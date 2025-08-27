@@ -1,14 +1,14 @@
-import { FileText, Home, Plus, Settings } from "lucide-react";
 import React from "react";
+import { FiFileText, FiHome, FiPlus, FiSettings } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 
 const Layout = ({ children }) => {
   const location = useLocation();
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: Home },
-    { name: "New Post", href: "/editor", icon: Plus },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Dashboard", href: "/", icon: FiHome },
+    { name: "New Post", href: "/editor", icon: FiPlus },
+    { name: "Settings", href: "/settings", icon: FiSettings },
   ];
 
   return (
@@ -18,7 +18,7 @@ const Layout = ({ children }) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-primary" />
+              <FiFileText className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold text-foreground">SyncApp</span>
             </Link>
 

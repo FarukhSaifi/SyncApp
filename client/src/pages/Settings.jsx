@@ -1,5 +1,5 @@
-import { AlertCircle, ExternalLink, Key, Save } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { FiAlertCircle, FiExternalLink, FiKey, FiSave } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import {
   Card,
@@ -111,7 +111,7 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <Key className="h-6 w-6 text-orange-600" />
+              <FiKey className="h-6 w-6 text-orange-600" />
             </div>
             <div>
               <CardTitle>Medium Integration</CardTitle>
@@ -124,7 +124,7 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <FiAlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">How to get your Medium API key:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
@@ -169,7 +169,7 @@ const Settings = () => {
             disabled={loading || !mediumApiKey.trim()}
             className="flex items-center space-x-2"
           >
-            <Save className="h-4 w-4" />
+            <FiSave className="h-4 w-4" />
             {loading ? "Saving..." : saved.medium ? "Saved!" : "Save Credentials"}
           </Button>
         </CardFooter>
@@ -180,7 +180,7 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <Key className="h-6 w-6 text-purple-600" />
+              <FiKey className="h-6 w-6 text-purple-600" />
             </div>
             <div>
               <CardTitle>DEV.to Integration</CardTitle>
@@ -193,7 +193,7 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+              <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-purple-800">
                 <p className="font-medium mb-1">How to get your DEV.to API key:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
@@ -251,7 +251,7 @@ const Settings = () => {
             disabled={loading || !devtoApiKey.trim() || !devtoUsername.trim()}
             className="flex items-center space-x-2"
           >
-            <Save className="h-4 w-4" />
+            <FiSave className="h-4 w-4" />
             {loading ? "Saving..." : saved.devto ? "Saved!" : "Save Credentials"}
           </Button>
         </CardFooter>
@@ -268,7 +268,7 @@ const Settings = () => {
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-100 rounded-lg">
-                  <Key className="h-4 w-4 text-orange-600" />
+                  <FiKey className="h-4 w-4 text-orange-600" />
                 </div>
                 <div>
                   <p className="font-medium">Medium</p>
@@ -289,7 +289,7 @@ const Settings = () => {
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <Key className="h-4 w-4 text-purple-600" />
+                  <FiKey className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
                   <p className="font-medium">DEV.to</p>
@@ -312,7 +312,7 @@ const Settings = () => {
             <div className="flex items-center justify-between p-3 border rounded-lg opacity-50">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gray-100 rounded-lg">
-                  <Key className="h-4 w-4 text-gray-600" />
+                  <FiKey className="h-4 w-4 text-gray-600" />
                 </div>
                 <div>
                   <p className="font-medium">WordPress</p>
@@ -341,10 +341,10 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
               <span>Medium Integration Token Guide</span>
             </div>
-            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
           </a>
 
           <a
@@ -354,10 +354,10 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
               <span>DEV.to API Key Guide</span>
             </div>
-            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
           </a>
 
           <a
@@ -367,10 +367,10 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
               <span>GitHub Repository</span>
             </div>
-            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
           </a>
         </CardContent>
       </Card>
