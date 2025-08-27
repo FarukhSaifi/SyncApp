@@ -1,5 +1,5 @@
-import { Edit, Globe, Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { FiEdit, FiGlobe, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
@@ -128,7 +128,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         </div>
         <Link to="/editor">
           <Button className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
+            <FiPlus className="h-4 w-4" />
             New Post
           </Button>
         </Link>
@@ -139,7 +139,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{posts.length}</div>
@@ -149,7 +149,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -161,7 +161,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Drafts</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -173,7 +173,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Platforms</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -203,7 +203,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         <CardContent>
           {posts.length === 0 ? (
             <div className="text-center py-8">
-              <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <FiGlobe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
               <p className="text-muted-foreground mb-4">
                 Start writing your first blog post to get published on Medium and DEV.to
@@ -266,7 +266,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                       <div className="flex items-center justify-end space-x-2">
                         <Link to={`/editor/${post.id || post._id}`}>
                           <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
+                            <FiEdit className="h-4 w-4" />
                           </Button>
                         </Link>
                         <Button
@@ -274,7 +274,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                           size="sm"
                           onClick={() => handleDelete(post.id || post._id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <FiTrash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
