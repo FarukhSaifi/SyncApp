@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
 const credentialsRoutes = require("./routes/credentials");
 const publishRoutes = require("./routes/publish");
+const mdxRoutes = require("./routes/mdx");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +19,8 @@ connectDB();
 
 // Security middleware
 app.use(helmet());
+
+// Note: Compression disabled (package not installed and not required)
 
 // Rate limiting
 const limiter = rateLimit({
@@ -51,6 +54,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/posts", postsRoutes);
 app.use("/api/credentials", credentialsRoutes);
 app.use("/api/publish", publishRoutes);
+app.use("/api/mdx", mdxRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

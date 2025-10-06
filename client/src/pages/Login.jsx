@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiArrowRight } from "react-icons/fi";
-import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -33,7 +33,7 @@ const Login = () => {
 
     try {
       const result = await login(formData.email, formData.password);
-      
+
       if (result.success) {
         navigate("/");
       } else {
@@ -47,30 +47,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account to continue
-          </p>
+          <p className="mt-2 text-sm text-gray-600">Sign in to your account to continue</p>
         </div>
 
         {/* Login Form */}
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-sm border">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl">Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {error}
-                </div>
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">{error}</div>
               )}
 
               <div>
@@ -126,11 +120,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full flex items-center justify-center space-x-2"
-                disabled={loading}
-              >
+              <Button type="submit" className="w-full flex items-center justify-center space-x-2" disabled={loading}>
                 {loading ? (
                   "Signing in..."
                 ) : (
@@ -145,10 +135,7 @@ const Login = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
+                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Sign up here
                 </Link>
               </p>

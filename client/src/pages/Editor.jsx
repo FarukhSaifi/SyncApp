@@ -1,29 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  FiArrowLeft,
-  FiBold,
-  FiCode,
-  FiEye,
-  FiEyeOff,
-  FiGlobe,
-  FiHash,
-  FiImage,
-  FiItalic,
-  FiLink,
-  FiList,
-  // FiQuote,
-  FiRotateCcw,
-  FiRotateCw,
-  FiSave,
-  FiSend,
-  FiUnderline,
-} from "react-icons/fi";
+import { FiArrowLeft, FiEye, FiEyeOff, FiGlobe, FiSave, FiSend } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { useToaster } from "../components/ui/Toaster";
+import { apiClient } from "../utils/apiClient";
 
 const Editor = ({ onPostCreate, onPostUpdate }) => {
   const { id } = useParams();
@@ -108,12 +93,21 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     editorRef.current?.focus();
   };
 
-  const handleEditorInput = () => {
-    if (editorRef.current) {
-      setFormData((prev) => ({
-        ...prev,
-        content_markdown: editorRef.current.innerHTML,
-      }));
+  const handleQuillChange = (html) => {
+    setFormData((prev) => ({ ...prev, content_markdown: html }));
+  };
+
+  const handleDownloadMdx = async () => {
+    try {
+      const postId = id;
+      if (!postId) {
+        showError("Export MDX", "Please save the post first before exporting MDX");
+        return;
+      }
+      await apiClient.downloadMdx(postId);
+      success("MDX Exported", "Your MDX file has been downloaded");
+    } catch (e) {
+      showError("Export Failed", e.message || "Could not export MDX");
     }
   };
 
@@ -423,31 +417,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="flex items-center space-x-2"
-              >
+              <Button variant="outline" onClick={() => navigate("/")} className="flex items-center space-x-2">
                 <FiArrowLeft className="h-4 w-4" />
                 Back to Dashboard
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {id ? "Edit Post" : "New Post"}
-                </h1>
-                <p className="text-gray-600 mt-2">
-                  {id ? "Update your blog post" : "Create a new blog post"}
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900">{id ? "Edit Post" : "New Post"}</h1>
+                <p className="text-gray-600 mt-2">{id ? "Update your blog post" : "Create a new blog post"}</p>
               </div>
             </div>
 
             <div className="flex items-center space-x-2">
               <Button variant="outline" onClick={() => setShowPreview(!showPreview)}>
-                {showPreview ? (
-                  <FiEyeOff className="h-4 w-4 mr-2" />
-                ) : (
-                  <FiEye className="h-4 w-4 mr-2" />
-                )}
+                {showPreview ? <FiEyeOff className="h-4 w-4 mr-2" /> : <FiEye className="h-4 w-4 mr-2" />}
                 {showPreview ? "Hide Preview" : "Show Preview"}
               </Button>
             </div>
@@ -459,217 +441,52 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
           <div className="lg:col-span-2 space-y-6">
             {/* Title Input */}
             <Card className="shadow-sm border-0">
+              <CardHeader>
+                <CardTitle>Post Title</CardTitle>
+              </CardHeader>
               <CardContent className="p-6">
-                <Input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  placeholder="Enter your post title..."
-                  className="w-full text-2xl font-bold border-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent px-0 py-2"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Post Title</label>
+                  <Input
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="Enter your post title..."
+                    className="w-full"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Enter the post title here, it will create a slug for the post
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Rich Text Editor */}
-            <Card className="shadow-sm border-0">
+            {/* Rich Text Editor (React Quill) */}
+            <Card className="shadow-sm border">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Content</CardTitle>
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => execCommand("undo")}
-                      className="h-8 w-8 p-0"
-                      title="Undo"
-                    >
-                      <FiRotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => execCommand("redo")}
-                      className="h-8 w-8 p-0"
-                      title="Redo"
-                    >
-                      <FiRotateCw className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <div className="text-sm text-muted-foreground">Rich text editor</div>
                 </div>
               </CardHeader>
-
-              {/* Toolbar */}
-              <div className="border-b border-gray-200 px-6 pb-3">
-                <div className="flex items-center space-x-1 flex-wrap gap-2">
-                  {/* Text Formatting */}
-                  <div className="flex items-center space-x-1 border-r border-gray-200 pr-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => execCommand("bold")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Bold"
-                    >
-                      <FiBold className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => execCommand("italic")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Italic"
-                    >
-                      <FiItalic className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => execCommand("underline")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Underline"
-                    >
-                      <FiUnderline className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Headings */}
-                  <div className="flex items-center space-x-1 border-r border-gray-200 pr-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("# ")}
-                      className="h-8 px-2 text-sm hover:bg-gray-100"
-                      title="Heading 1"
-                    >
-                      H1
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("## ")}
-                      className="h-8 px-2 text-sm hover:bg-gray-100"
-                      title="Heading 2"
-                    >
-                      H2
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("### ")}
-                      className="h-8 px-2 text-sm hover:bg-gray-100"
-                      title="Heading 3"
-                    >
-                      H3
-                    </Button>
-                  </div>
-
-                  {/* Lists */}
-                  <div className="flex items-center space-x-1 border-r border-gray-200 pr-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("- ")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Bullet List"
-                    >
-                      <FiList className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("1. ")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Numbered List"
-                    >
-                      <FiHash className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Special Elements */}
-                  <div className="flex items-center space-x-1 border-r border-gray-200 pr-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("> ")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Quote"
-                    >
-                      {/* <FiQuote className="h-4 w-4" /> */}
-                      ""
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("`code`")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Inline Code"
-                    >
-                      <FiCode className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("```\n\n```")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Code Block"
-                    >
-                      <FiCode className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Links and Images */}
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("[link text](url)")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Insert Link"
-                    >
-                      <FiLink className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => insertMarkdown("![alt text](image-url)")}
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Insert Image"
-                    >
-                      <FiImage className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Editor Area */}
-              <CardContent className="p-0">
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  onInput={handleEditorInput}
-                  onKeyDown={handleEditorKeyDown}
-                  className="min-h-[500px] p-6 focus:outline-none focus:ring-0 text-gray-800 leading-relaxed prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: formData.content_markdown }}
-                  style={{
-                    fontFamily:
-                      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontSize: "16px",
-                    lineHeight: "1.7",
-                  }}
+              <CardContent className="p-6">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.content_markdown}
+                  onChange={handleQuillChange}
+                  placeholder="Write your post content here..."
                 />
               </CardContent>
             </Card>
 
             {/* Metadata */}
-            <Card className="shadow-sm border-0">
+            <Card className="shadow-sm border">
               <CardHeader>
                 <CardTitle>Post Metadata</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags (comma-separated)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
                   <Input
                     name="tags"
                     value={formData.tags}
@@ -683,9 +500,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cover Image URL (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image URL (optional)</label>
                   <Input
                     name="cover_image"
                     value={formData.cover_image}
@@ -696,9 +511,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Canonical URL (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Canonical URL (optional)</label>
                   <Input
                     name="canonical_url"
                     value={formData.canonical_url}
@@ -712,12 +525,16 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             </Card>
 
             {/* Action Buttons */}
-            <Card className="shadow-sm border-0">
+            <Card className="shadow-sm border">
               <CardFooter className="flex flex-wrap gap-3 justify-between">
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => handleSave("draft")} disabled={loading}>
                     <FiSave className="h-4 w-4 mr-2" />
                     {loading ? "Saving..." : "Save Draft"}
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadMdx} disabled={!id || loading}>
+                    <FiSave className="h-4 w-4 mr-2" />
+                    Export MDX
                   </Button>
                 </div>
 
@@ -732,11 +549,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     {publishing ? "Publishing..." : "Publish to DEV.to"}
                   </Button>
 
-                  <Button
-                    onClick={handlePublishToWordpress}
-                    disabled={publishing}
-                    variant="secondary"
-                  >
+                  <Button onClick={handlePublishToWordpress} disabled={publishing} variant="secondary">
                     <FiGlobe className="h-4 w-4 mr-2" />
                     {publishing ? "Publishing..." : "Publish to WordPress"}
                   </Button>
@@ -759,9 +572,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                      {formData.title || "Untitled Post"}
-                    </h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">{formData.title || "Untitled Post"}</h1>
                     {formData.cover_image && (
                       <img
                         src={formData.cover_image}
@@ -770,9 +581,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                       />
                     )}
                     <div className="text-gray-700 leading-relaxed">
-                      <ReactMarkdown>
-                        {formData.content_markdown || "*No content yet...*"}
-                      </ReactMarkdown>
+                      <ReactMarkdown>{formData.content_markdown || "*No content yet...*"}</ReactMarkdown>
                     </div>
                     {formData.tags && (
                       <div className="flex flex-wrap gap-2 mt-6">
