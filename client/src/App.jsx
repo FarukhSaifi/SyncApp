@@ -3,13 +3,16 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-d
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster, ToasterProvider } from "./components/ui/Toaster";
+import { DEFAULT_PAGINATION } from "./constants";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import Settings from "./pages/Settings";
+import { apiClient } from "./utils/apiClient";
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth();
@@ -24,13 +27,7 @@ function AppContent() {
 
   const fetchPosts = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/posts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await apiClient.getPosts(DEFAULT_PAGINATION);
       if (data.success) {
         setPosts(data.data);
       }
@@ -46,11 +43,7 @@ function AppContent() {
   };
 
   const updatePost = (updatedPost) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === updatedPost.id || post._id === updatedPost._id ? updatedPost : post
-      )
-    );
+    setPosts(posts.map((post) => (post.id === updatedPost.id || post._id === updatedPost._id ? updatedPost : post)));
   };
 
   const deletePost = (postId) => {
@@ -69,7 +62,7 @@ function AppContent() {
   }
 
   return (
-    <Router>
+    <Router future={{ v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-background">
         {isAuthenticated ? (
           <Layout>
@@ -139,9 +132,11 @@ function AppContent() {
 function App() {
   return (
     <ToasterProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
     </ToasterProvider>
   );
 }

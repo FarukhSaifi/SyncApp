@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FiAlertCircle, FiExternalLink, FiKey, FiSave } from "react-icons/fi";
 import Button from "../components/ui/Button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/Card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { useToaster } from "../components/ui/Toaster";
 
@@ -147,13 +140,11 @@ const Settings = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure your API credentials and platform settings
-        </p>
+        <p className="text-muted-foreground mt-2">Configure your API credentials and platform settings</p>
       </div>
 
       {/* Medium Integration */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-orange-100 rounded-lg">
@@ -161,9 +152,7 @@ const Settings = () => {
             </div>
             <div>
               <CardTitle>Medium Integration</CardTitle>
-              <CardDescription>
-                Connect your Medium account to publish posts directly
-              </CardDescription>
+              <CardDescription>Connect your Medium account to publish posts directly</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -194,9 +183,7 @@ const Settings = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Medium Integration Token
-            </label>
+            <label className="block text-sm font-medium text-foreground mb-2">Medium Integration Token</label>
             <Input
               type="password"
               value={mediumApiKey}
@@ -204,9 +191,7 @@ const Settings = () => {
               placeholder="Enter your Medium integration token..."
               className="w-full"
             />
-            <p className="text-sm text-muted-foreground mt-1">
-              This token will be encrypted and stored securely
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">This token will be encrypted and stored securely</p>
           </div>
         </CardContent>
         <CardFooter>
@@ -222,7 +207,7 @@ const Settings = () => {
       </Card>
 
       {/* DEV.to Integration */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -230,9 +215,7 @@ const Settings = () => {
             </div>
             <div>
               <CardTitle>DEV.to Integration</CardTitle>
-              <CardDescription>
-                Connect your DEV.to account to publish posts directly
-              </CardDescription>
+              <CardDescription>Connect your DEV.to account to publish posts directly</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -264,9 +247,7 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                DEV.to Username
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-2">DEV.to Username</label>
               <Input
                 value={devtoUsername}
                 onChange={(e) => setDevtoUsername(e.target.value)}
@@ -275,9 +256,7 @@ const Settings = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                DEV.to API Key
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-2">DEV.to API Key</label>
               <Input
                 type="password"
                 value={devtoApiKey}
@@ -287,9 +266,7 @@ const Settings = () => {
               />
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Both username and API key are required for DEV.to integration
-          </p>
+          <p className="text-sm text-muted-foreground">Both username and API key are required for DEV.to integration</p>
         </CardContent>
         <CardFooter>
           <Button
@@ -304,7 +281,7 @@ const Settings = () => {
       </Card>
 
       {/* WordPress Integration */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -312,9 +289,7 @@ const Settings = () => {
             </div>
             <div>
               <CardTitle>WordPress Integration</CardTitle>
-              <CardDescription>
-                Connect your WordPress site to publish posts directly
-              </CardDescription>
+              <CardDescription>Connect your WordPress site to publish posts directly</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -346,23 +321,17 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                WordPress Site URL
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-2">WordPress Site URL</label>
               <Input
                 value={wordpressSiteUrl}
                 onChange={(e) => setWordpressSiteUrl(e.target.value)}
                 placeholder="https://yoursite.com"
                 className="w-full"
               />
-              <p className="text-sm text-muted-foreground mt-1">
-                Your WordPress site URL (e.g., https://yoursite.com)
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Your WordPress site URL (e.g., https://yoursite.com)</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                WordPress API Key
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-2">WordPress API Key</label>
               <Input
                 type="password"
                 value={wordpressApiKey}
@@ -392,7 +361,7 @@ const Settings = () => {
       </Card>
 
       {/* Platform Status */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardHeader>
           <CardTitle>Platform Status</CardTitle>
           <CardDescription>Current status of your connected platforms</CardDescription>
@@ -406,9 +375,7 @@ const Settings = () => {
                 </div>
                 <div>
                   <p className="font-medium">Medium</p>
-                  <p className="text-sm text-muted-foreground">
-                    {mediumApiKey ? "Connected" : "Not connected"}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{mediumApiKey ? "Connected" : "Not connected"}</p>
                 </div>
               </div>
               <div
@@ -434,9 +401,7 @@ const Settings = () => {
               </div>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  devtoApiKey && devtoUsername
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
+                  devtoApiKey && devtoUsername ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                 }`}
               >
                 {devtoApiKey && devtoUsername ? "Active" : "Inactive"}
@@ -457,9 +422,7 @@ const Settings = () => {
               </div>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  wordpressApiKey && wordpressSiteUrl
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
+                  wordpressApiKey && wordpressSiteUrl ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                 }`}
               >
                 {wordpressApiKey && wordpressSiteUrl ? "Active" : "Inactive"}

@@ -2,9 +2,7 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/syncapp"
-    );
+    const conn = await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/syncapp");
     console.log("✅ Connected to MongoDB database");
     return conn;
   } catch (error) {

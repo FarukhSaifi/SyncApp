@@ -14,10 +14,13 @@
     "date-fns": "^2.30.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-quill": "^2.0.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^6.20.1",
-    "react-syntax-highlighter": "^15.5.0"
+    "react-syntax-highlighter": "^15.5.0",
+    "file-saver": "^2.0.5",
+    "qs": "^6.13.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",

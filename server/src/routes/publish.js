@@ -34,8 +34,7 @@ router.post("/medium", async (req, res) => {
     if (!credential) {
       return res.status(400).json({
         success: false,
-        error:
-          "Medium API credentials not found. Please configure your Medium API key in settings.",
+        error: "Medium API credentials not found. Please configure your Medium API key in settings.",
       });
     }
 
@@ -69,16 +68,12 @@ router.post("/medium", async (req, res) => {
     };
 
     // Publish to Medium
-    const publishResponse = await axios.post(
-      `https://api.medium.com/v1/users/${authorId}/posts`,
-      mediumPostData,
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const publishResponse = await axios.post(`https://api.medium.com/v1/users/${authorId}/posts`, mediumPostData, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
 
     // Update the post status and Medium details in our database
     const updatedPost = await Post.findByIdAndUpdate(
@@ -153,8 +148,7 @@ router.post("/devto", async (req, res) => {
     if (!credential) {
       return res.status(400).json({
         success: false,
-        error:
-          "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
+        error: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
       });
     }
 
@@ -261,8 +255,7 @@ router.post("/wordpress", async (req, res) => {
     if (!credential) {
       return res.status(400).json({
         success: false,
-        error:
-          "WordPress API credentials not found. Please configure your WordPress API key in settings.",
+        error: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
       });
     }
 

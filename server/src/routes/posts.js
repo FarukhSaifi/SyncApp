@@ -9,6 +9,11 @@ router.get("/", optionalAuth, async (req, res) => {
   try {
     let query = {};
 
+    // Pagination params
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 100);
+    const skip = (page - 1) * limit;
+
     // If user is authenticated, show only their posts
     if (req.userId) {
       query.author = req.userId;
@@ -17,13 +22,26 @@ router.get("/", optionalAuth, async (req, res) => {
       query.status = "published";
     }
 
-    const posts = await Post.find(query)
-      .populate("author", "username firstName lastName")
-      .sort({ createdAt: -1 });
+    const [items, total] = await Promise.all([
+      Post.find(query)
+        .select("title slug status tags cover_image canonical_url createdAt updatedAt author platform_status")
+        .populate("author", "username firstName lastName")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean({ virtuals: false }),
+      Post.countDocuments(query),
+    ]);
 
     res.json({
       success: true,
-      data: posts,
+      data: items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching posts:", error);
@@ -34,12 +52,49 @@ router.get("/", optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/posts/:id - Retrieve a specific post
+// GET /api/posts/slug/:slug - Retrieve a specific post by slug
+router.get("/slug/:slug", optionalAuth, async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const post = await Post.findOne({ slug })
+      .populate("author", "username firstName lastName")
+      .lean({ virtuals: false });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: "Post not found",
+      });
+    }
+
+    // Check if user can access this post
+    if (post.status !== "published" && (!req.userId || post.author._id.toString() !== req.userId)) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: post,
+    });
+  } catch (error) {
+    console.error("Error fetching post by slug:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch post",
+    });
+  }
+});
+
+// GET /api/posts/:id - Retrieve a specific post by id
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const post = await Post.findById(id).populate("author", "username firstName lastName");
+    const post = await Post.findById(id).populate("author", "username firstName lastName").lean({ virtuals: false });
 
     if (!post) {
       return res.status(404).json({
@@ -72,14 +127,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 // POST /api/posts - Create a new post (authenticated only)
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const {
-      title,
-      content_markdown,
-      status = "draft",
-      tags,
-      cover_image,
-      canonical_url,
-    } = req.body;
+    const { title, content_markdown, status = "draft", tags, cover_image, canonical_url } = req.body;
 
     if (!title || !content_markdown) {
       return res.status(400).json({
@@ -98,10 +146,7 @@ router.post("/", authenticateToken, async (req, res) => {
       author: req.userId,
     });
 
-    const populatedPost = await Post.findById(post._id).populate(
-      "author",
-      "username firstName lastName"
-    );
+    const populatedPost = await Post.findById(post._id).populate("author", "username firstName lastName");
 
     res.status(201).json({
       success: true,
@@ -151,7 +196,9 @@ router.put("/:id", authenticateToken, async (req, res) => {
     const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
-    }).populate("author", "username firstName lastName");
+    })
+      .populate("author", "username firstName lastName")
+      .lean({ virtuals: false });
 
     res.json({
       success: true,

@@ -1,21 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiEdit, FiGlobe, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/Table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
 import { useToaster } from "../components/ui/Toaster";
+import { STATUS_CONFIG } from "../constants";
 
 const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
   const { success, error: showError } = useToaster();
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
     // Simulate loading
@@ -50,18 +45,8 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
   };
 
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      draft: { label: "Draft", className: "bg-gray-100 text-gray-800" },
-      published: { label: "Published", className: "bg-green-100 text-green-800" },
-      archived: { label: "Archived", className: "bg-yellow-100 text-yellow-800" },
-    };
-
-    const config = statusConfig[status] || statusConfig.draft;
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>
-        {config.label}
-      </span>
-    );
+    const config = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
   };
 
   const getPlatformStatus = (post) => {
@@ -128,6 +113,11 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
     });
   };
 
+  const filteredPosts = useMemo(() => {
+    if (filterStatus === "all") return posts;
+    return posts.filter((p) => p.status === filterStatus);
+  }, [posts, filterStatus]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -156,8 +146,11 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card
+          className={`cursor-pointer ${filterStatus === "all" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFilterStatus("all")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
             <FiGlobe className="h-4 w-4 text-muted-foreground" />
@@ -167,27 +160,29 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className={`cursor-pointer ${filterStatus === "published" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFilterStatus("published")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Published</CardTitle>
             <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {posts.filter((post) => post.status === "published").length}
-            </div>
+            <div className="text-2xl font-bold">{posts.filter((post) => post.status === "published").length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className={`cursor-pointer ${filterStatus === "draft" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setFilterStatus("draft")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Drafts</CardTitle>
             <FiGlobe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {posts.filter((post) => post.status === "draft").length}
-            </div>
+            <div className="text-2xl font-bold">{posts.filter((post) => post.status === "draft").length}</div>
           </CardContent>
         </Card>
 
@@ -202,8 +197,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                 posts.filter(
                   (post) =>
                     post.platform_status &&
-                    (post.platform_status.medium?.published ||
-                      post.platform_status.devto?.published)
+                    (post.platform_status.medium?.published || post.platform_status.devto?.published)
                 ).length
               }
             </div>
@@ -212,17 +206,29 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
       </div>
 
       {/* Posts Table */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardHeader>
-          <CardTitle>All Posts</CardTitle>
-          <CardDescription>
-            {posts.length === 0
-              ? "No posts yet. Create your first post to get started!"
-              : `Showing ${posts.length} post${posts.length === 1 ? "" : "s"}`}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Posts</CardTitle>
+              <CardDescription>
+                {filteredPosts.length === 0
+                  ? "No posts yet. Create your first post to get started!"
+                  : `Showing ${filteredPosts.length} post${filteredPosts.length === 1 ? "" : "s"}`}
+              </CardDescription>
+            </div>
+            {filterStatus !== "all" && (
+              <button
+                onClick={() => setFilterStatus("all")}
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          {posts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <div className="text-center py-8">
               <FiGlobe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
@@ -246,15 +252,13 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {posts.map((post) => (
+                {filteredPosts.map((post) => (
                   <TableRow key={post.id || post._id}>
                     <TableCell className="font-medium">
                       <div className="max-w-xs">
                         <div className="truncate">{post.title}</div>
                         {post.cover_image && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            📷 Has cover image
-                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">📷 Has cover image</div>
                         )}
                       </div>
                     </TableCell>
@@ -275,9 +279,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                           <span className="text-muted-foreground text-sm">No tags</span>
                         )}
                         {post.tags && post.tags.length > 3 && (
-                          <span className="text-muted-foreground text-xs">
-                            +{post.tags.length - 3} more
-                          </span>
+                          <span className="text-muted-foreground text-xs">+{post.tags.length - 3} more</span>
                         )}
                       </div>
                     </TableCell>
@@ -290,11 +292,7 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
                             <FiEdit className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(post.id || post._id)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(post.id || post._id)}>
                           <FiTrash2 className="h-4 w-4" />
                         </Button>
                       </div>
