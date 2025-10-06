@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema(
   {
+    // User ownership
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: {
       type: String,
       required: [true, "Title is required"],
@@ -53,6 +59,8 @@ const postSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
+postSchema.index({ author: 1, status: 1 });
+postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ status: 1 });
 postSchema.index({ createdAt: -1 });
 postSchema.index({ title: "text", content_markdown: "text" });

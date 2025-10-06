@@ -23,11 +23,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { useToaster } from "../components/ui/Toaster";
 
 const Editor = ({ onPostCreate, onPostUpdate }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
+  const { success, error: showError } = useToaster();
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -48,7 +50,12 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const fetchPost = async () => {
     try {
-      const response = await fetch(`/api/posts/${id}`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/posts/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -63,7 +70,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
       }
     } catch (error) {
       console.error("Error fetching post:", error);
-      alert("Failed to fetch post");
+      showError("Error", "Failed to fetch post");
     }
   };
 
@@ -119,7 +126,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handleSave = async (status = "draft") => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      alert("Please fill in both title and content");
+      showError("Validation Error", "Please fill in both title and content");
       return;
     }
 
@@ -134,10 +141,12 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
+      const token = localStorage.getItem("token");
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -151,21 +160,21 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
       if (data.success) {
         if (id) {
           onPostUpdate(data.data);
-          alert("Post updated successfully!");
+          success("Success", "Post updated successfully!");
         } else {
           onPostCreate(data.data);
-          alert("Post created successfully!");
+          success("Success", "Post created successfully!");
         }
 
         if (status === "draft") {
           navigate("/");
         }
       } else {
-        alert(`Error: ${data.error}`);
+        showError("Error", data.error || "Failed to save post");
       }
     } catch (error) {
       console.error("Error saving post:", error);
-      alert("Failed to save post");
+      showError("Error", "Failed to save post");
     } finally {
       setLoading(false);
     }
@@ -173,17 +182,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToMedium = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      alert("Please fill in both title and content");
+      showError("Validation Error", "Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       // First save the post
+      const token = localStorage.getItem("token");
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -206,6 +217,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ postId: saveData.data.id }),
       });
@@ -214,14 +226,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishData.success) {
         onPostCreate({ ...saveData.data, status: "published" });
-        alert("Post published to Medium successfully!");
+        success("Success", "Post published to Medium successfully!");
         navigate("/");
       } else {
         throw new Error(publishData.error);
       }
     } catch (error) {
       console.error("Error publishing to Medium:", error);
-      alert(`Failed to publish to Medium: ${error.message}`);
+      showError("Error", `Failed to publish to Medium: ${error.message}`);
     } finally {
       setPublishing(false);
     }
@@ -229,17 +241,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToDevto = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      alert("Please fill in both title and content");
+      showError("Validation Error", "Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       // First save the post
+      const token = localStorage.getItem("token");
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -262,6 +276,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ postId: saveData.data.id }),
       });
@@ -270,14 +285,73 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishData.success) {
         onPostCreate({ ...saveData.data, status: "published" });
-        alert("Post published to DEV.to successfully!");
+        success("Success", "Post published to DEV.to successfully!");
         navigate("/");
       } else {
         throw new Error(publishData.error);
       }
     } catch (error) {
       console.error("Error publishing to DEV.to:", error);
-      alert(`Failed to publish to DEV.to: ${error.message}`);
+      showError("Error", `Failed to publish to DEV.to: ${error.message}`);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handlePublishToWordpress = async () => {
+    if (!formData.title.trim() || !formData.content_markdown.trim()) {
+      showError("Validation Error", "Please fill in both title and content");
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      // First save the post
+      const token = localStorage.getItem("token");
+      const saveResponse = await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          tags: formData.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag.length > 0),
+          status: "draft",
+        }),
+      });
+
+      const saveData = await saveResponse.json();
+
+      if (!saveData.success) {
+        throw new Error(saveData.error);
+      }
+
+      // Then publish to WordPress
+      const publishResponse = await fetch("/api/publish/wordpress", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId: saveData.data.id }),
+      });
+
+      const publishData = await publishResponse.json();
+
+      if (publishData.success) {
+        onPostCreate({ ...saveData.data, status: "published" });
+        success("Success", "Post published to WordPress successfully!");
+        navigate("/");
+      } else {
+        throw new Error(publishData.error);
+      }
+    } catch (error) {
+      console.error("Error publishing to WordPress:", error);
+      showError("Error", `Failed to publish to WordPress: ${error.message}`);
     } finally {
       setPublishing(false);
     }
@@ -285,17 +359,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToAll = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      alert("Please fill in both title and content");
+      showError("Validation Error", "Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       // First save the post
+      const token = localStorage.getItem("token");
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -318,6 +394,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ postId: saveData.data.id }),
       });
@@ -326,14 +403,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishData.success) {
         onPostCreate({ ...saveData.data, status: "published" });
-        alert("Post published to all platforms successfully!");
+        success("Success", "Post published to all platforms successfully!");
         navigate("/");
       } else {
         throw new Error(publishData.error);
       }
     } catch (error) {
       console.error("Error publishing to all platforms:", error);
-      alert(`Failed to publish to all platforms: ${error.message}`);
+      showError("Error", `Failed to publish to all platforms: ${error.message}`);
     } finally {
       setPublishing(false);
     }
@@ -653,6 +730,15 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                   <Button onClick={handlePublishToDevto} disabled={publishing} variant="secondary">
                     <FiGlobe className="h-4 w-4 mr-2" />
                     {publishing ? "Publishing..." : "Publish to DEV.to"}
+                  </Button>
+
+                  <Button
+                    onClick={handlePublishToWordpress}
+                    disabled={publishing}
+                    variant="secondary"
+                  >
+                    <FiGlobe className="h-4 w-4 mr-2" />
+                    {publishing ? "Publishing..." : "Publish to WordPress"}
                   </Button>
 
                   <Button onClick={handlePublishToAll} disabled={publishing} variant="default">

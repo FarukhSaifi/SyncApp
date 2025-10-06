@@ -14,6 +14,14 @@ const credentialSchema = new mongoose.Schema(
       type: String,
       required: [true, "API key is required"],
     },
+    site_url: {
+      type: String,
+      trim: true,
+      // Only required for WordPress
+      required: function () {
+        return this.platform_name === "wordpress";
+      },
+    },
     user_id: {
       type: Number,
       default: 1, // Placeholder for future multi-user support
@@ -26,7 +34,7 @@ const credentialSchema = new mongoose.Schema(
       // Platform-specific configuration
       devto_username: String, // DEV.to username for the API
       medium_user_id: String, // Medium user ID
-      wordpress_url: String, // WordPress site URL
+      wordpress_url: String, // WordPress site URL (legacy support)
     },
   },
   {
