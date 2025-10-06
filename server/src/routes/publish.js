@@ -233,6 +233,124 @@ router.post("/devto", async (req, res) => {
   }
 });
 
+// POST /api/publish/wordpress - Publish a post to WordPress
+router.post("/wordpress", async (req, res) => {
+  try {
+    const { postId } = req.body;
+
+    if (!postId) {
+      return res.status(400).json({
+        success: false,
+        error: "Post ID is required",
+      });
+    }
+
+    // Get the post content from the database
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: "Post not found",
+      });
+    }
+
+    // Get the WordPress API credentials
+    const credential = await Credential.findOne({ platform_name: "wordpress" });
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "WordPress API credentials not found. Please configure your WordPress API key in settings.",
+      });
+    }
+
+    const encryptedApiKey = credential.api_key;
+    const apiKey = decrypt(encryptedApiKey);
+
+    if (!apiKey || apiKey === "your_wordpress_api_key_here") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid WordPress API key. Please configure your WordPress API key in settings.",
+      });
+    }
+
+    // Get WordPress site URL from credentials
+    const siteUrl = credential.site_url || credential.additional_data?.site_url;
+
+    if (!siteUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "WordPress site URL not configured. Please add your WordPress site URL in settings.",
+      });
+    }
+
+    // Prepare the post data for WordPress
+    const wordpressPostData = {
+      title: post.title,
+      content: post.content_markdown,
+      status: "publish",
+      categories: post.tags && post.tags.length > 0 ? post.tags : [],
+      featured_media: post.cover_image || null,
+      meta: {
+        canonical_url: post.canonical_url || null,
+      },
+    };
+
+    // Publish to WordPress
+    const publishResponse = await axios.post(`${siteUrl}/wp-json/wp/v2/posts`, wordpressPostData, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Update the post status and WordPress details in our database
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {
+        status: "published",
+        "platform_status.wordpress.published": true,
+        "platform_status.wordpress.post_id": publishResponse.data.id.toString(),
+        "platform_status.wordpress.url": publishResponse.data.link,
+        "platform_status.wordpress.published_at": new Date(),
+      },
+      { new: true, runValidators: true }
+    );
+
+    // Return success response
+    res.json({
+      success: true,
+      message: "Post published to WordPress successfully",
+      data: {
+        postId: updatedPost._id,
+        wordpressPostId: publishResponse.data.id,
+        wordpressUrl: publishResponse.data.link,
+        status: "published",
+      },
+    });
+  } catch (error) {
+    console.error("Error publishing to WordPress:", error);
+
+    // Handle specific WordPress API errors
+    if (error.response) {
+      const wordpressError = error.response.data;
+      return res.status(error.response.status).json({
+        success: false,
+        error: "WordPress API Error",
+        details: wordpressError.message || wordpressError.error || "Unknown WordPress API error",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to publish to WordPress",
+      message: error.message,
+    });
+  }
+});
+
 // POST /api/publish/all - Publish to all configured platforms
 router.post("/all", async (req, res) => {
   try {
@@ -270,6 +388,10 @@ router.post("/all", async (req, res) => {
           // Publish to DEV.to
           const devtoResult = await publishToDevto(post, credential);
           results.devto = devtoResult;
+        } else if (credential.platform_name === "wordpress") {
+          // Publish to WordPress
+          const wordpressResult = await publishToWordpress(post, credential);
+          results.wordpress = wordpressResult;
         }
       } catch (error) {
         errors.push({
@@ -370,6 +492,42 @@ async function publishToDevto(post, credential) {
     "platform_status.devto.post_id": publishResponse.data.id.toString(),
     "platform_status.devto.url": publishResponse.data.url,
     "platform_status.devto.published_at": new Date(),
+  };
+}
+
+async function publishToWordpress(post, credential) {
+  const apiKey = decrypt(credential.api_key);
+  const siteUrl = credential.site_url || credential.additional_data?.site_url;
+
+  if (!siteUrl) {
+    throw new Error("WordPress site URL not configured");
+  }
+
+  const publishResponse = await axios.post(
+    `${siteUrl}/wp-json/wp/v2/posts`,
+    {
+      title: post.title,
+      content: post.content_markdown,
+      status: "publish",
+      categories: post.tags && post.tags.length > 0 ? post.tags : [],
+      featured_media: post.cover_image || null,
+      meta: {
+        canonical_url: post.canonical_url || null,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return {
+    "platform_status.wordpress.published": true,
+    "platform_status.wordpress.post_id": publishResponse.data.id.toString(),
+    "platform_status.wordpress.url": publishResponse.data.link,
+    "platform_status.wordpress.published_at": new Date(),
   };
 }
 

@@ -53,7 +53,7 @@ router.get("/:platform", async (req, res) => {
 router.put("/:platform", async (req, res) => {
   try {
     const { platform } = req.params;
-    const { api_key } = req.body;
+    const { api_key, site_url, platform_config } = req.body;
 
     if (!api_key) {
       return res.status(400).json({
@@ -71,22 +71,41 @@ router.put("/:platform", async (req, res) => {
     let credential;
     if (existingCredential) {
       // Update existing credentials
-      credential = await Credential.findByIdAndUpdate(
-        existingCredential._id,
-        {
-          api_key: encryptedApiKey,
-          is_active: true,
-        },
-        { new: true, runValidators: true }
-      );
+      const updateData = {
+        api_key: encryptedApiKey,
+        is_active: true,
+      };
+
+      // Add platform-specific data
+      if (platform === "wordpress" && site_url) {
+        updateData.site_url = site_url;
+      }
+      if (platform_config) {
+        updateData.platform_config = platform_config;
+      }
+
+      credential = await Credential.findByIdAndUpdate(existingCredential._id, updateData, {
+        new: true,
+        runValidators: true,
+      });
     } else {
       // Insert new credentials
-      credential = await Credential.create({
+      const credentialData = {
         platform_name: platform,
         api_key: encryptedApiKey,
         user_id: 1,
         is_active: true,
-      });
+      };
+
+      // Add platform-specific data
+      if (platform === "wordpress" && site_url) {
+        credentialData.site_url = site_url;
+      }
+      if (platform_config) {
+        credentialData.platform_config = platform_config;
+      }
+
+      credential = await Credential.create(credentialData);
     }
 
     res.json({

@@ -1,15 +1,29 @@
-import React from "react";
-import { FiFileText, FiHome, FiPlus, FiSettings } from "react-icons/fi";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { FiFileText, FiHome, FiPlus, FiSettings, FiUser, FiLogOut, FiChevronDown } from "react-icons/fi";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import Button from "./ui/Button";
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: FiHome },
     { name: "New Post", href: "/editor", icon: FiPlus },
     { name: "Settings", href: "/settings", icon: FiSettings },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  if (!isAuthenticated) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,18 +58,63 @@ const Layout = ({ children }) => {
               })}
             </nav>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
+            {/* User Profile Menu */}
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <FiUser className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <span className="hidden sm:block">
+                    {user?.firstName || user?.username || "User"}
+                  </span>
+                  <FiChevronDown className="h-4 w-4" />
+                </button>
+
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
+                    <div className="px-4 py-2 border-b">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.firstName && user?.lastName 
+                          ? `${user.firstName} ${user.lastName}`
+                          : user?.username || "User"
+                        }
+                      </p>
+                      <p className="text-sm text-gray-500">{user?.email}</p>
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowProfileMenu(false)}
+                    >
+                      Profile Settings
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <button className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -72,6 +131,14 @@ const Layout = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* Click outside to close profile menu */}
+      {showProfileMenu && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowProfileMenu(false)}
+        />
+      )}
     </div>
   );
 };

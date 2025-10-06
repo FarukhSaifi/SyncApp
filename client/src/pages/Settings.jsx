@@ -10,13 +10,17 @@ import {
   CardTitle,
 } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { useToaster } from "../components/ui/Toaster";
 
 const Settings = () => {
+  const { success, error: showError, warning } = useToaster();
   const [loading, setLoading] = useState(false);
   const [mediumApiKey, setMediumApiKey] = useState("");
   const [devtoApiKey, setDevtoApiKey] = useState("");
   const [devtoUsername, setDevtoUsername] = useState("");
-  const [saved, setSaved] = useState({ medium: false, devto: false });
+  const [wordpressApiKey, setWordpressApiKey] = useState("");
+  const [wordpressSiteUrl, setWordpressSiteUrl] = useState("");
+  const [saved, setSaved] = useState({ medium: false, devto: false, wordpress: false });
 
   useEffect(() => {
     // In a real app, you might want to fetch existing credentials
@@ -25,7 +29,7 @@ const Settings = () => {
 
   const handleSaveMediumCredentials = async () => {
     if (!mediumApiKey.trim()) {
-      alert("Please enter your Medium API key");
+      showError("Validation Error", "Please enter your Medium API key");
       return;
     }
 
@@ -46,13 +50,13 @@ const Settings = () => {
       if (data.success) {
         setSaved((prev) => ({ ...prev, medium: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
-        alert("Medium API credentials saved successfully!");
+        success("Success", "Medium API credentials saved successfully!");
       } else {
-        alert(`Error: ${data.error}`);
+        showError("Error", data.error || "Failed to save credentials");
       }
     } catch (error) {
       console.error("Error saving credentials:", error);
-      alert("Failed to save credentials");
+      showError("Error", "Failed to save credentials");
     } finally {
       setLoading(false);
     }
@@ -60,7 +64,7 @@ const Settings = () => {
 
   const handleSaveDevtoCredentials = async () => {
     if (!devtoApiKey.trim() || !devtoUsername.trim()) {
-      alert("Please enter both DEV.to API key and username");
+      showError("Validation Error", "Please enter both DEV.to API key and username");
       return;
     }
 
@@ -84,13 +88,55 @@ const Settings = () => {
       if (data.success) {
         setSaved((prev) => ({ ...prev, devto: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
-        alert("DEV.to API credentials saved successfully!");
+        success("Success", "DEV.to API credentials saved successfully!");
       } else {
-        alert(`Error: ${data.error}`);
+        showError("Error", data.error || "Failed to save credentials");
       }
     } catch (error) {
       console.error("Error saving credentials:", error);
-      alert("Failed to save credentials");
+      showError("Error", "Failed to save credentials");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveWordpressCredentials = async () => {
+    if (!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) {
+      showError("Validation Error", "Please enter both WordPress API key and site URL");
+      return;
+    }
+
+    // Validate WordPress site URL
+    if (!wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
+      showError("Validation Error", "Please enter a valid WordPress site URL (must start with http:// or https://)");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/credentials/wordpress", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_key: wordpressApiKey.trim(),
+          site_url: wordpressSiteUrl.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSaved((prev) => ({ ...prev, wordpress: true }));
+        setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
+        success("Success", "WordPress API credentials saved successfully!");
+      } else {
+        showError("Error", data.error || "Failed to save credentials");
+      }
+    } catch (error) {
+      console.error("Error saving credentials:", error);
+      showError("Error", "Failed to save credentials");
     } finally {
       setLoading(false);
     }
@@ -257,6 +303,94 @@ const Settings = () => {
         </CardFooter>
       </Card>
 
+      {/* WordPress Integration */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FiKey className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle>WordPress Integration</CardTitle>
+              <CardDescription>
+                Connect your WordPress site to publish posts directly
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <FiAlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">How to get your WordPress API key:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>
+                    Install and activate the{" "}
+                    <a
+                      href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-blue-900"
+                    >
+                      JWT Authentication plugin
+                    </a>
+                  </li>
+                  <li>Go to WordPress Admin → Users → Your Profile</li>
+                  <li>Generate a new application password</li>
+                  <li>Use your username and the generated password as the API key</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                WordPress Site URL
+              </label>
+              <Input
+                value={wordpressSiteUrl}
+                onChange={(e) => setWordpressSiteUrl(e.target.value)}
+                placeholder="https://yoursite.com"
+                className="w-full"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Your WordPress site URL (e.g., https://yoursite.com)
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                WordPress API Key
+              </label>
+              <Input
+                type="password"
+                value={wordpressApiKey}
+                onChange={(e) => setWordpressApiKey(e.target.value)}
+                placeholder="Enter your WordPress API key..."
+                className="w-full"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Your WordPress username:password or application password
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Both site URL and API key are required for WordPress integration
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button
+            onClick={handleSaveWordpressCredentials}
+            disabled={loading || !wordpressApiKey.trim() || !wordpressSiteUrl.trim()}
+            className="flex items-center space-x-2"
+          >
+            <FiSave className="h-4 w-4" />
+            {loading ? "Saving..." : saved.wordpress ? "Saved!" : "Save Credentials"}
+          </Button>
+        </CardFooter>
+      </Card>
+
       {/* Platform Status */}
       <Card>
         <CardHeader>
@@ -309,18 +443,26 @@ const Settings = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg opacity-50">
+            <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <FiKey className="h-4 w-4 text-gray-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FiKey className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
                   <p className="font-medium">WordPress</p>
-                  <p className="text-sm text-muted-foreground">Coming soon</p>
+                  <p className="text-sm text-muted-foreground">
+                    {wordpressApiKey && wordpressSiteUrl ? "Connected" : "Not connected"}
+                  </p>
                 </div>
               </div>
-              <div className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                Planned
+              <div
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  wordpressApiKey && wordpressSiteUrl
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {wordpressApiKey && wordpressSiteUrl ? "Active" : "Inactive"}
               </div>
             </div>
           </div>
@@ -356,6 +498,19 @@ const Settings = () => {
             <div className="flex items-center space-x-3">
               <FiExternalLink className="h-4 w-4 text-muted-foreground" />
               <span>DEV.to API Key Guide</span>
+            </div>
+            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+          </a>
+
+          <a
+            href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+              <span>WordPress JWT Authentication Plugin</span>
             </div>
             <FiExternalLink className="h-4 w-4 text-muted-foreground" />
           </a>

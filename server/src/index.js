@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
 const connectDB = require("./database/connection");
+const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
 const credentialsRoutes = require("./routes/credentials");
 const publishRoutes = require("./routes/publish");
@@ -46,6 +47,7 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
+app.use("/api/auth", authRoutes);
 app.use("/api/posts", postsRoutes);
 app.use("/api/credentials", credentialsRoutes);
 app.use("/api/publish", publishRoutes);
