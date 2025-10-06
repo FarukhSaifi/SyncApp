@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { ROUTES } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
@@ -65,7 +66,7 @@ const Register = () => {
       const result = await register(registrationData);
 
       if (result.success) {
-        navigate("/");
+        navigate(ROUTES.DASHBOARD);
       } else {
         setError(result.error);
       }
@@ -260,7 +261,7 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                <Link to={ROUTES.LOGIN} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Sign in here
                 </Link>
               </p>

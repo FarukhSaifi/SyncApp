@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster, ToasterProvider } from "./components/ui/Toaster";
-import { DEFAULT_PAGINATION } from "./constants";
+import { DEFAULT_PAGINATION, ROUTES } from "./constants";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
-import Editor from "./pages/Editor";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import Register from "./pages/Register";
-import Settings from "./pages/Settings";
 import { apiClient } from "./utils/apiClient";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Editor = lazy(() => import("./pages/Editor"));
+const Login = lazy(() => import("./pages/Login"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Register = lazy(() => import("./pages/Register"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth();
@@ -62,66 +63,82 @@ function AppContent() {
   }
 
   return (
-    <Router future={{ v7_relativeSplatPath: true }}>
+    <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
       <div className="min-h-screen bg-background">
         {isAuthenticated ? (
           <Layout>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard
-                      posts={posts}
-                      loading={postsLoading}
-                      onPostUpdate={updatePost}
-                      onPostDelete={deletePost}
-                      onRefresh={fetchPosts}
-                    />
-                  </ProtectedRoute>
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">Loading...</div>
                 }
-              />
-              <Route
-                path="/editor"
-                element={
-                  <ProtectedRoute>
-                    <Editor onPostCreate={addPost} onPostUpdate={updatePost} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/editor/:id"
-                element={
-                  <ProtectedRoute>
-                    <Editor onPostCreate={addPost} onPostUpdate={updatePost} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+              >
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard
+                          posts={posts}
+                          loading={postsLoading}
+                          onPostUpdate={updatePost}
+                          onPostDelete={deletePost}
+                          onRefresh={fetchPosts}
+                        />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/editor"
+                    element={
+                      <ProtectedRoute>
+                        <Editor onPostCreate={addPost} onPostUpdate={updatePost} />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/editor/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Editor onPostCreate={addPost} onPostUpdate={updatePost} />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </Layout>
         ) : (
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">Loading...</div>
+              }
+            >
+              <Routes>
+                <Route path={ROUTES.LOGIN} element={<Login />} />
+                <Route path={ROUTES.REGISTER} element={<Register />} />
+                <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         )}
         <Toaster />
       </div>

@@ -11,7 +11,7 @@ const Profile = () => {
   const { success, error: showError } = useToaster();
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
-    lastName: user?.firstName || "",
+    lastName: user?.lastName || "",
     bio: user?.bio || "",
     avatar: user?.avatar || "",
   });
