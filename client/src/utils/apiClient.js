@@ -1,9 +1,10 @@
 // Centralized API client using axios with auth, query building, and robust error handling
 import axios from "axios";
 import qs from "qs";
+import { API_BASE, API_PATHS, HTTP_METHODS } from "../constants";
 
 export class ApiClient {
-  constructor(baseUrl = "/api") {
+  constructor(baseUrl = API_BASE) {
     this.baseUrl = baseUrl;
     this.client = axios.create({
       baseURL: baseUrl,
@@ -34,8 +35,9 @@ export class ApiClient {
   }
 
   async request(path, { method = "GET", headers = {}, body, params } = {}) {
+    const urlPath = path.startsWith(API_BASE) ? path.slice(API_BASE.length) : path;
     const response = await this.client.request({
-      url: path,
+      url: urlPath,
       method,
       headers,
       data: body instanceof FormData ? body : body,
@@ -46,45 +48,45 @@ export class ApiClient {
 
   // Posts
   getPosts(params = {}) {
-    return this.request(`/posts`, { params });
+    return this.request(`${API_PATHS.POSTS}`, { params });
   }
 
   getPost(id) {
-    return this.request(`/posts/${id}`);
+    return this.request(`${API_PATHS.POSTS}/${id}`);
   }
 
   getPostBySlug(slug) {
-    return this.request(`/posts/slug/${encodeURIComponent(slug)}`);
+    return this.request(`${API_PATHS.POSTS}/slug/${encodeURIComponent(slug)}`);
   }
 
   createPost(body) {
-    return this.request(`/posts`, { method: "POST", body });
+    return this.request(`${API_PATHS.POSTS}`, { method: HTTP_METHODS.POST, body });
   }
 
   updatePost(id, body) {
-    return this.request(`/posts/${id}`, { method: "PUT", body });
+    return this.request(`${API_PATHS.POSTS}/${id}`, { method: HTTP_METHODS.PUT, body });
   }
 
   deletePost(id) {
-    return this.request(`/posts/${id}`, { method: "DELETE" });
+    return this.request(`${API_PATHS.POSTS}/${id}`, { method: HTTP_METHODS.DELETE });
   }
 
   // Credentials
   upsertCredential(platform, body) {
-    return this.request(`/credentials/${platform}`, { method: "PUT", body });
+    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, { method: HTTP_METHODS.PUT, body });
   }
 
   // Publish
   publish(platform, postId) {
-    return this.request(`/publish/${platform}`, { method: "POST", body: { postId } });
+    return this.request(`${API_PATHS.PUBLISH}/${platform}`, { method: HTTP_METHODS.POST, body: { postId } });
   }
   publishAll(postId) {
-    return this.request(`/publish/all`, { method: "POST", body: { postId } });
+    return this.request(`${API_PATHS.PUBLISH}/all`, { method: HTTP_METHODS.POST, body: { postId } });
   }
 
   // MDX export
   async downloadMdx(postId) {
-    const url = `${this.baseUrl}/mdx/${postId}`;
+    const url = `${API_PATHS.MDX}/${postId}`;
     const token = localStorage.getItem("token");
     const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!response.ok) throw new Error("Failed to download MDX");

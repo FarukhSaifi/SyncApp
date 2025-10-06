@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FiChevronDown, FiFileText, FiHome, FiMoon, FiPlus, FiSettings, FiSun, FiUser } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ROUTES } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -12,14 +13,14 @@ const Layout = ({ children }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: FiHome },
-    { name: "New Post", href: "/editor", icon: FiPlus },
-    { name: "Settings", href: "/settings", icon: FiSettings },
+    { name: "Dashboard", href: ROUTES.DASHBOARD, icon: FiHome },
+    { name: "New Post", href: ROUTES.EDITOR, icon: FiPlus },
+    { name: "Settings", href: ROUTES.SETTINGS, icon: FiSettings },
   ];
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate(ROUTES.LOGIN);
   };
 
   if (!isAuthenticated) {
@@ -27,7 +28,7 @@ const Layout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
@@ -122,7 +123,7 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mx-auto px-4 py-8 flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="border-t bg-card mt-auto">
