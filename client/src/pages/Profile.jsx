@@ -97,34 +97,28 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your account information and security settings
-          </p>
+          <p className="text-gray-600 mt-2">Manage your account information and security settings</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Information */}
-          <Card className="shadow-sm border-0">
+          <Card className="shadow-sm border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <FiUser className="h-5 w-5" />
                 <span>Profile Information</span>
               </CardTitle>
-              <CardDescription>
-                Update your personal information and profile details
-              </CardDescription>
+              <CardDescription>Update your personal information and profile details</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                     <Input
                       name="firstName"
                       value={profileData.firstName}
@@ -134,9 +128,7 @@ const Profile = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                     <Input
                       name="lastName"
                       value={profileData.lastName}
@@ -168,11 +160,7 @@ const Profile = () => {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full flex items-center justify-center space-x-2"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full flex items-center justify-center space-x-2" disabled={loading}>
                   <FiSave className="h-4 w-4" />
                   {loading ? "Updating..." : "Update Profile"}
                 </Button>
@@ -181,7 +169,7 @@ const Profile = () => {
           </Card>
 
           {/* Change Password */}
-          <Card className="shadow-sm border-0">
+          <Card className="shadow-sm border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <FiLock className="h-5 w-5" />
@@ -192,9 +180,7 @@ const Profile = () => {
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Current Password
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiLock className="h-5 w-5 text-gray-400" />
@@ -223,9 +209,7 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New Password
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiLock className="h-5 w-5 text-gray-400" />
@@ -254,9 +238,7 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New Password
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiLock className="h-5 w-5 text-gray-400" />
@@ -298,7 +280,7 @@ const Profile = () => {
         </div>
 
         {/* Account Information */}
-        <Card className="mt-8 shadow-sm border-0">
+        <Card className="mt-8 shadow-sm border">
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
             <CardDescription>Your account details and statistics</CardDescription>

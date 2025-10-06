@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiArrowRight, FiCheck } from "react-icons/fi";
-import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -36,17 +36,17 @@ const Register = () => {
       setError("Passwords do not match");
       return false;
     }
-    
+
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return false;
     }
-    
+
     if (formData.username.length < 3) {
       setError("Username must be at least 3 characters long");
       return false;
     }
-    
+
     return true;
   };
 
@@ -63,7 +63,7 @@ const Register = () => {
     try {
       const { confirmPassword, ...registrationData } = formData;
       const result = await register(registrationData);
-      
+
       if (result.success) {
         navigate("/");
       } else {
@@ -77,30 +77,24 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Join SyncApp to start publishing your blog posts
-          </p>
+          <p className="mt-2 text-sm text-gray-600">Join SyncApp to start publishing your blog posts</p>
         </div>
 
         {/* Registration Form */}
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-sm border">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl">Sign Up</CardTitle>
-            <CardDescription>
-              Fill in your details to create an account
-            </CardDescription>
+            <CardDescription>Fill in your details to create an account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {error}
-                </div>
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">{error}</div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
@@ -251,11 +245,7 @@ const Register = () => {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full flex items-center justify-center space-x-2"
-                disabled={loading}
-              >
+              <Button type="submit" className="w-full flex items-center justify-center space-x-2" disabled={loading}>
                 {loading ? (
                   "Creating account..."
                 ) : (
@@ -270,10 +260,7 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link
-                  to="/login"
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
+                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Sign in here
                 </Link>
               </p>

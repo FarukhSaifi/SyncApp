@@ -111,9 +111,7 @@ router.put("/:platform", async (req, res) => {
     res.json({
       success: true,
       data: credential,
-      message: existingCredential
-        ? "Credentials updated successfully"
-        : "Credentials saved successfully",
+      message: existingCredential ? "Credentials updated successfully" : "Credentials saved successfully",
     });
   } catch (error) {
     console.error("Error saving credentials:", error);
