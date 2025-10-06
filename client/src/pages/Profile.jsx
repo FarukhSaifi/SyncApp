@@ -286,18 +286,37 @@ const Profile = () => {
             <CardDescription>Your account details and statistics</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{user?.username}</div>
-                <div className="text-sm text-gray-500">Username</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 items-stretch">
+              {/* Avatar + Username */}
+              <div className="flex flex-col items-center text-center space-y-3 p-4 border rounded-lg">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center ring-2 ring-primary/20">
+                  {user?.avatar ? (
+                    // eslint-disable-next-line jsx-a11y/alt-text
+                    <img src={user.avatar} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl sm:text-2xl font-semibold text-gray-600">
+                      {(user?.firstName?.[0] || user?.username?.[0] || "U").toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="text-lg sm:text-xl font-semibold text-blue-600 break-all">{user?.username}</div>
+                  <div className="text-xs text-gray-500">Username</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{user?.email}</div>
-                <div className="text-sm text-gray-500">Email</div>
+
+              {/* Email */}
+              <div className="text-center p-4 border rounded-lg break-words">
+                <div className="text-base sm:text-lg font-semibold text-green-600 break-words">{user?.email}</div>
+                <div className="text-xs text-gray-500 mt-1">Email</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{user?.role}</div>
-                <div className="text-sm text-gray-500">Role</div>
+
+              {/* Role */}
+              <div className="text-center sm:col-span-1 p-4 border rounded-lg">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm font-medium capitalize">
+                  <span className="w-2 h-2 rounded-full bg-purple-500" /> {user?.role}
+                </div>
+                <div className="text-xs text-gray-500 mt-2">Role</div>
               </div>
             </div>
           </CardContent>
