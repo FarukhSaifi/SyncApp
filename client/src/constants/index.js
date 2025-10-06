@@ -33,3 +33,21 @@ export const STATUS_CONFIG = Object.freeze({
   published: { label: "Published", className: "bg-green-100 text-green-800" },
   archived: { label: "Archived", className: "bg-yellow-100 text-yellow-800" },
 });
+
+// API base and paths
+export const API_BASE = "/api"; // switch to env-driven if needed
+export const API_PATHS = Object.freeze({
+  AUTH: `${API_BASE}/auth`,
+  POSTS: `${API_BASE}/posts`,
+  CREDENTIALS: `${API_BASE}/credentials`,
+  PUBLISH: `${API_BASE}/publish`,
+  MDX: `${API_BASE}/mdx`,
+});
+
+// HTTP methods
+export const HTTP_METHODS = Object.freeze({
+  GET: "GET",
+  POST: "POST",
+  PUT: "PUT",
+  DELETE: "DELETE",
+});
