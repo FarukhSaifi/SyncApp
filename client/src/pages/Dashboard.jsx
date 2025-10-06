@@ -11,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/Table";
+import { useToaster } from "../components/ui/Toaster";
 
 const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
+  const { success, error: showError } = useToaster();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,21 +26,25 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
+        const token = localStorage.getItem("token");
         const response = await fetch(`/api/posts/${id}`, {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         const data = await response.json();
 
         if (data.success) {
           onPostDelete(id);
-          alert("Post deleted successfully!");
+          success("Success", "Post deleted successfully!");
         } else {
-          alert(`Error: ${data.error}`);
+          showError("Error", data.error || "Failed to delete post");
         }
       } catch (error) {
         console.error("Error deleting post:", error);
-        alert("Failed to delete post");
+        showError("Error", "Failed to delete post");
       }
     }
   };
@@ -87,6 +93,21 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
         >
           <span className="text-purple-500">●</span>
           <span>DEV.to</span>
+        </a>
+      );
+    }
+
+    if (post.platform_status?.wordpress?.published) {
+      platforms.push(
+        <a
+          key="wordpress"
+          href={post.platform_status.wordpress.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+        >
+          <span className="text-blue-500">●</span>
+          <span>WordPress</span>
         </a>
       );
     }
