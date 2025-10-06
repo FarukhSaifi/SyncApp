@@ -123,7 +123,7 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8 flex-1">{children}</main>
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="border-t bg-card mt-auto">
