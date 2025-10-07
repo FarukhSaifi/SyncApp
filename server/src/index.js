@@ -12,7 +12,7 @@ const publishRoutes = require("./routes/publish");
 const mdxRoutes = require("./routes/mdx");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 9000;
 
 // Connect to MongoDB
 connectDB();
@@ -34,8 +34,8 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://yourdomain.com"]
-        : ["http://localhost:5173", "http://127.0.0.1:5173"],
+        ? [process.env.BACKEND_API_URL]
+        : ["http://localhost:3000", "http://127.0.0.1:3000"],
     credentials: true,
   })
 );
