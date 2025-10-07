@@ -29,13 +29,20 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS middleware
+// CORS middleware (configure allowed origins via CORS_ORIGIN, comma-separated)
+const defaultDevOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? [process.env.BACKEND_API_URL]
-        : ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: allowedOrigins.length ? allowedOrigins : defaultDevOrigins,
     credentials: true,
   })
 );

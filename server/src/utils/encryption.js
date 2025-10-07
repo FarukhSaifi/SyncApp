@@ -1,13 +1,10 @@
 const crypto = require("crypto");
-
-// Use a fixed key and IV for simplicity (in production, use environment variables)
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "your-32-character-secret-key-here!!";
-const ENCRYPTION_IV = process.env.ENCRYPTION_IV || "your-16-char-iv!!";
+const { config } = require("../config");
 
 // Ensure the key is exactly 32 bytes (256 bits) for AES-256
-const key = Buffer.from(ENCRYPTION_KEY.padEnd(32, "!").slice(0, 32), "utf8");
+const key = Buffer.from((config.encryption.key || "").padEnd(32, "!").slice(0, 32), "utf8");
 // Ensure the IV is exactly 16 bytes (128 bits) for AES-256
-const iv = Buffer.from(ENCRYPTION_IV.padEnd(16, "!").slice(0, 16), "utf8");
+const iv = Buffer.from((config.encryption.iv || "").padEnd(16, "!").slice(0, 16), "utf8");
 
 /**
  * Encrypt a string using AES-256-CBC
