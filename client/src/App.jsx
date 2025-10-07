@@ -1,13 +1,13 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense } from "react";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster, ToasterProvider } from "./components/ui/Toaster";
-import { DEFAULT_PAGINATION, ROUTES } from "./constants";
+import { ROUTES } from "./constants";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { apiClient } from "./utils/apiClient";
+import { usePosts } from "./hooks/usePosts";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Editor = lazy(() => import("./pages/Editor"));
 const Login = lazy(() => import("./pages/Login"));
@@ -17,39 +17,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth();
-  const [posts, setPosts] = useState([]);
-  const [postsLoading, setPostsLoading] = useState(true);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchPosts();
-    }
-  }, [isAuthenticated]);
-
-  const fetchPosts = async () => {
-    try {
-      const data = await apiClient.getPosts(DEFAULT_PAGINATION);
-      if (data.success) {
-        setPosts(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-    } finally {
-      setPostsLoading(false);
-    }
-  };
-
-  const addPost = (newPost) => {
-    setPosts([newPost, ...posts]);
-  };
-
-  const updatePost = (updatedPost) => {
-    setPosts(posts.map((post) => (post.id === updatedPost.id || post._id === updatedPost._id ? updatedPost : post)));
-  };
-
-  const deletePost = (postId) => {
-    setPosts(posts.filter((post) => post.id !== postId && post._id !== postId));
-  };
+  const { posts, loading: postsLoading, fetchPosts, addPost, updatePost, deletePost } = usePosts();
 
   if (loading) {
     return (
