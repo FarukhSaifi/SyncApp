@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const connectDB = require("./database/connection");
@@ -53,7 +54,33 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString() });
+  const healthInfo = {
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+    database: {
+      status: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      host: mongoose.connection.host || "unknown",
+      name: mongoose.connection.name || "unknown",
+    },
+    services: {
+      mongodb: mongoose.connection.readyState === 1 ? "healthy" : "unhealthy",
+      server: "healthy",
+    },
+  };
+
+  // Log health check details
+  console.log("🏥 Health check requested:", {
+    ip: req.ip || req.connection.remoteAddress,
+    userAgent: req.get("User-Agent"),
+    timestamp: healthInfo.timestamp,
+    status: healthInfo.status,
+    dbStatus: healthInfo.database.status,
+    memory: healthInfo.memory.used,
+  });
+
+  res.json(healthInfo);
 });
 
 // API routes
