@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { FiAlertCircle, FiExternalLink, FiKey, FiSave } from "react-icons/fi";
+import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { useToaster } from "../components/ui/Toaster";
+import { API_PATHS } from "../constants";
+import { apiClient } from "../utils/apiClient";
 
 const Settings = () => {
   const { success, error: showError, warning } = useToaster();
@@ -14,14 +16,46 @@ const Settings = () => {
   const [wordpressApiKey, setWordpressApiKey] = useState("");
   const [wordpressSiteUrl, setWordpressSiteUrl] = useState("");
   const [saved, setSaved] = useState({ medium: false, devto: false, wordpress: false });
+  const [showMediumKey, setShowMediumKey] = useState(false);
+  const [showDevtoKey, setShowDevtoKey] = useState(false);
+  const [showWordpressKey, setShowWordpressKey] = useState(false);
 
   useEffect(() => {
-    // In a real app, you might want to fetch existing credentials
-    // For now, we'll just show the form
+    const loadCredentials = async () => {
+      try {
+        const result = await apiClient.request(`${API_PATHS.CREDENTIALS}`);
+        if (result?.success && Array.isArray(result.data)) {
+          const creds = result.data;
+          const medium = creds.find((c) => c.platform_name === "medium");
+          const devto = creds.find((c) => c.platform_name === "devto");
+          const wordpress = creds.find((c) => c.platform_name === "wordpress");
+
+          if (medium) {
+            setSaved((prev) => ({ ...prev, medium: true }));
+            setMediumApiKey(MASK);
+          }
+          if (devto) {
+            setSaved((prev) => ({ ...prev, devto: true }));
+            if (devto.platform_config?.devto_username) {
+              setDevtoUsername(devto.platform_config.devto_username);
+            }
+            setDevtoApiKey(MASK);
+          }
+          if (wordpress) {
+            setSaved((prev) => ({ ...prev, wordpress: true }));
+            if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url);
+            setWordpressApiKey(MASK);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load credentials", e);
+      }
+    };
+    loadCredentials();
   }, []);
 
   const handleSaveMediumCredentials = async () => {
-    if (!mediumApiKey.trim()) {
+    if (!mediumApiKey.trim() || mediumApiKey === MASK) {
       showError("Validation Error", "Please enter your Medium API key");
       return;
     }
@@ -56,7 +90,7 @@ const Settings = () => {
   };
 
   const handleSaveDevtoCredentials = async () => {
-    if (!devtoApiKey.trim() || !devtoUsername.trim()) {
+    if (!devtoApiKey.trim() || devtoApiKey === MASK || !devtoUsername.trim()) {
       showError("Validation Error", "Please enter both DEV.to API key and username");
       return;
     }
@@ -94,7 +128,7 @@ const Settings = () => {
   };
 
   const handleSaveWordpressCredentials = async () => {
-    if (!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) {
+    if (!wordpressApiKey.trim() || wordpressApiKey === MASK || !wordpressSiteUrl.trim()) {
       showError("Validation Error", "Please enter both WordPress API key and site URL");
       return;
     }
@@ -184,13 +218,25 @@ const Settings = () => {
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Medium Integration Token</label>
-            <Input
-              type="password"
-              value={mediumApiKey}
-              onChange={(e) => setMediumApiKey(e.target.value)}
-              placeholder="Enter your Medium integration token..."
-              className="w-full"
-            />
+            <div className="relative">
+              <Input
+                type={showMediumKey ? "text" : "password"}
+                value={mediumApiKey}
+                onChange={(e) => setMediumApiKey(e.target.value)}
+                placeholder={
+                  saved.medium ? "Saved (hidden) — enter new to replace" : "Enter your Medium integration token..."
+                }
+                className="w-full pr-10"
+              />
+              <button
+                type="button"
+                aria-label={showMediumKey ? "Hide API key" : "Show API key"}
+                onClick={() => setShowMediumKey((v) => !v)}
+                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+              >
+                {showMediumKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+              </button>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">This token will be encrypted and stored securely</p>
           </div>
         </CardContent>
@@ -257,13 +303,23 @@ const Settings = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">DEV.to API Key</label>
-              <Input
-                type="password"
-                value={devtoApiKey}
-                onChange={(e) => setDevtoApiKey(e.target.value)}
-                placeholder="Enter your DEV.to API key..."
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  type={showDevtoKey ? "text" : "password"}
+                  value={devtoApiKey}
+                  onChange={(e) => setDevtoApiKey(e.target.value)}
+                  placeholder={saved.devto ? "Saved (hidden) — enter new to replace" : "Enter your DEV.to API key..."}
+                  className="w-full pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showDevtoKey ? "Hide API key" : "Show API key"}
+                  onClick={() => setShowDevtoKey((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                >
+                  {showDevtoKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">Both username and API key are required for DEV.to integration</p>
@@ -332,13 +388,25 @@ const Settings = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">WordPress API Key</label>
-              <Input
-                type="password"
-                value={wordpressApiKey}
-                onChange={(e) => setWordpressApiKey(e.target.value)}
-                placeholder="Enter your WordPress API key..."
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  type={showWordpressKey ? "text" : "password"}
+                  value={wordpressApiKey}
+                  onChange={(e) => setWordpressApiKey(e.target.value)}
+                  placeholder={
+                    saved.wordpress ? "Saved (hidden) — enter new to replace" : "Enter your WordPress API key..."
+                  }
+                  className="w-full pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showWordpressKey ? "Hide API key" : "Show API key"}
+                  onClick={() => setShowWordpressKey((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                >
+                  {showWordpressKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                </button>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Your WordPress username:password or application password
               </p>
