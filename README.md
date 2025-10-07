@@ -1,105 +1,95 @@
 # SyncApp - Blog Syndication Platform
 
-A web application that allows users to write blog posts in a central dashboard and publish them to multiple platforms, starting with Medium.
-
-## Features
-
-- **Central Dashboard**: Write and manage blog posts
-- **Markdown Editor**: Rich text editing with Markdown support
-- **Multi-Platform Publishing**: Currently supports Medium, with plans for expansion
-- **Secure Credential Storage**: Encrypted API key storage
-- **Modern UI**: Built with shadcn/ui and Tailwind CSS
-
-## Tech Stack
-
-- **Backend**: Node.js + Express.js
-- **Frontend**: React + Vite
-- **Database**: MongoDB with Mongoose ODM
-- **UI Components**: shadcn/ui
-- **Styling**: Tailwind CSS
+A web application that lets you write once and publish to multiple platforms (Medium, DEV.to, WordPress planned).
 
 ## Project Structure
 
-```
+```text
 SyncApp/
-├── server/          # Backend API server
-├── client/          # React frontend application
-├── package.json     # Root package.json with workspaces
-└── README.md        # This file
+├── client/                      # React (Vite) frontend
+├── server/                      # Express backend (MongoDB)
+│   ├── src/
+│   │   ├── config/             # Centralized config (env)
+│   │   ├── controllers/        # Route controllers
+│   │   ├── services/           # Business logic
+│   │   ├── routes/             # Express routers (slim handlers)
+│   │   ├── models/             # Mongoose models
+│   │   ├── utils/              # Utilities (encryption, auth, etc.)
+│   │   └── index.js            # App entrypoint
+│   └── env.example             # Server environment example
+├── vercel.json                  # Vercel (optional) config for monorepo
+├── DEPLOYMENT.md                # Deployment guide (Vercel & cloud)
+├── README.md                    # This file
+└── package.json                 # Workspaces and scripts
 ```
 
-## Getting Started
+## Requirements
 
-### Prerequisites
+- Node.js 22+
+- MongoDB Atlas (recommended) or local MongoDB
 
-- Node.js (v18 or higher)
-- MongoDB (local installation or MongoDB Atlas)
-- Medium API key (for publishing)
+## Environment Variables (Server)
 
-### Installation
+Copy `server/env.example` to `server/.env` and set:
 
-1. Clone the repository:
+- `NODE_ENV`=production | development
+- `PORT`=9000
+- `MONGODB_URI`=your MongoDB Atlas URI
+- `JWT_SECRET`=random secure string
+- `ENCRYPTION_KEY`=32-byte key (hex or string)
+- `ENCRYPTION_IV`=16-byte IV (hex or string)
+- `CORS_ORIGIN`=e.g., <http://localhost:3000>
+- `RATE_LIMIT_WINDOW_MS`=900000
+- `RATE_LIMIT_MAX_REQUESTS`=100
 
-   ```bash
-   git clone <repository-url>
-   cd SyncApp
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm run install:all
-   ```
-
-3. Set up environment variables:
-
-   ```bash
-   cp server/.env.example server/.env
-   # Edit server/.env with your MongoDB connection string and API credentials
-   ```
-
-4. Set up the database:
-
-   ```bash
-   cd server
-   npm run db:setup
-   ```
-
-5. Start the development servers:
-
-   ```bash
-   npm run dev
-   ```
-
-This will start both the backend server (port 3001) and frontend client (port 5173).
-
-## API Endpoints
-
-- `POST /api/posts` - Create a new blog post
-- `GET /api/posts` - Retrieve all posts
-- `PUT /api/credentials/medium` - Save Medium API credentials
-- `POST /api/publish/medium` - Publish a post to Medium
-
-## Development
-
-- **Backend**: `npm run dev:server`
-- **Frontend**: `npm run dev:client`
-- **Both**: `npm run dev`
-
-## Building for Production
+Tip: Generate secure keys with:
 
 ```bash
-npm run build
-npm start
+node scripts/generate-keys.js
 ```
 
-## Contributing
+## Install & Run
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+From project root:
 
-## License
+```bash
+npm run install:all
+npm run db:setup
+npm run dev
+```
 
-MIT License
+- Client: <http://localhost:3000>
+- Server: <http://localhost:9000>
+- Health: GET /health
+
+## Scripts
+
+- `npm run dev` → runs client and server
+- `npm run dev:client` → runs client only
+- `npm run dev:server` → runs server with nodemon
+- `npm run db:setup` → initializes MongoDB schema/seed
+
+## API (Highlights)
+
+- Posts: `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:id`, `DELETE /api/posts/:id`
+- Credentials: `PUT /api/credentials/:platform` (medium | devto | wordpress)
+- Publish: `POST /api/publish/medium|devto|wordpress`, `POST /api/publish/all`
+
+## Security
+
+- Credentials are encrypted using AES-256-CBC with `ENCRYPTION_KEY` and `ENCRYPTION_IV`
+- CORS configured via `CORS_ORIGIN`
+- Helmet + rate limiting enabled
+
+## Deployment
+
+See `DEPLOYMENT.md` for detailed steps:
+
+- Client on Vercel (static build)
+- Server on Vercel functions or Node host (Render/Railway/Fly/EC2)
+- MongoDB Atlas
+
+## Notes
+
+- Do not expose server secrets to the client
+- Use different secrets per environment (dev/staging/prod)
