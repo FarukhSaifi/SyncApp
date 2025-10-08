@@ -2,14 +2,14 @@
 
 All notable changes to SyncApp will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2025-08-26
 
 ### 🎉 Initial Release
 
 #### ✨ Added
+
 - **Full-Stack Application**: Complete React + Node.js blog syndication platform
 - **Multi-Platform Publishing**: Support for Medium and DEV.to APIs
 - **Modern UI**: Beautiful interface built with Tailwind CSS and shadcn/ui components
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings Management**: Easy configuration of platform API keys
 
 #### 🚀 Tech Stack
+
 - **Frontend**: React 18, Vite, Tailwind CSS, shadcn/ui
 - **Backend**: Node.js, Express.js, MongoDB with Mongoose ODM
 - **Database**: MongoDB Atlas cloud database
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Development**: Nodemon, concurrently, hot reloading
 
 #### 📱 Features
+
 - **Dashboard**: Overview of all posts with publishing status
 - **Editor**: Rich markdown editor with live preview
 - **Settings**: Platform credential management
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-Platform Status**: Track which platforms each post is published on
 
 #### 🔧 Configuration
+
 - Environment variable management with dotenv
 - MongoDB connection with connection pooling
 - CORS configuration for frontend-backend communication
@@ -45,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helmet.js for security headers
 
 #### 📚 Documentation
+
 - Comprehensive README with setup instructions
 - Quick start shell script for easy setup
 - Environment configuration examples
@@ -52,12 +56,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Database schema documentation
 
 #### 🎯 Use Cases
+
 - **Bloggers**: Write once, publish everywhere
 - **Developers**: Technical blog syndication
 - **Content Creators**: Multi-platform content distribution
 - **Teams**: Centralized content management
 
 #### 🔒 Security Features
+
 - API key encryption at rest
 - Secure credential storage
 - CORS protection
@@ -65,17 +71,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation and sanitization
 
 #### 🌐 Platform Support
+
 - **Medium**: Full API integration with user ID detection
 - **DEV.to**: Complete API integration with tag support
 - **WordPress**: Planned for future releases
 - **Hashnode**: Planned for future releases
 
 #### 📊 Database Schema
+
 - **Posts**: Title, content, status, tags, cover image, canonical URL
 - **Credentials**: Platform API keys with encryption
 - **Platform Status**: Publishing status across all platforms
 
 #### 🚀 Getting Started
+
 1. Clone the repository
 2. Run `npm run install:all`
 3. Configure environment variables
@@ -83,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 5. Start with `npm run dev`
 
 #### 📝 API Endpoints
+
 - `POST /api/posts` - Create new post
 - `GET /api/posts` - Retrieve all posts
 - `PUT /api/posts/:id` - Update post
@@ -97,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Future Releases
 
 ### [1.1.0] - Planned
+
 - WordPress integration
 - Hashnode integration
 - User authentication system
@@ -104,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Analytics dashboard
 
 ### [1.2.0] - Planned
+
 - Social media integration
 - Email newsletter support
 - Advanced SEO tools
