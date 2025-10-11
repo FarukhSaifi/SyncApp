@@ -60,7 +60,8 @@ const Settings = () => {
       }
     };
     loadCredentials();
-  }, [toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount, toast is stable
 
   const handleSaveMediumCredentials = async () => {
     if (!mediumApiKey.trim() || mediumApiKey === MASK) {

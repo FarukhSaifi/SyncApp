@@ -8,37 +8,36 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
   const [pagination, setPagination] = useState(initialPagination);
   const [error, setError] = useState(null);
 
-  const fetchPosts = useCallback(
-    async (opts = {}) => {
-      const params = { ...pagination, ...opts };
-      setLoading(true);
-      setError(null);
+  const fetchPosts = useCallback(async (opts = {}) => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        console.log("🔄 Fetching posts with params:", params);
-        const response = await apiClient.getPosts(params);
+    try {
+      // Use opts if provided, otherwise use current pagination state
+      const params = opts.page !== undefined || opts.limit !== undefined ? opts : { page: 1, limit: 20 };
 
-        if (response && response.success) {
-          console.log("✅ Posts fetched successfully:", response.data?.length || 0, "posts");
-          setPosts(response.data || []);
-          if (response.pagination) {
-            setPagination(response.pagination);
-          }
-        } else {
-          console.warn("⚠️ API returned unsuccessful response:", response);
-          setError(response?.error || "Failed to fetch posts");
-          setPosts([]);
+      console.log("🔄 Fetching posts with params:", params);
+      const response = await apiClient.getPosts(params);
+
+      if (response && response.success) {
+        console.log("✅ Posts fetched successfully:", response.data?.length || 0, "posts");
+        setPosts(response.data || []);
+        if (response.pagination) {
+          setPagination(response.pagination);
         }
-      } catch (err) {
-        console.error("❌ Error fetching posts:", err);
-        setError(err.message || "Failed to fetch posts");
+      } else {
+        console.warn("⚠️ API returned unsuccessful response:", response);
+        setError(response?.error || "Failed to fetch posts");
         setPosts([]);
-      } finally {
-        setLoading(false);
       }
-    },
-    [pagination]
-  );
+    } catch (err) {
+      console.error("❌ Error fetching posts:", err);
+      setError(err.message || "Failed to fetch posts");
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependencies to prevent infinite loops
 
   useEffect(() => {
     fetchPosts();

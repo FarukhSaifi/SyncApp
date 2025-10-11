@@ -101,12 +101,12 @@ const Toast = ({ toast, onRemove }) => {
 };
 
 export const Toaster = () => {
-  const { toasts } = useToaster();
+  const { toasts, removeToast } = useToaster();
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-3">
       {toasts.map((toast) => (
-        <Toast key={toast.id} toast={toast} />
+        <Toast key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
     </div>
   );

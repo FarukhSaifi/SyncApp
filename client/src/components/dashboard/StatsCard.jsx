@@ -6,13 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
  */
 const StatsCard = memo(({ title, value, icon: Icon, isActive, onClick }) => {
   return (
-    <Card
-      className={`cursor-pointer transition-all ${isActive ? "ring-2 ring-primary" : ""}`}
-      onClick={onClick}
-    >
+    <Card className={`cursor-pointer transition-all ${isActive ? "ring-2 ring-primary" : ""}`} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+        {Icon && <Icon className="h-4 w-4 mr-2 text-muted-foreground" />}
+        <CardTitle className="text-sm font-medium flex items-center space-x-2">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
@@ -24,4 +21,3 @@ const StatsCard = memo(({ title, value, icon: Icon, isActive, onClick }) => {
 StatsCard.displayName = "StatsCard";
 
 export default StatsCard;
-

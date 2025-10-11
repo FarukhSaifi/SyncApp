@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FiGlobe, FiPlus, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiEdit3, FiGlobe, FiPlus, FiRefreshCw, FiShare2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import PostRow from "../components/dashboard/PostRow";
+import StatsCard from "../components/dashboard/StatsCard";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import PostRow from "../components/dashboard/PostRow";
-import StatsCard from "../components/dashboard/StatsCard";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
@@ -18,27 +18,31 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
     if (error) {
       toast.apiError(`Failed to load posts: ${error}`);
     }
-  }, [error, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]); // Only depend on error, not toast (toast is stable)
 
   // Memoize delete handler to prevent unnecessary re-renders
-  const handleDelete = useCallback(async (id) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        console.log("🗑️ Deleting post:", id);
-        const response = await apiClient.deletePost(id);
+  const handleDelete = useCallback(
+    async (id) => {
+      if (window.confirm("Are you sure you want to delete this post?")) {
+        try {
+          console.log("🗑️ Deleting post:", id);
+          const response = await apiClient.deletePost(id);
 
-        if (response?.success) {
-          onPostDelete(id);
-          toast.deleteSuccess();
-        } else {
-          toast.apiError(response?.error || "Failed to delete post");
+          if (response?.success) {
+            onPostDelete(id);
+            toast.deleteSuccess();
+          } else {
+            toast.apiError(response?.error || "Failed to delete post");
+          }
+        } catch (error) {
+          console.error("❌ Error deleting post:", error);
+          toast.apiError(`Failed to delete post: ${error.message}`);
         }
-      } catch (error) {
-        console.error("❌ Error deleting post:", error);
-        toast.apiError(`Failed to delete post: ${error.message}`);
       }
-    }
-  }, [onPostDelete, toast]);
+    },
+    [onPostDelete, toast]
+  );
 
   const filteredPosts = useMemo(() => {
     if (filterStatus === "all") return posts;
@@ -66,12 +70,12 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="outline" onClick={onRefresh} disabled={loading} className="flex items-center space-x-2">
-            <FiRefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <FiRefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           <Link to="/editor">
             <Button className="flex items-center space-x-2">
-              <FiPlus className="h-4 w-4" />
+              <FiPlus className="h-4 w-4 mr-1" />
               New Post
             </Button>
           </Link>
@@ -87,7 +91,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               <p className="text-sm">{error}</p>
             </div>
             <Button variant="outline" size="sm" onClick={onRefresh}>
-              <FiRefreshCw className="h-4 w-4 mr-2" />
+              <FiRefreshCw className="h-4 w-4 mr-1" />
               Retry
             </Button>
           </div>
@@ -99,21 +103,21 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         <StatsCard
           title="Total Posts"
           value={posts.length}
-          icon={FiGlobe}
+          icon={() => <FiGlobe className="h-4 w-4 text-blue-500" />}
           isActive={filterStatus === "all"}
           onClick={() => setFilterStatus("all")}
         />
         <StatsCard
           title="Published"
           value={posts.filter((post) => post.status === "published").length}
-          icon={FiGlobe}
+          icon={() => <FiCheckCircle className="h-4 w-4 text-green-500" />}
           isActive={filterStatus === "published"}
           onClick={() => setFilterStatus("published")}
         />
         <StatsCard
           title="Drafts"
           value={posts.filter((post) => post.status === "draft").length}
-          icon={FiGlobe}
+          icon={() => <FiEdit3 className="h-4 w-4 text-yellow-500" />}
           isActive={filterStatus === "draft"}
           onClick={() => setFilterStatus("draft")}
         />
@@ -126,7 +130,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                 (post.platform_status.medium?.published || post.platform_status.devto?.published)
             ).length
           }
-          icon={FiGlobe}
+          icon={() => <FiShare2 className="h-4 w-4 text-purple-500" />}
           isActive={false}
           onClick={() => {}}
         />
