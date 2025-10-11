@@ -113,6 +113,9 @@ export class ApiClient {
   publishAll(postId) {
     return this.request(`${API_PATHS.PUBLISH}/all`, { method: HTTP_METHODS.POST, body: { postId } });
   }
+  unpublishFromPlatform(platform, postId) {
+    return this.request(`${API_PATHS.PUBLISH}/${platform}/${postId}`, { method: HTTP_METHODS.DELETE });
+  }
 
   // MDX export
   async downloadMdx(postId) {

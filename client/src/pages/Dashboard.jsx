@@ -184,7 +184,13 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               </TableHeader>
               <TableBody>
                 {filteredPosts.map((post) => (
-                  <PostRow key={post.id || post._id} post={post} onDelete={handleDelete} />
+                  <PostRow
+                    key={post.id || post._id}
+                    post={post}
+                    onDelete={handleDelete}
+                    onUpdate={onPostUpdate}
+                    toast={toast}
+                  />
                 ))}
               </TableBody>
             </Table>
