@@ -524,18 +524,13 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     variant="outline"
                     size="sm"
                     onClick={handleDownloadMdx}
-                    disabled={!id || loading}
+                    disabled={publishing}
                     className="w-full"
                   >
                     <FiSave className="h-4 w-4 mr-2" />
                     Export MDX
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handlePublishToMedium}
-                    disabled={publishing}
-                    className="w-full bg-black text-white hover:bg-black/90 border-0"
-                  >
+                  <Button size="sm" onClick={handlePublishToMedium} disabled={publishing} className="w-full">
                     <FiSend className="h-4 w-4 mr-2" />
                     {publishing ? "Publishing..." : "Publish to Medium"}
                   </Button>
@@ -544,7 +539,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     onClick={handlePublishToDevto}
                     disabled={publishing}
                     variant="secondary"
-                    className="w-full bg-gray-900 text-white hover:bg-gray-800 border-0"
+                    className="w-full"
                   >
                     <FiGlobe className="h-4 w-4 mr-2" />
                     {publishing ? "Publishing..." : "Publish to DEV.to"}
@@ -554,7 +549,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     onClick={handlePublishToWordpress}
                     disabled={publishing}
                     variant="secondary"
-                    className="w-full bg-[#21759B] text-white hover:opacity-90 border-0"
+                    className="w-full "
                   >
                     <FiGlobe className="h-4 w-4 mr-2" />
                     {publishing ? "Publishing..." : "Publish to WordPress"}
@@ -581,7 +576,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 <CardHeader>
                   <CardTitle>Preview</CardTitle>
                 </CardHeader>
-                <CardContent className="max-h-[70vh] overflow-auto">
+                <CardContent className="max-h-[100vh] overflow-auto">
                   <div className="prose prose-sm md:prose-base max-w-none">
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">{formData.title || "Untitled Post"}</h1>
                     {formData.cover_image && (
