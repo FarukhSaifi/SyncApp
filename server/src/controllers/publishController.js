@@ -1,152 +1,198 @@
 const Post = require("../models/Post");
 const Credential = require("../models/Credential");
 const { publishToMedium, publishToDevto, publishToWordpress } = require("../services/publishService");
+const { asyncHandler, NotFoundError, ValidationError } = require("../middleware/errorHandler");
 
+// Platform configuration
+const PLATFORM_CONFIG = {
+  medium: {
+    name: "Medium",
+    publishFn: publishToMedium,
+    errorMessage: "Medium API credentials not found. Please configure your Medium API key in settings.",
+  },
+  devto: {
+    name: "DEV.to",
+    publishFn: publishToDevto,
+    errorMessage: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
+  },
+  wordpress: {
+    name: "WordPress",
+    publishFn: publishToWordpress,
+    errorMessage: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
+  },
+};
+
+/**
+ * Get and validate post
+ */
 async function ensurePost(postId) {
   if (!postId) {
-    const err = new Error("Post ID is required");
-    err.status = 400;
-    throw err;
+    throw new ValidationError("Post ID is required");
   }
+
   const post = await Post.findById(postId);
   if (!post) {
-    const err = new Error("Post not found");
-    err.status = 404;
-    throw err;
+    throw new NotFoundError("Post not found");
   }
+
   return post;
 }
 
-async function publishMedium(req, res) {
-  try {
-    const post = await ensurePost(req.body.postId);
-    const credential = await Credential.findOne({ platform_name: "medium" });
-    if (!credential)
-      return res.status(400).json({
-        success: false,
-        error: "Medium API credentials not found. Please configure your Medium API key in settings.",
-      });
-
-    const updates = await publishToMedium(post, credential);
-    const updatedPost = await Post.findByIdAndUpdate(
-      post._id,
-      { status: "published", ...updates },
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      message: "Post published to Medium successfully",
-      data: { postId: updatedPost._id, status: "published" },
-    });
-  } catch (error) {
-    const status = error.status || (error.response && error.response.status) || 500;
-    const details = error.response?.data?.errors || error.response?.data?.message;
-    res.status(status).json({ success: false, error: error.message, details });
+/**
+ * Get and validate credential for platform
+ */
+async function ensureCredential(platformName) {
+  const credential = await Credential.findOne({ platform_name: platformName });
+  
+  if (!credential) {
+    const config = PLATFORM_CONFIG[platformName];
+    throw new ValidationError(config?.errorMessage || `${platformName} credentials not found`);
   }
+
+  return credential;
 }
 
-async function publishDevto(req, res) {
-  try {
-    const post = await ensurePost(req.body.postId);
-    const credential = await Credential.findOne({ platform_name: "devto" });
-    if (!credential)
-      return res.status(400).json({
-        success: false,
-        error: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
-      });
-
-    const updates = await publishToDevto(post, credential);
-    const updatedPost = await Post.findByIdAndUpdate(
-      post._id,
-      { status: "published", ...updates },
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      message: "Post published to DEV.to successfully",
-      data: { postId: updatedPost._id, status: "published" },
-    });
-  } catch (error) {
-    const status = error.status || (error.response && error.response.status) || 500;
-    const details = error.response?.data?.errors || error.response?.data?.message;
-    res.status(status).json({ success: false, error: error.message, details });
-  }
-}
-
-async function publishWordpress(req, res) {
-  try {
-    const post = await ensurePost(req.body.postId);
-    const credential = await Credential.findOne({ platform_name: "wordpress" });
-    if (!credential)
-      return res.status(400).json({
-        success: false,
-        error: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
-      });
-
-    const updates = await publishToWordpress(post, credential);
-    const updatedPost = await Post.findByIdAndUpdate(
-      post._id,
-      { status: "published", ...updates },
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      message: "Post published to WordPress successfully",
-      data: { postId: updatedPost._id, status: "published" },
-    });
-  } catch (error) {
-    const status = error.status || (error.response && error.response.status) || 500;
-    const details = error.response?.data?.errors || error.response?.data?.message;
-    res.status(status).json({ success: false, error: error.message, details });
-  }
-}
-
-async function publishAll(req, res) {
-  try {
-    const post = await ensurePost(req.body.postId);
-    const credentials = await Credential.find({ is_active: true });
-
-    const results = {};
-    const errors = [];
-
-    for (const credential of credentials) {
-      try {
-        if (credential.platform_name === "medium") results.medium = await publishToMedium(post, credential);
-        if (credential.platform_name === "devto") results.devto = await publishToDevto(post, credential);
-        if (credential.platform_name === "wordpress") results.wordpress = await publishToWordpress(post, credential);
-      } catch (e) {
-        errors.push({ platform: credential.platform_name, error: e.message });
-      }
+/**
+ * Generic publish handler for any platform
+ */
+async function publishToPlatform(platformName) {
+  return asyncHandler(async (req, res) => {
+    const config = PLATFORM_CONFIG[platformName];
+    if (!config) {
+      throw new ValidationError(`Invalid platform: ${platformName}`);
     }
 
+    const post = await ensurePost(req.body.postId);
+    const credential = await ensureCredential(platformName);
+
+    // Publish to platform
+    const updates = await config.publishFn(post, credential);
+
+    // Update post with platform status
     const updatedPost = await Post.findByIdAndUpdate(
       post._id,
-      { status: "published", ...results },
+      { status: "published", ...updates },
       { new: true, runValidators: true }
     );
 
     res.json({
       success: true,
-      message: "Post published to multiple platforms",
-      data: { postId: updatedPost._id, results, errors: errors.length ? errors : undefined },
+      message: `Post published to ${config.name} successfully`,
+      data: { 
+        postId: updatedPost._id, 
+        status: "published",
+        platformStatus: updatedPost.platform_status?.[platformName]
+      },
     });
-  } catch (error) {
-    const status = error.status || 500;
-    res.status(status).json({ success: false, error: error.message });
-  }
+  });
 }
 
-async function statusMedium(req, res) {
-  try {
-    const post = await ensurePost(req.params.postId);
-    res.json({ success: true, data: post });
-  } catch (error) {
-    const status = error.status || 500;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Publish to Medium
+ */
+const publishMedium = publishToPlatform("medium");
 
-module.exports = { publishMedium, publishDevto, publishWordpress, publishAll, statusMedium };
+/**
+ * Publish to DEV.to
+ */
+const publishDevto = publishToPlatform("devto");
+
+/**
+ * Publish to WordPress
+ */
+const publishWordpress = publishToPlatform("wordpress");
+
+/**
+ * Publish to all active platforms
+ */
+const publishAll = asyncHandler(async (req, res) => {
+  const post = await ensurePost(req.body.postId);
+  const credentials = await Credential.find({ is_active: true });
+
+  if (credentials.length === 0) {
+    throw new ValidationError("No active platform credentials found. Please configure at least one platform.");
+  }
+
+  const results = {};
+  const errors = [];
+  const successes = [];
+
+  // Publish to each platform
+  await Promise.allSettled(
+    credentials.map(async (credential) => {
+      const platformName = credential.platform_name;
+      const config = PLATFORM_CONFIG[platformName];
+
+      if (!config) {
+        errors.push({ platform: platformName, error: "Platform not supported" });
+        return;
+      }
+
+      try {
+        const updates = await config.publishFn(post, credential);
+        results[platformName] = updates;
+        successes.push(config.name);
+      } catch (error) {
+        errors.push({ 
+          platform: config.name, 
+          error: error.message || "Publishing failed" 
+        });
+      }
+    })
+  );
+
+  // Update post with all successful results
+  const updatedPost = await Post.findByIdAndUpdate(
+    post._id,
+    { status: "published", ...results },
+    { new: true, runValidators: true }
+  );
+
+  // Determine response
+  const hasErrors = errors.length > 0;
+  const hasSuccesses = successes.length > 0;
+
+  let message;
+  if (!hasSuccesses) {
+    message = "Failed to publish to any platform";
+  } else if (hasErrors) {
+    message = `Published to ${successes.join(", ")} with some errors`;
+  } else {
+    message = `Post published to all platforms successfully (${successes.join(", ")})`;
+  }
+
+  res.json({
+    success: hasSuccesses,
+    message,
+    data: {
+      postId: updatedPost._id,
+      status: "published",
+      successes,
+      errors: errors.length ? errors : undefined,
+    },
+  });
+});
+
+/**
+ * Get publish status for a post
+ */
+const statusMedium = asyncHandler(async (req, res) => {
+  const post = await ensurePost(req.params.postId);
+  
+  res.json({
+    success: true,
+    data: {
+      postId: post._id,
+      status: post.status,
+      platformStatus: post.platform_status,
+    },
+  });
+});
+
+module.exports = { 
+  publishMedium, 
+  publishDevto, 
+  publishWordpress, 
+  publishAll, 
+  statusMedium 
+};

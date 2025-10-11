@@ -1,65 +1,60 @@
 const postsService = require("../services/postsService");
+const { asyncHandler } = require("../middleware/errorHandler");
 
-async function createPost(req, res) {
-  try {
-    const post = await postsService.createPost({ ...req.body, author: req.userId });
-    res.status(201).json({ success: true, data: post });
-  } catch (error) {
-    const status = error.status || 400;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Create a new post
+ */
+const createPost = asyncHandler(async (req, res) => {
+  const post = await postsService.createPost({ ...req.body, author: req.userId });
+  res.status(201).json({ success: true, data: post });
+});
 
-async function getPosts(req, res) {
-  try {
-    const { page, limit } = req.query;
-    const result = await postsService.getPosts({ page, limit, userId: req.userId });
-    res.json({ success: true, ...result });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Get all posts with pagination
+ */
+const getPosts = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const result = await postsService.getPosts({ page, limit, userId: req.userId });
+  res.json({ success: true, ...result });
+});
 
-async function getPostById(req, res) {
-  try {
-    const post = await postsService.getPostById(req.params.id, req.userId);
-    if (!post) return res.status(404).json({ success: false, error: "Post not found" });
-    res.json({ success: true, data: post });
-  } catch (error) {
-    const status = error.status || 400;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Get post by ID
+ */
+const getPostById = asyncHandler(async (req, res) => {
+  const post = await postsService.getPostById(req.params.id, req.userId);
+  res.json({ success: true, data: post });
+});
 
-async function getPostBySlug(req, res) {
-  try {
-    const post = await postsService.getPostBySlug(req.params.slug, req.userId);
-    if (!post) return res.status(404).json({ success: false, error: "Post not found" });
-    res.json({ success: true, data: post });
-  } catch (error) {
-    const status = error.status || 400;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Get post by slug
+ */
+const getPostBySlug = asyncHandler(async (req, res) => {
+  const post = await postsService.getPostBySlug(req.params.slug, req.userId);
+  res.json({ success: true, data: post });
+});
 
-async function updatePost(req, res) {
-  try {
-    const post = await postsService.updatePost(req.params.id, req.body, req.userId);
-    res.json({ success: true, data: post, message: "Post updated successfully" });
-  } catch (error) {
-    const status = error.status || 400;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Update post
+ */
+const updatePost = asyncHandler(async (req, res) => {
+  const post = await postsService.updatePost(req.params.id, req.body, req.userId);
+  res.json({ success: true, data: post, message: "Post updated successfully" });
+});
 
-async function deletePost(req, res) {
-  try {
-    await postsService.deletePost(req.params.id, req.userId);
-    res.json({ success: true, message: "Post deleted" });
-  } catch (error) {
-    const status = error.status || 400;
-    res.status(status).json({ success: false, error: error.message });
-  }
-}
+/**
+ * Delete post
+ */
+const deletePost = asyncHandler(async (req, res) => {
+  await postsService.deletePost(req.params.id, req.userId);
+  res.json({ success: true, message: "Post deleted successfully" });
+});
 
-module.exports = { createPost, getPosts, getPostById, getPostBySlug, updatePost, deletePost };
+module.exports = { 
+  createPost, 
+  getPosts, 
+  getPostById, 
+  getPostBySlug, 
+  updatePost, 
+  deletePost 
+};

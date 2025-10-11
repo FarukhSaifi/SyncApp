@@ -2,6 +2,8 @@
 
 A web application that lets you write once and publish to multiple platforms (Medium, DEV.to, WordPress planned).
 
+🚀 **Optimized for Performance** - See [OPTIMIZATION.md](./OPTIMIZATION.md) for details on caching, error handling, and performance improvements.
+
 ## Project Structure
 
 ```text
