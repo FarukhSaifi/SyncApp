@@ -4,20 +4,20 @@ import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import { useToaster } from "../components/ui/Toaster";
+import { useToast } from "../hooks/useToast";
 import { STATUS_CONFIG } from "../constants";
 import { apiClient } from "../utils/apiClient";
 
 const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }) => {
-  const { success, error: showError } = useToaster();
+  const toast = useToast();
   const [filterStatus, setFilterStatus] = useState("all");
 
   // Show error if posts failed to load
   useEffect(() => {
     if (error) {
-      showError("Error", `Failed to load posts: ${error}`);
+      toast.apiError(`Failed to load posts: ${error}`);
     }
-  }, [error, showError]);
+  }, [error, toast]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
@@ -27,13 +27,13 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
 
         if (response?.success) {
           onPostDelete(id);
-          success("Success", "Post deleted successfully!");
+          toast.deleteSuccess();
         } else {
-          showError("Error", response?.error || "Failed to delete post");
+          toast.apiError(response?.error || "Failed to delete post");
         }
       } catch (error) {
         console.error("❌ Error deleting post:", error);
-        showError("Error", `Failed to delete post: ${error.message}`);
+        toast.apiError(`Failed to delete post: ${error.message}`);
       }
     }
   };
@@ -132,12 +132,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
           <p className="text-muted-foreground mt-2">Manage your blog posts and publishing status</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={onRefresh}
-            disabled={loading}
-            className="flex items-center space-x-2"
-          >
+          <Button variant="outline" onClick={onRefresh} disabled={loading} className="flex items-center space-x-2">
             <FiRefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
