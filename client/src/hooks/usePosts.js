@@ -6,22 +6,33 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState(initialPagination);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
   const fetchPosts = useCallback(
-    async (opts) => {
-      const params = { ...(opts || pagination) };
+    async (opts = {}) => {
+      const params = { ...pagination, ...opts };
       setLoading(true);
-      setError("");
+      setError(null);
+      
       try {
-        const data = await apiClient.getPosts(params);
-        if (data.success) {
-          // API service returns { success, data, pagination }
-          setPosts(data.data);
-          if (data.pagination) setPagination(data.pagination);
+        console.log("🔄 Fetching posts with params:", params);
+        const response = await apiClient.getPosts(params);
+        
+        if (response && response.success) {
+          console.log("✅ Posts fetched successfully:", response.data?.length || 0, "posts");
+          setPosts(response.data || []);
+          if (response.pagination) {
+            setPagination(response.pagination);
+          }
+        } else {
+          console.warn("⚠️ API returned unsuccessful response:", response);
+          setError(response?.error || "Failed to fetch posts");
+          setPosts([]);
         }
-      } catch (e) {
-        setError(e.message || "Failed to fetch posts");
+      } catch (err) {
+        console.error("❌ Error fetching posts:", err);
+        setError(err.message || "Failed to fetch posts");
+        setPosts([]);
       } finally {
         setLoading(false);
       }
@@ -31,8 +42,7 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
 
   useEffect(() => {
     fetchPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Only run once on mount
 
   const addPost = useCallback((newPost) => {
     setPosts((prev) => [newPost, ...prev]);
@@ -40,13 +50,24 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
 
   const updatePost = useCallback((updatedPost) => {
     setPosts((prev) =>
-      prev.map((post) => (post.id === updatedPost.id || post._id === updatedPost._id ? updatedPost : post))
+      prev.map((post) => {
+        const postId = post.id || post._id;
+        const updatedId = updatedPost.id || updatedPost._id;
+        return postId === updatedId ? { ...post, ...updatedPost } : post;
+      })
     );
   }, []);
 
   const deletePost = useCallback((postId) => {
-    setPosts((prev) => prev.filter((post) => post.id !== postId && post._id !== postId));
+    setPosts((prev) => prev.filter((post) => {
+      const currentId = post.id || post._id;
+      return currentId !== postId;
+    }));
   }, []);
+
+  const refreshPosts = useCallback(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const stats = useMemo(
     () => ({
@@ -71,6 +92,7 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
     pagination,
     stats,
     fetchPosts,
+    refreshPosts,
     addPost,
     updatePost,
     deletePost,

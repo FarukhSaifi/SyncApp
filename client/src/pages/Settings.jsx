@@ -20,10 +20,15 @@ const Settings = () => {
   const [showDevtoKey, setShowDevtoKey] = useState(false);
   const [showWordpressKey, setShowWordpressKey] = useState(false);
 
+  const MASK = "••••••••••••••••";
+
   useEffect(() => {
     const loadCredentials = async () => {
       try {
+        console.log("🔄 Loading credentials...");
         const result = await apiClient.request(`${API_PATHS.CREDENTIALS}`);
+        console.log("📋 Credentials response:", result);
+        
         if (result?.success && Array.isArray(result.data)) {
           const creds = result.data;
           const medium = creds.find((c) => c.platform_name === "medium");
@@ -46,13 +51,16 @@ const Settings = () => {
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url);
             setWordpressApiKey(MASK);
           }
+        } else {
+          console.warn("⚠️ No credentials found or invalid response");
         }
       } catch (e) {
-        console.error("Failed to load credentials", e);
+        console.error("❌ Failed to load credentials:", e);
+        showError("Error", `Failed to load credentials: ${e.message}`);
       }
     };
     loadCredentials();
-  }, []);
+  }, [showError]);
 
   const handleSaveMediumCredentials = async () => {
     if (!mediumApiKey.trim() || mediumApiKey === MASK) {
@@ -62,28 +70,22 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/credentials/medium", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          api_key: mediumApiKey.trim(),
-        }),
+      console.log("🔄 Saving Medium credentials...");
+      const result = await apiClient.upsertCredential("medium", {
+        api_key: mediumApiKey.trim(),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (result?.success) {
         setSaved((prev) => ({ ...prev, medium: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
         success("Success", "Medium API credentials saved successfully!");
+        setMediumApiKey(MASK);
       } else {
-        showError("Error", data.error || "Failed to save credentials");
+        showError("Error", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("Error saving credentials:", error);
-      showError("Error", "Failed to save credentials");
+      console.error("❌ Error saving Medium credentials:", error);
+      showError("Error", `Failed to save credentials: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -97,31 +99,25 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/credentials/devto", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      console.log("🔄 Saving DEV.to credentials...");
+      const result = await apiClient.upsertCredential("devto", {
+        api_key: devtoApiKey.trim(),
+        platform_config: {
+          devto_username: devtoUsername.trim(),
         },
-        body: JSON.stringify({
-          api_key: devtoApiKey.trim(),
-          platform_config: {
-            devto_username: devtoUsername.trim(),
-          },
-        }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (result?.success) {
         setSaved((prev) => ({ ...prev, devto: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
         success("Success", "DEV.to API credentials saved successfully!");
+        setDevtoApiKey(MASK);
       } else {
-        showError("Error", data.error || "Failed to save credentials");
+        showError("Error", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("Error saving credentials:", error);
-      showError("Error", "Failed to save credentials");
+      console.error("❌ Error saving DEV.to credentials:", error);
+      showError("Error", `Failed to save credentials: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -141,29 +137,23 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/credentials/wordpress", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          api_key: wordpressApiKey.trim(),
-          site_url: wordpressSiteUrl.trim(),
-        }),
+      console.log("🔄 Saving WordPress credentials...");
+      const result = await apiClient.upsertCredential("wordpress", {
+        api_key: wordpressApiKey.trim(),
+        site_url: wordpressSiteUrl.trim(),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (result?.success) {
         setSaved((prev) => ({ ...prev, wordpress: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
         success("Success", "WordPress API credentials saved successfully!");
+        setWordpressApiKey(MASK);
       } else {
-        showError("Error", data.error || "Failed to save credentials");
+        showError("Error", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("Error saving credentials:", error);
-      showError("Error", "Failed to save credentials");
+      console.error("❌ Error saving WordPress credentials:", error);
+      showError("Error", `Failed to save credentials: ${error.message}`);
     } finally {
       setLoading(false);
     }
