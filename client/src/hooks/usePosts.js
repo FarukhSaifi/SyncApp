@@ -13,11 +13,11 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
       const params = { ...pagination, ...opts };
       setLoading(true);
       setError(null);
-      
+
       try {
         console.log("🔄 Fetching posts with params:", params);
         const response = await apiClient.getPosts(params);
-        
+
         if (response && response.success) {
           console.log("✅ Posts fetched successfully:", response.data?.length || 0, "posts");
           setPosts(response.data || []);
@@ -59,10 +59,12 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
   }, []);
 
   const deletePost = useCallback((postId) => {
-    setPosts((prev) => prev.filter((post) => {
-      const currentId = post.id || post._id;
-      return currentId !== postId;
-    }));
+    setPosts((prev) =>
+      prev.filter((post) => {
+        const currentId = post.id || post._id;
+        return currentId !== postId;
+      })
+    );
   }, []);
 
   const refreshPosts = useCallback(() => {

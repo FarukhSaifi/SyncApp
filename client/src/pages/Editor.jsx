@@ -9,14 +9,14 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useToaster } from "../components/ui/Toaster";
+import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
 const Editor = ({ onPostCreate, onPostUpdate }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
-  const { success, error: showError } = useToaster();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -51,11 +51,11 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
           canonical_url: response.data.canonical_url || "",
         });
       } else {
-        showError("Error", response?.error || "Failed to fetch post");
+        toast.apiError(response?.error || "Failed to fetch post");
       }
     } catch (error) {
       console.error("❌ Error fetching post:", error);
-      showError("Error", `Failed to fetch post: ${error.message}`);
+      toast.apiError(`Failed to fetch post: ${error.message}`);
     }
   };
 
@@ -101,13 +101,13 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     try {
       const postId = id;
       if (!postId) {
-        showError("Export MDX", "Please save the post first before exporting MDX");
+        toast.validationError("Please save the post first before exporting MDX");
         return;
       }
       await apiClient.downloadMdx(postId);
-      success("MDX Exported", "Your MDX file has been downloaded");
+      toast.exportSuccess("MDX");
     } catch (e) {
-      showError("Export Failed", e.message || "Could not export MDX");
+      toast.exportError("MDX", e.message || "Could not export MDX");
     }
   };
 
@@ -120,7 +120,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handleSave = async (status = "draft") => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      showError("Validation Error", "Please fill in both title and content");
+      toast.validationError("Please fill in both title and content");
       return;
     }
 
@@ -140,7 +140,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       console.log("🔄 Saving post:", id ? "update" : "create", postData);
       let response;
-      
+
       if (id) {
         response = await apiClient.updatePost(id, postData);
       } else {
@@ -152,21 +152,21 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
       if (response?.success) {
         if (id) {
           onPostUpdate(response.data);
-          success("Success", "Post updated successfully!");
+          toast.saveSuccess(true);
         } else {
           onPostCreate(response.data);
-          success("Success", "Post created successfully!");
+          toast.saveSuccess(false);
         }
 
         if (status === "draft") {
           navigate("/");
         }
       } else {
-        showError("Error", response?.error || "Failed to save post");
+        toast.apiError(response?.error || "Failed to save post");
       }
     } catch (error) {
       console.error("❌ Error saving post:", error);
-      showError("Error", `Failed to save post: ${error.message}`);
+      toast.apiError(`Failed to save post: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -174,14 +174,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToMedium = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      showError("Validation Error", "Please fill in both title and content");
+      toast.validationError("Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       let currentPostId = id;
-      
+
       // If it's a new post, save it first
       if (!currentPostId) {
         const tags = formData.tags
@@ -210,14 +210,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishResponse?.success) {
         onPostUpdate(publishResponse.data);
-        success("Success", "Post published to Medium successfully!");
+        toast.publishSuccess("Medium");
         navigate("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to Medium");
       }
     } catch (error) {
       console.error("❌ Error publishing to Medium:", error);
-      showError("Error", `Failed to publish to Medium: ${error.message}`);
+      toast.publishError("Medium", error.message);
     } finally {
       setPublishing(false);
     }
@@ -225,14 +225,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToDevto = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      showError("Validation Error", "Please fill in both title and content");
+      toast.validationError("Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       let currentPostId = id;
-      
+
       // If it's a new post, save it first
       if (!currentPostId) {
         const tags = formData.tags
@@ -261,14 +261,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishResponse?.success) {
         onPostUpdate(publishResponse.data);
-        success("Success", "Post published to DEV.to successfully!");
+        toast.publishSuccess("DEV.to");
         navigate("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to DEV.to");
       }
     } catch (error) {
       console.error("❌ Error publishing to DEV.to:", error);
-      showError("Error", `Failed to publish to DEV.to: ${error.message}`);
+      toast.publishError("DEV.to", error.message);
     } finally {
       setPublishing(false);
     }
@@ -276,7 +276,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToWordpress = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      showError("Validation Error", "Please fill in both title and content");
+      toast.validationError("Please fill in both title and content");
       return;
     }
 
@@ -335,14 +335,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToAll = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      showError("Validation Error", "Please fill in both title and content");
+      toast.validationError("Please fill in both title and content");
       return;
     }
 
     setPublishing(true);
     try {
       let currentPostId = id;
-      
+
       // If it's a new post, save it first
       if (!currentPostId) {
         const tags = formData.tags
@@ -371,14 +371,14 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
       if (publishResponse?.success) {
         onPostUpdate(publishResponse.data);
-        success("Success", "Post published to all platforms successfully!");
+        toast.success("Published Everywhere!", "Post published to all platforms successfully!");
         navigate("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to all platforms");
       }
     } catch (error) {
       console.error("❌ Error publishing to all platforms:", error);
-      showError("Error", `Failed to publish to all platforms: ${error.message}`);
+      toast.error("Publish Failed", `Failed to publish to all platforms: ${error.message}`);
     } finally {
       setPublishing(false);
     }

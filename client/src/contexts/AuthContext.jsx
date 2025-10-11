@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { API_BASE } from "../constants";
+import { useToast } from "../hooks/useToast";
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
 
   useEffect(() => {
     if (token) {
@@ -36,10 +38,12 @@ export const AuthProvider = ({ children }) => {
         setUser(data.data);
       } else {
         // Token is invalid, remove it
+        toast.authError("Session expired. Please log in again.");
         logout();
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
+      toast.networkError();
       logout();
     } finally {
       setLoading(false);
@@ -63,12 +67,15 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setToken(authToken);
         localStorage.setItem("token", authToken);
+        toast.success("Welcome back!", `Hello ${userData.firstName || userData.username}!`);
         return { success: true };
       } else {
+        toast.authError(data.error || "Invalid credentials");
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Login error:", error);
+      toast.networkError();
       return { success: false, error: "Login failed. Please try again." };
     }
   };
@@ -90,12 +97,15 @@ export const AuthProvider = ({ children }) => {
         setUser(newUser);
         setToken(authToken);
         localStorage.setItem("token", authToken);
+        toast.success("Welcome to SyncApp!", `Account created successfully for ${newUser.firstName || newUser.username}!`);
         return { success: true };
       } else {
+        toast.error("Registration Failed", data.error || "Failed to create account");
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Registration error:", error);
+      toast.networkError();
       return { success: false, error: "Registration failed. Please try again." };
     }
   };
@@ -104,6 +114,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
+    toast.info("Logged out", "You have been successfully logged out");
   };
 
   const updateProfile = async (profileData) => {
@@ -121,12 +132,15 @@ export const AuthProvider = ({ children }) => {
 
       if (data.success) {
         setUser(data.data);
+        toast.success("Profile Updated", "Your profile has been updated successfully");
         return { success: true };
       } else {
+        toast.error("Update Failed", data.error || "Failed to update profile");
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Profile update error:", error);
+      toast.networkError();
       return { success: false, error: "Profile update failed. Please try again." };
     }
   };
@@ -145,12 +159,15 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (data.success) {
+        toast.success("Password Changed", "Your password has been updated successfully");
         return { success: true };
       } else {
+        toast.error("Password Change Failed", data.error || "Failed to change password");
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Password change error:", error);
+      toast.networkError();
       return { success: false, error: "Password change failed. Please try again." };
     }
   };
