@@ -33,21 +33,21 @@ const Settings = () => {
           const devto = creds.find((c) => c.platform_name === "devto");
           const wordpress = creds.find((c) => c.platform_name === "wordpress");
 
-          if (medium && medium.has_api_key) {
+          if (medium) {
             setSaved((prev) => ({ ...prev, medium: true }));
-            setMediumApiKey(""); // Keep input empty for security
+            if (medium.api_key) setMediumApiKey(medium.api_key);
           }
-          if (devto && devto.has_api_key) {
+          if (devto) {
             setSaved((prev) => ({ ...prev, devto: true }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username);
             }
-            setDevtoApiKey(""); // Keep input empty for security
+            if (devto.api_key) setDevtoApiKey(devto.api_key);
           }
-          if (wordpress && wordpress.has_api_key) {
+          if (wordpress) {
             setSaved((prev) => ({ ...prev, wordpress: true }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url);
-            setWordpressApiKey(""); // Keep input empty for security
+            if (wordpress.api_key) setWordpressApiKey(wordpress.api_key);
           }
         } else {
           console.warn("⚠️ No credentials found or invalid response");
@@ -78,7 +78,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, medium: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
         toast.credentialsSaved("Medium");
-        setMediumApiKey(""); // Clear input after save
+        // Keep the key in the input so user can see it
       } else {
         toast.credentialsError("Medium", result?.error || "Failed to save credentials");
       }
@@ -110,7 +110,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, devto: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
         toast.credentialsSaved("DEV.to");
-        setDevtoApiKey(""); // Clear input after save
+        // Keep the key in the input so user can see it
       } else {
         toast.credentialsError("DEV.to", result?.error || "Failed to save credentials");
       }
@@ -146,7 +146,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, wordpress: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
         toast.credentialsSaved("WordPress");
-        setWordpressApiKey(""); // Clear input after save
+        // Keep the key in the input so user can see it
       } else {
         toast.credentialsError("WordPress", result?.error || "Failed to save credentials");
       }
