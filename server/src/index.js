@@ -13,7 +13,7 @@ const publishRoutes = require("./routes/publish");
 const mdxRoutes = require("./routes/mdx");
 
 const app = express();
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 3001;
 
 // Connect to MongoDB
 connectDB();
