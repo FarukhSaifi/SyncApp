@@ -3,12 +3,12 @@ import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "r
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useToaster } from "../components/ui/Toaster";
+import { useToast } from "../hooks/useToast";
 import { API_PATHS } from "../constants";
 import { apiClient } from "../utils/apiClient";
 
 const Settings = () => {
-  const { success, error: showError, warning } = useToaster();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [mediumApiKey, setMediumApiKey] = useState("");
   const [devtoApiKey, setDevtoApiKey] = useState("");
@@ -28,7 +28,7 @@ const Settings = () => {
         console.log("🔄 Loading credentials...");
         const result = await apiClient.request(`${API_PATHS.CREDENTIALS}`);
         console.log("📋 Credentials response:", result);
-        
+
         if (result?.success && Array.isArray(result.data)) {
           const creds = result.data;
           const medium = creds.find((c) => c.platform_name === "medium");
@@ -56,15 +56,15 @@ const Settings = () => {
         }
       } catch (e) {
         console.error("❌ Failed to load credentials:", e);
-        showError("Error", `Failed to load credentials: ${e.message}`);
+        toast.apiError(`Failed to load credentials: ${e.message}`);
       }
     };
     loadCredentials();
-  }, [showError]);
+  }, [toast]);
 
   const handleSaveMediumCredentials = async () => {
     if (!mediumApiKey.trim() || mediumApiKey === MASK) {
-      showError("Validation Error", "Please enter your Medium API key");
+      toast.validationError("Please enter your Medium API key");
       return;
     }
 
@@ -78,14 +78,14 @@ const Settings = () => {
       if (result?.success) {
         setSaved((prev) => ({ ...prev, medium: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
-        success("Success", "Medium API credentials saved successfully!");
+        toast.credentialsSaved("Medium");
         setMediumApiKey(MASK);
       } else {
-        showError("Error", result?.error || "Failed to save credentials");
+        toast.credentialsError("Medium", result?.error || "Failed to save credentials");
       }
     } catch (error) {
       console.error("❌ Error saving Medium credentials:", error);
-      showError("Error", `Failed to save credentials: ${error.message}`);
+      toast.credentialsError("Medium", error.message);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ const Settings = () => {
 
   const handleSaveDevtoCredentials = async () => {
     if (!devtoApiKey.trim() || devtoApiKey === MASK || !devtoUsername.trim()) {
-      showError("Validation Error", "Please enter both DEV.to API key and username");
+      toast.validationError("Please enter both DEV.to API key and username");
       return;
     }
 
@@ -110,14 +110,14 @@ const Settings = () => {
       if (result?.success) {
         setSaved((prev) => ({ ...prev, devto: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
-        success("Success", "DEV.to API credentials saved successfully!");
+        toast.credentialsSaved("DEV.to");
         setDevtoApiKey(MASK);
       } else {
-        showError("Error", result?.error || "Failed to save credentials");
+        toast.credentialsError("DEV.to", result?.error || "Failed to save credentials");
       }
     } catch (error) {
       console.error("❌ Error saving DEV.to credentials:", error);
-      showError("Error", `Failed to save credentials: ${error.message}`);
+      toast.credentialsError("DEV.to", error.message);
     } finally {
       setLoading(false);
     }
@@ -125,13 +125,13 @@ const Settings = () => {
 
   const handleSaveWordpressCredentials = async () => {
     if (!wordpressApiKey.trim() || wordpressApiKey === MASK || !wordpressSiteUrl.trim()) {
-      showError("Validation Error", "Please enter both WordPress API key and site URL");
+      toast.validationError("Please enter both WordPress API key and site URL");
       return;
     }
 
     // Validate WordPress site URL
     if (!wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
-      showError("Validation Error", "Please enter a valid WordPress site URL (must start with http:// or https://)");
+      toast.validationError("Please enter a valid WordPress site URL (must start with http:// or https://)");
       return;
     }
 
@@ -146,14 +146,14 @@ const Settings = () => {
       if (result?.success) {
         setSaved((prev) => ({ ...prev, wordpress: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
-        success("Success", "WordPress API credentials saved successfully!");
+        toast.credentialsSaved("WordPress");
         setWordpressApiKey(MASK);
       } else {
-        showError("Error", result?.error || "Failed to save credentials");
+        toast.credentialsError("WordPress", result?.error || "Failed to save credentials");
       }
     } catch (error) {
       console.error("❌ Error saving WordPress credentials:", error);
-      showError("Error", `Failed to save credentials: ${error.message}`);
+      toast.credentialsError("WordPress", error.message);
     } finally {
       setLoading(false);
     }

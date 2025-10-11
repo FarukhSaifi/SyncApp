@@ -39,13 +39,19 @@ export class ApiClient {
       (error) => {
         // Log errors in development
         if (process.env.NODE_ENV === "development") {
-          console.error(`❌ API ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error.message);
+          console.error(
+            `❌ API ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+            error.response?.data || error.message
+          );
         }
-        
+
         // Handle different error types
         if (error.response) {
           // Server responded with error status
-          const message = error.response.data?.error || error.response.data?.message || `HTTP ${error.response.status}: ${error.response.statusText}`;
+          const message =
+            error.response.data?.error ||
+            error.response.data?.message ||
+            `HTTP ${error.response.status}: ${error.response.statusText}`;
           return Promise.reject(new Error(message));
         } else if (error.request) {
           // Request was made but no response received

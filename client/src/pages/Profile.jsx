@@ -3,12 +3,12 @@ import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useToaster } from "../components/ui/Toaster";
+import { useToast } from "../hooks/useToast";
 import { useAuth } from "../contexts/AuthContext";
 
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();
-  const { success, error: showError } = useToaster();
+  const toast = useToast();
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -50,12 +50,12 @@ const Profile = () => {
       const result = await updateProfile(profileData);
 
       if (result.success) {
-        success("Success", "Profile updated successfully!");
+        // Toast is already handled in AuthContext
       } else {
-        showError("Error", result.error || "Failed to update profile");
+        // Error toast is already handled in AuthContext
       }
     } catch (error) {
-      showError("Error", "An unexpected error occurred. Please try again.");
+      toast.apiError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -65,12 +65,12 @@ const Profile = () => {
     e.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showError("Validation Error", "New passwords do not match");
+      toast.validationError("New passwords do not match");
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      showError("Validation Error", "New password must be at least 6 characters long");
+      toast.validationError("New password must be at least 6 characters long");
       return;
     }
 
@@ -80,17 +80,17 @@ const Profile = () => {
       const result = await changePassword(passwordData.currentPassword, passwordData.newPassword);
 
       if (result.success) {
-        success("Success", "Password changed successfully!");
+        // Toast is already handled in AuthContext
         setPasswordData({
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
         });
       } else {
-        showError("Error", result.error || "Failed to change password");
+        // Error toast is already handled in AuthContext
       }
     } catch (error) {
-      showError("Error", "An unexpected error occurred. Please try again.");
+      toast.apiError("An unexpected error occurred. Please try again.");
     } finally {
       setPasswordLoading(false);
     }
