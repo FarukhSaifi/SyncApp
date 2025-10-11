@@ -16,10 +16,10 @@ const Register = lazy(() => import("./pages/Register"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 function AppContent() {
-  const { isAuthenticated, loading } = useAuth();
-  const { posts, loading: postsLoading, fetchPosts, addPost, updatePost, deletePost } = usePosts();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { posts, loading: postsLoading, error: postsError, refreshPosts, addPost, updatePost, deletePost } = usePosts();
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -49,9 +49,10 @@ function AppContent() {
                         <Dashboard
                           posts={posts}
                           loading={postsLoading}
+                          error={postsError}
                           onPostUpdate={updatePost}
                           onPostDelete={deletePost}
-                          onRefresh={fetchPosts}
+                          onRefresh={refreshPosts}
                         />
                       </ProtectedRoute>
                     }

@@ -1,45 +1,39 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiEdit, FiGlobe, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiGlobe, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
 import { useToaster } from "../components/ui/Toaster";
 import { STATUS_CONFIG } from "../constants";
+import { apiClient } from "../utils/apiClient";
 
-const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
+const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }) => {
   const { success, error: showError } = useToaster();
-  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
 
+  // Show error if posts failed to load
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (error) {
+      showError("Error", `Failed to load posts: ${error}`);
+    }
+  }, [error, showError]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`/api/posts/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        console.log("🗑️ Deleting post:", id);
+        const response = await apiClient.deletePost(id);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (response?.success) {
           onPostDelete(id);
           success("Success", "Post deleted successfully!");
         } else {
-          showError("Error", data.error || "Failed to delete post");
+          showError("Error", response?.error || "Failed to delete post");
         }
       } catch (error) {
-        console.error("Error deleting post:", error);
-        showError("Error", "Failed to delete post");
+        console.error("❌ Error deleting post:", error);
+        showError("Error", `Failed to delete post: ${error.message}`);
       }
     }
   };
@@ -137,13 +131,40 @@ const Dashboard = ({ posts, onPostDelete, onPostUpdate }) => {
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-2">Manage your blog posts and publishing status</p>
         </div>
-        <Link to="/editor">
-          <Button className="flex items-center space-x-2">
-            <FiPlus className="h-4 w-4" />
-            New Post
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={onRefresh}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <FiRefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
-        </Link>
+          <Link to="/editor">
+            <Button className="flex items-center space-x-2">
+              <FiPlus className="h-4 w-4" />
+              New Post
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Failed to load posts</p>
+              <p className="text-sm">{error}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={onRefresh}>
+              <FiRefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

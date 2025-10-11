@@ -37,27 +37,25 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const fetchPost = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/posts/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      console.log("🔄 Fetching post:", id);
+      const response = await apiClient.getPost(id);
+      console.log("📄 Post response:", response);
 
-      if (data.success) {
+      if (response?.success) {
         setFormData({
-          title: data.data.title,
-          content_markdown: data.data.content_markdown,
-          status: data.data.status,
-          tags: data.data.tags ? data.data.tags.join(", ") : "",
-          cover_image: data.data.cover_image || "",
-          canonical_url: data.data.canonical_url || "",
+          title: response.data.title,
+          content_markdown: response.data.content_markdown,
+          status: response.data.status,
+          tags: response.data.tags ? response.data.tags.join(", ") : "",
+          cover_image: response.data.cover_image || "",
+          canonical_url: response.data.canonical_url || "",
         });
+      } else {
+        showError("Error", response?.error || "Failed to fetch post");
       }
     } catch (error) {
-      console.error("Error fetching post:", error);
-      showError("Error", "Failed to fetch post");
+      console.error("❌ Error fetching post:", error);
+      showError("Error", `Failed to fetch post: ${error.message}`);
     }
   };
 
@@ -128,37 +126,35 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
     setLoading(true);
     try {
-      const url = id ? `/api/posts/${id}` : "/api/posts";
-      const method = id ? "PUT" : "POST";
-
       // Process tags from comma-separated string to array
       const tags = formData.tags
         .split(",")
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          tags,
-          status,
-        }),
-      });
+      const postData = {
+        ...formData,
+        tags,
+        status,
+      };
 
-      const data = await response.json();
+      console.log("🔄 Saving post:", id ? "update" : "create", postData);
+      let response;
+      
+      if (id) {
+        response = await apiClient.updatePost(id, postData);
+      } else {
+        response = await apiClient.createPost(postData);
+      }
 
-      if (data.success) {
+      console.log("💾 Save response:", response);
+
+      if (response?.success) {
         if (id) {
-          onPostUpdate(data.data);
+          onPostUpdate(response.data);
           success("Success", "Post updated successfully!");
         } else {
-          onPostCreate(data.data);
+          onPostCreate(response.data);
           success("Success", "Post created successfully!");
         }
 
@@ -166,11 +162,11 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
           navigate("/");
         }
       } else {
-        showError("Error", data.error || "Failed to save post");
+        showError("Error", response?.error || "Failed to save post");
       }
     } catch (error) {
-      console.error("Error saving post:", error);
-      showError("Error", "Failed to save post");
+      console.error("❌ Error saving post:", error);
+      showError("Error", `Failed to save post: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -184,51 +180,43 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
     setPublishing(true);
     try {
-      // First save the post
-      const token = localStorage.getItem("token");
-      const saveResponse = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      let currentPostId = id;
+      
+      // If it's a new post, save it first
+      if (!currentPostId) {
+        const tags = formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+
+        console.log("🔄 Saving new post before publishing...");
+        const saveResponse = await apiClient.createPost({
           ...formData,
-          tags: formData.tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0),
+          tags,
           status: "draft",
-        }),
-      });
+        });
 
-      const saveData = await saveResponse.json();
+        if (!saveResponse?.success) {
+          throw new Error(saveResponse?.error || "Failed to save post");
+        }
 
-      if (!saveData.success) {
-        throw new Error(saveData.error);
+        currentPostId = saveResponse.data.id;
+        onPostCreate(saveResponse.data);
       }
 
-      // Then publish to Medium
-      const publishResponse = await fetch("/api/publish/medium", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId: saveData.data.id }),
-      });
+      // Publish to Medium
+      console.log("🚀 Publishing to Medium...");
+      const publishResponse = await apiClient.publish("medium", currentPostId);
 
-      const publishData = await publishResponse.json();
-
-      if (publishData.success) {
-        onPostCreate({ ...saveData.data, status: "published" });
+      if (publishResponse?.success) {
+        onPostUpdate(publishResponse.data);
         success("Success", "Post published to Medium successfully!");
         navigate("/");
       } else {
-        throw new Error(publishData.error);
+        throw new Error(publishResponse?.error || "Failed to publish to Medium");
       }
     } catch (error) {
-      console.error("Error publishing to Medium:", error);
+      console.error("❌ Error publishing to Medium:", error);
       showError("Error", `Failed to publish to Medium: ${error.message}`);
     } finally {
       setPublishing(false);
@@ -243,51 +231,43 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
     setPublishing(true);
     try {
-      // First save the post
-      const token = localStorage.getItem("token");
-      const saveResponse = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      let currentPostId = id;
+      
+      // If it's a new post, save it first
+      if (!currentPostId) {
+        const tags = formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+
+        console.log("🔄 Saving new post before publishing...");
+        const saveResponse = await apiClient.createPost({
           ...formData,
-          tags: formData.tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0),
+          tags,
           status: "draft",
-        }),
-      });
+        });
 
-      const saveData = await saveResponse.json();
+        if (!saveResponse?.success) {
+          throw new Error(saveResponse?.error || "Failed to save post");
+        }
 
-      if (!saveData.success) {
-        throw new Error(saveData.error);
+        currentPostId = saveResponse.data.id;
+        onPostCreate(saveResponse.data);
       }
 
-      // Then publish to DEV.to
-      const publishResponse = await fetch("/api/publish/devto", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId: saveData.data.id }),
-      });
+      // Publish to DEV.to
+      console.log("🚀 Publishing to DEV.to...");
+      const publishResponse = await apiClient.publish("devto", currentPostId);
 
-      const publishData = await publishResponse.json();
-
-      if (publishData.success) {
-        onPostCreate({ ...saveData.data, status: "published" });
+      if (publishResponse?.success) {
+        onPostUpdate(publishResponse.data);
         success("Success", "Post published to DEV.to successfully!");
         navigate("/");
       } else {
-        throw new Error(publishData.error);
+        throw new Error(publishResponse?.error || "Failed to publish to DEV.to");
       }
     } catch (error) {
-      console.error("Error publishing to DEV.to:", error);
+      console.error("❌ Error publishing to DEV.to:", error);
       showError("Error", `Failed to publish to DEV.to: ${error.message}`);
     } finally {
       setPublishing(false);
@@ -361,51 +341,43 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
     setPublishing(true);
     try {
-      // First save the post
-      const token = localStorage.getItem("token");
-      const saveResponse = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      let currentPostId = id;
+      
+      // If it's a new post, save it first
+      if (!currentPostId) {
+        const tags = formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+
+        console.log("🔄 Saving new post before publishing...");
+        const saveResponse = await apiClient.createPost({
           ...formData,
-          tags: formData.tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0),
+          tags,
           status: "draft",
-        }),
-      });
+        });
 
-      const saveData = await saveResponse.json();
+        if (!saveResponse?.success) {
+          throw new Error(saveResponse?.error || "Failed to save post");
+        }
 
-      if (!saveData.success) {
-        throw new Error(saveData.error);
+        currentPostId = saveResponse.data.id;
+        onPostCreate(saveResponse.data);
       }
 
-      // Then publish to all platforms
-      const publishResponse = await fetch("/api/publish/all", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId: saveData.data.id }),
-      });
+      // Publish to all platforms
+      console.log("🚀 Publishing to all platforms...");
+      const publishResponse = await apiClient.publishAll(currentPostId);
 
-      const publishData = await publishResponse.json();
-
-      if (publishData.success) {
-        onPostCreate({ ...saveData.data, status: "published" });
+      if (publishResponse?.success) {
+        onPostUpdate(publishResponse.data);
         success("Success", "Post published to all platforms successfully!");
         navigate("/");
       } else {
-        throw new Error(publishData.error);
+        throw new Error(publishResponse?.error || "Failed to publish to all platforms");
       }
     } catch (error) {
-      console.error("Error publishing to all platforms:", error);
+      console.error("❌ Error publishing to all platforms:", error);
       showError("Error", `Failed to publish to all platforms: ${error.message}`);
     } finally {
       setPublishing(false);

@@ -11,25 +11,49 @@ export class ApiClient {
       headers: { "Content-Type": "application/json" },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "comma", skipNulls: true }),
       withCredentials: false,
+      timeout: 10000, // 10 second timeout
     });
 
     // Attach token to every request
-    this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
     // Normalize responses and errors
     this.client.interceptors.response.use(
-      (response) => response.data,
+      (response) => {
+        // Log successful requests in development
+        if (process.env.NODE_ENV === "development") {
+          console.log(`✅ API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+        }
+        return response.data;
+      },
       (error) => {
-        const message =
-          error?.response?.data?.error || error?.response?.data?.message || error?.message || "Request failed";
-        return Promise.reject(new Error(message));
+        // Log errors in development
+        if (process.env.NODE_ENV === "development") {
+          console.error(`❌ API ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error.message);
+        }
+        
+        // Handle different error types
+        if (error.response) {
+          // Server responded with error status
+          const message = error.response.data?.error || error.response.data?.message || `HTTP ${error.response.status}: ${error.response.statusText}`;
+          return Promise.reject(new Error(message));
+        } else if (error.request) {
+          // Request was made but no response received
+          return Promise.reject(new Error("Network error: Unable to connect to server"));
+        } else {
+          // Something else happened
+          return Promise.reject(new Error(error.message || "Request failed"));
+        }
       }
     );
   }

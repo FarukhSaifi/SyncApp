@@ -13,11 +13,13 @@ SyncApp is a blog syndication platform that allows users to write posts and publ
 ## Authentication
 
 ### Register User
+
 Create a new user account.
 
 **Endpoint:** `POST /api/auth/register`
 
 **Request Body:**
+
 ```json
 {
   "username": "johndoe",
@@ -29,6 +31,7 @@ Create a new user account.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -48,17 +51,20 @@ Create a new user account.
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - User already exists
 - `500 Internal Server Error` - Registration failed
 
 ---
 
 ### Login User
+
 Authenticate user and receive JWT token.
 
 **Endpoint:** `POST /api/auth/login`
 
 **Request Body:**
+
 ```json
 {
   "email": "john@example.com",
@@ -67,6 +73,7 @@ Authenticate user and receive JWT token.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -86,22 +93,26 @@ Authenticate user and receive JWT token.
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized` - Invalid credentials
 - `500 Internal Server Error` - Login failed
 
 ---
 
 ### Get Current User Profile
+
 Get the authenticated user's profile information.
 
 **Endpoint:** `GET /api/auth/me`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -123,22 +134,26 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized` - Invalid or missing token
 - `404 Not Found` - User not found
 
 ---
 
 ### Update User Profile
+
 Update the authenticated user's profile information.
 
 **Endpoint:** `PUT /api/auth/me`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "firstName": "John",
@@ -149,6 +164,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -173,16 +189,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Change Password
+
 Change the authenticated user's password.
 
 **Endpoint:** `PUT /api/auth/change-password`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "currentPassword": "oldpassword123",
@@ -191,6 +210,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -199,6 +219,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - Current password is incorrect
 - `401 Unauthorized` - Invalid or missing token
 
@@ -207,20 +228,24 @@ Authorization: Bearer <jwt_token>
 ## Posts
 
 ### Get Posts
+
 Retrieve posts with pagination. Returns user's posts if authenticated, public posts if not.
 
 **Endpoint:** `GET /api/posts`
 
 **Query Parameters:**
+
 - `page` (optional) - Page number (default: 1)
 - `limit` (optional) - Posts per page (default: 20, max: 100)
 
 **Headers (optional):**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -269,16 +294,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Get Post by ID
+
 Retrieve a specific post by its ID.
 
 **Endpoint:** `GET /api/posts/:id`
 
 **Headers (optional):**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -312,17 +340,20 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `404 Not Found` - Post not found
 - `403 Forbidden` - Access denied (trying to access draft post without authentication)
 
 ---
 
 ### Get Post by Slug
+
 Retrieve a specific post by its slug.
 
 **Endpoint:** `GET /api/posts/slug/:slug`
 
 **Headers (optional):**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -332,16 +363,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Create Post
+
 Create a new blog post.
 
 **Endpoint:** `POST /api/posts`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "My New Blog Post",
@@ -354,6 +388,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -384,22 +419,26 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - Missing required fields
 - `401 Unauthorized` - Invalid or missing token
 
 ---
 
 ### Update Post
+
 Update an existing blog post.
 
 **Endpoint:** `PUT /api/posts/:id`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "Updated Blog Post Title",
@@ -411,6 +450,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -437,22 +477,26 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `403 Forbidden` - Not the post owner
 - `404 Not Found` - Post not found
 
 ---
 
 ### Delete Post
+
 Delete a blog post.
 
 **Endpoint:** `DELETE /api/posts/:id`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -461,6 +505,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `403 Forbidden` - Not the post owner
 - `404 Not Found` - Post not found
 
@@ -469,16 +514,19 @@ Authorization: Bearer <jwt_token>
 ## Credentials
 
 ### Get All Credentials
+
 Retrieve all platform credentials for the user.
 
 **Endpoint:** `GET /api/credentials`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -514,19 +562,23 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Get Credential by Platform
+
 Retrieve credentials for a specific platform.
 
 **Endpoint:** `GET /api/credentials/:platform`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Path Parameters:**
+
 - `platform` - Platform name (`medium`, `devto`, `wordpress`)
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -546,24 +598,29 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `404 Not Found` - Credentials not found for this platform
 
 ---
 
 ### Save Credentials
+
 Save or update platform credentials.
 
 **Endpoint:** `PUT /api/credentials/:platform`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Path Parameters:**
+
 - `platform` - Platform name (`medium`, `devto`, `wordpress`)
 
 **Request Body:**
+
 ```json
 {
   "api_key": "your_api_key_here",
@@ -576,6 +633,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -596,24 +654,29 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - API key is required
 
 ---
 
 ### Delete Credentials
+
 Delete platform credentials.
 
 **Endpoint:** `DELETE /api/credentials/:platform`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Path Parameters:**
+
 - `platform` - Platform name (`medium`, `devto`, `wordpress`)
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -622,6 +685,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `404 Not Found` - Credentials not found for this platform
 
 ---
@@ -629,16 +693,19 @@ Authorization: Bearer <jwt_token>
 ## Publishing
 
 ### Publish to Medium
+
 Publish a post to Medium.
 
 **Endpoint:** `POST /api/publish/medium`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "postId": "64f1a2b3c4d5e6f7g8h9i0j3"
@@ -646,6 +713,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -658,6 +726,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - Medium API credentials not found
 - `404 Not Found` - Post not found
 - `500 Internal Server Error` - Publishing failed
@@ -665,16 +734,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Publish to DEV.to
+
 Publish a post to DEV.to.
 
 **Endpoint:** `POST /api/publish/devto`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "postId": "64f1a2b3c4d5e6f7g8h9i0j3"
@@ -682,6 +754,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -696,16 +769,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Publish to WordPress
+
 Publish a post to WordPress.
 
 **Endpoint:** `POST /api/publish/wordpress`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "postId": "64f1a2b3c4d5e6f7g8h9i0j3"
@@ -713,6 +789,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -727,16 +804,19 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Publish to All Platforms
+
 Publish a post to all configured platforms.
 
 **Endpoint:** `POST /api/publish/all`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "postId": "64f1a2b3c4d5e6f7g8h9i0j3"
@@ -744,6 +824,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -777,19 +858,23 @@ Authorization: Bearer <jwt_token>
 ---
 
 ### Get Medium Post Status
+
 Get the publishing status of a post on Medium.
 
 **Endpoint:** `GET /api/publish/medium/status/:postId`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Path Parameters:**
+
 - `postId` - Post ID
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -813,19 +898,23 @@ Authorization: Bearer <jwt_token>
 ## MDX Export
 
 ### Export Post as MDX
+
 Export a post as MDX format for download.
 
 **Endpoint:** `GET /api/mdx/:id`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Path Parameters:**
+
 - `id` - Post ID
 
 **Response (200 OK):**
+
 ```
 Content-Type: text/markdown; charset=utf-8
 Content-Disposition: attachment; filename="2024-01-15-my-blog-post.mdx"
@@ -844,6 +933,7 @@ This is the content of the blog post...
 ```
 
 **Error Responses:**
+
 - `403 Forbidden` - Access denied
 - `404 Not Found` - Post not found
 
@@ -852,11 +942,13 @@ This is the content of the blog post...
 ## Health Check
 
 ### Server Health
+
 Check the health status of the server and database.
 
 **Endpoint:** `GET /health`
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "OK",
@@ -882,6 +974,7 @@ Check the health status of the server and database.
 All API endpoints return consistent error responses:
 
 **Error Response Format:**
+
 ```json
 {
   "success": false,
@@ -891,6 +984,7 @@ All API endpoints return consistent error responses:
 ```
 
 **Common HTTP Status Codes:**
+
 - `200 OK` - Request successful
 - `201 Created` - Resource created successfully
 - `400 Bad Request` - Invalid request data
@@ -904,6 +998,7 @@ All API endpoints return consistent error responses:
 ## Rate Limiting
 
 The API implements rate limiting:
+
 - **Window:** 15 minutes
 - **Limit:** 100 requests per IP address
 - **Headers:** Rate limit information is included in response headers
@@ -919,6 +1014,7 @@ Most endpoints require authentication using JWT tokens:
 3. **Token expires** after 7 days (configurable)
 
 **Example:**
+
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
      http://localhost:9000/api/posts
@@ -929,6 +1025,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 ## Development Setup
 
 1. **Start the server:**
+
    ```bash
    cd server
    npm run dev
@@ -951,6 +1048,7 @@ For production deployment, update the base URL to your deployed server URL:
 - **Custom domain:** `https://api.yourdomain.com/api`
 
 Make sure to set the following environment variables:
+
 - `MONGODB_URI`
 - `JWT_SECRET`
 - `ENCRYPTION_KEY`
