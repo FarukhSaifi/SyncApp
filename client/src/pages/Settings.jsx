@@ -20,8 +20,6 @@ const Settings = () => {
   const [showDevtoKey, setShowDevtoKey] = useState(false);
   const [showWordpressKey, setShowWordpressKey] = useState(false);
 
-  const MASK = "••••••••••••••••";
-
   useEffect(() => {
     const loadCredentials = async () => {
       try {
@@ -35,21 +33,21 @@ const Settings = () => {
           const devto = creds.find((c) => c.platform_name === "devto");
           const wordpress = creds.find((c) => c.platform_name === "wordpress");
 
-          if (medium) {
+          if (medium && medium.has_api_key) {
             setSaved((prev) => ({ ...prev, medium: true }));
-            setMediumApiKey(MASK);
+            setMediumApiKey(""); // Keep input empty for security
           }
-          if (devto) {
+          if (devto && devto.has_api_key) {
             setSaved((prev) => ({ ...prev, devto: true }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username);
             }
-            setDevtoApiKey(MASK);
+            setDevtoApiKey(""); // Keep input empty for security
           }
-          if (wordpress) {
+          if (wordpress && wordpress.has_api_key) {
             setSaved((prev) => ({ ...prev, wordpress: true }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url);
-            setWordpressApiKey(MASK);
+            setWordpressApiKey(""); // Keep input empty for security
           }
         } else {
           console.warn("⚠️ No credentials found or invalid response");
@@ -64,7 +62,7 @@ const Settings = () => {
   }, []); // Only run once on mount, toast is stable
 
   const handleSaveMediumCredentials = async () => {
-    if (!mediumApiKey.trim() || mediumApiKey === MASK) {
+    if (!mediumApiKey.trim()) {
       toast.validationError("Please enter your Medium API key");
       return;
     }
@@ -80,7 +78,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, medium: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
         toast.credentialsSaved("Medium");
-        setMediumApiKey(MASK);
+        setMediumApiKey(""); // Clear input after save
       } else {
         toast.credentialsError("Medium", result?.error || "Failed to save credentials");
       }
@@ -93,7 +91,7 @@ const Settings = () => {
   };
 
   const handleSaveDevtoCredentials = async () => {
-    if (!devtoApiKey.trim() || devtoApiKey === MASK || !devtoUsername.trim()) {
+    if (!devtoApiKey.trim() || !devtoUsername.trim()) {
       toast.validationError("Please enter both DEV.to API key and username");
       return;
     }
@@ -112,7 +110,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, devto: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
         toast.credentialsSaved("DEV.to");
-        setDevtoApiKey(MASK);
+        setDevtoApiKey(""); // Clear input after save
       } else {
         toast.credentialsError("DEV.to", result?.error || "Failed to save credentials");
       }
@@ -125,7 +123,7 @@ const Settings = () => {
   };
 
   const handleSaveWordpressCredentials = async () => {
-    if (!wordpressApiKey.trim() || wordpressApiKey === MASK || !wordpressSiteUrl.trim()) {
+    if (!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) {
       toast.validationError("Please enter both WordPress API key and site URL");
       return;
     }
@@ -148,7 +146,7 @@ const Settings = () => {
         setSaved((prev) => ({ ...prev, wordpress: true }));
         setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
         toast.credentialsSaved("WordPress");
-        setWordpressApiKey(MASK);
+        setWordpressApiKey(""); // Clear input after save
       } else {
         toast.credentialsError("WordPress", result?.error || "Failed to save credentials");
       }
@@ -222,8 +220,12 @@ const Settings = () => {
               <button
                 type="button"
                 aria-label={showMediumKey ? "Hide API key" : "Show API key"}
-                onClick={() => setShowMediumKey((v) => !v)}
-                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMediumKey((v) => !v);
+                }}
+                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {showMediumKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
               </button>
@@ -305,8 +307,12 @@ const Settings = () => {
                 <button
                   type="button"
                   aria-label={showDevtoKey ? "Hide API key" : "Show API key"}
-                  onClick={() => setShowDevtoKey((v) => !v)}
-                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowDevtoKey((v) => !v);
+                  }}
+                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   {showDevtoKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                 </button>
@@ -392,8 +398,12 @@ const Settings = () => {
                 <button
                   type="button"
                   aria-label={showWordpressKey ? "Hide API key" : "Show API key"}
-                  onClick={() => setShowWordpressKey((v) => !v)}
-                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowWordpressKey((v) => !v);
+                  }}
+                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   {showWordpressKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                 </button>
