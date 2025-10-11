@@ -13,7 +13,7 @@ const publishRoutes = require("./routes/publish");
 const mdxRoutes = require("./routes/mdx");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 9000;
 
 // Connect to MongoDB
 connectDB();
@@ -36,6 +36,8 @@ const defaultDevOrigins = [
   "http://127.0.0.1:5173",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+  "http://localhost:9000",
+  "http://127.0.0.1:9000",
 ];
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")

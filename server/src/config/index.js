@@ -10,7 +10,7 @@ function requireEnv(name, fallback, { optional = false } = {}) {
 
 const config = {
   nodeEnv: process.env.NODE_ENV || "production",
-  port: parseInt(process.env.PORT || "3001", 10),
+  port: parseInt(process.env.PORT || "9000", 10),
   mongoUri: requireEnv("MONGODB_URI"),
   jwtSecret: requireEnv("JWT_SECRET", undefined, {}),
   corsOrigin: requireEnv("CORS_ORIGIN", "http://localhost:3000", { optional: true }),
