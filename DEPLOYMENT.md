@@ -2,11 +2,19 @@
 
 ## Overview
 
-SyncApp is a monorepo with a React client (Vite) and an Express server using MongoDB (Atlas recommended). You can deploy:
+SyncApp is a monorepo with a React client (Vite) and an Express server using MongoDB (Atlas recommended).
 
-- Client: Vercel (recommended)
-- Server: Vercel Serverless Functions or a Node server (Render, Railway, Fly.io, EC2)
+**Quick Deploy (Recommended):**
+1. Push to GitHub
+2. Import in Vercel → Framework: **Other**
+3. Set environment variables
+4. Deploy (both client + server automatically)
+
+**Architecture:**
+- Client: React SPA (Vite) → Static hosting
+- Server: Express API → Serverless functions
 - Database: MongoDB Atlas
+- Routing: `vercel.json` handles `/api/*` → server, `/*` → client
 
 ---
 
@@ -40,68 +48,97 @@ Client build time variables (optional):
 
 ---
 
-### 3) Deploy Client to Vercel
+### 3) Deploy to Vercel (Monorepo - Recommended)
 
 1. Push repo to GitHub
-2. Import in Vercel → Framework: Vite
-3. Build Command: `cd client && npm ci && npm run build`
-4. Output Directory: `client/dist`
-5. Root Directory: repository root (or `client` if you configure a separate project)
-6. Environment Variables: none required for static client
+2. Import in Vercel → Framework: **Other** (not Vite)
+3. Root Directory: **Leave as root** (monorepo)
+4. Build Command: `cd client && npm ci && npm run build`
+5. Output Directory: `client/dist`
+6. **Important**: The `vercel.json` in repo root handles the routing automatically
+7. Environment Variables: Set server variables (see Section 2)
 
-After deploy, note your client URL (e.g., `https://syncapp.example.app`). Use this as `CORS_ORIGIN` for the server.
-
----
-
-### 4) Deploy Server
-
-You have two options:
-
-#### A) Vercel Serverless (api routes)
-
-- Create a separate Vercel project for the server, or use a monorepo setup
-- Configure `vercel.json` in repo root (see below)
-- Set Environment Variables (Section 2)
-- Ensure `CORS_ORIGIN` matches your client URL
-
-Endpoints will be under your Vercel domain, e.g., `https://syncapp-api.vercel.app/api/...`
-
-Pros: autoscaling, no server mgmt Cons: cold starts, request time limits
-
-#### B) Node Host (Render/Railway/Fly/EC2)
-
-- Create service from the repository, set root to `server`
-- Build Command: `npm ci`
-- Start Command: `npm start`
-- Set environment variables (Section 2)
-- Configure CORS to your client URL
-
-Pros: long-running server, full control Cons: server management, scaling plan
+**Note**: Don't use separate client/server projects. The monorepo setup with `vercel.json` handles both.
 
 ---
 
-### 5) vercel.json Example (monorepo)
+### 4) Alternative Deployment Options
 
-Place in repo root if deploying serverless on Vercel for server routes:
+#### A) Vercel Monorepo (Recommended - Already configured)
 
-```
+✅ **Already handled in Section 3** - The `vercel.json` automatically deploys both client and server.
+
+**How it works:**
+- `/api/*` routes → Express server (serverless functions)
+- All other routes → React SPA
+- Single domain: `https://your-app.vercel.app`
+
+#### B) Separate Deployments
+
+**Client only on Vercel:**
+1. Create new Vercel project
+2. Root Directory: `client`
+3. Framework: Vite
+4. Build Command: `npm run build`
+5. Output Directory: `dist`
+
+**Server on Render/Railway:**
+1. Create service from repository
+2. Root Directory: `server`
+3. Build Command: `npm ci`
+4. Start Command: `npm start`
+5. Set environment variables (Section 2)
+6. Update `CORS_ORIGIN` to your client URL
+
+**Pros/Cons:**
+- Monorepo: Simpler, single domain, auto-scaling
+- Separate: More control, different scaling needs
+
+---
+
+### 5) vercel.json Configuration (Already in repo)
+
+The `vercel.json` in your repo root is already configured:
+
+```json
 {
   "version": 2,
   "builds": [
-    { "src": "client/vite.config.js", "use": "@vercel/static-build", "config": { "distDir": "client/dist" } },
-    { "src": "server/src/index.js", "use": "@vercel/node" }
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "client/dist"
+      }
+    },
+    {
+      "src": "server/src/index.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "server/src/index.js" },
-    { "src": "/(.*)", "dest": "client/dist/index.html" }
-  ]
+    {
+      "src": "/api/(.*)",
+      "dest": "server/src/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "client/dist/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3001"
+  }
 }
 ```
 
-Notes:
-
-- Alternatively deploy client and server as separate Vercel projects for clean separation
-- For large APIs, prefer dedicated Node hosts
+**This configuration:**
+- Builds React app from `client/` directory
+- Builds Express server from `server/src/index.js`
+- Routes `/api/*` to server functions
+- Routes everything else to React SPA
+- Sets production environment variables
 
 ---
 
@@ -130,10 +167,24 @@ Notes:
 
 ### 8) Troubleshooting
 
-- 500 on DB connect: verify `MONGODB_URI`, IP whitelist on Atlas
-- CORS errors: check `CORS_ORIGIN`
-- 401 from Medium/DEV.to: verify tokens, scopes
-- Serverless timeouts: move heavy tasks to job/queue or persistent host
+**Common 404 Issues:**
+- **404 on all routes**: Check `vercel.json` is in repo root and properly formatted
+- **404 on `/api/*`**: Verify server build succeeded, check Vercel function logs
+- **404 on React routes**: Ensure `client/dist/index.html` exists, check build output
+- **404 after deployment**: Clear browser cache, check Vercel deployment logs
+
+**Other Issues:**
+- **500 on DB connect**: verify `MONGODB_URI`, IP whitelist on Atlas
+- **CORS errors**: check `CORS_ORIGIN` matches your Vercel domain
+- **401 from Medium/DEV.to**: verify tokens, scopes
+- **Serverless timeouts**: move heavy tasks to job/queue or persistent host
+- **Build failures**: check environment variables are set correctly
+
+**Debug Steps:**
+1. Check Vercel deployment logs in dashboard
+2. Test `/health` endpoint: `https://your-app.vercel.app/health`
+3. Test API: `https://your-app.vercel.app/api/posts`
+4. Check browser network tab for failed requests
 
 ---
 
