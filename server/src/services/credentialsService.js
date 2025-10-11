@@ -14,9 +14,7 @@ async function getAllCredentials() {
     return cached;
   }
 
-  const credentials = await Credential.find()
-    .select("-api_key") // Don't send API keys to client
-    .lean();
+  const credentials = await Credential.find().lean();
 
   // Cache for 5 minutes
   cache.set(cacheKey, credentials, 300000);
@@ -25,28 +23,23 @@ async function getAllCredentials() {
 }
 
 /**
- * Get credential by platform (with decrypted API key for internal use)
+ * Get credential by platform (with decrypted API key for client display)
  */
-async function getCredentialByPlatform(platformName, decrypt = false) {
-  // Try cache first (only for non-decrypted requests)
-  if (!decrypt) {
-    const cacheKey = cacheKeys.credentials.single(platformName);
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-  }
-
+async function getCredentialByPlatform(platformName) {
   const credential = await Credential.findOne({ platform_name: platformName }).lean();
 
   if (!credential) {
     return null;
   }
 
-  // Cache for 5 minutes (without decryption)
-  if (!decrypt) {
-    const cacheKey = cacheKeys.credentials.single(platformName);
-    cache.set(cacheKey, credential, 300000);
+  // Decrypt the API key for client display
+  if (credential.api_key) {
+    try {
+      credential.api_key = decrypt(credential.api_key);
+    } catch (error) {
+      console.error("Failed to decrypt API key:", error);
+      credential.api_key = "";
+    }
   }
 
   return credential;
@@ -85,11 +78,11 @@ async function upsertCredential(platformName, data) {
   }
 
   // Upsert credential
-  const credential = await Credential.findOneAndUpdate(
-    { platform_name: platformName },
-    updateData,
-    { upsert: true, new: true, runValidators: true }
-  ).lean();
+  const credential = await Credential.findOneAndUpdate({ platform_name: platformName }, updateData, {
+    upsert: true,
+    new: true,
+    runValidators: true,
+  }).lean();
 
   // Invalidate cache
   cache.delete(cacheKeys.credentials.single(platformName));
