@@ -9,7 +9,7 @@ function requireEnv(name, fallback, { optional = false } = {}) {
 }
 
 const config = {
-  nodeEnv: process.env.NODE_ENV || "development",
+  nodeEnv: process.env.NODE_ENV || "production",
   port: parseInt(process.env.PORT || "9000", 10),
   mongoUri: requireEnv("MONGODB_URI"),
   jwtSecret: requireEnv("JWT_SECRET", undefined, {}),

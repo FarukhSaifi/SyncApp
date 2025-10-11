@@ -35,7 +35,7 @@ export const STATUS_CONFIG = Object.freeze({
 });
 
 // API base and paths
-export const API_BASE = "/api"; // switch to env-driven if needed
+export const API_BASE = import.meta.env.VITE_API_BACKEND_URL || "/api";
 export const API_PATHS = Object.freeze({
   AUTH: `${API_BASE}/auth`,
   POSTS: `${API_BASE}/posts`,

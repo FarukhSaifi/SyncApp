@@ -28,7 +28,9 @@ SyncApp/
 - Node.js 22+
 - MongoDB Atlas (recommended) or local MongoDB
 
-## Environment Variables (Server)
+## Environment Variables
+
+### Server Environment Variables
 
 Copy `server/env.example` to `server/.env` and set:
 
@@ -41,6 +43,17 @@ Copy `server/env.example` to `server/.env` and set:
 - `CORS_ORIGIN`=e.g., <http://localhost:3000>
 - `RATE_LIMIT_WINDOW_MS`=900000
 - `RATE_LIMIT_MAX_REQUESTS`=100
+
+### Client Environment Variables
+
+Copy `client/.env.example` to `client/.env` and set:
+
+- `VITE_API_BASE_URL`=`http://localhost:9000/api` (backend API URL)
+- `VITE_NODE_ENV`=development
+- `VITE_APP_NAME`=SyncApp
+- `VITE_APP_VERSION`=1.0.0
+- `VITE_ENABLE_DEBUG`=false (optional)
+- `VITE_ENABLE_ANALYTICS`=false (optional)
 
 Tip: Generate secure keys with:
 
@@ -58,7 +71,7 @@ npm run db:setup
 npm run dev
 ```
 
-- Client: <http://localhost:3000>
+- Client: <http://localhost:5173>
 - Server: <http://localhost:9000>
 - Health: GET /health
 
