@@ -1,14 +1,38 @@
-import React, { memo } from "react";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import React, { memo, useState } from "react";
+import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { STATUS_CONFIG } from "../../constants";
+import { apiClient } from "../../utils/apiClient";
 import Button from "../ui/Button";
 import { TableCell, TableRow } from "../ui/Table";
 
 /**
  * Memoized post row component for better performance
  */
-const PostRow = memo(({ post, onDelete }) => {
+const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
+  const [unpublishing, setUnpublishing] = useState(null);
+
+  const handleUnpublish = async (platform) => {
+    const postId = post.id || post._id;
+    setUnpublishing(platform);
+    try {
+      const response = await apiClient.unpublishFromPlatform(platform, postId);
+      if (response?.success) {
+        toast?.success?.("Unpublished", `Post removed from ${platform}`);
+        // Update the post in parent component
+        if (onUpdate) {
+          onUpdate({ ...post, platform_status: response.data.platformStatus });
+        }
+      } else {
+        toast?.error?.("Error", response?.error || `Failed to unpublish from ${platform}`);
+      }
+    } catch (error) {
+      toast?.error?.("Error", `Failed to unpublish from ${platform}: ${error.message}`);
+    } finally {
+      setUnpublishing(null);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const config = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
@@ -19,46 +43,73 @@ const PostRow = memo(({ post, onDelete }) => {
 
     if (post.platform_status?.medium?.published) {
       platforms.push(
-        <a
-          key="medium"
-          href={post.platform_status.medium.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-orange-500">●</span>
-          <span>Medium</span>
-        </a>
+        <div key="medium" className="inline-flex items-center space-x-1 group">
+          <a
+            href={post.platform_status.medium.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+          >
+            <span className="text-orange-500">●</span>
+            <span>Medium</span>
+          </a>
+          <button
+            onClick={() => handleUnpublish("medium")}
+            disabled={unpublishing === "medium"}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            title="Remove from Medium"
+          >
+            <FiX className="h-3 w-3" />
+          </button>
+        </div>
       );
     }
 
     if (post.platform_status?.devto?.published) {
       platforms.push(
-        <a
-          key="devto"
-          href={post.platform_status.devto.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-purple-500">●</span>
-          <span>DEV.to</span>
-        </a>
+        <div key="devto" className="inline-flex items-center space-x-1 group">
+          <a
+            href={post.platform_status.devto.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+          >
+            <span className="text-purple-500">●</span>
+            <span>DEV.to</span>
+          </a>
+          <button
+            onClick={() => handleUnpublish("devto")}
+            disabled={unpublishing === "devto"}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            title="Remove from DEV.to"
+          >
+            <FiX className="h-3 w-3" />
+          </button>
+        </div>
       );
     }
 
     if (post.platform_status?.wordpress?.published) {
       platforms.push(
-        <a
-          key="wordpress"
-          href={post.platform_status.wordpress.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-blue-500">●</span>
-          <span>WordPress</span>
-        </a>
+        <div key="wordpress" className="inline-flex items-center space-x-1 group">
+          <a
+            href={post.platform_status.wordpress.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+          >
+            <span className="text-blue-500">●</span>
+            <span>WordPress</span>
+          </a>
+          <button
+            onClick={() => handleUnpublish("wordpress")}
+            disabled={unpublishing === "wordpress"}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            title="Remove from WordPress"
+          >
+            <FiX className="h-3 w-3" />
+          </button>
+        </div>
       );
     }
 

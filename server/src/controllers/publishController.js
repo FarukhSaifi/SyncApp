@@ -1,6 +1,7 @@
 const Post = require("../models/Post");
 const Credential = require("../models/Credential");
 const { publishToMedium, publishToDevto, publishToWordpress } = require("../services/publishService");
+const { unpublishFromPlatform, getPlatformStatus } = require("../services/platformService");
 const { asyncHandler, NotFoundError, ValidationError } = require("../middleware/errorHandler");
 
 // Platform configuration
@@ -189,10 +190,33 @@ const statusMedium = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Unpublish from a specific platform
+ */
+const unpublishPlatform = asyncHandler(async (req, res) => {
+  const { postId, platform } = req.params;
+
+  if (!PLATFORM_CONFIG[platform]) {
+    throw new ValidationError(`Invalid platform: ${platform}`);
+  }
+
+  const updatedPost = await unpublishFromPlatform(postId, platform);
+
+  res.json({
+    success: true,
+    message: `Post unpublished from ${PLATFORM_CONFIG[platform].name}`,
+    data: {
+      postId: updatedPost._id,
+      platformStatus: updatedPost.platform_status,
+    },
+  });
+});
+
 module.exports = {
   publishMedium,
   publishDevto,
   publishWordpress,
   publishAll,
   statusMedium,
+  unpublishPlatform,
 };

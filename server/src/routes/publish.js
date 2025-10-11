@@ -9,4 +9,7 @@ router.post("/wordpress", controller.publishWordpress);
 router.post("/all", controller.publishAll);
 router.get("/medium/status/:postId", controller.statusMedium);
 
+// Unpublish from specific platform
+router.delete("/:platform/:postId", controller.unpublishPlatform);
+
 module.exports = router;
