@@ -1,9 +1,9 @@
 import React, { memo } from "react";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { STATUS_CONFIG } from "../../constants";
 import Button from "../ui/Button";
 import { TableCell, TableRow } from "../ui/Table";
-import { STATUS_CONFIG } from "../../constants";
 
 /**
  * Memoized post row component for better performance
@@ -130,4 +130,3 @@ const PostRow = memo(({ post, onDelete }) => {
 PostRow.displayName = "PostRow";
 
 export default PostRow;
-

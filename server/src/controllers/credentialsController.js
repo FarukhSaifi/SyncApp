@@ -2,7 +2,7 @@ const service = require("../services/credentialsService");
 
 async function list(req, res) {
   try {
-    const data = await service.listCredentials();
+    const data = await service.getAllCredentials();
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -11,7 +11,7 @@ async function list(req, res) {
 
 async function get(req, res) {
   try {
-    const data = await service.getCredential(req.params.platform);
+    const data = await service.getCredentialByPlatform(req.params.platform);
     if (!data) return res.status(404).json({ success: false, error: "Credentials not found for this platform" });
     res.json({ success: true, data });
   } catch (error) {
