@@ -282,52 +282,44 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
     setPublishing(true);
     try {
-      // First save the post
-      const token = localStorage.getItem("token");
-      const saveResponse = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      let currentPostId = id;
+
+      // If it's a new post, save it first
+      if (!currentPostId) {
+        const tags = formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+
+        console.log("🔄 Saving new post before publishing...");
+        const saveResponse = await apiClient.createPost({
           ...formData,
-          tags: formData.tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0),
+          tags,
           status: "draft",
-        }),
-      });
+        });
 
-      const saveData = await saveResponse.json();
+        if (!saveResponse?.success) {
+          throw new Error(saveResponse?.error || "Failed to save post");
+        }
 
-      if (!saveData.success) {
-        throw new Error(saveData.error);
+        currentPostId = saveResponse.data.id;
+        onPostCreate(saveResponse.data);
       }
 
-      // Then publish to WordPress
-      const publishResponse = await fetch("/api/publish/wordpress", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId: saveData.data.id }),
-      });
+      // Publish to WordPress
+      console.log("🚀 Publishing to WordPress...");
+      const publishResponse = await apiClient.publish("wordpress", currentPostId);
 
-      const publishData = await publishResponse.json();
-
-      if (publishData.success) {
-        onPostCreate({ ...saveData.data, status: "published" });
-        success("Success", "Post published to WordPress successfully!");
+      if (publishResponse?.success) {
+        onPostUpdate(publishResponse.data);
+        toast.publishSuccess("WordPress");
         navigate("/");
       } else {
-        throw new Error(publishData.error);
+        throw new Error(publishResponse?.error || "Failed to publish to WordPress");
       }
     } catch (error) {
-      console.error("Error publishing to WordPress:", error);
-      showError("Error", `Failed to publish to WordPress: ${error.message}`);
+      console.error("❌ Error publishing to WordPress:", error);
+      toast.publishError("WordPress", error.message);
     } finally {
       setPublishing(false);
     }

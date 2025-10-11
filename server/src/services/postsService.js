@@ -7,7 +7,7 @@ const { NotFoundError, ForbiddenError } = require("../middleware/errorHandler");
  */
 async function createPost(input) {
   const { title, content_markdown, status = "draft", tags, cover_image, canonical_url, author } = input;
-  
+
   if (!title || !content_markdown) {
     throw new Error("Title and content are required");
   }
@@ -36,7 +36,7 @@ async function createPost(input) {
 async function getPosts({ page = 1, limit = 20, userId }) {
   const safePage = Math.max(parseInt(page, 10) || 1, 1);
   const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-  
+
   // Try cache first
   const cacheKey = cacheKeys.posts.list(userId || "public", safePage, safeLimit);
   const cached = cache.get(cacheKey);
@@ -82,7 +82,7 @@ async function getPostById(id, userId) {
   // Try cache first
   const cacheKey = cacheKeys.posts.single(id);
   const cached = cache.get(cacheKey);
-  
+
   if (cached) {
     // Still need to check access
     if (cached.status !== "published" && (!userId || cached.author._id.toString() !== userId)) {
@@ -91,9 +91,7 @@ async function getPostById(id, userId) {
     return cached;
   }
 
-  const post = await Post.findById(id)
-    .populate("author", "username firstName lastName")
-    .lean();
+  const post = await Post.findById(id).populate("author", "username firstName lastName").lean();
 
   if (!post) {
     throw new NotFoundError("Post not found");
@@ -116,7 +114,7 @@ async function getPostBySlug(slug, userId) {
   // Try cache first
   const cacheKey = cacheKeys.posts.slug(slug);
   const cached = cache.get(cacheKey);
-  
+
   if (cached) {
     if (cached.status !== "published" && (!userId || cached.author._id.toString() !== userId)) {
       throw new ForbiddenError("Access denied");
@@ -124,9 +122,7 @@ async function getPostBySlug(slug, userId) {
     return cached;
   }
 
-  const post = await Post.findOne({ slug })
-    .populate("author", "username firstName lastName")
-    .lean();
+  const post = await Post.findOne({ slug }).populate("author", "username firstName lastName").lean();
 
   if (!post) {
     throw new NotFoundError("Post not found");
@@ -147,7 +143,7 @@ async function getPostBySlug(slug, userId) {
  */
 async function updatePost(id, updates, userId) {
   const post = await Post.findById(id);
-  
+
   if (!post) {
     throw new NotFoundError("Post not found");
   }
@@ -162,9 +158,9 @@ async function updatePost(id, updates, userId) {
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
 
-  const updatedPost = await Post.findByIdAndUpdate(id, updateData, { 
-    new: true, 
-    runValidators: true 
+  const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
+    new: true,
+    runValidators: true,
   })
     .populate("author", "username firstName lastName")
     .lean();
@@ -182,7 +178,7 @@ async function updatePost(id, updates, userId) {
  */
 async function deletePost(id, userId) {
   const post = await Post.findById(id);
-  
+
   if (!post) {
     throw new NotFoundError("Post not found");
   }
@@ -199,11 +195,11 @@ async function deletePost(id, userId) {
   cache.invalidatePattern(cacheKeys.posts.all());
 }
 
-module.exports = { 
-  createPost, 
-  getPosts, 
-  getPostById, 
-  getPostBySlug, 
-  updatePost, 
-  deletePost 
+module.exports = {
+  createPost,
+  getPosts,
+  getPostById,
+  getPostBySlug,
+  updatePost,
+  deletePost,
 };

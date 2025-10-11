@@ -43,7 +43,7 @@ async function ensurePost(postId) {
  */
 async function ensureCredential(platformName) {
   const credential = await Credential.findOne({ platform_name: platformName });
-  
+
   if (!credential) {
     const config = PLATFORM_CONFIG[platformName];
     throw new ValidationError(config?.errorMessage || `${platformName} credentials not found`);
@@ -55,7 +55,7 @@ async function ensureCredential(platformName) {
 /**
  * Generic publish handler for any platform
  */
-async function publishToPlatform(platformName) {
+function publishToPlatform(platformName) {
   return asyncHandler(async (req, res) => {
     const config = PLATFORM_CONFIG[platformName];
     if (!config) {
@@ -78,10 +78,10 @@ async function publishToPlatform(platformName) {
     res.json({
       success: true,
       message: `Post published to ${config.name} successfully`,
-      data: { 
-        postId: updatedPost._id, 
+      data: {
+        postId: updatedPost._id,
         status: "published",
-        platformStatus: updatedPost.platform_status?.[platformName]
+        platformStatus: updatedPost.platform_status?.[platformName],
       },
     });
   });
@@ -133,9 +133,9 @@ const publishAll = asyncHandler(async (req, res) => {
         results[platformName] = updates;
         successes.push(config.name);
       } catch (error) {
-        errors.push({ 
-          platform: config.name, 
-          error: error.message || "Publishing failed" 
+        errors.push({
+          platform: config.name,
+          error: error.message || "Publishing failed",
         });
       }
     })
@@ -178,7 +178,7 @@ const publishAll = asyncHandler(async (req, res) => {
  */
 const statusMedium = asyncHandler(async (req, res) => {
   const post = await ensurePost(req.params.postId);
-  
+
   res.json({
     success: true,
     data: {
@@ -189,10 +189,10 @@ const statusMedium = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { 
-  publishMedium, 
-  publishDevto, 
-  publishWordpress, 
-  publishAll, 
-  statusMedium 
+module.exports = {
+  publishMedium,
+  publishDevto,
+  publishWordpress,
+  publishAll,
+  statusMedium,
 };

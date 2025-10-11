@@ -3,14 +3,13 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 const ThemeContext = createContext({ theme: "light", setTheme: () => {}, toggleTheme: () => {} });
 
 export const ThemeProvider = ({ children }) => {
+  // Always default to "light" theme unless user explicitly set one
   const getInitialTheme = () => {
     try {
       const stored = localStorage.getItem("theme");
       if (stored === "dark" || stored === "light") return stored;
     } catch {}
-    if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
+    // No system preference checks! Default to "light"
     return "light";
   };
 
@@ -26,12 +25,15 @@ export const ThemeProvider = ({ children }) => {
     try {
       localStorage.setItem("theme", theme);
     } catch {}
-    // Expose color-scheme for native form controls and UA styling
     root.style.colorScheme = theme;
   }, [theme]);
 
   const value = useMemo(
-    () => ({ theme, setTheme, toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")) }),
+    () => ({
+      theme,
+      setTheme,
+      toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+    }),
     [theme]
   );
 
