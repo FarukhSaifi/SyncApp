@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { FiEdit, FiGlobe, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { FiGlobe, FiPlus, FiRefreshCw } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import { STATUS_CONFIG } from "../constants";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "../components/ui/Table";
+import PostRow from "../components/dashboard/PostRow";
+import StatsCard from "../components/dashboard/StatsCard";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
@@ -19,7 +20,8 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
     }
   }, [error, toast]);
 
-  const handleDelete = async (id) => {
+  // Memoize delete handler to prevent unnecessary re-renders
+  const handleDelete = useCallback(async (id) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
         console.log("🗑️ Deleting post:", id);
@@ -36,76 +38,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         toast.apiError(`Failed to delete post: ${error.message}`);
       }
     }
-  };
-
-  const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
-  };
-
-  const getPlatformStatus = (post) => {
-    const platforms = [];
-
-    if (post.platform_status?.medium?.published) {
-      platforms.push(
-        <a
-          key="medium"
-          href={post.platform_status.medium.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-orange-500">●</span>
-          <span>Medium</span>
-        </a>
-      );
-    }
-
-    if (post.platform_status?.devto?.published) {
-      platforms.push(
-        <a
-          key="devto"
-          href={post.platform_status.devto.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-purple-500">●</span>
-          <span>DEV.to</span>
-        </a>
-      );
-    }
-
-    if (post.platform_status?.wordpress?.published) {
-      platforms.push(
-        <a
-          key="wordpress"
-          href={post.platform_status.wordpress.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-        >
-          <span className="text-blue-500">●</span>
-          <span>WordPress</span>
-        </a>
-      );
-    }
-
-    if (platforms.length === 0) {
-      return <span className="text-muted-foreground">Not published</span>;
-    }
-
-    return <div className="flex flex-wrap gap-2">{platforms}</div>;
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  }, [onPostDelete, toast]);
 
   const filteredPosts = useMemo(() => {
     if (filterStatus === "all") return posts;
@@ -163,62 +96,40 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card
-          className={`cursor-pointer ${filterStatus === "all" ? "ring-2 ring-primary" : ""}`}
+        <StatsCard
+          title="Total Posts"
+          value={posts.length}
+          icon={FiGlobe}
+          isActive={filterStatus === "all"}
           onClick={() => setFilterStatus("all")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-            <FiGlobe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{posts.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer ${filterStatus === "published" ? "ring-2 ring-primary" : ""}`}
+        />
+        <StatsCard
+          title="Published"
+          value={posts.filter((post) => post.status === "published").length}
+          icon={FiGlobe}
+          isActive={filterStatus === "published"}
           onClick={() => setFilterStatus("published")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <FiGlobe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{posts.filter((post) => post.status === "published").length}</div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer ${filterStatus === "draft" ? "ring-2 ring-primary" : ""}`}
+        />
+        <StatsCard
+          title="Drafts"
+          value={posts.filter((post) => post.status === "draft").length}
+          icon={FiGlobe}
+          isActive={filterStatus === "draft"}
           onClick={() => setFilterStatus("draft")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Drafts</CardTitle>
-            <FiGlobe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{posts.filter((post) => post.status === "draft").length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Platforms</CardTitle>
-            <FiGlobe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {
-                posts.filter(
-                  (post) =>
-                    post.platform_status &&
-                    (post.platform_status.medium?.published || post.platform_status.devto?.published)
-                ).length
-              }
-            </div>
-          </CardContent>
-        </Card>
+        />
+        <StatsCard
+          title="Platforms"
+          value={
+            posts.filter(
+              (post) =>
+                post.platform_status &&
+                (post.platform_status.medium?.published || post.platform_status.devto?.published)
+            ).length
+          }
+          icon={FiGlobe}
+          isActive={false}
+          onClick={() => {}}
+        />
       </div>
 
       {/* Posts Table */}
@@ -269,51 +180,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               </TableHeader>
               <TableBody>
                 {filteredPosts.map((post) => (
-                  <TableRow key={post.id || post._id}>
-                    <TableCell className="font-medium">
-                      <div className="max-w-xs">
-                        <div className="truncate">{post.title}</div>
-                        {post.cover_image && (
-                          <div className="text-xs text-muted-foreground mt-1">📷 Has cover image</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(post.status)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-32">
-                        {post.tags && post.tags.length > 0 ? (
-                          post.tags.slice(0, 3).map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full truncate"
-                              title={tag}
-                            >
-                              #{tag}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No tags</span>
-                        )}
-                        {post.tags && post.tags.length > 3 && (
-                          <span className="text-muted-foreground text-xs">+{post.tags.length - 3} more</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getPlatformStatus(post)}</TableCell>
-                    <TableCell>{formatDate(post.created_at || post.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Link to={`/editor/${post.id || post._id}`}>
-                          <Button variant="outline" size="sm">
-                            <FiEdit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(post.id || post._id)}>
-                          <FiTrash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <PostRow key={post.id || post._id} post={post} onDelete={handleDelete} />
                 ))}
               </TableBody>
             </Table>

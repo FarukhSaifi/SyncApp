@@ -11,6 +11,8 @@ const postsRoutes = require("./routes/posts");
 const credentialsRoutes = require("./routes/credentials");
 const publishRoutes = require("./routes/publish");
 const mdxRoutes = require("./routes/mdx");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { requestLogger, logger } = require("./utils/logger");
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -54,6 +56,9 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Request logging middleware
+app.use(requestLogger);
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   const healthInfo = {
@@ -92,21 +97,16 @@ app.use("/api/credentials", credentialsRoutes);
 app.use("/api/publish", publishRoutes);
 app.use("/api/mdx", mdxRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: "Something went wrong!",
-    message: process.env.NODE_ENV === "development" ? err.message : "Internal server error",
-  });
-});
+// 404 handler (must be after routes)
+app.use(notFoundHandler);
 
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({ error: "Route not found" });
-});
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  logger.info(`Server started successfully`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || "development",
+    healthCheck: `http://localhost:${PORT}/health`,
+  });
 });
