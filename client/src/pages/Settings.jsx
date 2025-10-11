@@ -3,8 +3,8 @@ import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "r
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useToast } from "../hooks/useToast";
 import { API_PATHS } from "../constants";
+import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
 const Settings = () => {
