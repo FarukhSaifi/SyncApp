@@ -5,12 +5,14 @@
 SyncApp is a monorepo with a React client (Vite) and an Express server using MongoDB (Atlas recommended).
 
 **Quick Deploy (Recommended):**
+
 1. Push to GitHub
 2. Import in Vercel → Framework: **Other**
 3. Set environment variables
 4. Deploy (both client + server automatically)
 
 **Architecture:**
+
 - Client: React SPA (Vite) → Static hosting
 - Server: Express API → Serverless functions
 - Database: MongoDB Atlas
@@ -69,6 +71,7 @@ Client build time variables (optional):
 ✅ **Already handled in Section 3** - The `vercel.json` automatically deploys both client and server.
 
 **How it works:**
+
 - `/api/*` routes → Express server (serverless functions)
 - All other routes → React SPA
 - Single domain: `https://your-app.vercel.app`
@@ -76,6 +79,7 @@ Client build time variables (optional):
 #### B) Separate Deployments
 
 **Client only on Vercel:**
+
 1. Create new Vercel project
 2. Root Directory: `client`
 3. Framework: Vite
@@ -83,6 +87,7 @@ Client build time variables (optional):
 5. Output Directory: `dist`
 
 **Server on Render/Railway:**
+
 1. Create service from repository
 2. Root Directory: `server`
 3. Build Command: `npm ci`
@@ -91,6 +96,7 @@ Client build time variables (optional):
 6. Update `CORS_ORIGIN` to your client URL
 
 **Pros/Cons:**
+
 - Monorepo: Simpler, single domain, auto-scaling
 - Separate: More control, different scaling needs
 
@@ -134,6 +140,7 @@ The `vercel.json` in your repo root is already configured:
 ```
 
 **This configuration:**
+
 - Builds React app from `client/` directory
 - Builds Express server from `server/src/index.js`
 - Routes `/api/*` to server functions
@@ -168,12 +175,14 @@ The `vercel.json` in your repo root is already configured:
 ### 8) Troubleshooting
 
 **Common 404 Issues:**
+
 - **404 on all routes**: Check `vercel.json` is in repo root and properly formatted
 - **404 on `/api/*`**: Verify server build succeeded, check Vercel function logs
 - **404 on React routes**: Ensure `client/dist/index.html` exists, check build output
 - **404 after deployment**: Clear browser cache, check Vercel deployment logs
 
 **Other Issues:**
+
 - **500 on DB connect**: verify `MONGODB_URI`, IP whitelist on Atlas
 - **CORS errors**: check `CORS_ORIGIN` matches your Vercel domain
 - **401 from Medium/DEV.to**: verify tokens, scopes
@@ -181,6 +190,7 @@ The `vercel.json` in your repo root is already configured:
 - **Build failures**: check environment variables are set correctly
 
 **Debug Steps:**
+
 1. Check Vercel deployment logs in dashboard
 2. Test `/health` endpoint: `https://your-app.vercel.app/health`
 3. Test API: `https://your-app.vercel.app/api/posts`

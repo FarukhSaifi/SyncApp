@@ -57,7 +57,7 @@ app.get("/health", (req, res) => {
   const healthInfo = {
     status: "OK",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: Number(process.uptime().toFixed(2)), // seconds (float, 2 decimals)
     environment: process.env.NODE_ENV || "development",
     database: {
       status: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
@@ -77,7 +77,7 @@ app.get("/health", (req, res) => {
     timestamp: healthInfo.timestamp,
     status: healthInfo.status,
     dbStatus: healthInfo.database.status,
-    memory: healthInfo.memory.used,
+    memory: healthInfo.memory?.used,
   });
 
   res.json(healthInfo);
