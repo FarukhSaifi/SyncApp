@@ -71,7 +71,7 @@ export const useToast = () => {
       error = "Operation failed",
       loadingMessage,
       successMessage,
-      errorMessage
+      errorMessage,
     } = options;
 
     return toaster.promise(promise, {
@@ -80,7 +80,7 @@ export const useToast = () => {
       error,
       loadingMessage,
       successMessage,
-      errorMessage
+      errorMessage,
     });
   };
 

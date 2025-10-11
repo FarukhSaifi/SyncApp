@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import { useToast } from "../hooks/useToast";
 import { STATUS_CONFIG } from "../constants";
+import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
 const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }) => {
