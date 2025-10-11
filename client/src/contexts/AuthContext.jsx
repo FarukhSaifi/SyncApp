@@ -97,7 +97,10 @@ export const AuthProvider = ({ children }) => {
         setUser(newUser);
         setToken(authToken);
         localStorage.setItem("token", authToken);
-        toast.success("Welcome to SyncApp!", `Account created successfully for ${newUser.firstName || newUser.username}!`);
+        toast.success(
+          "Welcome to SyncApp!",
+          `Account created successfully for ${newUser.firstName || newUser.username}!`
+        );
         return { success: true };
       } else {
         toast.error("Registration Failed", data.error || "Failed to create account");

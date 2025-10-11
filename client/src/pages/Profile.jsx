@@ -3,8 +3,8 @@ import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useToast } from "../hooks/useToast";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../hooks/useToast";
 
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();
