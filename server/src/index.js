@@ -17,8 +17,14 @@ const { requestLogger, logger } = require("./utils/logger");
 const app = express();
 const PORT = process.env.PORT || 9000;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB (with error handling for serverless)
+connectDB().catch((error) => {
+  console.error("Failed to connect to MongoDB:", error);
+  // Don't exit the process in serverless environment
+  if (process.env.NODE_ENV !== "production") {
+    process.exit(1);
+  }
+});
 
 // Security middleware
 app.use(helmet());
@@ -34,23 +40,33 @@ app.use(limiter);
 
 // CORS middleware (configure allowed origins via CORS_ORIGIN, comma-separated)
 const defaultDevOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:9000",
   "http://127.0.0.1:9000",
+  "https://sync-app-client.vercel.app", // Vercel deployment
+  "https://sync-app-client-git-main-farukhsaifi.vercel.app", // Vercel preview deployments
 ];
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-app.use(
-  cors({
-    origin: allowedOrigins.length ? allowedOrigins : defaultDevOrigins,
-    credentials: true,
-  })
-);
+console.log("🚀 ~ allowedOrigins:", allowedOrigins);
+
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "development"
+      ? true // Allow all origins in development
+      : allowedOrigins.length
+      ? allowedOrigins
+      : defaultDevOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Disposition"],
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -60,19 +76,36 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(requestLogger);
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/health", async (req, res) => {
+  const dbReadyState = mongoose.connection.readyState;
+  const dbStatus = dbReadyState === 1 ? "connected" : "disconnected";
+  const dbHealthy = dbReadyState === 1 ? "healthy" : "unhealthy";
+
+  // Try to ping the database if connected
+  let dbPing = false;
+  if (dbReadyState === 1) {
+    try {
+      await mongoose.connection.db.admin().ping();
+      dbPing = true;
+    } catch (error) {
+      console.error("Database ping failed:", error);
+    }
+  }
+
   const healthInfo = {
-    status: "OK",
+    status: dbHealthy === "healthy" ? "OK" : "DEGRADED",
     timestamp: new Date().toISOString(),
     uptime: Number(process.uptime().toFixed(2)), // seconds (float, 2 decimals)
     environment: process.env.NODE_ENV || "development",
     database: {
-      status: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      status: dbStatus,
       host: mongoose.connection.host || "unknown",
       name: mongoose.connection.name || "unknown",
+      readyState: dbReadyState,
+      ping: dbPing,
     },
     services: {
-      mongodb: mongoose.connection.readyState === 1 ? "healthy" : "unhealthy",
+      mongodb: dbHealthy,
       server: "healthy",
     },
   };
@@ -84,10 +117,13 @@ app.get("/health", (req, res) => {
     timestamp: healthInfo.timestamp,
     status: healthInfo.status,
     dbStatus: healthInfo.database.status,
-    memory: healthInfo.memory?.used,
+    dbReadyState: healthInfo.database.readyState,
+    dbPing: healthInfo.database.ping,
   });
 
-  res.json(healthInfo);
+  // Return appropriate status code
+  const statusCode = healthInfo.status === "OK" ? 200 : 503;
+  res.status(statusCode).json(healthInfo);
 });
 
 // API routes
