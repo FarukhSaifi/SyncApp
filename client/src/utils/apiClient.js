@@ -31,14 +31,14 @@ export class ApiClient {
     this.client.interceptors.response.use(
       (response) => {
         // Log successful requests in development
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV || import.meta.env.MODE === "development") {
           console.log(`✅ API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
         }
         return response.data;
       },
       (error) => {
         // Log errors in development
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV || import.meta.env.MODE === "development") {
           console.error(
             `❌ API ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
             error.response?.data || error.message
@@ -119,7 +119,8 @@ export class ApiClient {
 
   // MDX export
   async downloadMdx(postId) {
-    const url = `${API_PATHS.MDX}/${postId}`;
+    // Use full URL with API_BASE for fetch (which doesn't use axios baseURL)
+    const url = `${API_BASE}/mdx/${postId}`;
     const token = localStorage.getItem("token");
     const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!response.ok) throw new Error("Failed to download MDX");

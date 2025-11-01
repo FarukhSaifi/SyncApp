@@ -3,21 +3,9 @@
   "version": "1.0.0",
   "description": "Blog syndication application for publishing to multiple platforms",
   "private": true,
-  "workspaces": [
-    "server",
-    "client"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "build": "npm run build:client",
-    "build:client": "cd client && npm run build",
-    "start": "cd server && npm start",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "db:setup": "cd server && npm run db:setup"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "install:all": "npm run install:client && npm run install:server"
   }
 }
