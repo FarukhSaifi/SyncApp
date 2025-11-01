@@ -1,16 +1,17 @@
 const jwt = require("jsonwebtoken");
+const { config } = require("../config");
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  return jwt.sign({ userId }, config.jwtSecret, {
+    expiresIn: config.jwtExpiresIn,
   });
 };
 
 // Verify JWT token
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, config.jwtSecret);
   } catch (error) {
     return null;
   }

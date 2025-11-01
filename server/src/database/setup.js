@@ -1,11 +1,12 @@
 require("dotenv").config();
+const { config } = require("../config");
 const connectDB = require("./connection");
 const Credential = require("../models/Credential");
 
 async function setupDatabase() {
   try {
     console.log("🚀 Setting up MongoDB database...");
-    console.log("🔗 Connecting to:", process.env.MONGODB_URI || "mongodb://localhost:27017/syncapp");
+    console.log("🔗 Connecting to:", config.mongoUri.replace(/\/\/[^:]+:[^@]+@/, "//***:***@"));
 
     // Connect to MongoDB
     await connectDB();
