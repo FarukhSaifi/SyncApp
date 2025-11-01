@@ -38,17 +38,28 @@ const defaultDevOrigins = [
   "http://127.0.0.1:3000",
   "http://localhost:9000",
   "http://127.0.0.1:9000",
+  "https://sync-app-client.vercel.app", // Vercel deployment
+  "https://sync-app-client-git-main-farukhsaifi.vercel.app", // Vercel preview deployments
 ];
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-app.use(
-  cors({
-    origin: allowedOrigins.length ? allowedOrigins : defaultDevOrigins,
-    credentials: true,
-  })
-);
+
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "development"
+      ? true // Allow all origins in development
+      : allowedOrigins.length
+      ? allowedOrigins
+      : defaultDevOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Disposition"],
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
