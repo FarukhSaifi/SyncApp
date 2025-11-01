@@ -49,81 +49,24 @@
 
 ### Project Structure
 
+This project consists of **two separate applications** that can be developed, deployed, and run independently:
+
 ```text
 SyncApp/
-├── client/                      # React frontend application
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   │   ├── ui/            # Base UI components (Button, Card, etc.)
-│   │   │   ├── dashboard/     # Dashboard-specific components
-│   │   │   ├── Layout.jsx     # App layout with navigation
-│   │   │   ├── ErrorBoundary.jsx
-│   │   │   └── ProtectedRoute.jsx
-│   │   ├── pages/             # Page components
-│   │   │   ├── Dashboard.jsx  # Main dashboard
-│   │   │   ├── Editor.jsx     # Post editor
-│   │   │   ├── Settings.jsx   # Platform settings
-│   │   │   ├── Profile.jsx    # User profile
-│   │   │   ├── Login.jsx      # Login page
-│   │   │   └── Register.jsx   # Registration page
-│   │   ├── contexts/          # React contexts
-│   │   │   ├── AuthContext.jsx
-│   │   │   └── ThemeContext.jsx
-│   │   ├── hooks/             # Custom React hooks
-│   │   │   ├── usePosts.js
-│   │   │   ├── useToast.js
-│   │   │   ├── useDebounce.js
-│   │   │   └── useIntersectionObserver.js
-│   │   ├── utils/             # Utility functions
-│   │   │   ├── apiClient.js
-│   │   │   └── performance.js
-│   │   ├── constants/         # App constants
-│   │   ├── App.jsx           # Root component
-│   │   ├── main.jsx          # Entry point
-│   │   └── index.css         # Global styles
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── package.json
+├── client/                      # React frontend application (STANDALONE)
+│   ├── src/                    # Frontend source code
+│   ├── README.md               # Frontend setup guide
+│   ├── .env.example            # Frontend environment template
+│   ├── package.json            # Frontend dependencies
+│   └── vite.config.js          # Vite configuration
 │
-├── server/                      # Express backend API
-│   ├── src/
-│   │   ├── config/            # Configuration management
-│   │   │   └── index.js       # Centralized config with env validation
-│   │   ├── controllers/       # Route controllers
-│   │   │   ├── postsController.js
-│   │   │   ├── credentialsController.js
-│   │   │   └── publishController.js
-│   │   ├── services/          # Business logic layer
-│   │   │   ├── postsService.js
-│   │   │   ├── credentialsService.js
-│   │   │   └── publishService.js
-│   │   ├── models/            # Mongoose models
-│   │   │   ├── User.js
-│   │   │   ├── Post.js
-│   │   │   └── Credential.js
-│   │   ├── routes/            # Express routes (slim handlers)
-│   │   │   ├── auth.js
-│   │   │   ├── posts.js
-│   │   │   ├── credentials.js
-│   │   │   ├── publish.js
-│   │   │   └── mdx.js
-│   │   ├── middleware/        # Custom middleware
-│   │   │   ├── errorHandler.js
-│   │   │   └── validator.js
-│   │   ├── utils/             # Utility functions
-│   │   │   ├── auth.js        # JWT utilities
-│   │   │   ├── encryption.js  # AES-256 encryption
-│   │   │   ├── logger.js      # Logging system
-│   │   │   └── cache.js       # In-memory cache
-│   │   ├── database/          # Database setup
-│   │   │   ├── connection.js
-│   │   │   └── setup.js
-│   │   └── index.js           # Server entry point
-│   ├── env.example            # Environment variables template
-│   └── package.json
+├── server/                      # Express backend API (STANDALONE)
+│   ├── src/                    # Backend source code
+│   ├── README.md               # Backend setup guide
+│   ├── env.example             # Backend environment template
+│   └── package.json            # Backend dependencies
 │
-├── scripts/                     # Utility scripts
+├── scripts/                     # Shared utility scripts
 │   └── generate-keys.js       # Generate encryption keys
 │
 ├── DEPLOYMENT.md                # Deployment guide
@@ -133,11 +76,24 @@ SyncApp/
 ├── API.md                       # API documentation
 ├── CHANGELOG.md                 # Version history
 ├── LICENSE                      # MIT License
-├── package.json                 # Root workspace config
+├── package.json                 # Root package (helper scripts only)
 └── README.md                    # This file
 ```
 
+**Note**: The frontend and backend are **independent applications**. Each has its own:
+
+- `package.json` with its own dependencies
+- `README.md` with setup instructions
+- Environment configuration files
+- Can be deployed separately
+- Can be developed independently
+
 ## 🚀 Quick Start
+
+SyncApp consists of **two separate applications** that communicate via REST API:
+
+1. **Frontend (Client)** - React application
+2. **Backend (Server)** - Express API server
 
 ### Prerequisites
 
@@ -151,6 +107,8 @@ SyncApp/
 
 ### Installation
 
+#### Option 1: Install Both (Recommended for Development)
+
 1. **Clone the repository:**
 
    ```bash
@@ -158,94 +116,121 @@ SyncApp/
    cd SyncApp
    ```
 
-2. **Install dependencies:**
+2. **Install all dependencies:**
 
    ```bash
    npm run install:all
    ```
 
-   This installs dependencies for root, server, and client.
-
-3. **Generate encryption keys:**
+   Or install separately:
 
    ```bash
-   node scripts/generate-keys.js
+   cd client && npm install
+   cd ../server && npm install
    ```
 
-   Copy the output keys for the next step.
+#### Option 2: Install Separately
 
-4. **Configure environment variables:**
+**Frontend only:**
 
-   **Server (`server/.env`):**
+```bash
+cd client
+npm install
+```
 
-   ```bash
-   # Copy example file
-   cp server/env.example server/.env
+**Backend only:**
 
-   # Edit with your values:
-   NODE_ENV=development
-   PORT=9000
+```bash
+cd server
+npm install
+```
 
-   # MongoDB (required)
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/syncapp
+### Setup
 
-   # JWT Secret (required)
-   JWT_SECRET=your_secure_random_string_here
+#### 1. Backend Setup
 
-   # Encryption Keys (from generate-keys.js)
-   ENCRYPTION_KEY=your_generated_encryption_key
-   ENCRYPTION_IV=your_generated_iv_key
+See **[server/README.md](./server/README.md)** for detailed backend setup:
 
-   # CORS (optional in development)
-   CORS_ORIGIN=http://localhost:3000
+```bash
+cd server
 
-   # Rate Limiting (optional)
-   RATE_LIMIT_WINDOW_MS=900000
-   RATE_LIMIT_MAX_REQUESTS=100
-   ```
+# Copy environment template
+cp env.example .env
 
-5. **Set up the database:**
+# Generate encryption keys (from root)
+node ../scripts/generate-keys.js
 
-   ```bash
-   npm run db:setup
-   ```
+# Edit .env with your MongoDB URI, JWT secret, and encryption keys
+# Then setup database
+npm run db:setup
 
-6. **Start the development servers:**
+# Start backend
+npm run dev
+```
 
-   ```bash
-   npm run dev
-   ```
+Backend runs on: <http://localhost:9000>
 
-   This starts both frontend (port 3000) and backend (port 9000).
+#### 2. Frontend Setup
 
-7. **Open your browser:**
-   - Frontend: <http://localhost:3000>
-   - Backend API: <http://localhost:9000>
-   - Health Check: <http://localhost:9000/health>
+See **[client/README.md](./client/README.md)** for detailed frontend setup:
+
+```bash
+cd client
+
+# Copy environment template
+cp .env.example .env.local
+
+# Edit .env.local with backend API URL (optional in dev, uses proxy)
+# VITE_API_BACKEND_URL=http://localhost:9000/api
+
+# Start frontend
+npm run dev
+```
+
+Frontend runs on: <http://localhost:3000>
+
+### Quick Start (Both Apps)
+
+After installing both:
+
+```bash
+# Terminal 1: Start backend
+cd server && npm run dev
+
+# Terminal 2: Start frontend
+cd client && npm run dev
+```
+
+- **Frontend**: <http://localhost:3000>
+- **Backend API**: <http://localhost:9000>
+- **Health Check**: <http://localhost:9000/health>
 
 ## 📦 Available Scripts
 
 ### Root Scripts
 
-- `npm run dev` - Start both client and server concurrently
-- `npm run dev:client` - Start client only
-- `npm run dev:server` - Start server only with nodemon
-- `npm run install:all` - Install all dependencies
-- `npm run db:setup` - Initialize MongoDB database
-- `npm run build` - Build client for production
+Helper scripts for convenience:
 
-### Server Scripts (from `server/` directory)
+- `npm run install:all` - Install dependencies for both client and server
+- `npm run install:client` - Install client dependencies only
+- `npm run install:server` - Install server dependencies only
 
-- `npm run dev` - Start server with nodemon (auto-reload)
+### Backend Scripts (from `server/` directory)
+
 - `npm start` - Start server in production mode
+- `npm run dev` - Start server with nodemon (auto-reload)
 - `npm run db:setup` - Initialize database schema and seed data
 
-### Client Scripts (from `client/` directory)
+See **[server/README.md](./server/README.md)** for more details.
 
-- `npm run dev` - Start Vite dev server
+### Frontend Scripts (from `client/` directory)
+
+- `npm run dev` - Start Vite dev server (port 3000)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+
+See **[client/README.md](./client/README.md)** for more details.
 
 ## 🔐 Authentication & User Management
 
@@ -440,15 +425,15 @@ RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 ```
 
-### Client Environment Variables
+### Frontend Environment Variables
 
-Optional variables in `client/.env.local`:
+See `client/.env.example` or **[client/README.md](./client/README.md)**:
 
 ```bash
 # API URL (optional - uses proxy in development)
 VITE_API_BACKEND_URL=http://localhost:9000/api
 
-# App Configuration
+# App Configuration (optional)
 VITE_APP_NAME=SyncApp
 VITE_APP_VERSION=1.0.0
 ```
@@ -479,25 +464,41 @@ VITE_APP_VERSION=1.0.0
 
 ## 🚀 Deployment
 
-### Option 1: Vercel (Recommended)
+The frontend and backend are **separate applications** and should be deployed independently:
 
-1. **Push to GitHub**
-2. **Import in Vercel** → Framework: Other
-3. **Configure Build:**
-   - Build Command: `cd client && npm ci && npm run build`
-   - Output Directory: `client/dist`
-4. **Set Environment Variables** (see Configuration section)
-5. **Deploy**
+### Frontend Deployment
 
-### Option 2: Railway/Render
+**Option 1: Vercel (Recommended)**
 
-1. **Create Service** from GitHub repository
-2. **Root Directory**: `server`
-3. **Build Command**: `npm ci`
-4. **Start Command**: `npm start`
-5. **Set Environment Variables**
+- See **[client/README.md](./client/README.md)** for details
+- Framework: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
 
-### Option 3: Docker (Coming Soon)
+**Option 2: Netlify, Cloudflare Pages, or any static hosting**
+
+- Build with `npm run build` in the `client/` directory
+- Deploy the `dist/` folder
+
+### Backend Deployment
+
+**Option 1: Railway/Render**
+
+- See **[server/README.md](./server/README.md)** for details
+- Root Directory: `server`
+- Build Command: `npm ci`
+- Start Command: `npm start`
+
+**Option 2: Heroku, AWS, or any Node.js hosting**
+
+- Deploy from the `server/` directory
+- Set all environment variables
+
+### Important Notes
+
+- **Frontend** requires `VITE_API_BACKEND_URL` pointing to your deployed backend
+- **Backend** requires proper CORS configuration for your frontend URL
+- Both can be deployed to different platforms/services
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 

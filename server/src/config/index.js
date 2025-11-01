@@ -13,6 +13,7 @@ const config = {
   port: parseInt(process.env.PORT || "9000", 10),
   mongoUri: requireEnv("MONGODB_URI"),
   jwtSecret: requireEnv("JWT_SECRET", undefined, {}),
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   corsOrigin: requireEnv("CORS_ORIGIN", "http://localhost:3000", { optional: true }),
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000", 10),

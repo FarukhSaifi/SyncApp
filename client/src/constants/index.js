@@ -35,7 +35,19 @@ export const STATUS_CONFIG = Object.freeze({
 });
 
 // API base and paths
-export const API_BASE = import.meta.env.VITE_API_BACKEND_URL || "/api";
+// In development, Vite proxy handles /api, so we use relative path
+// In production, VITE_API_BACKEND_URL should be set to full backend URL (e.g., https://api.example.com/api)
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_BACKEND_URL;
+  if (envUrl) {
+    // If full URL is provided, use it as-is
+    return envUrl.endsWith("/api") ? envUrl : `${envUrl}/api`;
+  }
+  // Default to relative path for Vite proxy in development
+  return "/api";
+};
+
+export const API_BASE = getApiBase();
 export const API_PATHS = Object.freeze({
   AUTH: `${API_BASE}/auth`,
   POSTS: `${API_BASE}/posts`,

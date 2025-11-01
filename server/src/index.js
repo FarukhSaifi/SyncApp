@@ -3,8 +3,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
-require("dotenv").config();
 
+const { config } = require("./config");
+console.log("🚀 ~ config:", config);
 const connectDB = require("./database/connection");
 const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
@@ -15,7 +16,7 @@ const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const { requestLogger, logger } = require("./utils/logger");
 
 const app = express();
-const PORT = process.env.PORT || 9000;
+const PORT = config.port;
 
 // Connect to MongoDB
 connectDB();
@@ -25,30 +26,36 @@ app.use(helmet());
 
 // Note: Compression disabled (package not installed and not required)
 
-// Rate limiting
+// Rate limiting (from config)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
 });
-app.use(limiter);
+app.use("/api", limiter);
 
 // CORS middleware (configure allowed origins via CORS_ORIGIN, comma-separated)
 const defaultDevOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "http://localhost:9000",
-  "http://127.0.0.1:9000",
-  "https://sync-app-client.vercel.app", // Vercel deployment
-  "https://sync-app-client-git-main-farukhsaifi.vercel.app", // Vercel preview deployments
+  "http://localhost:5173", // Vite default port
+  "http://127.0.0.1:5173",
+  "https://sync-app-client.vercel.app",
 ];
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
+
+// Parse CORS_ORIGIN (can be comma-separated for multiple origins)
+const corsOriginEnv = config.corsOrigin || "";
+const allowedOrigins = corsOriginEnv
   .split(",")
   .map((s) => s.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .concat(defaultDevOrigins);
 
 const corsOptions = {
   origin:
-    process.env.NODE_ENV === "development"
+    config.nodeEnv === "development"
       ? true // Allow all origins in development
       : allowedOrigins.length
       ? allowedOrigins
@@ -74,7 +81,7 @@ app.get("/health", (req, res) => {
     status: "OK",
     timestamp: new Date().toISOString(),
     uptime: Number(process.uptime().toFixed(2)), // seconds (float, 2 decimals)
-    environment: process.env.NODE_ENV || "development",
+    environment: config.nodeEnv,
     database: {
       status: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
       host: mongoose.connection.host || "unknown",
@@ -115,7 +122,8 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`Server started successfully`, {
     port: PORT,
-    environment: process.env.NODE_ENV || "development",
+    environment: config.nodeEnv,
+    corsOrigin: config.corsOrigin,
     healthCheck: `http://localhost:${PORT}/health`,
   });
 });
