@@ -5,7 +5,6 @@ const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 
 const { config } = require("./config");
-console.log("🚀 ~ config:", config);
 const connectDB = require("./database/connection");
 const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
@@ -19,7 +18,29 @@ const app = express();
 const PORT = config.port;
 
 // Connect to MongoDB
-connectDB();
+// In serverless (Vercel), connection is handled per request to avoid cold start issues
+// In traditional server, connect once at startup
+const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+
+if (!isVercel) {
+  // Connect immediately for traditional server deployment
+  connectDB();
+} else {
+  // For Vercel serverless, connect on first request (with caching)
+  let dbConnected = false;
+  app.use(async (req, res, next) => {
+    if (!dbConnected && mongoose.connection.readyState !== 1) {
+      try {
+        await connectDB();
+        dbConnected = true;
+      } catch (error) {
+        console.error("Failed to connect to database:", error);
+        // Continue anyway - some routes might not need DB
+      }
+    }
+    next();
+  });
+}
 
 // Security middleware
 app.use(helmet());
@@ -119,11 +140,19 @@ app.use(notFoundHandler);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`Server started successfully`, {
-    port: PORT,
-    environment: config.nodeEnv,
-    corsOrigin: config.corsOrigin,
-    healthCheck: `http://localhost:${PORT}/health`,
+// Export app for Vercel serverless functions, or start server for local/other platforms
+// Vercel sets VERCEL environment variable, or we check if running as serverless
+if (isVercel) {
+  // Export for Vercel serverless function
+  module.exports = app;
+} else {
+  // Start server for local development or other platforms (Railway, Render, etc.)
+  app.listen(PORT, () => {
+    logger.info(`Server started successfully`, {
+      port: PORT,
+      environment: config.nodeEnv,
+      corsOrigin: config.corsOrigin,
+      healthCheck: `http://localhost:${PORT}/health`,
+    });
   });
-});
+}

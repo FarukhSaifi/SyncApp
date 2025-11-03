@@ -33,6 +33,7 @@
    ```
 
    Edit `.env` with your values:
+
    ```bash
    NODE_ENV=development
    PORT=9000
@@ -86,7 +87,7 @@
 ### Required Environment Variables
 
 | Variable | Description | Example |
-|----------|-------------|---------|
+| --- | --- | --- |
 | `MONGODB_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/syncapp` |
 | `JWT_SECRET` | Secret for JWT tokens (min 32 chars) | `your_random_secure_string` |
 | `ENCRYPTION_KEY` | 32-byte hex string for credential encryption | `hex_string_32_bytes` |
@@ -94,13 +95,13 @@
 
 ### Optional Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `production` |
-| `PORT` | Server port | `9000` |
-| `CORS_ORIGIN` | Allowed CORS origin | `http://localhost:3000` |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
+| Variable                  | Description             | Default                 |
+| ------------------------- | ----------------------- | ----------------------- |
+| `NODE_ENV`                | Environment mode        | `production`            |
+| `PORT`                    | Server port             | `9000`                  |
+| `CORS_ORIGIN`             | Allowed CORS origin     | `http://localhost:3000` |
+| `RATE_LIMIT_WINDOW_MS`    | Rate limit window in ms | `900000` (15 min)       |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100`                   |
 
 ## 🏗️ Tech Stack
 
@@ -134,6 +135,7 @@ server/
 ## 🔌 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - Create new account
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
@@ -141,6 +143,7 @@ server/
 - `PUT /api/auth/change-password` - Change password
 
 ### Posts
+
 - `GET /api/posts` - List posts (paginated)
 - `GET /api/posts/:id` - Get specific post
 - `GET /api/posts/slug/:slug` - Get post by slug
@@ -149,21 +152,25 @@ server/
 - `DELETE /api/posts/:id` - Delete post (auth required)
 
 ### Credentials
+
 - `GET /api/credentials` - List all credentials
 - `GET /api/credentials/:platform` - Get platform credentials
 - `PUT /api/credentials/:platform` - Save/update credentials
 - `DELETE /api/credentials/:platform` - Delete credentials
 
 ### Publishing
+
 - `POST /api/publish/medium` - Publish to Medium
 - `POST /api/publish/devto` - Publish to DEV.to
 - `POST /api/publish/wordpress` - Publish to WordPress
 - `POST /api/publish/all` - Publish to all platforms
 
 ### Export
+
 - `GET /api/mdx/:id` - Export post as MDX
 
 ### System
+
 - `GET /health` - Health check
 
 ## 🔐 Security Features
@@ -177,6 +184,55 @@ server/
 - **Input Validation**: Joi schemas prevent injection attacks
 
 ## 🚀 Deployment
+
+### Vercel (Serverless)
+
+Vercel supports serverless functions for Express apps. The server is configured to work automatically with Vercel.
+
+1. **Push to GitHub**
+
+2. **Import in Vercel:**
+
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "Add New" → "Project"
+   - Import your repository
+   - **Root Directory**: `server` (important!)
+
+3. **Configure Build Settings:**
+
+   - **Framework Preset**: Other (or leave empty)
+   - **Build Command**: `npm install` (or leave empty, Vercel auto-detects)
+   - **Output Directory**: Leave empty (not used for serverless)
+   - **Install Command**: `npm install`
+
+4. **Set Environment Variables** (Required):
+
+   In Vercel Dashboard → Project Settings → Environment Variables, add all required variables:
+
+   ```
+   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/syncapp
+   JWT_SECRET=your_secure_random_string_here_min_32_chars
+   ENCRYPTION_KEY=your_32_byte_hex_string_here
+   ENCRYPTION_IV=your_16_byte_hex_string_here
+   NODE_ENV=production
+   CORS_ORIGIN=https://your-frontend-url.vercel.app,https://sync-app-client.vercel.app
+   PORT=9000
+   ```
+
+   **Important Notes:**
+
+   - Set `NODE_ENV=production` for production
+   - Set `CORS_ORIGIN` to your frontend URL(s), comma-separated
+   - Can set different values for Production, Preview, and Development environments
+   - Vercel automatically sets `VERCEL=1` environment variable
+
+5. **Deploy**
+   - Click "Deploy"
+   - Vercel will automatically detect the serverless function configuration
+   - Your API will be available at: `https://your-project.vercel.app/api/*`
+   - Health check: `https://your-project.vercel.app/health`
+
+**Note:** The server automatically detects Vercel environment and exports the Express app as a serverless function. MongoDB connections are handled efficiently for serverless cold starts.
 
 ### Railway/Render
 
@@ -224,20 +280,32 @@ Returns system status, database connection, and uptime.
 ## 🔍 Troubleshooting
 
 **Server won't start:**
+
 - Check MongoDB connection string
 - Ensure all required environment variables are set
 - Verify port 9000 is available
 
 **CORS errors:**
+
 - Update `CORS_ORIGIN` in `.env` to match frontend URL
 - Ensure client and server ports match configuration
 
 **Database connection fails:**
+
 - Verify MongoDB URI is correct
 - Check network/firewall settings
 - Ensure MongoDB Atlas IP whitelist includes your IP
+- For Vercel: Check that MongoDB Atlas allows connections from all IPs (0.0.0.0/0) or add Vercel IP ranges
+
+**Vercel deployment issues:**
+
+- Ensure `vercel.json` exists in the server directory
+- Check that `api/index.js` exists
+- Verify all environment variables are set in Vercel Dashboard
+- Check Vercel function logs for detailed error messages
+- Ensure Root Directory is set to `server` in Vercel project settings
 
 **Encryption errors:**
+
 - Regenerate encryption keys if needed
 - Ensure keys are correct hex strings (32 bytes for key, 16 bytes for IV)
-
