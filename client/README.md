@@ -112,11 +112,40 @@ The frontend connects to the backend API. Make sure:
 
 ### Vercel (Recommended)
 
-1. Push to GitHub
-2. Import in Vercel → Framework: Vite
-3. Set environment variables:
-   - `VITE_API_BACKEND_URL` - Your backend API URL
-4. Deploy
+1. **Push to GitHub**
+
+2. **Import in Vercel:**
+
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "Add New" → "Project"
+   - Import your repository
+   - Framework: **Vite** (auto-detected)
+
+3. **Configure Build Settings:**
+
+   - **Build Command:** `npm run build` (or `npm run build:vercel`)
+   - **Output Directory:** `dist`
+   - **Install Command:** `npm install`
+
+4. **Set Environment Variables** (Required for Production):
+
+   In Vercel Dashboard → Project Settings → Environment Variables, add:
+
+   ```
+   VITE_API_BACKEND_URL=https://your-backend-api.com/api
+   ```
+
+   **Important:**
+
+   - Use your **production backend URL** (e.g., `https://sync-app-server.railway.app/api`)
+   - Must include the `/api` suffix
+   - Can add for specific environments (Production, Preview, Development)
+   - For multiple environments, set the same variable for all environments with different values
+
+5. **Deploy**
+   - Click "Deploy"
+   - Vercel will automatically detect Vite and build your app
+   - Environment variables are injected at build time
 
 ### Other Platforms
 
