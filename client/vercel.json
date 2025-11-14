@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/vite"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
