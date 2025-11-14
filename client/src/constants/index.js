@@ -1,3 +1,36 @@
+// Re-export user roles and messages for convenience
+export * from "./messages";
+export * from "./userRoles";
+
+// Re-export message types for easier access (explicit exports for better IDE support)
+// Note: All exports are also available via "export * from './messages'" above
+export {
+  // Individual Message Types
+  BUTTON_LABELS,
+  ERROR_MESSAGES,
+  INFO_MESSAGES,
+  LABELS,
+  MODAL_DESCRIPTIONS,
+  MODAL_TITLES,
+  PAGE_DESCRIPTIONS,
+  PAGE_TITLES,
+  SERVER_ERROR_MESSAGES,
+  SERVER_MESSAGES,
+  SERVER_SUCCESS_MESSAGES,
+  SUCCESS_MESSAGES,
+  SYNC_LABEL,
+  TOAST_TITLES,
+  UI_BUTTONS,
+  UI_DESCRIPTIONS,
+  // Grouped UI Exports (Recommended for new code)
+  UI_LABELS,
+  UI_MESSAGES,
+  UI_PLACEHOLDERS,
+  UI_TITLES,
+  VALIDATION_MESSAGES,
+  WARNING_MESSAGES,
+} from "./messages";
+
 // Shared UI constants
 export const DEFAULT_PAGE_SIZE = 10;
 export const MAX_PAGE_SIZE = 100;
@@ -13,6 +46,7 @@ export const ROUTES = Object.freeze({
   EDITOR: "/editor",
   SETTINGS: "/settings",
   PROFILE: "/profile",
+  USERS: "/users",
   LOGIN: "/login",
   REGISTER: "/register",
 });
@@ -54,6 +88,7 @@ export const API_PATHS = Object.freeze({
   CREDENTIALS: `${API_BASE}/credentials`,
   PUBLISH: `${API_BASE}/publish`,
   MDX: `${API_BASE}/mdx`,
+  USERS: `${API_BASE}/users`,
 });
 
 // HTTP methods

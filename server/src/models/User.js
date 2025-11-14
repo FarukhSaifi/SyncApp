@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { VALID_USER_ROLES, USER_ROLES } = require("../constants/userRoles");
 
 const userSchema = new mongoose.Schema(
   {
@@ -48,8 +49,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: VALID_USER_ROLES,
+      default: USER_ROLES.USER,
     },
     lastLogin: {
       type: Date,

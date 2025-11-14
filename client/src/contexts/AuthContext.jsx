@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { API_BASE } from "../constants";
+import { API_BASE, HTTP_METHODS, SYNC_LABEL, TOAST_TITLES } from "../constants";
 import { useToast } from "../hooks/useToast";
 const AuthContext = createContext();
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data.data);
       } else {
         // Token is invalid, remove it
-        toast.authError("Session expired. Please log in again.");
+        toast.authError(SYNC_LABEL.SESSION_EXPIRED);
         logout();
       }
     } catch (error) {
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
+        method: HTTP_METHODS.POST,
         headers: {
           "Content-Type": "application/json",
         },
@@ -68,23 +68,23 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setToken(authToken);
         localStorage.setItem("token", authToken);
-        toast.success("Welcome back!", `Hello ${userData.firstName || userData.username}!`);
+        toast.success(TOAST_TITLES.WELCOME_BACK, SYNC_LABEL.WELCOME_MESSAGE(userData.firstName || userData.username));
         return { success: true };
       } else {
-        toast.authError(data.error || "Invalid credentials");
+        toast.authError(data.error || SYNC_LABEL.INVALID_CREDENTIALS);
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Login error:", error);
       toast.networkError();
-      return { success: false, error: "Login failed. Please try again." };
+      return { success: false, error: SYNC_LABEL.LOGIN_FAILED };
     }
   };
 
   const register = async (userData) => {
     try {
       const response = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
+        method: HTTP_METHODS.POST,
         headers: {
           "Content-Type": "application/json",
         },
@@ -98,19 +98,16 @@ export const AuthProvider = ({ children }) => {
         setUser(newUser);
         setToken(authToken);
         localStorage.setItem("token", authToken);
-        toast.success(
-          "Welcome to SyncApp!",
-          `Account created successfully for ${newUser.firstName || newUser.username}!`
-        );
+        toast.success(TOAST_TITLES.WELCOME, SYNC_LABEL.ACCOUNT_CREATED_SUCCESS(newUser.firstName || newUser.username));
         return { success: true };
       } else {
-        toast.error("Registration Failed", data.error || "Failed to create account");
+        toast.error(TOAST_TITLES.REGISTRATION_FAILED, data.error || SYNC_LABEL.REGISTRATION_FAILED);
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Registration error:", error);
       toast.networkError();
-      return { success: false, error: "Registration failed. Please try again." };
+      return { success: false, error: SYNC_LABEL.REGISTRATION_FAILED_RETRY };
     }
   };
 
@@ -118,13 +115,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
-    toast.info("Logged out", "You have been successfully logged out");
+    toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
   };
 
   const updateProfile = async (profileData) => {
     try {
       const response = await fetch(`${API_BASE}/auth/me`, {
-        method: "PUT",
+        method: HTTP_METHODS.PUT,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -136,23 +133,23 @@ export const AuthProvider = ({ children }) => {
 
       if (data.success) {
         setUser(data.data);
-        toast.success("Profile Updated", "Your profile has been updated successfully");
+        toast.success(TOAST_TITLES.PROFILE_UPDATED, SYNC_LABEL.PROFILE_UPDATED_SUCCESS);
         return { success: true };
       } else {
-        toast.error("Update Failed", data.error || "Failed to update profile");
+        toast.error(TOAST_TITLES.UPDATE_FAILED, data.error || SYNC_LABEL.PROFILE_UPDATE_FAILED);
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Profile update error:", error);
       toast.networkError();
-      return { success: false, error: "Profile update failed. Please try again." };
+      return { success: false, error: SYNC_LABEL.PROFILE_UPDATE_FAILED_RETRY };
     }
   };
 
   const changePassword = async (currentPassword, newPassword) => {
     try {
       const response = await fetch(`${API_BASE}/auth/change-password`, {
-        method: "PUT",
+        method: HTTP_METHODS.PUT,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -163,16 +160,16 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Password Changed", "Your password has been updated successfully");
+        toast.success(TOAST_TITLES.PASSWORD_CHANGED, SYNC_LABEL.PASSWORD_CHANGED_SUCCESS);
         return { success: true };
       } else {
-        toast.error("Password Change Failed", data.error || "Failed to change password");
+        toast.error(TOAST_TITLES.PASSWORD_CHANGE_FAILED, data.error || SYNC_LABEL.PASSWORD_CHANGE_FAILED);
         return { success: false, error: data.error };
       }
     } catch (error) {
       console.error("Password change error:", error);
       toast.networkError();
-      return { success: false, error: "Password change failed. Please try again." };
+      return { success: false, error: SYNC_LABEL.PASSWORD_CHANGE_FAILED_RETRY };
     }
   };
 
