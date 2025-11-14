@@ -54,7 +54,7 @@ const Settings = () => {
         }
       } catch (e) {
         console.error("❌ Failed to load credentials:", e);
-        toast.apiError(`Failed to load credentials: ${e.message}`);
+        toast.apiError(`${SYNC_LABEL.FAILED_TO_LOAD_CREDENTIALS}: ${e.message}`);
       }
     };
     loadCredentials();
@@ -187,7 +187,7 @@ const Settings = () => {
                 <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_MEDIUM_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
-                    Go to{" "}
+                    {SYNC_LABEL.GO_TO}{" "}
                     <a
                       href="https://medium.com/me/settings"
                       target="_blank"
@@ -217,7 +217,7 @@ const Settings = () => {
               />
               <button
                 type="button"
-                aria-label={showMediumKey ? "Hide API key" : "Show API key"}
+                aria-label={showMediumKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -268,7 +268,7 @@ const Settings = () => {
                 <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_DEVTO_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
-                    Go to{" "}
+                    {SYNC_LABEL.GO_TO}{" "}
                     <a
                       href="https://dev.to/settings/account"
                       target="_blank"
@@ -310,7 +310,7 @@ const Settings = () => {
                 />
                 <button
                   type="button"
-                  aria-label={showDevtoKey ? "Hide API key" : "Show API key"}
+                  aria-label={showDevtoKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -403,7 +403,7 @@ const Settings = () => {
                 />
                 <button
                   type="button"
-                  aria-label={showWordpressKey ? "Hide API key" : "Show API key"}
+                  aria-label={showWordpressKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -445,7 +445,7 @@ const Settings = () => {
                   <FiKey className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
                 </div>
                 <div>
-                  <p className="font-medium">Medium</p>
+                  <p className="font-medium">{SYNC_LABEL.PLATFORM_MEDIUM}</p>
                   <p className="text-sm text-muted-foreground">
                     {mediumApiKey ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
@@ -466,7 +466,7 @@ const Settings = () => {
                   <FiKey className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-medium">DEV.to</p>
+                  <p className="font-medium">{SYNC_LABEL.PLATFORM_DEVTO}</p>
                   <p className="text-sm text-muted-foreground">
                     {devtoApiKey && devtoUsername ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
@@ -487,7 +487,7 @@ const Settings = () => {
                   <FiKey className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium">WordPress</p>
+                  <p className="font-medium">{SYNC_LABEL.PLATFORM_WORDPRESS}</p>
                   <p className="text-sm text-muted-foreground">
                     {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
