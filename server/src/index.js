@@ -11,6 +11,7 @@ const postsRoutes = require("./routes/posts");
 const credentialsRoutes = require("./routes/credentials");
 const publishRoutes = require("./routes/publish");
 const mdxRoutes = require("./routes/mdx");
+const usersRoutes = require("./routes/users");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const { requestLogger, logger } = require("./utils/logger");
 
@@ -133,6 +134,7 @@ app.use("/api/posts", postsRoutes);
 app.use("/api/credentials", credentialsRoutes);
 app.use("/api/publish", publishRoutes);
 app.use("/api/mdx", mdxRoutes);
+app.use("/api/users", usersRoutes);
 
 // 404 handler (must be after routes)
 app.use(notFoundHandler);

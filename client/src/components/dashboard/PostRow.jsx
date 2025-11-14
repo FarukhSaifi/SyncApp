@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
-import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
+import { FiEdit3, FiTrash2, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { STATUS_CONFIG } from "../../constants";
+import { STATUS_CONFIG, SYNC_LABEL } from "../../constants";
 import { apiClient } from "../../utils/apiClient";
 import Button from "../ui/Button";
 import { TableCell, TableRow } from "../ui/Table";
@@ -57,7 +57,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             onClick={() => handleUnpublish("medium")}
             disabled={unpublishing === "medium"}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
-            title="Remove from Medium"
+            title={SYNC_LABEL.REMOVE_FROM_MEDIUM}
           >
             <FiX className="h-3 w-3" />
           </button>
@@ -81,7 +81,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             onClick={() => handleUnpublish("devto")}
             disabled={unpublishing === "devto"}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
-            title="Remove from DEV.to"
+            title={SYNC_LABEL.REMOVE_FROM_DEVTO}
           >
             <FiX className="h-3 w-3" />
           </button>
@@ -105,7 +105,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             onClick={() => handleUnpublish("wordpress")}
             disabled={unpublishing === "wordpress"}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
-            title="Remove from WordPress"
+            title={SYNC_LABEL.REMOVE_FROM_WORDPRESS}
           >
             <FiX className="h-3 w-3" />
           </button>
@@ -114,7 +114,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
     }
 
     if (platforms.length === 0) {
-      return <span className="text-muted-foreground">Not published</span>;
+      return <span className="text-muted-foreground">{SYNC_LABEL.NOT_PUBLISHED}</span>;
     }
 
     return <div className="flex flex-wrap gap-2">{platforms}</div>;
@@ -153,7 +153,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
               </span>
             ))
           ) : (
-            <span className="text-muted-foreground text-sm">No tags</span>
+            <span className="text-muted-foreground text-sm">{SYNC_LABEL.NO_TAGS}</span>
           )}
           {post.tags && post.tags.length > 3 && (
             <span className="text-muted-foreground text-xs">+{post.tags.length - 3} more</span>
@@ -165,12 +165,19 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
       <TableCell className="text-right">
         <div className="flex items-center justify-end space-x-2">
           <Link to={`/editor/${postId}`}>
-            <Button variant="outline" size="sm">
-              <FiEdit className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="flex items-center space-x-1">
+              <FiEdit3 className="h-4 w-4" />
+              <span>{SYNC_LABEL.EDIT}</span>
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={() => onDelete(postId)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(postId)}
+            className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
             <FiTrash2 className="h-4 w-4" />
+            <span>{SYNC_LABEL.DELETE}</span>
           </Button>
         </div>
       </TableCell>

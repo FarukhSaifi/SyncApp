@@ -64,7 +64,7 @@ export class ApiClient {
     );
   }
 
-  async request(path, { method = "GET", headers = {}, body, params } = {}) {
+  async request(path, { method = HTTP_METHODS.GET, headers = {}, body, params } = {}) {
     const urlPath = path.startsWith(API_BASE) ? path.slice(API_BASE.length) : path;
     const response = await this.client.request({
       url: urlPath,
@@ -143,6 +143,27 @@ export class ApiClient {
       link.click();
       link.remove();
     }
+  }
+
+  // Users (Admin only)
+  getUsers(params = {}) {
+    return this.request(`${API_PATHS.USERS}`, { params });
+  }
+
+  getUser(id) {
+    return this.request(`${API_PATHS.USERS}/${id}`);
+  }
+
+  createUser(body) {
+    return this.request(`${API_PATHS.USERS}`, { method: HTTP_METHODS.POST, body });
+  }
+
+  updateUser(id, body) {
+    return this.request(`${API_PATHS.USERS}/${id}`, { method: HTTP_METHODS.PUT, body });
+  }
+
+  deleteUser(id) {
+    return this.request(`${API_PATHS.USERS}/${id}`, { method: HTTP_METHODS.DELETE });
   }
 }
 

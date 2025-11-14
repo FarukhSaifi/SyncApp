@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { ROUTES } from "../constants";
+import { ROUTES, SYNC_LABEL } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
@@ -34,17 +34,17 @@ const Register = () => {
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError(SYNC_LABEL.PASSWORDS_DO_NOT_MATCH_REGISTER);
       return false;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError(SYNC_LABEL.PASSWORD_MIN_LENGTH_REGISTER);
       return false;
     }
 
     if (formData.username.length < 3) {
-      setError("Username must be at least 3 characters long");
+      setError(SYNC_LABEL.USERNAME_MIN_LENGTH);
       return false;
     }
 
@@ -71,7 +71,7 @@ const Register = () => {
         setError(result.error);
       }
     } catch (error) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setLoading(false);
     }
@@ -82,15 +82,15 @@ const Register = () => {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-2 text-sm text-gray-600">Join SyncApp to start publishing your blog posts</p>
+          <h1 className="text-3xl font-bold text-gray-900">{SYNC_LABEL.CREATE_ACCOUNT}</h1>
+          <p className="mt-2 text-sm text-gray-600">{SYNC_LABEL.JOIN_SYNCAPP}</p>
         </div>
 
         {/* Registration Form */}
         <Card className="shadow-sm border">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">Sign Up</CardTitle>
-            <CardDescription>Fill in your details to create an account</CardDescription>
+            <CardTitle className="text-xl">{SYNC_LABEL.SIGN_UP}</CardTitle>
+            <CardDescription>{SYNC_LABEL.FILL_DETAILS}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,7 +101,7 @@ const Register = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
+                    {SYNC_LABEL.LABEL_FIRST_NAME}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -113,7 +113,7 @@ const Register = () => {
                       type="text"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      placeholder="First name"
+                      placeholder={SYNC_LABEL.PLACEHOLDER_FIRST_NAME_PROFILE}
                       className="pl-10"
                     />
                   </div>
@@ -121,7 +121,7 @@ const Register = () => {
 
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
+                    {SYNC_LABEL.LABEL_LAST_NAME}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -133,7 +133,7 @@ const Register = () => {
                       type="text"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      placeholder="Last name"
+                      placeholder={SYNC_LABEL.PLACEHOLDER_LAST_NAME_PROFILE}
                       className="pl-10"
                     />
                   </div>
@@ -142,7 +142,7 @@ const Register = () => {
 
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
+                  {SYNC_LABEL.LABEL_USERNAME}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -155,7 +155,7 @@ const Register = () => {
                     required
                     value={formData.username}
                     onChange={handleInputChange}
-                    placeholder="Choose a username"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_CHOOSE_USERNAME}
                     className="pl-10"
                   />
                 </div>
@@ -163,7 +163,7 @@ const Register = () => {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  {SYNC_LABEL.EMAIL_LABEL}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -176,7 +176,7 @@ const Register = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="Enter your email"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_EMAIL}
                     className="pl-10"
                   />
                 </div>
@@ -184,7 +184,7 @@ const Register = () => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {SYNC_LABEL.LABEL_PASSWORD}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -197,7 +197,7 @@ const Register = () => {
                     required
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Create a password"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_CREATE_PASSWORD}
                     className="pl-10 pr-10"
                   />
                   <button
@@ -216,7 +216,7 @@ const Register = () => {
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  {SYNC_LABEL.CONFIRM_NEW_PASSWORD}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -229,7 +229,7 @@ const Register = () => {
                     required
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder="Confirm your password"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_CONFIRM_PASSWORD_REGISTER}
                     className="pl-10 pr-10"
                   />
                   <button
@@ -248,10 +248,10 @@ const Register = () => {
 
               <Button type="submit" className="w-full flex items-center justify-center space-x-2" disabled={loading}>
                 {loading ? (
-                  "Creating account..."
+                  SYNC_LABEL.CREATING_ACCOUNT
                 ) : (
                   <>
-                    <span>Create Account</span>
+                    <span>{SYNC_LABEL.CREATE_ACCOUNT_BUTTON}</span>
                     <FiArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -260,9 +260,9 @@ const Register = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{" "}
+                {SYNC_LABEL.ALREADY_HAVE_ACCOUNT}{" "}
                 <Link to={ROUTES.LOGIN} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                  Sign in here
+                  {SYNC_LABEL.SIGN_IN_HERE}
                 </Link>
               </p>
             </div>
@@ -271,7 +271,7 @@ const Register = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>&copy; 2025 SyncApp. All rights reserved.</p>
+          <p>{SYNC_LABEL.COPYRIGHT}</p>
         </div>
       </div>
     </div>

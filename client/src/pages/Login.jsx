@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { ROUTES } from "../constants";
+import { ROUTES, SYNC_LABEL } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
@@ -41,7 +41,7 @@ const Login = () => {
         setError(result.error);
       }
     } catch (error) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setLoading(false);
     }
@@ -52,15 +52,15 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your account to continue</p>
+          <h1 className="text-3xl font-bold text-gray-900">{SYNC_LABEL.WELCOME_BACK}</h1>
+          <p className="mt-2 text-sm text-gray-600">{SYNC_LABEL.SIGN_IN_DESCRIPTION}</p>
         </div>
 
         {/* Login Form */}
         <Card className="shadow-sm border">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-xl">{SYNC_LABEL.SIGN_IN}</CardTitle>
+            <CardDescription>{SYNC_LABEL.SIGN_IN_DESCRIPTION_2}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,7 +70,7 @@ const Login = () => {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  {SYNC_LABEL.EMAIL_LABEL}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -83,7 +83,7 @@ const Login = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="Enter your email"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_EMAIL}
                     className="pl-10"
                   />
                 </div>
@@ -91,7 +91,7 @@ const Login = () => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {SYNC_LABEL.LABEL_PASSWORD}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -104,7 +104,7 @@ const Login = () => {
                     required
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Enter your password"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_NEW_PASSWORD}
                     className="pl-10 pr-10"
                   />
                   <button
@@ -123,10 +123,10 @@ const Login = () => {
 
               <Button type="submit" className="w-full flex items-center justify-center space-x-2" disabled={loading}>
                 {loading ? (
-                  "Signing in..."
+                  SYNC_LABEL.SIGNING_IN
                 ) : (
                   <>
-                    <span>Sign In</span>
+                    <span>{SYNC_LABEL.SIGN_IN}</span>
                     <FiArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -135,9 +135,9 @@ const Login = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{" "}
+                {SYNC_LABEL.DONT_HAVE_ACCOUNT}{" "}
                 <Link to={ROUTES.REGISTER} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                  Sign up here
+                  {SYNC_LABEL.SIGN_UP_HERE}
                 </Link>
               </p>
             </div>
@@ -146,7 +146,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>&copy; 2025 SyncApp. All rights reserved.</p>
+          <p>{SYNC_LABEL.COPYRIGHT}</p>
         </div>
       </div>
     </div>
