@@ -3,7 +3,7 @@ import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "r
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { API_PATHS } from "../constants";
+import { API_PATHS, SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
@@ -63,7 +63,7 @@ const Settings = () => {
 
   const handleSaveMediumCredentials = async () => {
     if (!mediumApiKey.trim()) {
-      toast.validationError("Please enter your Medium API key");
+      toast.validationError(SYNC_LABEL.ENTER_MEDIUM_API_KEY);
       return;
     }
 
@@ -92,7 +92,7 @@ const Settings = () => {
 
   const handleSaveDevtoCredentials = async () => {
     if (!devtoApiKey.trim() || !devtoUsername.trim()) {
-      toast.validationError("Please enter both DEV.to API key and username");
+      toast.validationError(SYNC_LABEL.ENTER_DEVTO_CREDENTIALS);
       return;
     }
 
@@ -124,13 +124,13 @@ const Settings = () => {
 
   const handleSaveWordpressCredentials = async () => {
     if (!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) {
-      toast.validationError("Please enter both WordPress API key and site URL");
+      toast.validationError(SYNC_LABEL.ENTER_WORDPRESS_CREDENTIALS);
       return;
     }
 
     // Validate WordPress site URL
     if (!wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
-      toast.validationError("Please enter a valid WordPress site URL (must start with http:// or https://)");
+      toast.validationError(SYNC_LABEL.VALID_WORDPRESS_URL);
       return;
     }
 
@@ -162,29 +162,29 @@ const Settings = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-2">Configure your API credentials and platform settings</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.SETTINGS_TITLE}</h1>
+        <p className="text-muted-foreground mt-2">{SYNC_LABEL.SETTINGS_DESCRIPTION}</p>
       </div>
 
       {/* Medium Integration */}
       <Card className="border shadow-sm">
         <CardHeader>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <FiKey className="h-6 w-6 text-orange-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
+              <FiKey className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
             </div>
             <div>
-              <CardTitle>Medium Integration</CardTitle>
-              <CardDescription>Connect your Medium account to publish posts directly</CardDescription>
+              <CardTitle>{SYNC_LABEL.MEDIUM_INTEGRATION}</CardTitle>
+              <CardDescription>{SYNC_LABEL.MEDIUM_INTEGRATION_DESCRIPTION}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <FiAlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">How to get your Medium API key:</p>
+                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_MEDIUM_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
                     Go to{" "}
@@ -194,27 +194,25 @@ const Settings = () => {
                       rel="noopener noreferrer"
                       className="underline hover:text-blue-900"
                     >
-                      Medium Settings
+                      {SYNC_LABEL.MEDIUM_SETTINGS}
                     </a>
                   </li>
-                  <li>Scroll down to "Integration tokens"</li>
-                  <li>Click "Get integration token"</li>
-                  <li>Copy the generated token</li>
+                  <li>{SYNC_LABEL.INTEGRATION_TOKENS}</li>
+                  <li>{SYNC_LABEL.GET_INTEGRATION_TOKEN}</li>
+                  <li>{SYNC_LABEL.COPY_TOKEN}</li>
                 </ol>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Medium Integration Token</label>
+            <label className="block text-sm font-medium text-foreground mb-2">{SYNC_LABEL.MEDIUM_API_KEY_LABEL}</label>
             <div className="relative">
               <Input
                 type={showMediumKey ? "text" : "password"}
                 value={mediumApiKey}
                 onChange={(e) => setMediumApiKey(e.target.value)}
-                placeholder={
-                  saved.medium ? "Saved (hidden) — enter new to replace" : "Enter your Medium integration token..."
-                }
+                placeholder={saved.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
                 className="w-full pr-10"
               />
               <button
@@ -227,20 +225,24 @@ const Settings = () => {
                 }}
                 className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                {showMediumKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                {showMediumKey ? (
+                  <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                ) : (
+                  <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">This token will be encrypted and stored securely</p>
+            <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.TOKEN_ENCRYPTED}</p>
           </div>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveMediumCredentials}
             disabled={loading || !mediumApiKey.trim()}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1.5 sm:space-x-2"
           >
-            <FiSave className="h-4 w-4" />
-            {loading ? "Saving..." : saved.medium ? "Saved!" : "Save Credentials"}
+            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+            {loading ? SYNC_LABEL.SAVING : saved.medium ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -253,8 +255,8 @@ const Settings = () => {
               <FiKey className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <CardTitle>DEV.to Integration</CardTitle>
-              <CardDescription>Connect your DEV.to account to publish posts directly</CardDescription>
+              <CardTitle>{SYNC_LABEL.DEVTO_INTEGRATION}</CardTitle>
+              <CardDescription>{SYNC_LABEL.DEVTO_INTEGRATION_DESCRIPTION}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -263,7 +265,7 @@ const Settings = () => {
             <div className="flex items-start space-x-3">
               <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-purple-800">
-                <p className="font-medium mb-1">How to get your DEV.to API key:</p>
+                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_DEVTO_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
                     Go to{" "}
@@ -273,12 +275,12 @@ const Settings = () => {
                       rel="noopener noreferrer"
                       className="underline hover:text-purple-900"
                     >
-                      DEV.to Settings
+                      {SYNC_LABEL.DEVTO_SETTINGS}
                     </a>
                   </li>
-                  <li>Scroll down to "API Keys" section</li>
-                  <li>Click "Generate API Key"</li>
-                  <li>Copy the generated key</li>
+                  <li>{SYNC_LABEL.API_KEYS_SECTION}</li>
+                  <li>{SYNC_LABEL.GENERATE_API_KEY}</li>
+                  <li>{SYNC_LABEL.COPY_KEY}</li>
                 </ol>
               </div>
             </div>
@@ -286,22 +288,24 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">DEV.to Username</label>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {SYNC_LABEL.DEVTO_USERNAME_LABEL}
+              </label>
               <Input
                 value={devtoUsername}
                 onChange={(e) => setDevtoUsername(e.target.value)}
-                placeholder="Enter your DEV.to username..."
+                placeholder={SYNC_LABEL.PLACEHOLDER_DEVTO_USERNAME}
                 className="w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">DEV.to API Key</label>
+              <label className="block text-sm font-medium text-foreground mb-2">{SYNC_LABEL.DEVTO_API_KEY_LABEL}</label>
               <div className="relative">
                 <Input
                   type={showDevtoKey ? "text" : "password"}
                   value={devtoApiKey}
                   onChange={(e) => setDevtoApiKey(e.target.value)}
-                  placeholder={saved.devto ? "Saved (hidden) — enter new to replace" : "Enter your DEV.to API key..."}
+                  placeholder={saved.devto ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY}
                   className="w-full pr-10"
                 />
                 <button
@@ -319,16 +323,16 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">Both username and API key are required for DEV.to integration</p>
+          <p className="text-sm text-muted-foreground">{SYNC_LABEL.BOTH_REQUIRED_DEVTO}</p>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveDevtoCredentials}
             disabled={loading || !devtoApiKey.trim() || !devtoUsername.trim()}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1.5 sm:space-x-2"
           >
-            <FiSave className="h-4 w-4" />
-            {loading ? "Saving..." : saved.devto ? "Saved!" : "Save Credentials"}
+            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+            {loading ? SYNC_LABEL.SAVING : saved.devto ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -341,32 +345,32 @@ const Settings = () => {
               <FiKey className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <CardTitle>WordPress Integration</CardTitle>
-              <CardDescription>Connect your WordPress site to publish posts directly</CardDescription>
+              <CardTitle>{SYNC_LABEL.WORDPRESS_INTEGRATION}</CardTitle>
+              <CardDescription>{SYNC_LABEL.WORDPRESS_INTEGRATION_DESCRIPTION}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <FiAlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">How to get your WordPress API key:</p>
+                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_WORDPRESS_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
-                    Install and activate the{" "}
+                    {SYNC_LABEL.INSTALL_JWT_PLUGIN}{" "}
                     <a
                       href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:text-blue-900"
                     >
-                      JWT Authentication plugin
+                      {SYNC_LABEL.WORDPRESS_JWT_PLUGIN}
                     </a>
                   </li>
-                  <li>Go to WordPress Admin → Users → Your Profile</li>
-                  <li>Generate a new application password</li>
-                  <li>Use your username and the generated password as the API key</li>
+                  <li>{SYNC_LABEL.WORDPRESS_ADMIN}</li>
+                  <li>{SYNC_LABEL.GENERATE_APP_PASSWORD}</li>
+                  <li>{SYNC_LABEL.USE_USERNAME_PASSWORD}</li>
                 </ol>
               </div>
             </div>
@@ -374,25 +378,27 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">WordPress Site URL</label>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {SYNC_LABEL.WORDPRESS_SITE_URL_LABEL}
+              </label>
               <Input
                 value={wordpressSiteUrl}
                 onChange={(e) => setWordpressSiteUrl(e.target.value)}
-                placeholder="https://yoursite.com"
+                placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL}
                 className="w-full"
               />
-              <p className="text-sm text-muted-foreground mt-1">Your WordPress site URL (e.g., https://yoursite.com)</p>
+              <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">WordPress API Key</label>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {SYNC_LABEL.WORDPRESS_API_KEY_LABEL}
+              </label>
               <div className="relative">
                 <Input
                   type={showWordpressKey ? "text" : "password"}
                   value={wordpressApiKey}
                   onChange={(e) => setWordpressApiKey(e.target.value)}
-                  placeholder={
-                    saved.wordpress ? "Saved (hidden) — enter new to replace" : "Enter your WordPress API key..."
-                  }
+                  placeholder={saved.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY}
                   className="w-full pr-10"
                 />
                 <button
@@ -408,23 +414,19 @@ const Settings = () => {
                   {showWordpressKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                 </button>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your WordPress username:password or application password
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Both site URL and API key are required for WordPress integration
-          </p>
+          <p className="text-sm text-muted-foreground">{SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}</p>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveWordpressCredentials}
             disabled={loading || !wordpressApiKey.trim() || !wordpressSiteUrl.trim()}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1.5 sm:space-x-2"
           >
-            <FiSave className="h-4 w-4" />
-            {loading ? "Saving..." : saved.wordpress ? "Saved!" : "Save Credentials"}
+            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+            {loading ? SYNC_LABEL.SAVING : saved.wordpress ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -432,19 +434,21 @@ const Settings = () => {
       {/* Platform Status */}
       <Card className="border shadow-sm">
         <CardHeader>
-          <CardTitle>Platform Status</CardTitle>
-          <CardDescription>Current status of your connected platforms</CardDescription>
+          <CardTitle>{SYNC_LABEL.PLATFORM_STATUS}</CardTitle>
+          <CardDescription>{SYNC_LABEL.PLATFORM_STATUS_DESCRIPTION}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FiKey className="h-4 w-4 text-orange-600" />
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
+                  <FiKey className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
                 </div>
                 <div>
                   <p className="font-medium">Medium</p>
-                  <p className="text-sm text-muted-foreground">{mediumApiKey ? "Connected" : "Not connected"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {mediumApiKey ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                  </p>
                 </div>
               </div>
               <div
@@ -452,7 +456,7 @@ const Settings = () => {
                   mediumApiKey ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {mediumApiKey ? "Active" : "Inactive"}
+                {mediumApiKey ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
               </div>
             </div>
 
@@ -464,7 +468,7 @@ const Settings = () => {
                 <div>
                   <p className="font-medium">DEV.to</p>
                   <p className="text-sm text-muted-foreground">
-                    {devtoApiKey && devtoUsername ? "Connected" : "Not connected"}
+                    {devtoApiKey && devtoUsername ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
                 </div>
               </div>
@@ -473,7 +477,7 @@ const Settings = () => {
                   devtoApiKey && devtoUsername ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {devtoApiKey && devtoUsername ? "Active" : "Inactive"}
+                {devtoApiKey && devtoUsername ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
               </div>
             </div>
 
@@ -485,7 +489,7 @@ const Settings = () => {
                 <div>
                   <p className="font-medium">WordPress</p>
                   <p className="text-sm text-muted-foreground">
-                    {wordpressApiKey && wordpressSiteUrl ? "Connected" : "Not connected"}
+                    {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
                 </div>
               </div>
@@ -494,7 +498,7 @@ const Settings = () => {
                   wordpressApiKey && wordpressSiteUrl ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {wordpressApiKey && wordpressSiteUrl ? "Active" : "Inactive"}
+                {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
               </div>
             </div>
           </div>
@@ -504,8 +508,8 @@ const Settings = () => {
       {/* Help & Support */}
       <Card>
         <CardHeader>
-          <CardTitle>Help & Support</CardTitle>
-          <CardDescription>Resources to help you get started</CardDescription>
+          <CardTitle>{SYNC_LABEL.HELP_SUPPORT}</CardTitle>
+          <CardDescription>{SYNC_LABEL.HELP_SUPPORT_DESCRIPTION}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <a
@@ -514,11 +518,11 @@ const Settings = () => {
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
-            <div className="flex items-center space-x-3">
-              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
-              <span>Medium Integration Token Guide</span>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span>{SYNC_LABEL.MEDIUM_INTEGRATION_GUIDE}</span>
             </div>
-            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </a>
 
           <a
@@ -527,11 +531,11 @@ const Settings = () => {
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
-            <div className="flex items-center space-x-3">
-              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
-              <span>DEV.to API Key Guide</span>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span>{SYNC_LABEL.DEVTO_API_KEY_GUIDE}</span>
             </div>
-            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </a>
 
           <a
@@ -540,11 +544,11 @@ const Settings = () => {
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
-            <div className="flex items-center space-x-3">
-              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
-              <span>WordPress JWT Authentication Plugin</span>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span>{SYNC_LABEL.WORDPRESS_JWT_PLUGIN}</span>
             </div>
-            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </a>
 
           <a
@@ -553,11 +557,11 @@ const Settings = () => {
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
-            <div className="flex items-center space-x-3">
-              <FiExternalLink className="h-4 w-4 text-muted-foreground" />
-              <span>GitHub Repository</span>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span>{SYNC_LABEL.GITHUB_REPOSITORY}</span>
             </div>
-            <FiExternalLink className="h-4 w-4 text-muted-foreground" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </a>
         </CardContent>
       </Card>

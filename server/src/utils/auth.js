@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { config } = require("../config");
+const { ERROR_MESSAGES } = require("../constants/messages");
+const { USER_ROLES } = require("../constants/userRoles");
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -33,7 +35,7 @@ const authenticateToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       success: false,
-      error: "Access token required",
+      error: ERROR_MESSAGES.ACCESS_TOKEN_REQUIRED,
     });
   }
 
@@ -41,7 +43,7 @@ const authenticateToken = (req, res, next) => {
   if (!decoded) {
     return res.status(401).json({
       success: false,
-      error: "Invalid or expired token",
+      error: ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN,
     });
   }
 
@@ -63,10 +65,42 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
+// Admin authorization middleware (must be used after authenticateToken)
+const requireAdmin = async (req, res, next) => {
+  try {
+    const User = require("../models/User");
+    const user = await User.findById(req.userId).select("role");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: ERROR_MESSAGES.USER_NOT_FOUND,
+      });
+    }
+
+    if (user.role !== USER_ROLES.ADMIN) {
+      return res.status(403).json({
+        success: false,
+        error: ERROR_MESSAGES.ADMIN_ACCESS_REQUIRED,
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Admin check error:", error);
+    res.status(500).json({
+      success: false,
+      error: ERROR_MESSAGES.FAILED_TO_VERIFY_ADMIN,
+      details: error.message,
+    });
+  }
+};
+
 module.exports = {
   generateToken,
   verifyToken,
   extractToken,
   authenticateToken,
   optionalAuth,
+  requireAdmin,
 };

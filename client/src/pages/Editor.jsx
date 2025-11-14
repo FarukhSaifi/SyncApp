@@ -9,6 +9,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
+import { SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
@@ -101,7 +102,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     try {
       const postId = id;
       if (!postId) {
-        toast.validationError("Please save the post first before exporting MDX");
+        toast.validationError(SYNC_LABEL.SAVE_FIRST_BEFORE_EXPORT);
         return;
       }
       await apiClient.downloadMdx(postId);
@@ -120,7 +121,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handleSave = async (status = "draft") => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError("Please fill in both title and content");
+      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
       return;
     }
 
@@ -174,7 +175,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToMedium = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError("Please fill in both title and content");
+      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
       return;
     }
 
@@ -225,7 +226,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToDevto = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError("Please fill in both title and content");
+      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
       return;
     }
 
@@ -276,7 +277,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToWordpress = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError("Please fill in both title and content");
+      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
       return;
     }
 
@@ -327,7 +328,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   const handlePublishToAll = async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError("Please fill in both title and content");
+      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
       return;
     }
 
@@ -378,38 +379,46 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
 
   return (
     <div className="min-h-screen w-full">
-      <div className=" mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-          <div className="mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{id ? "Edit Post" : "New Post"}</h1>
-            <p className="text-gray-600 mt-2">{id ? "Update your blog post" : "Create a new blog post"}</p>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {id ? SYNC_LABEL.EDIT_POST : SYNC_LABEL.NEW_POST}
+              </h1>
+              <p className="text-muted-foreground mt-1 sm:mt-2 text-xs sm:text-sm">
+                {id ? SYNC_LABEL.UPDATE_POST_DESCRIPTION : SYNC_LABEL.CREATE_POST_DESCRIPTION}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/")}
-                className="flex items-center space-x-2"
-                aria-label="Back to Dashboard"
-                title="Back to Dashboard"
+                className="flex items-center space-x-1.5 sm:space-x-2"
+                aria-label={SYNC_LABEL.BACK_TO_DASHBOARD}
+                title={SYNC_LABEL.BACK_TO_DASHBOARD}
               >
-                <FiArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
+                <FiArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{SYNC_LABEL.BACK_TO_DASHBOARD}</span>
               </Button>
-            </div>
-
-            <div className="flex items-center justify-end sm:justify-end w-full sm:w-auto space-x-2 mb-4 sm:mb-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPreview(!showPreview)}
-                aria-label={showPreview ? "Hide Preview" : "Show Preview"}
-                title={showPreview ? "Hide Preview" : "Show Preview"}
+                className="flex items-center space-x-1.5 sm:space-x-2"
+                aria-label={showPreview ? SYNC_LABEL.HIDE_PREVIEW : SYNC_LABEL.SHOW_PREVIEW}
+                title={showPreview ? SYNC_LABEL.HIDE_PREVIEW : SYNC_LABEL.SHOW_PREVIEW}
               >
-                {showPreview ? <FiEyeOff className="h-4 w-4 sm:mr-2" /> : <FiEye className="h-4 w-4 sm:mr-2" />}
-                <span className="hidden sm:inline">{showPreview ? "Hide Preview" : "Show Preview"}</span>
+                {showPreview ? (
+                  <FiEyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
+                ) : (
+                  <FiEye className="h-3 w-3 sm:h-4 sm:w-4" />
+                )}
+                <span className="text-xs sm:text-sm">
+                  {showPreview ? SYNC_LABEL.HIDE_PREVIEW : SYNC_LABEL.SHOW_PREVIEW}
+                </span>
               </Button>
             </div>
           </div>
@@ -421,21 +430,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             {/* Title Input */}
             <Card className="shadow-sm border">
               <CardHeader>
-                <CardTitle>Post Title</CardTitle>
+                <CardTitle>{SYNC_LABEL.POST_TITLE}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Post Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{SYNC_LABEL.POST_TITLE}</label>
                   <Input
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    placeholder="Enter your post title..."
+                    placeholder={SYNC_LABEL.PLACEHOLDER_POST_TITLE}
                     className="w-full"
                   />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Enter the post title here, it will create a slug for the post
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{SYNC_LABEL.TITLE_SLUG_INFO}</p>
                 </div>
               </CardContent>
             </Card>
@@ -444,8 +451,8 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             <Card className="shadow-sm border">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Content</CardTitle>
-                  <div className="text-sm text-muted-foreground">Rich text editor</div>
+                  <CardTitle>{SYNC_LABEL.CONTENT}</CardTitle>
+                  <div className="text-sm text-muted-foreground">{SYNC_LABEL.RICH_TEXT_EDITOR}</div>
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
@@ -453,7 +460,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                   theme="snow"
                   value={formData.content_markdown}
                   onChange={handleQuillChange}
-                  placeholder="Write your post content here..."
+                  placeholder={SYNC_LABEL.PLACEHOLDER_POST_CONTENT}
                 />
               </CardContent>
             </Card>
@@ -461,7 +468,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             {/* Metadata */}
             <Card className="shadow-sm border">
               <CardHeader>
-                <CardTitle>Post Metadata</CardTitle>
+                <CardTitle>{SYNC_LABEL.POST_METADATA}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4">
                 <div>
@@ -470,12 +477,10 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     name="tags"
                     value={formData.tags}
                     onChange={handleInputChange}
-                    placeholder="webdev, programming, javascript, react..."
+                    placeholder={SYNC_LABEL.PLACEHOLDER_TAGS}
                     className="w-full"
                   />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Tags help with discoverability on DEV.to and other platforms
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{SYNC_LABEL.TAGS_HELP}</p>
                 </div>
 
                 <div>
@@ -484,7 +489,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     name="cover_image"
                     value={formData.cover_image}
                     onChange={handleInputChange}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_COVER_IMAGE}
                     className="w-full"
                   />
                 </div>
@@ -495,10 +500,10 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     name="canonical_url"
                     value={formData.canonical_url}
                     onChange={handleInputChange}
-                    placeholder="https://yourblog.com/post-url"
+                    placeholder={SYNC_LABEL.PLACEHOLDER_CANONICAL_URL}
                     className="w-full"
                   />
-                  <p className="text-sm text-gray-500 mt-1">Original source URL for SEO purposes</p>
+                  <p className="text-sm text-gray-500 mt-1">{SYNC_LABEL.CANONICAL_URL_HELP}</p>
                 </div>
               </CardContent>
             </Card>
@@ -506,7 +511,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             {/* Action Buttons */}
             <Card className="shadow-sm border">
               <CardHeader>
-                <CardTitle>Action Buttons</CardTitle>
+                <CardTitle>{SYNC_LABEL.ACTION_BUTTONS}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -518,7 +523,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     className="w-full"
                   >
                     <FiSave className="h-4 w-4 mr-2" />
-                    {loading ? "Saving..." : "Save Draft"}
+                    {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.SAVE_DRAFT}
                   </Button>
                   <Button
                     variant="outline"
@@ -528,11 +533,11 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     className="w-full"
                   >
                     <FiSave className="h-4 w-4 mr-2" />
-                    Export MDX
+                    {SYNC_LABEL.EXPORT_MDX}
                   </Button>
                   <Button size="sm" onClick={handlePublishToMedium} disabled={publishing} className="w-full">
                     <FiSend className="h-4 w-4 mr-2" />
-                    {publishing ? "Publishing..." : "Publish to Medium"}
+                    {publishing ? SYNC_LABEL.PUBLISHING : SYNC_LABEL.PUBLISH_TO_MEDIUM}
                   </Button>
                   <Button
                     size="sm"
@@ -542,7 +547,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     className="w-full"
                   >
                     <FiGlobe className="h-4 w-4 mr-2" />
-                    {publishing ? "Publishing..." : "Publish to DEV.to"}
+                    {publishing ? SYNC_LABEL.PUBLISHING : SYNC_LABEL.PUBLISH_TO_DEVTO}
                   </Button>
                   <Button
                     size="sm"
@@ -552,7 +557,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     className="w-full "
                   >
                     <FiGlobe className="h-4 w-4 mr-2" />
-                    {publishing ? "Publishing..." : "Publish to WordPress"}
+                    {publishing ? SYNC_LABEL.PUBLISHING : SYNC_LABEL.PUBLISH_TO_WORDPRESS}
                   </Button>
                   <Button
                     size="sm"
@@ -562,7 +567,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     className="w-full"
                   >
                     <FiGlobe className="h-4 w-4 mr-2" />
-                    {publishing ? "Publishing..." : "Publish to All"}
+                    {publishing ? SYNC_LABEL.PUBLISHING : SYNC_LABEL.PUBLISH_TO_ALL}
                   </Button>
                 </div>
               </CardContent>
@@ -574,11 +579,13 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
             <div className="space-y-6">
               <Card className="shadow-sm border lg:sticky lg:top-6">
                 <CardHeader>
-                  <CardTitle>Preview</CardTitle>
+                  <CardTitle>{SYNC_LABEL.PREVIEW}</CardTitle>
                 </CardHeader>
                 <CardContent className="max-h-[100vh] overflow-auto">
                   <div className="prose prose-sm md:prose-base max-w-none">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">{formData.title || "Untitled Post"}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                      {formData.title || SYNC_LABEL.UNTITLED_POST}
+                    </h1>
                     {formData.cover_image && (
                       <img
                         src={formData.cover_image}
@@ -635,7 +642,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                           },
                         }}
                       >
-                        {formData.content_markdown || "*No content yet...*"}
+                        {formData.content_markdown || SYNC_LABEL.NO_CONTENT_YET}
                       </ReactMarkdown>
                     </div>
                     {formData.tags && (

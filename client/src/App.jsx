@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import AdminRoute from "./components/AdminRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -14,6 +15,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Register = lazy(() => import("./pages/Register"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Users = lazy(() => import("./pages/Users"));
 
 function AppContent() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -87,6 +89,14 @@ function AppContent() {
                       <ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/users"
+                    element={
+                      <AdminRoute>
+                        <Users />
+                      </AdminRoute>
                     }
                   />
                   <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
