@@ -199,6 +199,13 @@ export const LABELS = Object.freeze({
   ACTIVE: "Active",
   INACTIVE: "Inactive",
   NOT_PUBLISHED: "Not published",
+  // Platform Names
+  PLATFORM_MEDIUM: "Medium",
+  PLATFORM_DEVTO: "DEV.to",
+  PLATFORM_WORDPRESS: "WordPress",
+  // Accessibility Labels
+  HIDE_API_KEY: "Hide API key",
+  SHOW_API_KEY: "Show API key",
   // Table Headers
   TABLE_TITLE: "Title",
   TABLE_STATUS: "Status",
@@ -429,6 +436,7 @@ export const INFO_MESSAGES = Object.freeze({
   HAS_COVER_IMAGE: "📷 Has cover image",
   NO_TAGS: "No tags",
   // Settings Help
+  GO_TO: "Go to",
   HOW_TO_GET_MEDIUM_KEY: "How to get your Medium API key:",
   HOW_TO_GET_DEVTO_KEY: "How to get your DEV.to API key:",
   HOW_TO_GET_WORDPRESS_KEY: "How to get your WordPress API key:",
@@ -448,6 +456,8 @@ export const INFO_MESSAGES = Object.freeze({
   DEVTO_API_KEY_GUIDE: "DEV.to API Key Guide",
   WORDPRESS_JWT_PLUGIN: "WordPress JWT Authentication Plugin",
   GITHUB_REPOSITORY: "GitHub Repository",
+  // Error Messages - Settings
+  FAILED_TO_LOAD_CREDENTIALS: "Failed to load credentials",
   // Auth
   DONT_HAVE_ACCOUNT: "Don't have an account?",
   SIGN_UP_HERE: "Sign up here",
