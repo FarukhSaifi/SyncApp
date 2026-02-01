@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const createSlug = require("slugify");
 const { v4: uuidv4 } = require("uuid");
+const { STRING_LIMITS, NUMERIC_LIMITS, VALID_POST_STATUS, POST_STATUS } = require("../constants");
 
 const postSchema = new mongoose.Schema(
   {
@@ -21,7 +22,7 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: [true, "Title is required"],
       trim: true,
-      maxlength: [500, "Title cannot exceed 500 characters"],
+      maxlength: [STRING_LIMITS.POST_TITLE_MAX, `Title cannot exceed ${STRING_LIMITS.POST_TITLE_MAX} characters`],
     },
     content_markdown: {
       type: String,
@@ -29,8 +30,8 @@ const postSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "published", "archived"],
-      default: "draft",
+      enum: VALID_POST_STATUS,
+      default: POST_STATUS.DRAFT,
     },
     // Multi-platform publishing status
     platform_status: {
@@ -83,7 +84,7 @@ async function generateUniqueSlug(doc) {
       strict: true,
       trim: true,
       locale: "en",
-    }).slice(0, 120) || "untitled-post";
+    }).slice(0, STRING_LIMITS.POST_SLUG_MAX) || "untitled-post";
 
   let candidate = base;
   let suffix = 2;
@@ -91,24 +92,19 @@ async function generateUniqueSlug(doc) {
   // Ensure uniqueness; exclude current doc id when updating
   // Try a few friendly suffixes before falling back to uuid segment
   while (await mongoose.model("Post").exists({ slug: candidate, _id: { $ne: doc._id } })) {
-    if (suffix <= 6) {
+    if (suffix <= NUMERIC_LIMITS.SLUG_MAX_SUFFIX_ATTEMPTS) {
       candidate = `${base}-${suffix++}`;
     } else {
-      candidate = `${base}-${uuidv4().slice(0, 6)}`;
+      candidate = `${base}-${uuidv4().slice(0, NUMERIC_LIMITS.SLUG_UUID_LENGTH)}`;
       break;
     }
   }
   return candidate;
 }
 
-postSchema.pre("validate", async function (next) {
-  if (!this.isModified("title") && this.slug) return next();
-  try {
-    this.slug = await generateUniqueSlug(this);
-    next();
-  } catch (err) {
-    next(err);
-  }
+postSchema.pre("validate", async function () {
+  if (!this.isModified("title") && this.slug) return;
+  this.slug = await generateUniqueSlug(this);
 });
 
 // Virtual for formatted dates

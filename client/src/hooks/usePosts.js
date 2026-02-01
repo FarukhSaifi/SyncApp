@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_PAGINATION } from "../constants";
 import { apiClient } from "../utils/apiClient";
+import { devError, devLog, devWarn } from "../utils/logger";
 
 export function usePosts(initialPagination = DEFAULT_PAGINATION) {
   const [posts, setPosts] = useState([]);
@@ -13,31 +14,30 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
     setError(null);
 
     try {
-      // Use opts if provided, otherwise use current pagination state
       const params = opts.page !== undefined || opts.limit !== undefined ? opts : { page: 1, limit: 20 };
+      devLog("Fetching posts with params:", params);
 
-      console.log("🔄 Fetching posts with params:", params);
       const response = await apiClient.getPosts(params);
 
       if (response && response.success) {
-        console.log("✅ Posts fetched successfully:", response.data?.length || 0, "posts");
+        devLog("Posts fetched:", response.data?.length ?? 0);
         setPosts(response.data || []);
         if (response.pagination) {
           setPagination(response.pagination);
         }
       } else {
-        console.warn("⚠️ API returned unsuccessful response:", response);
+        devWarn("API returned unsuccessful response:", response);
         setError(response?.error || "Failed to fetch posts");
         setPosts([]);
       }
     } catch (err) {
-      console.error("❌ Error fetching posts:", err);
+      devError("Error fetching posts:", err);
       setError(err.message || "Failed to fetch posts");
       setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, []); // No dependencies to prevent infinite loops
+  }, []);
 
   useEffect(() => {
     fetchPosts();

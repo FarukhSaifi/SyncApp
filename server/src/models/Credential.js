@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { VALID_PLATFORMS, PLATFORMS, NUMERIC_LIMITS } = require("../constants");
 
 const credentialSchema = new mongoose.Schema(
   {
@@ -8,7 +9,7 @@ const credentialSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      enum: ["medium", "devto", "wordpress", "hashnode"], // Supported platforms
+      enum: VALID_PLATFORMS,
     },
     api_key: {
       type: String,
@@ -19,12 +20,12 @@ const credentialSchema = new mongoose.Schema(
       trim: true,
       // Only required for WordPress
       required: function () {
-        return this.platform_name === "wordpress";
+        return this.platform_name === PLATFORMS.WORDPRESS;
       },
     },
     user_id: {
       type: Number,
-      default: 1, // Placeholder for future multi-user support
+      default: NUMERIC_LIMITS.DEFAULT_USER_ID,
     },
     is_active: {
       type: Boolean,

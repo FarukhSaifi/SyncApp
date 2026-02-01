@@ -2,6 +2,7 @@ require("dotenv").config();
 const { config } = require("../config");
 const connectDB = require("./connection");
 const Credential = require("../models/Credential");
+const { DATABASE, PLATFORMS } = require("../constants");
 
 async function setupDatabase() {
   try {
@@ -14,17 +15,12 @@ async function setupDatabase() {
     console.log("✅ MongoDB connection established");
 
     // Check if default credentials already exist
-    const existingMediumCredentials = await Credential.findOne({ platform_name: "medium" });
-    const existingDevtoCredentials = await Credential.findOne({ platform_name: "devto" });
+    const existingMediumCredentials = await Credential.findOne({ platform_name: PLATFORMS.MEDIUM });
+    const existingDevtoCredentials = await Credential.findOne({ platform_name: PLATFORMS.DEVTO });
 
     if (!existingMediumCredentials) {
       // Create default Medium credentials record
-      await Credential.create({
-        platform_name: "medium",
-        api_key: "your_medium_api_key_here",
-        user_id: 1,
-        is_active: false,
-      });
+      await Credential.create(DATABASE.DEFAULT_PLATFORM_CREDENTIALS.MEDIUM);
       console.log("✅ Default Medium credentials record created");
     } else {
       console.log("✅ Medium credentials already exist");
@@ -32,15 +28,7 @@ async function setupDatabase() {
 
     if (!existingDevtoCredentials) {
       // Create default DEV.to credentials record
-      await Credential.create({
-        platform_name: "devto",
-        api_key: "your_devto_api_key_here",
-        user_id: 1,
-        is_active: false,
-        platform_config: {
-          devto_username: "your_devto_username_here",
-        },
-      });
+      await Credential.create(DATABASE.DEFAULT_PLATFORM_CREDENTIALS.DEVTO);
       console.log("✅ Default DEV.to credentials record created");
     } else {
       console.log("✅ DEV.to credentials already exist");
@@ -48,8 +36,8 @@ async function setupDatabase() {
 
     console.log("🎉 Database setup completed successfully!");
     console.log("📝 Don't forget to update your API keys in the settings!");
-    console.log("   - Medium API key: https://medium.com/me/settings");
-    console.log("   - DEV.to API key: https://dev.to/settings/account");
+    console.log(`   - Medium API key: ${DATABASE.SETUP_URLS.MEDIUM_SETTINGS}`);
+    console.log(`   - DEV.to API key: ${DATABASE.SETUP_URLS.DEVTO_SETTINGS}`);
   } catch (error) {
     console.error("❌ Database setup failed:", error);
 
@@ -58,14 +46,14 @@ async function setupDatabase() {
       console.log("   On macOS: brew services start mongodb-community");
       console.log("   On Ubuntu: sudo systemctl start mongodb");
       console.log("   On Windows: Start MongoDB service from Services");
-      console.log("   Or use MongoDB Atlas: https://cloud.mongodb.com/");
+      console.log(`   Or use MongoDB Atlas: ${DATABASE.SETUP_URLS.MONGODB_ATLAS}`);
     }
 
     process.exit(1);
   } finally {
     // Close the connection
     const mongoose = require("mongoose");
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED) {
       await mongoose.connection.close();
       console.log("✅ MongoDB connection closed");
     }
