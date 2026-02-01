@@ -8,7 +8,15 @@ import Modal from "../components/ui/Modal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table";
 import Textarea from "../components/ui/Textarea";
 import UserCard from "../components/users/UserCard";
-import { PLACEHOLDERS, SUCCESS_MESSAGES, SYNC_LABEL, TOAST_TITLES, USER_ROLES, USER_ROLE_OPTIONS } from "../constants";
+import {
+  COLOR_CLASSES,
+  PLACEHOLDERS,
+  SUCCESS_MESSAGES,
+  SYNC_LABEL,
+  TOAST_TITLES,
+  USER_ROLES,
+  USER_ROLE_OPTIONS,
+} from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 
@@ -204,7 +212,9 @@ const Users = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+        <div
+          className={`${COLOR_CLASSES.ALERT_BG.DESTRUCTIVE} ${COLOR_CLASSES.ALERT_TEXT.DESTRUCTIVE} px-4 py-3 rounded-md`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">{SYNC_LABEL.FAILED_TO_LOAD_USERS}</p>
@@ -313,8 +323,8 @@ const Users = () => {
                       <TableRow key={user._id || user.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FiUser className="h-5 w-5 text-blue-600" />
+                            <div className="w-10 h-10 bg-primary/15 rounded-full flex items-center justify-center">
+                              <FiUser className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                               <div className="font-medium">
@@ -332,7 +342,7 @@ const Users = () => {
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               user.role === USER_ROLES.ADMIN
                                 ? "bg-purple-100 text-purple-800"
-                                : "bg-gray-100 text-gray-800"
+                                : "bg-muted text-muted-foreground"
                             }`}
                           >
                             {user.role === USER_ROLES.ADMIN ? (
@@ -351,7 +361,7 @@ const Users = () => {
                         <TableCell>
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              user.isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                              user.isVerified ? COLOR_CLASSES.BADGE.VERIFIED : COLOR_CLASSES.BADGE.UNVERIFIED
                             }`}
                           >
                             {user.isVerified ? (
@@ -447,7 +457,8 @@ const Users = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
-                {SYNC_LABEL.LABEL_USERNAME} <span className="text-red-500">{SYNC_LABEL.REQUIRED_FIELD}</span>
+                {SYNC_LABEL.LABEL_USERNAME}{" "}
+                <span className={COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}>{SYNC_LABEL.REQUIRED_FIELD}</span>
               </label>
               <Input
                 value={addForm.username}
@@ -458,7 +469,8 @@ const Users = () => {
             </div>
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
-                {SYNC_LABEL.LABEL_EMAIL} <span className="text-red-500">{SYNC_LABEL.REQUIRED_FIELD}</span>
+                {SYNC_LABEL.LABEL_EMAIL}{" "}
+                <span className={COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}>{SYNC_LABEL.REQUIRED_FIELD}</span>
               </label>
               <Input
                 type="email"
@@ -472,7 +484,8 @@ const Users = () => {
 
           <div>
             <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
-              {SYNC_LABEL.LABEL_PASSWORD} <span className="text-gray-500 text-xs">{SYNC_LABEL.PASSWORD_OPTIONAL}</span>
+              {SYNC_LABEL.LABEL_PASSWORD}{" "}
+              <span className="text-muted-foreground text-xs">{SYNC_LABEL.PASSWORD_OPTIONAL}</span>
             </label>
             <Input
               type="password"
@@ -546,7 +559,7 @@ const Users = () => {
                   type="checkbox"
                   checked={addForm.isVerified}
                   onChange={(e) => setAddForm({ ...addForm, isVerified: e.target.checked })}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                  className="rounded border-input text-primary focus:ring-primary"
                 />
                 <span className="text-xs sm:text-sm font-medium">{SYNC_LABEL.LABEL_VERIFIED}</span>
               </label>
@@ -600,7 +613,7 @@ const Users = () => {
                 type="checkbox"
                 checked={editForm.isVerified}
                 onChange={(e) => setEditForm({ ...editForm, isVerified: e.target.checked })}
-                className="rounded border-gray-300 text-primary focus:ring-primary"
+                className="rounded border-input text-primary focus:ring-primary"
               />
               <span className="text-sm font-medium">{SYNC_LABEL.LABEL_VERIFIED}</span>
             </label>

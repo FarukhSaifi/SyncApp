@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { API_BASE, HTTP_METHODS, SYNC_LABEL, TOAST_TITLES } from "../constants";
+import { API_BASE, HTTP_METHODS, STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "../constants";
 import { useToast } from "../hooks/useToast";
+
 const AuthContext = createContext();
+const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -13,7 +15,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
@@ -67,7 +69,7 @@ export const AuthProvider = ({ children }) => {
         const { user: userData, token: authToken } = data.data;
         setUser(userData);
         setToken(authToken);
-        localStorage.setItem("token", authToken);
+        localStorage.setItem(TOKEN_KEY, authToken);
         toast.success(TOAST_TITLES.WELCOME_BACK, SYNC_LABEL.WELCOME_MESSAGE(userData.firstName || userData.username));
         return { success: true };
       } else {
@@ -97,7 +99,7 @@ export const AuthProvider = ({ children }) => {
         const { user: newUser, token: authToken } = data.data;
         setUser(newUser);
         setToken(authToken);
-        localStorage.setItem("token", authToken);
+        localStorage.setItem(TOKEN_KEY, authToken);
         toast.success(TOAST_TITLES.WELCOME, SYNC_LABEL.ACCOUNT_CREATED_SUCCESS(newUser.firstName || newUser.username));
         return { success: true };
       } else {
@@ -114,7 +116,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    localStorage.removeItem(TOKEN_KEY);
     toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
   };
 

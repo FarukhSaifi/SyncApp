@@ -4,6 +4,7 @@
  */
 
 const { config } = require("../config");
+const { HTTP_STATUS, ERROR_MESSAGES } = require("../constants");
 
 class AppError extends Error {
   constructor(message, statusCode = 500, details = null) {
@@ -44,16 +45,16 @@ class ForbiddenError extends AppError {
 function handleMongoError(error) {
   if (error.name === "ValidationError") {
     const errors = Object.values(error.errors).map((err) => err.message);
-    return new ValidationError("Validation failed", errors);
+    return new ValidationError(ERROR_MESSAGES.VALIDATION_FAILED_ERROR, errors);
   }
 
   if (error.name === "CastError") {
-    return new ValidationError(`Invalid ${error.path}: ${error.value}`);
+    return new ValidationError(ERROR_MESSAGES.INVALID_FIELD(error.path, error.value));
   }
 
   if (error.code === 11000) {
     const field = Object.keys(error.keyPattern)[0];
-    return new ValidationError(`${field} already exists`);
+    return new ValidationError(`${field} ${ERROR_MESSAGES.FIELD_ALREADY_EXISTS}`);
   }
 
   return error;
@@ -67,10 +68,10 @@ function handleAxiosError(error) {
   }
 
   if (error.request) {
-    return new AppError("External service unavailable", 503);
+    return new AppError(ERROR_MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
 
-  return new AppError(error.message, 500);
+  return new AppError(error.message, HTTP_STATUS.INTERNAL_SERVER_ERROR);
 }
 
 // Main error handler middleware
@@ -86,8 +87,8 @@ function errorHandler(err, req, res, next) {
   }
 
   // Set default values
-  const statusCode = error.statusCode || err.status || 500;
-  const message = error.message || "Internal server error";
+  const statusCode = error.statusCode || err.status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+  const message = error.message || ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
 
   // Log errors
   if (config.nodeEnv === "development") {
@@ -133,7 +134,7 @@ function asyncHandler(fn) {
 
 // 404 handler
 function notFoundHandler(req, res, next) {
-  next(new NotFoundError(`Route ${req.originalUrl} not found`));
+  next(new NotFoundError(`${ERROR_MESSAGES.ROUTE_NOT_FOUND}: ${req.originalUrl}`));
 }
 
 module.exports = {

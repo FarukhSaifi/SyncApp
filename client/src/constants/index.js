@@ -1,4 +1,8 @@
-// Re-export user roles and messages for convenience
+// Re-export user roles, messages, and storage keys
+export * from "./colorClasses";
+export * from "./config";
+export * from "./designTokens";
+export * from "./editor";
 export * from "./messages";
 export * from "./userRoles";
 
@@ -61,11 +65,11 @@ export const DEFAULT_PAGINATION = Object.freeze({
   limit: DEFAULT_PAGE_SIZE,
 });
 
-// Post status display config (unified across UI)
+// Post status display config (Get UI–inspired semantic colors)
 export const STATUS_CONFIG = Object.freeze({
-  draft: { label: "Draft", className: "bg-gray-100 text-gray-800" },
-  published: { label: "Published", className: "bg-green-100 text-green-800" },
-  archived: { label: "Archived", className: "bg-yellow-100 text-yellow-800" },
+  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
+  published: { label: "Published", className: "bg-positive/15 text-positive" },
+  archived: { label: "Archived", className: "bg-warning/15 text-warning" },
 });
 
 // API base and paths
@@ -89,6 +93,7 @@ export const API_PATHS = Object.freeze({
   PUBLISH: `${API_BASE}/publish`,
   MDX: `${API_BASE}/mdx`,
   USERS: `${API_BASE}/users`,
+  AI: `${API_BASE}/ai`,
 });
 
 // HTTP methods
@@ -97,4 +102,12 @@ export const HTTP_METHODS = Object.freeze({
   POST: "POST",
   PUT: "PUT",
   DELETE: "DELETE",
+});
+
+/**
+ * Local storage keys – single source of truth for client persistence.
+ * Use these constants instead of string literals to avoid typos and simplify refactors.
+ */
+export const STORAGE_KEYS = Object.freeze({
+  AUTH_TOKEN: "token",
 });

@@ -1,7 +1,7 @@
 // Centralized API client using axios with auth, query building, and robust error handling
 import axios from "axios";
 import qs from "qs";
-import { API_BASE, API_PATHS, HTTP_METHODS } from "../constants";
+import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, STORAGE_KEYS } from "../constants";
 
 export class ApiClient {
   constructor(baseUrl = API_BASE) {
@@ -11,13 +11,13 @@ export class ApiClient {
       headers: { "Content-Type": "application/json" },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "comma", skipNulls: true }),
       withCredentials: false,
-      timeout: 10000, // 10 second timeout
+      timeout: APP_CONFIG.API_TIMEOUT,
     });
 
     // Attach token to every request
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         if (token) {
           config.headers = config.headers || {};
           config.headers.Authorization = `Bearer ${token}`;
@@ -30,17 +30,17 @@ export class ApiClient {
     // Normalize responses and errors
     this.client.interceptors.response.use(
       (response) => {
-        // Log successful requests in development
-        if (import.meta.env.DEV || import.meta.env.MODE === "development") {
-          console.log(`✅ API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.log(`API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
         }
         return response.data;
       },
       (error) => {
-        // Log errors in development
-        if (import.meta.env.DEV || import.meta.env.MODE === "development") {
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
           console.error(
-            `❌ API ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+            `API ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
             error.response?.data || error.message
           );
         }
@@ -64,7 +64,7 @@ export class ApiClient {
     );
   }
 
-  async request(path, { method = HTTP_METHODS.GET, headers = {}, body, params } = {}) {
+  async request(path, { method = HTTP_METHODS.GET, headers = {}, body, params, timeout } = {}) {
     const urlPath = path.startsWith(API_BASE) ? path.slice(API_BASE.length) : path;
     const response = await this.client.request({
       url: urlPath,
@@ -72,6 +72,7 @@ export class ApiClient {
       headers,
       data: body instanceof FormData ? body : body,
       params,
+      ...(timeout != null && { timeout }),
     });
     return response;
   }
@@ -90,31 +91,50 @@ export class ApiClient {
   }
 
   createPost(body) {
-    return this.request(`${API_PATHS.POSTS}`, { method: HTTP_METHODS.POST, body });
+    return this.request(`${API_PATHS.POSTS}`, {
+      method: HTTP_METHODS.POST,
+      body,
+    });
   }
 
   updatePost(id, body) {
-    return this.request(`${API_PATHS.POSTS}/${id}`, { method: HTTP_METHODS.PUT, body });
+    return this.request(`${API_PATHS.POSTS}/${id}`, {
+      method: HTTP_METHODS.PUT,
+      body,
+    });
   }
 
   deletePost(id) {
-    return this.request(`${API_PATHS.POSTS}/${id}`, { method: HTTP_METHODS.DELETE });
+    return this.request(`${API_PATHS.POSTS}/${id}`, {
+      method: HTTP_METHODS.DELETE,
+    });
   }
 
   // Credentials
   upsertCredential(platform, body) {
-    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, { method: HTTP_METHODS.PUT, body });
+    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, {
+      method: HTTP_METHODS.PUT,
+      body,
+    });
   }
 
   // Publish
   publish(platform, postId) {
-    return this.request(`${API_PATHS.PUBLISH}/${platform}`, { method: HTTP_METHODS.POST, body: { postId } });
+    return this.request(`${API_PATHS.PUBLISH}/${platform}`, {
+      method: HTTP_METHODS.POST,
+      body: { postId },
+    });
   }
   publishAll(postId) {
-    return this.request(`${API_PATHS.PUBLISH}/all`, { method: HTTP_METHODS.POST, body: { postId } });
+    return this.request(`${API_PATHS.PUBLISH}/all`, {
+      method: HTTP_METHODS.POST,
+      body: { postId },
+    });
   }
   unpublishFromPlatform(platform, postId) {
-    return this.request(`${API_PATHS.PUBLISH}/${platform}/${postId}`, { method: HTTP_METHODS.DELETE });
+    return this.request(`${API_PATHS.PUBLISH}/${platform}/${postId}`, {
+      method: HTTP_METHODS.DELETE,
+    });
   }
 
   // MDX export
@@ -122,7 +142,9 @@ export class ApiClient {
     // Use full URL with API_BASE for fetch (which doesn't use axios baseURL)
     const url = `${API_BASE}/mdx/${postId}`;
     const token = localStorage.getItem("token");
-    const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!response.ok) throw new Error("Failed to download MDX");
     const blob = await response.blob();
     const disposition = response.headers.get("content-disposition") || "";
@@ -145,6 +167,36 @@ export class ApiClient {
     }
   }
 
+  // AI (AI Sandwich: outline → draft → comedian) — longer timeout for Vertex AI / grounding
+  aiOutline(keyword) {
+    return this.request(`${API_PATHS.AI}/outline`, {
+      method: HTTP_METHODS.POST,
+      body: { keyword },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+  aiDraft(outline) {
+    return this.request(`${API_PATHS.AI}/draft`, {
+      method: HTTP_METHODS.POST,
+      body: { outline },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+  aiComedian(content, tone = "medium") {
+    return this.request(`${API_PATHS.AI}/comedian`, {
+      method: HTTP_METHODS.POST,
+      body: { content, tone },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+  aiGenerate(keyword, options = {}) {
+    return this.request(`${API_PATHS.AI}/generate`, {
+      method: HTTP_METHODS.POST,
+      body: { keyword, ...options },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
   // Users (Admin only)
   getUsers(params = {}) {
     return this.request(`${API_PATHS.USERS}`, { params });
@@ -155,15 +207,23 @@ export class ApiClient {
   }
 
   createUser(body) {
-    return this.request(`${API_PATHS.USERS}`, { method: HTTP_METHODS.POST, body });
+    return this.request(`${API_PATHS.USERS}`, {
+      method: HTTP_METHODS.POST,
+      body,
+    });
   }
 
   updateUser(id, body) {
-    return this.request(`${API_PATHS.USERS}/${id}`, { method: HTTP_METHODS.PUT, body });
+    return this.request(`${API_PATHS.USERS}/${id}`, {
+      method: HTTP_METHODS.PUT,
+      body,
+    });
   }
 
   deleteUser(id) {
-    return this.request(`${API_PATHS.USERS}/${id}`, { method: HTTP_METHODS.DELETE });
+    return this.request(`${API_PATHS.USERS}/${id}`, {
+      method: HTTP_METHODS.DELETE,
+    });
   }
 }
 

@@ -20,17 +20,19 @@ This document outlines all the optimizations implemented in SyncApp for better p
 Implemented an in-memory caching system to reduce database queries for frequently accessed data.
 
 **Features:**
+
 - TTL (Time To Live) support
 - Pattern-based cache invalidation
 - `getOrSet` method for automatic cache population
 - Cache key builders for consistency
 
 **Usage:**
+
 ```javascript
-const { cache, cacheKeys } = require('./utils/cache');
+const { cache, cacheKeys } = require("./utils/cache");
 
 // Cache a value for 5 minutes
-cache.set('key', value, 300000);
+cache.set("key", value, 300000);
 
 // Get or fetch pattern
 const data = await cache.getOrSet(
@@ -41,6 +43,7 @@ const data = await cache.getOrSet(
 ```
 
 **Cached Resources:**
+
 - Posts list (2 minutes TTL)
 - Individual posts (5 minutes TTL)
 - Credentials (5 minutes TTL)
@@ -53,6 +56,7 @@ const data = await cache.getOrSet(
 Centralized error handling with custom error types and consistent responses.
 
 **Features:**
+
 - Custom error classes (ValidationError, NotFoundError, etc.)
 - MongoDB error normalization
 - Axios error handling
@@ -60,12 +64,13 @@ Centralized error handling with custom error types and consistent responses.
 - Development vs Production error responses
 
 **Usage:**
+
 ```javascript
-const { asyncHandler, ValidationError } = require('./middleware/errorHandler');
+const { asyncHandler, ValidationError } = require("./middleware/errorHandler");
 
 const createPost = asyncHandler(async (req, res) => {
   if (!req.body.title) {
-    throw new ValidationError('Title is required');
+    throw new ValidationError("Title is required");
   }
   // ... rest of the code
 });
@@ -78,40 +83,42 @@ const createPost = asyncHandler(async (req, res) => {
 Schema-based request validation using Joi for data integrity and security.
 
 **Features:**
+
 - Comprehensive validation schemas for all endpoints
 - Query parameter validation
 - Automatic data sanitization
 - Detailed error messages
 
 **Available Schemas:**
+
 - `createPost`, `updatePost`
 - `upsertCredential`
 - `register`, `login`, `updateProfile`, `changePassword`
 - `getPosts` (query validation)
 
 **Usage:**
-```javascript
-const { validate, schemas } = require('./middleware/validator');
 
-router.post('/posts', 
-  validate(schemas.createPost),
-  postsController.createPost
-);
+```javascript
+const { validate, schemas } = require("./middleware/validator");
+
+router.post("/posts", validate(schemas.createPost), postsController.createPost);
 ```
 
 ### 4. Optimized Database Queries
 
 **Improvements:**
+
 - Using `.lean()` for read-only queries (faster than full Mongoose documents)
 - Selective field projection with `.select()`
 - Proper indexing on frequently queried fields
 - Batch operations with `Promise.all()`
 
 **Example:**
+
 ```javascript
 const posts = await Post.find(query)
-  .select('title slug status tags cover_image')
-  .populate('author', 'username firstName lastName')
+  .select("title slug status tags cover_image")
+  .populate("author", "username firstName lastName")
   .sort({ createdAt: -1 })
   .lean(); // 50% faster for read operations
 ```
@@ -119,6 +126,7 @@ const posts = await Post.find(query)
 ### 5. Refactored Controllers
 
 **Improvements:**
+
 - Removed code duplication in `publishController`
 - Generic `publishToPlatform` function
 - Platform configuration object
@@ -134,6 +142,7 @@ const posts = await Post.find(query)
 Structured logging system for better debugging and monitoring.
 
 **Features:**
+
 - Context-based loggers
 - Colored console output
 - Request logging middleware
@@ -141,12 +150,13 @@ Structured logging system for better debugging and monitoring.
 - Environment-aware (detailed in dev, minimal in prod)
 
 **Usage:**
-```javascript
-const { createLogger } = require('./utils/logger');
-const logger = createLogger('AUTH');
 
-logger.info('User logged in', { userId, email });
-logger.error('Login failed', error, { email });
+```javascript
+const { createLogger } = require("./utils/logger");
+const logger = createLogger("AUTH");
+
+logger.info("User logged in", { userId, email });
+logger.error("Login failed", error, { email });
 ```
 
 ---
@@ -156,68 +166,53 @@ logger.error('Login failed', error, { email });
 ### 1. Component Memoization
 
 **Components:**
+
 - `PostRow` - Memoized table row component
 - `StatsCard` - Memoized stats card
 
 **Benefits:**
+
 - Prevents unnecessary re-renders
 - ~30% performance improvement on Dashboard
 - Better scalability with large lists
 
 **Usage:**
+
 ```javascript
 const PostRow = memo(({ post, onDelete }) => {
   // Component logic
 });
 ```
 
-### 2. Custom Hooks
-
-#### useDebounce
-**Location:** `client/src/hooks/useDebounce.js`
-
-Delays value updates for search/filter operations.
-
-```javascript
-const debouncedSearch = useDebounce(searchTerm, 500);
-```
-
-#### useIntersectionObserver
-**Location:** `client/src/hooks/useIntersectionObserver.js`
-
-Enables lazy loading and infinite scroll.
-
-```javascript
-const [ref, isIntersecting] = useIntersectionObserver();
-```
-
-### 3. Code Splitting & Lazy Loading
+### 2. Code Splitting & Lazy Loading
 
 All pages are lazy-loaded using React's `lazy()` and `Suspense`:
 
 ```javascript
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Editor = lazy(() => import('./pages/Editor'));
-const Settings = lazy(() => import('./pages/Settings'));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Editor = lazy(() => import("./pages/Editor"));
+const Settings = lazy(() => import("./pages/Settings"));
 ```
 
 **Benefits:**
+
 - Reduced initial bundle size
 - Faster initial page load
 - Better caching strategy
 
-### 4. Optimized API Client
+### 3. Optimized API Client
 
 **Location:** `client/src/utils/apiClient.js`
 
 **Features:**
+
 - Axios interceptors for auth and error handling
 - Request/response logging in development
 - Automatic error normalization
 - Query string serialization
 - 10-second timeout
 
-### 5. Removed Dead Code
+### 4. Removed Dead Code
 
 - Removed unused `usePostEditor` hook
 - Consolidated duplicate API call logic
@@ -230,33 +225,20 @@ const Settings = lazy(() => import('./pages/Settings'));
 ### Backend Monitoring
 
 **Request Logging:**
+
 - Every request is logged with method, URL, status, duration
 - Colored output based on status code
 - IP and user agent tracking
 
 **Database Monitoring:**
+
 - Query execution time logging (dev only)
 - Connection status tracking
 - Health check endpoint with detailed metrics
 
 ### Frontend Monitoring
 
-**Location:** `client/src/utils/performance.js`
-
-**Features:**
-- Web Vitals metrics (TTFB, FCP, DCL, etc.)
-- Component render time tracking
-- Async operation measurement
-- Performance summary logging
-
-**Usage:**
-```javascript
-import { measureAsync } from './utils/performance';
-
-const data = await measureAsync('fetch-posts', async () => {
-  return await apiClient.getPosts();
-});
-```
+Frontend performance monitoring utilities have been removed to reduce bundle size. Optional hooks (e.g. debounce, intersection observer) and performance measurement can be re-added if needed for specific features.
 
 ---
 
@@ -373,6 +355,7 @@ const data = await measureAsync('fetch-posts', async () => {
 **URL:** `GET /health`
 
 Returns detailed server health information:
+
 ```json
 {
   "status": "OK",
@@ -394,6 +377,7 @@ Returns detailed server health information:
 ### Logging
 
 All logs follow a consistent format:
+
 ```
 [timestamp] [LEVEL] [CONTEXT] message
 metadata (if any)
@@ -438,6 +422,7 @@ When adding new features, ensure:
 ## Support
 
 For questions or issues related to optimizations:
+
 - Check the code comments for inline documentation
 - Review the implementation in respective files
 - Open an issue on GitHub with `[optimization]` tag
@@ -446,4 +431,3 @@ For questions or issues related to optimizations:
 
 **Last Updated:** 2025-10-11  
 **Version:** 1.0.0
-

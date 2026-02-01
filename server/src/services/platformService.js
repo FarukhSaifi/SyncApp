@@ -1,5 +1,6 @@
 const Post = require("../models/Post");
 const { NotFoundError } = require("../middleware/errorHandler");
+const { ERROR_MESSAGES, FIELDS } = require("../constants");
 
 /**
  * Unpublish/remove post from a specific platform
@@ -8,19 +9,19 @@ async function unpublishFromPlatform(postId, platformName) {
   const post = await Post.findById(postId);
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
   // Clear the platform status
   const updateData = {
-    [`platform_status.${platformName}.published`]: false,
-    [`platform_status.${platformName}.post_id`]: null,
-    [`platform_status.${platformName}.url`]: null,
-    [`platform_status.${platformName}.published_at`]: null,
+    [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(platformName)]: false,
+    [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(platformName)]: null,
+    [FIELDS.PLATFORM_STATUS_FIELDS.URL(platformName)]: null,
+    [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(platformName)]: null,
   };
 
   const updatedPost = await Post.findByIdAndUpdate(postId, updateData, { new: true, runValidators: true })
-    .populate("author", "username firstName lastName")
+    .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
     .lean();
 
   return updatedPost;
@@ -30,10 +31,10 @@ async function unpublishFromPlatform(postId, platformName) {
  * Get post publishing status for a specific platform
  */
 async function getPlatformStatus(postId, platformName) {
-  const post = await Post.findById(postId).select("platform_status").lean();
+  const post = await Post.findById(postId).select(FIELDS.POST_FIELDS.PLATFORM_STATUS_PREFIX).lean();
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
   return {

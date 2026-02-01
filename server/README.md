@@ -95,13 +95,19 @@
 
 ### Optional Environment Variables
 
-| Variable                  | Description             | Default                 |
-| ------------------------- | ----------------------- | ----------------------- |
-| `NODE_ENV`                | Environment mode        | `production`            |
-| `PORT`                    | Server port             | `9000`                  |
-| `CORS_ORIGIN`             | Allowed CORS origin     | `http://localhost:3000` |
-| `RATE_LIMIT_WINDOW_MS`    | Rate limit window in ms | `900000` (15 min)       |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100`                   |
+| Variable | Description | Default |
+| --- | --- | --- |
+| `NODE_ENV` | Environment mode | `production` |
+| `PORT` | Server port | `9000` |
+| `CORS_ORIGIN` | Allowed CORS origin(s), comma-separated | `http://localhost:3000` |
+| `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
+| `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID for Vertex AI (AI Assistant) | _(not set)_ |
+| `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (or use `gcloud auth application-default login`) | _(not set)_ |
+| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-2.0-flash-001` |
+| `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
 
 ## 🏗️ Tech Stack
 
@@ -110,7 +116,7 @@
 - **MongoDB** - Database
 - **Mongoose** - ODM
 - **JWT** - Authentication
-- **Bcrypt** - Password hashing
+- **bcryptjs** - Password hashing
 - **Joi** - Input validation
 - **Axios** - HTTP client for external APIs
 
@@ -118,17 +124,42 @@
 
 ```
 server/
+├── api/
+│   └── index.js             # Vercel serverless entry (wraps src/index.js)
 ├── src/
-│   ├── config/          # Configuration management
-│   ├── controllers/     # Route controllers
-│   ├── services/        # Business logic
-│   ├── models/          # Mongoose models
-│   ├── routes/          # Express routes
-│   ├── middleware/      # Custom middleware
-│   ├── utils/           # Utility functions
-│   ├── database/        # Database setup
-│   └── index.js         # Server entry point
-├── env.example          # Environment template
+│   ├── config/              # Configuration management
+│   │   └── index.js
+│   ├── constants/           # Application constants
+│   │   ├── index.js         # Central exports
+│   │   ├── messages.js      # Error/success messages
+│   │   ├── userRoles.js     # User roles
+│   │   ├── httpStatus.js    # HTTP status codes
+│   │   ├── http.js          # HTTP method/header constants
+│   │   ├── defaultValues.js # Default configurations
+│   │   ├── defaultPasswords.js
+│   │   ├── validation.js    # Validation rules
+│   │   ├── database.js      # Database constants
+│   │   ├── api.js           # External API URLs
+│   │   ├── fields.js        # Field name constants
+│   │   ├── platformConfig.js
+│   │   ├── mdx.js           # MDX export config
+│   │   └── ai.js            # AI prompts and config
+│   ├── controllers/         # Route controllers
+│   ├── services/            # Business logic
+│   ├── models/              # Mongoose models
+│   ├── routes/              # Express routes
+│   ├── middleware/          # Custom middleware (errorHandler, validator)
+│   ├── utils/               # Utility functions
+│   │   ├── auth.js          # JWT utilities
+│   │   ├── encryption.js    # Credential encryption
+│   │   ├── cache.js         # In-memory caching
+│   │   └── logger.js        # Logging utilities
+│   ├── database/            # Database management
+│   │   ├── connection.js    # MongoDB connection
+│   │   └── setup.js         # Initial database setup
+│   └── index.js             # Server entry point
+├── env.example              # Environment template
+├── vercel.json              # Vercel serverless config
 └── package.json
 ```
 
@@ -141,6 +172,14 @@ server/
 - `GET /api/auth/me` - Get current user
 - `PUT /api/auth/me` - Update profile
 - `PUT /api/auth/change-password` - Change password
+
+### Users (admin only)
+
+- `POST /api/users` - Create user
+- `GET /api/users` - List users (paginated, filterable)
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
 
 ### Posts
 
@@ -169,15 +208,24 @@ server/
 
 - `GET /api/mdx/:id` - Export post as MDX
 
+### AI (AI Sandwich – auth required)
+
+- `POST /api/ai/outline` - Generate SEO outline from keyword (body: `{ keyword }`)
+- `POST /api/ai/draft` - Generate draft from outline (body: `{ outline }`)
+- `POST /api/ai/comedian` - Add humor to content (body: `{ content, tone? }`, tone: low/medium/high)
+- `POST /api/ai/generate` - Full chain: outline → draft → comedian (body: `{ keyword, tone?, skipComedian? }`)
+
+Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account JSON, or `gcloud auth application-default login`). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
+
 ### System
 
 - `GET /health` - Health check
 
 ## 🔐 Security Features
 
-- **Password Hashing**: bcrypt with salt rounds
+- **Password Hashing**: bcryptjs with salt rounds
 - **JWT Tokens**: Secure authentication with expiration
-- **API Key Encryption**: AES-256-CBC encryption for stored credentials
+- **Credential Encryption**: AES-256-CBC encryption for stored platform credentials
 - **CORS Protection**: Configurable origin restrictions
 - **Rate Limiting**: Prevent abuse (100 requests per 15 minutes)
 - **Helmet.js**: Security headers
@@ -192,14 +240,12 @@ Vercel supports serverless functions for Express apps. The server is configured 
 1. **Push to GitHub**
 
 2. **Import in Vercel:**
-
    - Go to [Vercel Dashboard](https://vercel.com/dashboard)
    - Click "Add New" → "Project"
    - Import your repository
    - **Root Directory**: `server` (important!)
 
 3. **Configure Build Settings:**
-
    - **Framework Preset**: Other (or leave empty)
    - **Build Command**: `npm install` (or leave empty, Vercel auto-detects)
    - **Output Directory**: Leave empty (not used for serverless)
@@ -220,7 +266,6 @@ Vercel supports serverless functions for Express apps. The server is configured 
    ```
 
    **Important Notes:**
-
    - Set `NODE_ENV=production` for production
    - Set `CORS_ORIGIN` to your frontend URL(s), comma-separated
    - Can set different values for Production, Preview, and Development environments

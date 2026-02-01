@@ -1,16 +1,17 @@
 const mongoose = require("mongoose");
 const { config } = require("../config");
+const { DATABASE } = require("../constants");
 
 // Connection options for better serverless support
 const mongooseOptions = {
-  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+  serverSelectionTimeoutMS: DATABASE.SERVER_SELECTION_TIMEOUT,
+  socketTimeoutMS: DATABASE.SOCKET_TIMEOUT,
 };
 
 const connectDB = async () => {
   try {
     // Check if already connected (useful for serverless/function reuse)
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED) {
       console.log("✅ MongoDB already connected");
       return mongoose.connection;
     }
