@@ -1,12 +1,13 @@
 const postsService = require("../services/postsService");
 const { asyncHandler } = require("../middleware/errorHandler");
+const { HTTP_STATUS, SUCCESS_MESSAGES } = require("../constants");
 
 /**
  * Create a new post
  */
 const createPost = asyncHandler(async (req, res) => {
   const post = await postsService.createPost({ ...req.body, author: req.userId });
-  res.status(201).json({ success: true, data: post });
+  res.status(HTTP_STATUS.CREATED).json({ success: true, data: post });
 });
 
 /**
@@ -47,7 +48,7 @@ const updatePost = asyncHandler(async (req, res) => {
  */
 const deletePost = asyncHandler(async (req, res) => {
   await postsService.deletePost(req.params.id, req.userId);
-  res.json({ success: true, message: "Post deleted successfully" });
+  res.json({ success: true, message: SUCCESS_MESSAGES.POST_DELETED });
 });
 
 module.exports = { 

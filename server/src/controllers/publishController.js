@@ -3,24 +3,13 @@ const Credential = require("../models/Credential");
 const { publishToMedium, publishToDevto, publishToWordpress } = require("../services/publishService");
 const { unpublishFromPlatform, getPlatformStatus } = require("../services/platformService");
 const { asyncHandler, NotFoundError, ValidationError } = require("../middleware/errorHandler");
+const { ERROR_MESSAGES, SUCCESS_MESSAGES, PLATFORM_CONFIG, POST_STATUS } = require("../constants");
 
-// Platform configuration
-const PLATFORM_CONFIG = {
-  medium: {
-    name: "Medium",
-    publishFn: publishToMedium,
-    errorMessage: "Medium API credentials not found. Please configure your Medium API key in settings.",
-  },
-  devto: {
-    name: "DEV.to",
-    publishFn: publishToDevto,
-    errorMessage: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
-  },
-  wordpress: {
-    name: "WordPress",
-    publishFn: publishToWordpress,
-    errorMessage: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
-  },
+// Add publish functions to platform config
+const PLATFORM_CONFIG_WITH_FUNCTIONS = {
+  medium: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
+  devto: { ...PLATFORM_CONFIG.devto, publishFn: publishToDevto },
+  wordpress: { ...PLATFORM_CONFIG.wordpress, publishFn: publishToWordpress },
 };
 
 /**
@@ -28,12 +17,12 @@ const PLATFORM_CONFIG = {
  */
 async function ensurePost(postId) {
   if (!postId) {
-    throw new ValidationError("Post ID is required");
+    throw new ValidationError(ERROR_MESSAGES.POST_ID_REQUIRED);
   }
 
   const post = await Post.findById(postId);
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
   return post;
@@ -58,9 +47,9 @@ async function ensureCredential(platformName) {
  */
 function publishToPlatform(platformName) {
   return asyncHandler(async (req, res) => {
-    const config = PLATFORM_CONFIG[platformName];
+    const config = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
     if (!config) {
-      throw new ValidationError(`Invalid platform: ${platformName}`);
+      throw new ValidationError(ERROR_MESSAGES.PLATFORM_NOT_SUPPORTED);
     }
 
     const post = await ensurePost(req.body.postId);
@@ -125,7 +114,7 @@ const publishAll = asyncHandler(async (req, res) => {
       const config = PLATFORM_CONFIG[platformName];
 
       if (!config) {
-        errors.push({ platform: platformName, error: "Platform not supported" });
+        errors.push({ platform: platformName, error: ERROR_MESSAGES.PLATFORM_NOT_SUPPORTED });
         return;
       }
 
@@ -136,7 +125,7 @@ const publishAll = asyncHandler(async (req, res) => {
       } catch (error) {
         errors.push({
           platform: config.name,
-          error: error.message || "Publishing failed",
+          error: error.message || ERROR_MESSAGES.PUBLISHING_FAILED,
         });
       }
     })
@@ -145,7 +134,7 @@ const publishAll = asyncHandler(async (req, res) => {
   // Update post with all successful results
   const updatedPost = await Post.findByIdAndUpdate(
     post._id,
-    { status: "published", ...results },
+    { status: POST_STATUS.PUBLISHED, ...results },
     { new: true, runValidators: true }
   );
 
@@ -155,11 +144,11 @@ const publishAll = asyncHandler(async (req, res) => {
 
   let message;
   if (!hasSuccesses) {
-    message = "Failed to publish to any platform";
+    message = SUCCESS_MESSAGES.FAILED_TO_PUBLISH_ALL;
   } else if (hasErrors) {
-    message = `Published to ${successes.join(", ")} with some errors`;
+    message = SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORMS(successes);
   } else {
-    message = `Post published to all platforms successfully (${successes.join(", ")})`;
+    message = SUCCESS_MESSAGES.PUBLISHED_TO_ALL(successes);
   }
 
   res.json({
@@ -167,7 +156,7 @@ const publishAll = asyncHandler(async (req, res) => {
     message,
     data: {
       postId: updatedPost._id,
-      status: "published",
+      status: POST_STATUS.PUBLISHED,
       successes,
       errors: errors.length ? errors : undefined,
     },

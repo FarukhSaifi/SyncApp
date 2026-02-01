@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import { FiEdit3, FiTrash2, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { STATUS_CONFIG, SYNC_LABEL } from "../../constants";
+import { COLOR_CLASSES, STATUS_CONFIG, SYNC_LABEL } from "../../constants";
 import { apiClient } from "../../utils/apiClient";
 import Button from "../ui/Button";
 import { TableCell, TableRow } from "../ui/Table";
@@ -48,15 +48,15 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             href={post.platform_status.medium.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
-            <span className="text-orange-500">●</span>
+            <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
             <span>Medium</span>
           </a>
           <button
             onClick={() => handleUnpublish("medium")}
             disabled={unpublishing === "medium"}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            className={`opacity-0 group-hover:opacity-100 transition-opacity ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}`}
             title={SYNC_LABEL.REMOVE_FROM_MEDIUM}
           >
             <FiX className="h-3 w-3" />
@@ -72,15 +72,15 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             href={post.platform_status.devto.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
-            <span className="text-purple-500">●</span>
+            <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
             <span>DEV.to</span>
           </a>
           <button
             onClick={() => handleUnpublish("devto")}
             disabled={unpublishing === "devto"}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            className={`opacity-0 group-hover:opacity-100 transition-opacity ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}`}
             title={SYNC_LABEL.REMOVE_FROM_DEVTO}
           >
             <FiX className="h-3 w-3" />
@@ -96,15 +96,15 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             href={post.platform_status.wordpress.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
-            <span className="text-blue-500">●</span>
+            <span className="text-primary">●</span>
             <span>WordPress</span>
           </a>
           <button
             onClick={() => handleUnpublish("wordpress")}
             disabled={unpublishing === "wordpress"}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+            className={`opacity-0 group-hover:opacity-100 transition-opacity ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}`}
             title={SYNC_LABEL.REMOVE_FROM_WORDPRESS}
           >
             <FiX className="h-3 w-3" />
@@ -146,7 +146,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             post.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full truncate"
+                className="px-2 py-1 bg-primary/15 text-primary text-xs rounded-full truncate"
                 title={tag}
               >
                 #{tag}
@@ -174,7 +174,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             variant="outline"
             size="sm"
             onClick={() => onDelete(postId)}
-            className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className={`flex items-center space-x-1 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ${COLOR_CLASSES.HOVER_DESTRUCTIVE}`}
           >
             <FiTrash2 className="h-4 w-4" />
             <span>{SYNC_LABEL.DELETE}</span>

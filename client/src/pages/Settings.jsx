@@ -3,9 +3,10 @@ import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "r
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { API_PATHS, SYNC_LABEL } from "../constants";
+import { API_PATHS, COLOR_CLASSES, EXTERNAL_LINKS, SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
+import { devError, devLog, devWarn } from "../utils/logger";
 
 const Settings = () => {
   const toast = useToast();
@@ -23,9 +24,9 @@ const Settings = () => {
   useEffect(() => {
     const loadCredentials = async () => {
       try {
-        console.log("🔄 Loading credentials...");
+        devLog("Loading credentials");
         const result = await apiClient.request(`${API_PATHS.CREDENTIALS}`);
-        console.log("📋 Credentials response:", result);
+        devLog("Credentials response:", result?.success ? "ok" : result?.error);
 
         if (result?.success && Array.isArray(result.data)) {
           const creds = result.data;
@@ -50,10 +51,10 @@ const Settings = () => {
             if (wordpress.api_key) setWordpressApiKey(wordpress.api_key);
           }
         } else {
-          console.warn("⚠️ No credentials found or invalid response");
+          devWarn("No credentials found or invalid response");
         }
       } catch (e) {
-        console.error("❌ Failed to load credentials:", e);
+        devError("Failed to load credentials:", e);
         toast.apiError(`${SYNC_LABEL.FAILED_TO_LOAD_CREDENTIALS}: ${e.message}`);
       }
     };
@@ -69,7 +70,7 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      console.log("🔄 Saving Medium credentials...");
+      devLog("Saving Medium credentials");
       const result = await apiClient.upsertCredential("medium", {
         api_key: mediumApiKey.trim(),
       });
@@ -83,7 +84,7 @@ const Settings = () => {
         toast.credentialsError("Medium", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("❌ Error saving Medium credentials:", error);
+      devError("Error saving Medium credentials:", error);
       toast.credentialsError("Medium", error.message);
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      console.log("🔄 Saving DEV.to credentials...");
+      devLog("Saving DEV.to credentials");
       const result = await apiClient.upsertCredential("devto", {
         api_key: devtoApiKey.trim(),
         platform_config: {
@@ -115,7 +116,7 @@ const Settings = () => {
         toast.credentialsError("DEV.to", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("❌ Error saving DEV.to credentials:", error);
+      devError("Error saving DEV.to credentials:", error);
       toast.credentialsError("DEV.to", error.message);
     } finally {
       setLoading(false);
@@ -136,7 +137,7 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      console.log("🔄 Saving WordPress credentials...");
+      devLog("Saving WordPress credentials");
       const result = await apiClient.upsertCredential("wordpress", {
         api_key: wordpressApiKey.trim(),
         site_url: wordpressSiteUrl.trim(),
@@ -151,7 +152,7 @@ const Settings = () => {
         toast.credentialsError("WordPress", result?.error || "Failed to save credentials");
       }
     } catch (error) {
-      console.error("❌ Error saving WordPress credentials:", error);
+      devError("Error saving WordPress credentials:", error);
       toast.credentialsError("WordPress", error.message);
     } finally {
       setLoading(false);
@@ -159,19 +160,19 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.SETTINGS_TITLE}</h1>
-        <p className="text-muted-foreground mt-2">{SYNC_LABEL.SETTINGS_DESCRIPTION}</p>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">{SYNC_LABEL.SETTINGS_DESCRIPTION}</p>
       </div>
 
       {/* Medium Integration */}
       <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
-              <FiKey className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
+            <div className={`p-1.5 sm:p-2 ${COLOR_CLASSES.ICON_BG.WARNING} rounded-lg shrink-0`}>
+              <FiKey className={`h-4 w-4 sm:h-6 sm:w-6 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
             </div>
             <div>
               <CardTitle>{SYNC_LABEL.MEDIUM_INTEGRATION}</CardTitle>
@@ -180,16 +181,16 @@ const Settings = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
             <div className="flex items-start space-x-2 sm:space-x-3">
-              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
+              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+              <div className="text-sm text-foreground">
                 <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_MEDIUM_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
                     {SYNC_LABEL.GO_TO}{" "}
                     <a
-                      href="https://medium.com/me/settings"
+                      href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:text-blue-900"
@@ -206,14 +207,19 @@ const Settings = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">{SYNC_LABEL.MEDIUM_API_KEY_LABEL}</label>
+            <label htmlFor="settings-medium-token" className="block text-sm font-medium text-foreground mb-2">
+              {SYNC_LABEL.MEDIUM_API_KEY_LABEL}
+            </label>
             <div className="relative">
               <Input
+                id="settings-medium-token"
+                name="mediumApiKey"
                 type={showMediumKey ? "text" : "password"}
                 value={mediumApiKey}
                 onChange={(e) => setMediumApiKey(e.target.value)}
                 placeholder={saved.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
-                className="w-full pr-10"
+                className="w-full pr-12 sm:pr-10"
+                autoComplete="off"
               />
               <button
                 type="button"
@@ -223,16 +229,16 @@ const Settings = () => {
                   e.stopPropagation();
                   setShowMediumKey((v) => !v);
                 }}
-                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
               >
                 {showMediumKey ? (
-                  <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                 ) : (
-                  <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <FiEye className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                 )}
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.TOKEN_ENCRYPTED}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.TOKEN_ENCRYPTED}</p>
           </div>
         </CardContent>
         <CardFooter>
@@ -251,8 +257,8 @@ const Settings = () => {
       <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FiKey className="h-6 w-6 text-purple-600" />
+            <div className={`p-2 ${COLOR_CLASSES.ICON_BG.PRIMARY} rounded-lg`}>
+              <FiKey className={`h-6 w-6 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
             </div>
             <div>
               <CardTitle>{SYNC_LABEL.DEVTO_INTEGRATION}</CardTitle>
@@ -263,17 +269,17 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+              <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 shrink-0" />
               <div className="text-sm text-purple-800">
                 <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_DEVTO_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
                     {SYNC_LABEL.GO_TO}{" "}
                     <a
-                      href="https://dev.to/settings/account"
+                      href={EXTERNAL_LINKS.DEVTO_SETTINGS}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline hover:text-purple-900"
+                      className="underline hover:text-primary/90"
                     >
                       {SYNC_LABEL.DEVTO_SETTINGS}
                     </a>
@@ -288,25 +294,33 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="settings-devto-username" className="block text-sm font-medium text-foreground mb-2">
                 {SYNC_LABEL.DEVTO_USERNAME_LABEL}
               </label>
               <Input
+                id="settings-devto-username"
+                name="devtoUsername"
                 value={devtoUsername}
                 onChange={(e) => setDevtoUsername(e.target.value)}
                 placeholder={SYNC_LABEL.PLACEHOLDER_DEVTO_USERNAME}
                 className="w-full"
+                autoComplete="username"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">{SYNC_LABEL.DEVTO_API_KEY_LABEL}</label>
+              <label htmlFor="settings-devto-api-key" className="block text-sm font-medium text-foreground mb-2">
+                {SYNC_LABEL.DEVTO_API_KEY_LABEL}
+              </label>
               <div className="relative">
                 <Input
+                  id="settings-devto-api-key"
+                  name="devtoApiKey"
                   type={showDevtoKey ? "text" : "password"}
                   value={devtoApiKey}
                   onChange={(e) => setDevtoApiKey(e.target.value)}
                   placeholder={saved.devto ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY}
-                  className="w-full pr-10"
+                  className="w-full pr-12 sm:pr-10"
+                  autoComplete="off"
                 />
                 <button
                   type="button"
@@ -316,9 +330,13 @@ const Settings = () => {
                     e.stopPropagation();
                     setShowDevtoKey((v) => !v);
                   }}
-                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
                 >
-                  {showDevtoKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                  {showDevtoKey ? (
+                    <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -341,8 +359,8 @@ const Settings = () => {
       <Card className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FiKey className="h-6 w-6 text-blue-600" />
+            <div className="p-2 bg-primary/15 rounded-lg">
+              <FiKey className="h-6 w-6 text-primary" />
             </div>
             <div>
               <CardTitle>{SYNC_LABEL.WORDPRESS_INTEGRATION}</CardTitle>
@@ -351,16 +369,16 @@ const Settings = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
             <div className="flex items-start space-x-2 sm:space-x-3">
-              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
+              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+              <div className="text-sm text-foreground">
                 <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_WORDPRESS_KEY}</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>
                     {SYNC_LABEL.INSTALL_JWT_PLUGIN}{" "}
                     <a
-                      href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/"
+                      href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:text-blue-900"
@@ -378,28 +396,35 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="settings-wordpress-site-url" className="block text-sm font-medium text-foreground mb-2">
                 {SYNC_LABEL.WORDPRESS_SITE_URL_LABEL}
               </label>
               <Input
+                id="settings-wordpress-site-url"
+                name="wordpressSiteUrl"
+                type="url"
                 value={wordpressSiteUrl}
                 onChange={(e) => setWordpressSiteUrl(e.target.value)}
                 placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL}
                 className="w-full"
+                autoComplete="url"
               />
-              <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="settings-wordpress-api-key" className="block text-sm font-medium text-foreground mb-2">
                 {SYNC_LABEL.WORDPRESS_API_KEY_LABEL}
               </label>
               <div className="relative">
                 <Input
+                  id="settings-wordpress-api-key"
+                  name="wordpressApiKey"
                   type={showWordpressKey ? "text" : "password"}
                   value={wordpressApiKey}
                   onChange={(e) => setWordpressApiKey(e.target.value)}
                   placeholder={saved.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY}
-                  className="w-full pr-10"
+                  className="w-full pr-12 sm:pr-10"
+                  autoComplete="off"
                 />
                 <button
                   type="button"
@@ -409,12 +434,16 @@ const Settings = () => {
                     e.stopPropagation();
                     setShowWordpressKey((v) => !v);
                   }}
-                  className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
                 >
-                  {showWordpressKey ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                  {showWordpressKey ? (
+                    <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                  )}
                 </button>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}</p>
@@ -441,8 +470,8 @@ const Settings = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
-                  <FiKey className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                <div className={`p-1.5 sm:p-2 ${COLOR_CLASSES.ICON_BG.WARNING} rounded-lg shrink-0`}>
+                  <FiKey className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
                 </div>
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_MEDIUM}</p>
@@ -453,7 +482,7 @@ const Settings = () => {
               </div>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  mediumApiKey ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                  mediumApiKey ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {mediumApiKey ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
@@ -462,8 +491,8 @@ const Settings = () => {
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FiKey className="h-4 w-4 text-purple-600" />
+                <div className={`p-2 ${COLOR_CLASSES.ICON_BG.PRIMARY} rounded-lg`}>
+                  <FiKey className={`h-4 w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
                 </div>
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_DEVTO}</p>
@@ -474,7 +503,7 @@ const Settings = () => {
               </div>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  devtoApiKey && devtoUsername ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                  devtoApiKey && devtoUsername ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {devtoApiKey && devtoUsername ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
@@ -483,8 +512,8 @@ const Settings = () => {
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FiKey className="h-4 w-4 text-blue-600" />
+                <div className="p-2 bg-primary/15 rounded-lg">
+                  <FiKey className="h-4 w-4 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_WORDPRESS}</p>
@@ -495,7 +524,9 @@ const Settings = () => {
               </div>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  wordpressApiKey && wordpressSiteUrl ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                  wordpressApiKey && wordpressSiteUrl
+                    ? "bg-positive/15 text-positive"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
@@ -519,10 +550,10 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               <span>{SYNC_LABEL.MEDIUM_INTEGRATION_GUIDE}</span>
             </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </a>
 
           <a
@@ -532,10 +563,10 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               <span>{SYNC_LABEL.DEVTO_API_KEY_GUIDE}</span>
             </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </a>
 
           <a
@@ -545,23 +576,23 @@ const Settings = () => {
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               <span>{SYNC_LABEL.WORDPRESS_JWT_PLUGIN}</span>
             </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </a>
 
           <a
-            href="https://github.com/your-repo/syncapp"
+            href={EXTERNAL_LINKS.GITHUB_REPO}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               <span>{SYNC_LABEL.GITHUB_REPOSITORY}</span>
             </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </a>
         </CardContent>
       </Card>

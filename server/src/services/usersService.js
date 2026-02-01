@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const { VALID_USER_ROLES } = require("../constants/userRoles");
-const { ERROR_MESSAGES } = require("../constants/messages");
+const { ERROR_MESSAGES, SUCCESS_MESSAGES, FIELDS, DEFAULT_PASSWORDS } = require("../constants");
 
 /**
  * Get all users with pagination and filtering
@@ -24,7 +24,12 @@ async function getUsers({ page = 1, limit = 20, search = "", role = "" } = {}) {
 
   // Get users and total count
   const [users, total] = await Promise.all([
-    User.find(query).select("-password").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.find(query)
+      .select(FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     User.countDocuments(query),
   ]);
 
@@ -43,9 +48,9 @@ async function getUsers({ page = 1, limit = 20, search = "", role = "" } = {}) {
  * Get user by ID
  */
 async function getUserById(userId) {
-  const user = await User.findById(userId).select("-password");
+  const user = await User.findById(userId).select(FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD);
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
   }
   return user;
 }
@@ -54,11 +59,10 @@ async function getUserById(userId) {
  * Update user (admin only)
  */
 async function updateUser(userId, updateData) {
-  const allowedFields = ["firstName", "lastName", "bio", "avatar", "role", "isVerified"];
   const updateFields = {};
 
   // Only allow updating specific fields
-  allowedFields.forEach((field) => {
+  FIELDS.USER_FIELDS.UPDATABLE_FIELDS.forEach((field) => {
     if (updateData[field] !== undefined) {
       updateFields[field] = updateData[field];
     }
@@ -70,11 +74,11 @@ async function updateUser(userId, updateData) {
   }
 
   const user = await User.findByIdAndUpdate(userId, updateFields, { new: true, runValidators: true }).select(
-    "-password"
+    FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD
   );
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
   }
 
   return user;
@@ -92,7 +96,7 @@ async function createUser(userData) {
   });
 
   if (existingUser) {
-    throw new Error("User with this email or username already exists");
+    throw new Error(ERROR_MESSAGES.USER_ALREADY_EXISTS);
   }
 
   // Validate role if provided
@@ -104,12 +108,12 @@ async function createUser(userData) {
   const user = new User({
     username,
     email,
-    password: password || "TempPassword123!", // Default password if not provided
+    password: password || DEFAULT_PASSWORDS.TEMP_PASSWORD,
     firstName,
     lastName,
     bio,
     avatar,
-    role: role || "user",
+    role: role || USER_ROLES.USER,
     isVerified: isVerified || false,
   });
 
@@ -127,9 +131,9 @@ async function createUser(userData) {
 async function deleteUser(userId) {
   const user = await User.findByIdAndDelete(userId);
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
   }
-  return { message: "User deleted successfully" };
+  return { message: SUCCESS_MESSAGES.USER_DELETED };
 }
 
 module.exports = {

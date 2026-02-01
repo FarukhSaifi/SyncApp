@@ -13,7 +13,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { PLACEHOLDERS, ROUTES, USER_ROLES } from "../constants";
+import { APP_CONFIG, PLACEHOLDERS, ROUTES, USER_ROLES } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -111,7 +111,7 @@ const Layout = ({ children }) => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                className="p-2.5 sm:p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center touch-manipulation"
                 aria-label="Toggle theme"
                 title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
               >
@@ -129,8 +129,8 @@ const Layout = ({ children }) => {
                   aria-label="User menu"
                   aria-expanded={showProfileMenu}
                 >
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <FiUser className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                  <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center">
+                    <FiUser className="h-4 w-4 text-primary" />
                   </div>
                   <span className="hidden sm:block">{user?.firstName || user?.username || PLACEHOLDERS.USER}</span>
                   <FiChevronDown className={`h-4 w-4 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
@@ -144,14 +144,14 @@ const Layout = ({ children }) => {
                     </div>
                     <Link
                       to={ROUTES.PROFILE}
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                      className="block px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 items-center touch-manipulation"
                       onClick={() => setShowProfileMenu(false)}
                     >
                       Profile Settings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                      className="w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
                     >
                       Sign Out
                     </button>
@@ -211,15 +211,15 @@ const Layout = ({ children }) => {
                     <div className="border-t mt-2 pt-2">
                       <Link
                         to={ROUTES.PROFILE}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                        className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
                         onClick={() => setShowMobileMenu(false)}
                       >
-                        <FiUser className="h-4 w-4" />
+                        <FiUser className="h-4 w-4 shrink-0" />
                         <span>Profile Settings</span>
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-2 w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                        className="flex items-center space-x-2 w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
                       >
                         <FiLogOut className="h-4 w-4" />
                         <span>Sign Out</span>
@@ -240,7 +240,8 @@ const Layout = ({ children }) => {
       <footer className="border-t bg-card mt-auto">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 SyncApp. Blog syndication made simple.</p>
+            <p>{APP_CONFIG.COPYRIGHT}</p>
+            <p className="mt-1">{APP_CONFIG.APP_DESCRIPTION}</p>
           </div>
         </div>
       </footer>

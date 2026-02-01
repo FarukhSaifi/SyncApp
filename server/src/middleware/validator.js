@@ -5,6 +5,7 @@
 
 const Joi = require("joi");
 const { ValidationError } = require("./errorHandler");
+const { STRING_LIMITS, NUMERIC_LIMITS, VALID_POST_STATUS, POST_STATUS, VALIDATION_ERRORS } = require("../constants");
 
 // Validation wrapper
 function validate(schema) {
@@ -19,7 +20,7 @@ function validate(schema) {
 
     if (error) {
       const errors = error.details.map((detail) => detail.message);
-      return next(new ValidationError("Validation failed", errors));
+      return next(new ValidationError(VALIDATION_ERRORS.VALIDATION_FAILED, errors));
     }
 
     // Replace req.body with validated and sanitized value
@@ -53,18 +54,18 @@ function validateQuery(schema) {
 const schemas = {
   // Post schemas
   createPost: Joi.object({
-    title: Joi.string().required().max(500).trim(),
+    title: Joi.string().required().max(STRING_LIMITS.POST_TITLE_MAX).trim(),
     content_markdown: Joi.string().required().trim(),
-    status: Joi.string().valid("draft", "published", "archived").default("draft"),
+    status: Joi.string().valid(...VALID_POST_STATUS).default(POST_STATUS.DRAFT),
     tags: Joi.array().items(Joi.string().trim()).default([]),
     cover_image: Joi.string().uri().allow("").optional(),
     canonical_url: Joi.string().uri().allow("").optional(),
   }),
 
   updatePost: Joi.object({
-    title: Joi.string().max(500).trim().optional(),
+    title: Joi.string().max(STRING_LIMITS.POST_TITLE_MAX).trim().optional(),
     content_markdown: Joi.string().trim().optional(),
-    status: Joi.string().valid("draft", "published", "archived").optional(),
+    status: Joi.string().valid(...VALID_POST_STATUS).optional(),
     tags: Joi.array().items(Joi.string().trim()).optional(),
     cover_image: Joi.string().uri().allow("").optional(),
     canonical_url: Joi.string().uri().allow("").optional(),
@@ -88,11 +89,11 @@ const schemas = {
 
   // Auth schemas
   register: Joi.object({
-    username: Joi.string().required().alphanum().min(3).max(30).trim(),
+    username: Joi.string().required().alphanum().min(STRING_LIMITS.USERNAME_MIN).max(STRING_LIMITS.USERNAME_MAX).trim(),
     email: Joi.string().required().email().lowercase().trim(),
-    password: Joi.string().required().min(6).max(128),
-    firstName: Joi.string().max(100).trim().optional(),
-    lastName: Joi.string().max(100).trim().optional(),
+    password: Joi.string().required().min(STRING_LIMITS.PASSWORD_MIN).max(STRING_LIMITS.PASSWORD_MAX),
+    firstName: Joi.string().max(STRING_LIMITS.DISPLAY_NAME_MAX).trim().optional(),
+    lastName: Joi.string().max(STRING_LIMITS.DISPLAY_NAME_MAX).trim().optional(),
   }),
 
   login: Joi.object({
@@ -101,22 +102,22 @@ const schemas = {
   }),
 
   updateProfile: Joi.object({
-    username: Joi.string().alphanum().min(3).max(30).trim().optional(),
+    username: Joi.string().alphanum().min(STRING_LIMITS.USERNAME_MIN).max(STRING_LIMITS.USERNAME_MAX).trim().optional(),
     email: Joi.string().email().lowercase().trim().optional(),
-    firstName: Joi.string().max(100).trim().optional(),
-    lastName: Joi.string().max(100).trim().optional(),
+    firstName: Joi.string().max(STRING_LIMITS.DISPLAY_NAME_MAX).trim().optional(),
+    lastName: Joi.string().max(STRING_LIMITS.DISPLAY_NAME_MAX).trim().optional(),
   }),
 
   changePassword: Joi.object({
     currentPassword: Joi.string().required(),
-    newPassword: Joi.string().required().min(6).max(128),
+    newPassword: Joi.string().required().min(STRING_LIMITS.PASSWORD_MIN).max(STRING_LIMITS.PASSWORD_MAX),
   }),
 
   // Query schemas
   getPosts: Joi.object({
-    page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(20),
-    status: Joi.string().valid("draft", "published", "archived").optional(),
+    page: Joi.number().integer().min(NUMERIC_LIMITS.PAGE_MIN).default(NUMERIC_LIMITS.PAGE_MIN),
+    limit: Joi.number().integer().min(NUMERIC_LIMITS.LIMIT_MIN).max(NUMERIC_LIMITS.LIMIT_MAX).default(NUMERIC_LIMITS.DEFAULT_LIMIT),
+    status: Joi.string().valid(...VALID_POST_STATUS).optional(),
   }),
 };
 

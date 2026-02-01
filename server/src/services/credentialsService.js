@@ -2,6 +2,7 @@ const Credential = require("../models/Credential");
 const { encrypt, decrypt } = require("../utils/encryption");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ValidationError } = require("../middleware/errorHandler");
+const { ERROR_MESSAGES, SUCCESS_MESSAGES } = require("../constants");
 
 /**
  * Get all credentials (without decrypted API keys)
@@ -37,7 +38,7 @@ async function getCredentialByPlatform(platformName) {
     try {
       credential.api_key = decrypt(credential.api_key);
     } catch (error) {
-      console.error("Failed to decrypt API key:", error);
+      console.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error);
       credential.api_key = "";
     }
   }
@@ -101,7 +102,7 @@ async function deleteCredential(platformName) {
   const result = await Credential.findOneAndDelete({ platform_name: platformName });
 
   if (!result) {
-    throw new NotFoundError("Credential not found");
+    throw new NotFoundError(ERROR_MESSAGES.CREDENTIAL_NOT_FOUND);
   }
 
   // Invalidate cache
@@ -122,7 +123,7 @@ async function toggleCredentialStatus(platformName, isActive) {
   ).lean();
 
   if (!credential) {
-    throw new NotFoundError("Credential not found");
+    throw new NotFoundError(ERROR_MESSAGES.CREDENTIAL_NOT_FOUND);
   }
 
   // Invalidate cache

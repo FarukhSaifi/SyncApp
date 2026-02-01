@@ -1,5 +1,6 @@
 const usersService = require("../services/usersService");
 const { asyncHandler } = require("../middleware/errorHandler");
+const { HTTP_STATUS, SUCCESS_MESSAGES } = require("../constants");
 
 /**
  * Get all users with pagination and filtering
@@ -31,7 +32,7 @@ const createUser = asyncHandler(async (req, res) => {
  */
 const updateUser = asyncHandler(async (req, res) => {
   const user = await usersService.updateUser(req.params.id, req.body);
-  res.json({ success: true, data: user, message: "User updated successfully" });
+  res.json({ success: true, data: user, message: SUCCESS_MESSAGES.USER_UPDATED });
 });
 
 /**
@@ -39,7 +40,7 @@ const updateUser = asyncHandler(async (req, res) => {
  */
 const deleteUser = asyncHandler(async (req, res) => {
   await usersService.deleteUser(req.params.id);
-  res.json({ success: true, message: "User deleted successfully" });
+  res.json({ success: true, message: SUCCESS_MESSAGES.USER_DELETED });
 });
 
 module.exports = {

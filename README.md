@@ -219,7 +219,7 @@ Helper scripts for convenience:
 
 - `npm start` - Start server in production mode
 - `npm run dev` - Start server with nodemon (auto-reload)
-- `npm run db:setup` - Initialize database schema and seed data
+- `npm run db:setup` - Initialize database schema
 
 See **[server/README.md](./server/README.md)** for more details.
 

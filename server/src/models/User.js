@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const { VALID_USER_ROLES, USER_ROLES } = require("../constants/userRoles");
+const { STRING_LIMITS, NUMERIC_LIMITS, REGEX_PATTERNS, VALIDATION_ERRORS } = require("../constants/validation");
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,8 +10,8 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      minlength: 3,
-      maxlength: 30,
+      minlength: STRING_LIMITS.USERNAME_MIN,
+      maxlength: STRING_LIMITS.USERNAME_MAX,
     },
     email: {
       type: String,
@@ -18,26 +19,26 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please enter a valid email"],
+      match: [REGEX_PATTERNS.EMAIL, VALIDATION_ERRORS.INVALID_EMAIL],
     },
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      minlength: STRING_LIMITS.PASSWORD_MIN,
     },
     firstName: {
       type: String,
       trim: true,
-      maxlength: 50,
+      maxlength: STRING_LIMITS.FIRST_NAME_MAX,
     },
     lastName: {
       type: String,
       trim: true,
-      maxlength: 50,
+      maxlength: STRING_LIMITS.LAST_NAME_MAX,
     },
     bio: {
       type: String,
-      maxlength: 500,
+      maxlength: STRING_LIMITS.BIO_MAX,
     },
     avatar: {
       type: String,
@@ -62,16 +63,11 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  const salt = await bcrypt.genSalt(NUMERIC_LIMITS.BCRYPT_SALT_ROUNDS);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Compare password method

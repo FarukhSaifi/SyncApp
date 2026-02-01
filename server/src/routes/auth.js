@@ -1,6 +1,7 @@
 const express = require("express");
 const User = require("../models/User");
 const { generateToken, authenticateToken } = require("../utils/auth");
+const { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } = require("../constants");
 const router = express.Router();
 
 // User registration
@@ -14,9 +15,9 @@ router.post("/register", async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: "User with this email or username already exists",
+        error: ERROR_MESSAGES.USER_ALREADY_EXISTS,
       });
     }
 
@@ -34,7 +35,7 @@ router.post("/register", async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
       data: {
         user: {
@@ -47,13 +48,13 @@ router.post("/register", async (req, res) => {
         },
         token,
       },
-      message: "User registered successfully",
+      message: SUCCESS_MESSAGES.REGISTRATION_SUCCESS,
     });
   } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({
+    console.error(ERROR_MESSAGES.REGISTRATION_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: "Registration failed",
+      error: ERROR_MESSAGES.REGISTRATION_FAILED,
       details: error.message,
     });
   }
@@ -67,18 +68,18 @@ router.post("/login", async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        error: "Invalid email or password",
+        error: ERROR_MESSAGES.INVALID_EMAIL_OR_PASSWORD,
       });
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        error: "Invalid email or password",
+        error: ERROR_MESSAGES.INVALID_EMAIL_OR_PASSWORD,
       });
     }
 
@@ -102,13 +103,13 @@ router.post("/login", async (req, res) => {
         },
         token,
       },
-      message: "Login successful",
+      message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
     });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
+    console.error(ERROR_MESSAGES.LOGIN_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: "Login failed",
+      error: ERROR_MESSAGES.LOGIN_FAILED,
       details: error.message,
     });
   }
@@ -117,12 +118,13 @@ router.post("/login", async (req, res) => {
 // Get current user profile
 router.get("/me", authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password");
+    const { FIELDS } = require("../constants");
+    const user = await User.findById(req.userId).select(FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD);
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        error: "User not found",
+        error: ERROR_MESSAGES.USER_NOT_FOUND,
       });
     }
 
@@ -131,10 +133,10 @@ router.get("/me", authenticateToken, async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error("Get profile error:", error);
-    res.status(500).json({
+    console.error(ERROR_MESSAGES.GET_PROFILE_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: "Failed to get profile",
+      error: ERROR_MESSAGES.FAILED_TO_GET_PROFILE,
       details: error.message,
     });
   }
@@ -147,9 +149,9 @@ router.put("/me", authenticateToken, async (req, res) => {
 
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        error: "User not found",
+        error: ERROR_MESSAGES.USER_NOT_FOUND,
       });
     }
 
@@ -164,13 +166,13 @@ router.put("/me", authenticateToken, async (req, res) => {
     res.json({
       success: true,
       data: user,
-      message: "Profile updated successfully",
+      message: SUCCESS_MESSAGES.PROFILE_UPDATED,
     });
   } catch (error) {
-    console.error("Update profile error:", error);
-    res.status(500).json({
+    console.error(ERROR_MESSAGES.UPDATE_PROFILE_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: "Failed to update profile",
+      error: ERROR_MESSAGES.FAILED_TO_UPDATE_PROFILE,
       details: error.message,
     });
   }
@@ -183,18 +185,18 @@ router.put("/change-password", authenticateToken, async (req, res) => {
 
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        error: "User not found",
+        error: ERROR_MESSAGES.USER_NOT_FOUND,
       });
     }
 
     // Verify current password
     const isCurrentPasswordValid = await user.comparePassword(currentPassword);
     if (!isCurrentPasswordValid) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: "Current password is incorrect",
+        error: ERROR_MESSAGES.CURRENT_PASSWORD_INCORRECT,
       });
     }
 
@@ -204,13 +206,13 @@ router.put("/change-password", authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: "Password changed successfully",
+      message: SUCCESS_MESSAGES.PASSWORD_CHANGED,
     });
   } catch (error) {
-    console.error("Change password error:", error);
-    res.status(500).json({
+    console.error(ERROR_MESSAGES.CHANGE_PASSWORD_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: "Failed to change password",
+      error: ERROR_MESSAGES.FAILED_TO_CHANGE_PASSWORD,
       details: error.message,
     });
   }

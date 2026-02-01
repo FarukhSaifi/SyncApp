@@ -8,9 +8,10 @@ import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import ConfirmationModal from "../components/ui/ConfirmationModal";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import { SYNC_LABEL } from "../constants";
+import { COLOR_CLASSES, SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
+import { devError, devLog } from "../utils/logger";
 
 const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }) => {
   const toast = useToast();
@@ -37,7 +38,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
 
     setDeleting(true);
     try {
-      console.log("🗑️ Deleting post:", deleteConfirm.postId);
+      devLog("Deleting post:", deleteConfirm.postId);
       const response = await apiClient.deletePost(deleteConfirm.postId);
 
       if (response?.success) {
@@ -48,7 +49,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_DELETE_POST);
       }
     } catch (error) {
-      console.error("❌ Error deleting post:", error);
+      devError("Error deleting post:", error);
       toast.apiError(`${SYNC_LABEL.FAILED_TO_DELETE_POST}: ${error.message}`);
     } finally {
       setDeleting(false);
@@ -72,9 +73,9 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.DASHBOARD_TITLE}</h1>
           <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">{SYNC_LABEL.DASHBOARD_DESCRIPTION}</p>
@@ -100,7 +101,9 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+        <div
+          className={`${COLOR_CLASSES.ALERT_BG.DESTRUCTIVE} ${COLOR_CLASSES.ALERT_TEXT.DESTRUCTIVE} px-4 py-3 rounded-md`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">{SYNC_LABEL.FAILED_TO_LOAD_POSTS_TITLE}</p>
@@ -119,21 +122,21 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         <StatsCard
           title={SYNC_LABEL.TOTAL_POSTS}
           value={posts.length}
-          icon={() => <FiGlobe className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />}
+          icon={() => <FiGlobe className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />}
           isActive={filterStatus === "all"}
           onClick={() => setFilterStatus("all")}
         />
         <StatsCard
           title={SYNC_LABEL.PUBLISHED}
           value={posts.filter((post) => post.status === "published").length}
-          icon={() => <FiCheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />}
+          icon={() => <FiCheckCircle className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.POSITIVE}`} />}
           isActive={filterStatus === "published"}
           onClick={() => setFilterStatus("published")}
         />
         <StatsCard
           title={SYNC_LABEL.DRAFTS}
           value={posts.filter((post) => post.status === "draft").length}
-          icon={() => <FiEdit3 className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />}
+          icon={() => <FiEdit3 className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />}
           isActive={filterStatus === "draft"}
           onClick={() => setFilterStatus("draft")}
         />
@@ -146,7 +149,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                 (post.platform_status.medium?.published || post.platform_status.devto?.published)
             ).length
           }
-          icon={() => <FiShare2 className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />}
+          icon={() => <FiShare2 className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />}
           isActive={false}
           onClick={() => {}}
         />

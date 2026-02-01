@@ -5,5 +5,15 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
+    server: {
+      port: 3000,
+      proxy: {
+        "/api": {
+          target: process.env.VITE_API_BACKEND_URL || "http://localhost:9000",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
   };
 });

@@ -1,15 +1,16 @@
 const Post = require("../models/Post");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ForbiddenError } = require("../middleware/errorHandler");
+const { ERROR_MESSAGES, POST_STATUS, FIELDS, VALIDATION_ERRORS } = require("../constants");
 
 /**
  * Create a new post
  */
 async function createPost(input) {
-  const { title, content_markdown, status = "draft", tags, cover_image, canonical_url, author } = input;
+  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, canonical_url, author } = input;
 
   if (!title || !content_markdown) {
-    throw new Error("Title and content are required");
+    throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
   }
 
   const created = await Post.create({
@@ -22,7 +23,7 @@ async function createPost(input) {
     author,
   });
 
-  const post = await Post.findById(created._id).populate("author", "username firstName lastName");
+  const post = await Post.findById(created._id).populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC);
 
   // Invalidate cache
   cache.invalidatePattern(cacheKeys.posts.all());
@@ -45,13 +46,13 @@ async function getPosts({ page = 1, limit = 20, userId }) {
   }
 
   const skip = (safePage - 1) * safeLimit;
-  const query = userId ? { author: userId } : { status: "published" };
+  const query = userId ? { author: userId } : { status: POST_STATUS.PUBLISHED };
 
   // Optimized query with lean and specific field selection
   const [items, total] = await Promise.all([
     Post.find(query)
-      .select("title slug status tags cover_image canonical_url createdAt updatedAt author platform_status")
-      .populate("author", "username firstName lastName")
+      .select(FIELDS.POST_FIELDS.LIST_SELECT)
+      .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(safeLimit)
@@ -85,20 +86,20 @@ async function getPostById(id, userId) {
 
   if (cached) {
     // Still need to check access
-    if (cached.status !== "published" && (!userId || cached.author._id.toString() !== userId)) {
-      throw new ForbiddenError("Access denied");
+    if (cached.status !== POST_STATUS.PUBLISHED && (!userId || cached.author._id.toString() !== userId)) {
+      throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
     }
     return cached;
   }
 
-  const post = await Post.findById(id).populate("author", "username firstName lastName").lean();
+  const post = await Post.findById(id).populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC).lean();
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
-  if (post.status !== "published" && (!userId || post.author._id.toString() !== userId)) {
-    throw new ForbiddenError("Access denied");
+  if (post.status !== POST_STATUS.PUBLISHED && (!userId || post.author._id.toString() !== userId)) {
+    throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
   // Cache for 5 minutes
@@ -116,20 +117,22 @@ async function getPostBySlug(slug, userId) {
   const cached = cache.get(cacheKey);
 
   if (cached) {
-    if (cached.status !== "published" && (!userId || cached.author._id.toString() !== userId)) {
-      throw new ForbiddenError("Access denied");
+    if (cached.status !== POST_STATUS.PUBLISHED && (!userId || cached.author._id.toString() !== userId)) {
+      throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
     }
     return cached;
   }
 
-  const post = await Post.findOne({ slug }).populate("author", "username firstName lastName").lean();
+  const post = await Post.findOne({ slug })
+    .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
+    .lean();
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
-  if (post.status !== "published" && (!userId || post.author._id.toString() !== userId)) {
-    throw new ForbiddenError("Access denied");
+  if (post.status !== POST_STATUS.PUBLISHED && (!userId || post.author._id.toString() !== userId)) {
+    throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
   // Cache for 5 minutes
@@ -145,16 +148,16 @@ async function updatePost(id, updates, userId) {
   const post = await Post.findById(id);
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
   if (post.author.toString() !== userId) {
-    throw new ForbiddenError("Access denied");
+    throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
   // Only allow specific fields to be updated
   const updateData = {};
-  ["title", "content_markdown", "status", "tags", "cover_image", "canonical_url"].forEach((k) => {
+  FIELDS.POST_FIELDS.UPDATABLE_FIELDS.forEach((k) => {
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
 
@@ -162,7 +165,7 @@ async function updatePost(id, updates, userId) {
     new: true,
     runValidators: true,
   })
-    .populate("author", "username firstName lastName")
+    .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
     .lean();
 
   // Invalidate cache
@@ -180,11 +183,11 @@ async function deletePost(id, userId) {
   const post = await Post.findById(id);
 
   if (!post) {
-    throw new NotFoundError("Post not found");
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
   if (post.author.toString() !== userId) {
-    throw new ForbiddenError("Access denied");
+    throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
   await Post.findByIdAndDelete(id);
