@@ -1,9 +1,11 @@
 /**
- * Centralized logging utility
- * Provides consistent logging across the application
+ * Centralized logging utility.
+ * Development: full logs including debug, stacks, and meta.
+ * Production: no sensitive data (redacted keys, no stacks, safe request meta).
  */
 
 const { config } = require("../config");
+const { SENSITIVE_KEYS, REDACT_PLACEHOLDER } = require("../constants/logging");
 
 const LOG_LEVELS = {
   ERROR: "ERROR",
@@ -20,10 +22,32 @@ const COLORS = {
   RESET: "\x1b[0m",
 };
 
+function redactSensitive(obj) {
+  if (obj === null || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(redactSensitive);
+
+  const out = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const keyLower = key.toLowerCase();
+    const isSensitive = SENSITIVE_KEYS.some((k) => keyLower.includes(k.toLowerCase()));
+    if (isSensitive) {
+      out[key] = REDACT_PLACEHOLDER;
+    } else {
+      out[key] = typeof value === "object" && value !== null ? redactSensitive(value) : value;
+    }
+  }
+  return out;
+}
+
 class Logger {
   constructor(context = "APP") {
     this.context = context;
     this.isDevelopment = config.nodeEnv === "development";
+  }
+
+  /** Return meta safe for the current environment (redact in production) */
+  safeMeta(meta = {}) {
+    return this.isDevelopment ? meta : redactSensitive(meta);
   }
 
   /**
@@ -44,17 +68,15 @@ class Logger {
   }
 
   /**
-   * Log error
+   * Log error. In production: message only, no stack or error details.
    */
   error(message, error = null, meta = {}) {
-    const logMeta = { ...meta };
+    const logMeta = this.safeMeta(meta);
 
     if (error) {
-      logMeta.error = {
-        message: error.message,
-        stack: this.isDevelopment ? error.stack : undefined,
-        ...error,
-      };
+      logMeta.error = this.isDevelopment
+        ? { message: error.message, stack: error.stack, ...error }
+        : { message: error.message };
     }
 
     console.error(this.formatMessage(LOG_LEVELS.ERROR, message, logMeta));
@@ -64,18 +86,18 @@ class Logger {
    * Log warning
    */
   warn(message, meta = {}) {
-    console.warn(this.formatMessage(LOG_LEVELS.WARN, message, meta));
+    console.warn(this.formatMessage(LOG_LEVELS.WARN, message, this.safeMeta(meta)));
   }
 
   /**
    * Log info
    */
   info(message, meta = {}) {
-    console.log(this.formatMessage(LOG_LEVELS.INFO, message, meta));
+    console.log(this.formatMessage(LOG_LEVELS.INFO, message, this.safeMeta(meta)));
   }
 
   /**
-   * Log debug (only in development)
+   * Log debug (development only; no-op in production)
    */
   debug(message, meta = {}) {
     if (this.isDevelopment) {
@@ -84,10 +106,10 @@ class Logger {
   }
 
   /**
-   * Log HTTP request
+   * Log HTTP request. In production: url/userAgent redacted if sensitive.
    */
   request(req, res, duration) {
-    const meta = {
+    const rawMeta = {
       method: req.method,
       url: req.originalUrl,
       ip: req.ip,
@@ -95,7 +117,7 @@ class Logger {
       statusCode: res.statusCode,
       duration: `${duration}ms`,
     };
-
+    const meta = this.safeMeta(rawMeta);
     const message = `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`;
 
     if (res.statusCode >= 500) {
@@ -168,4 +190,3 @@ module.exports = {
   requestLogger,
   Logger,
 };
-

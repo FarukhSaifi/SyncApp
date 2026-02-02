@@ -31,7 +31,7 @@ if (!isVercel) {
         await connectDB();
         dbConnected = true;
       } catch (error) {
-        console.error("Failed to connect to database:", error);
+        logger.error("Failed to connect to database", error);
         // Continue anyway - some routes might not need DB
       }
     }
@@ -68,8 +68,8 @@ const corsOptions = {
     config.nodeEnv === "development"
       ? true // Allow all origins in development
       : allowedOrigins.length
-        ? allowedOrigins
-        : DEFAULT_VALUES.DEFAULT_DEV_ORIGINS,
+      ? allowedOrigins
+      : DEFAULT_VALUES.DEFAULT_DEV_ORIGINS,
   credentials: true,
   methods: HTTP.METHODS,
   allowedHeaders: HTTP.CORS_HEADERS.ALLOWED,
@@ -80,7 +80,12 @@ app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT }));
-app.use(express.urlencoded({ extended: true, limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT }));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT,
+  })
+);
 
 // Request logging middleware
 app.use(requestLogger);
@@ -103,14 +108,11 @@ app.get("/health", (req, res) => {
     },
   };
 
-  // Log health check details
-  console.log("🏥 Health check requested:", {
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get("User-Agent"),
+  logger.debug("Health check requested", {
+    ip: req.ip || req.connection?.remoteAddress,
     timestamp: healthInfo.timestamp,
     status: healthInfo.status,
     dbStatus: healthInfo.database.status,
-    memory: healthInfo.memory?.used,
   });
 
   res.json(healthInfo);

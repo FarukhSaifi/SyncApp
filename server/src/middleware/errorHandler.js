@@ -5,6 +5,7 @@
 
 const { config } = require("../config");
 const { HTTP_STATUS, ERROR_MESSAGES } = require("../constants");
+const { logger } = require("../utils/logger");
 
 class AppError extends Error {
   constructor(message, statusCode = 500, details = null) {
@@ -90,23 +91,12 @@ function errorHandler(err, req, res, next) {
   const statusCode = error.statusCode || err.status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const message = error.message || ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
 
-  // Log errors
-  if (config.nodeEnv === "development") {
-    console.error("❌ Error:", {
-      method: req.method,
-      path: req.path,
-      statusCode,
-      message,
-      stack: err.stack,
-    });
-  } else {
-    console.error("❌ Error:", {
-      method: req.method,
-      path: req.path,
-      statusCode,
-      message,
-    });
-  }
+  // Log errors (logger redacts sensitive data in production)
+  logger.error(message, err, {
+    method: req.method,
+    path: req.path,
+    statusCode,
+  });
 
   // Send error response
   const response = {

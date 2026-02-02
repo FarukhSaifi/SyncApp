@@ -3,6 +3,9 @@ const { encrypt, decrypt } = require("../utils/encryption");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ValidationError } = require("../middleware/errorHandler");
 const { ERROR_MESSAGES, SUCCESS_MESSAGES } = require("../constants");
+const { createLogger } = require("../utils/logger");
+
+const logger = createLogger("CREDENTIALS");
 
 /**
  * Get all credentials (without decrypted API keys)
@@ -27,7 +30,9 @@ async function getAllCredentials() {
  * Get credential by platform (with decrypted API key for client display)
  */
 async function getCredentialByPlatform(platformName) {
-  const credential = await Credential.findOne({ platform_name: platformName }).lean();
+  const credential = await Credential.findOne({
+    platform_name: platformName,
+  }).lean();
 
   if (!credential) {
     return null;
@@ -38,7 +43,7 @@ async function getCredentialByPlatform(platformName) {
     try {
       credential.api_key = decrypt(credential.api_key);
     } catch (error) {
-      console.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error);
+      logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error);
       credential.api_key = "";
     }
   }
@@ -99,7 +104,9 @@ async function upsertCredential(platformName, data) {
  * Delete credential
  */
 async function deleteCredential(platformName) {
-  const result = await Credential.findOneAndDelete({ platform_name: platformName });
+  const result = await Credential.findOneAndDelete({
+    platform_name: platformName,
+  });
 
   if (!result) {
     throw new NotFoundError(ERROR_MESSAGES.CREDENTIAL_NOT_FOUND);

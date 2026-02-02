@@ -2,6 +2,7 @@
 import axios from "axios";
 import qs from "qs";
 import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, STORAGE_KEYS } from "../constants";
+import { devLog, logError } from "./logger";
 
 export class ApiClient {
   constructor(baseUrl = API_BASE) {
@@ -27,23 +28,14 @@ export class ApiClient {
       (error) => Promise.reject(error)
     );
 
-    // Normalize responses and errors
+    // Normalize responses and errors (dev: full logs; production: no sensitive response/error details)
     this.client.interceptors.response.use(
       (response) => {
-        if (import.meta.env?.DEV) {
-          // eslint-disable-next-line no-console
-          console.log(`API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
-        }
+        devLog(`API ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
         return response.data;
       },
       (error) => {
-        if (import.meta.env?.DEV) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `API ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
-            error.response?.data || error.message
-          );
-        }
+        logError(`API ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error);
 
         // Handle different error types
         if (error.response) {

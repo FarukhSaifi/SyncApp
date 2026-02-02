@@ -153,7 +153,10 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     try {
       const response = await apiClient.aiDraft(outline);
       if (response?.success && response.data?.draft) {
-        setFormData((prev) => ({ ...prev, content_markdown: response.data.draft }));
+        setFormData((prev) => ({
+          ...prev,
+          content_markdown: response.data.draft,
+        }));
         toast.success("Draft generated", "Content added to the editor.");
       } else {
         toast.apiError(response?.error || "Failed to generate draft");
@@ -175,7 +178,10 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     try {
       const response = await apiClient.aiComedian(content, aiTone);
       if (response?.success && response.data?.content) {
-        setFormData((prev) => ({ ...prev, content_markdown: response.data.content }));
+        setFormData((prev) => ({
+          ...prev,
+          content_markdown: response.data.content,
+        }));
         toast.success("Humor added", "Content updated with more personality.");
       } else {
         toast.apiError(response?.error || "Failed to add humor");
@@ -259,7 +265,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
         response = await apiClient.createPost(postData);
       }
 
-      console.log("💾 Save response:", response);
+      devLog("💾 Save response:", response);
 
       if (response?.success) {
         if (id) {
@@ -312,7 +318,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
       }
 
       // Publish to Medium
-      console.log("🚀 Publishing to Medium...");
+      devLog("🚀 Publishing to Medium...");
       const publishResponse = await apiClient.publish("medium", currentPostId);
 
       if (publishResponse?.success) {

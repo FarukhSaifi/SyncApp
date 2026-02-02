@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { API_BASE, HTTP_METHODS, STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "../constants";
 import { useToast } from "../hooks/useToast";
+import { logError } from "../utils/logger";
 
 const AuthContext = createContext();
 const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         logout();
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      logError("Error fetching user profile", error);
       toast.networkError();
       logout();
     } finally {
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error("Login error:", error);
+      logError("Login error", error);
       toast.networkError();
       return { success: false, error: SYNC_LABEL.LOGIN_FAILED };
     }
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      logError("Registration error", error);
       toast.networkError();
       return { success: false, error: SYNC_LABEL.REGISTRATION_FAILED_RETRY };
     }
@@ -142,7 +143,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error("Profile update error:", error);
+      logError("Profile update error", error);
       toast.networkError();
       return { success: false, error: SYNC_LABEL.PROFILE_UPDATE_FAILED_RETRY };
     }
@@ -169,7 +170,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error("Password change error:", error);
+      logError("Password change error", error);
       toast.networkError();
       return { success: false, error: SYNC_LABEL.PASSWORD_CHANGE_FAILED_RETRY };
     }

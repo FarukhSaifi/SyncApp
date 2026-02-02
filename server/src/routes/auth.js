@@ -2,7 +2,9 @@ const express = require("express");
 const User = require("../models/User");
 const { generateToken, authenticateToken } = require("../utils/auth");
 const { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } = require("../constants");
+const { createLogger } = require("../utils/logger");
 const router = express.Router();
+const logger = createLogger("AUTH");
 
 // User registration
 router.post("/register", async (req, res) => {
@@ -51,7 +53,7 @@ router.post("/register", async (req, res) => {
       message: SUCCESS_MESSAGES.REGISTRATION_SUCCESS,
     });
   } catch (error) {
-    console.error(ERROR_MESSAGES.REGISTRATION_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.REGISTRATION_ERROR_LOG, error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.REGISTRATION_FAILED,
@@ -106,7 +108,7 @@ router.post("/login", async (req, res) => {
       message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
     });
   } catch (error) {
-    console.error(ERROR_MESSAGES.LOGIN_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.LOGIN_ERROR_LOG, error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.LOGIN_FAILED,
@@ -133,7 +135,7 @@ router.get("/me", authenticateToken, async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error(ERROR_MESSAGES.GET_PROFILE_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.GET_PROFILE_ERROR_LOG, error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.FAILED_TO_GET_PROFILE,
@@ -169,7 +171,7 @@ router.put("/me", authenticateToken, async (req, res) => {
       message: SUCCESS_MESSAGES.PROFILE_UPDATED,
     });
   } catch (error) {
-    console.error(ERROR_MESSAGES.UPDATE_PROFILE_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.UPDATE_PROFILE_ERROR_LOG, error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.FAILED_TO_UPDATE_PROFILE,
@@ -209,7 +211,7 @@ router.put("/change-password", authenticateToken, async (req, res) => {
       message: SUCCESS_MESSAGES.PASSWORD_CHANGED,
     });
   } catch (error) {
-    console.error(ERROR_MESSAGES.CHANGE_PASSWORD_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.CHANGE_PASSWORD_ERROR_LOG, error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.FAILED_TO_CHANGE_PASSWORD,

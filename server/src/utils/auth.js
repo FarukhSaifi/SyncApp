@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const { config } = require("../config");
 const { ERROR_MESSAGES } = require("../constants/messages");
 const { USER_ROLES } = require("../constants/userRoles");
+const { logger } = require("./logger");
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -87,7 +88,7 @@ const requireAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Admin check error:", error);
+    logger.error("Admin check error", error);
     res.status(500).json({
       success: false,
       error: ERROR_MESSAGES.FAILED_TO_VERIFY_ADMIN,
