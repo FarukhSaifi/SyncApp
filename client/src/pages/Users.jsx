@@ -19,6 +19,7 @@ import {
 } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
+import { logError } from "../utils/logger";
 
 const Users = () => {
   const toast = useToast();
@@ -28,7 +29,12 @@ const Users = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 1,
+  });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({ role: "", isVerified: false });
   const [showAddModal, setShowAddModal] = useState(false);
@@ -44,7 +50,11 @@ const Users = () => {
     isVerified: false,
   });
   const [creating, setCreating] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, userId: null, username: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    isOpen: false,
+    userId: null,
+    username: "",
+  });
   const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
@@ -65,7 +75,7 @@ const Users = () => {
         setError(response?.error || SYNC_LABEL.FAILED_TO_LOAD_USERS);
       }
     } catch (err) {
-      console.error("Error fetching users:", err);
+      logError("Error fetching users", err);
       setError(err.message || SYNC_LABEL.FAILED_TO_LOAD_USERS);
       toast.apiError(err.message || SYNC_LABEL.FAILED_TO_LOAD_USERS);
     } finally {
@@ -95,7 +105,7 @@ const Users = () => {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_DELETE_USER);
       }
     } catch (err) {
-      console.error("Error deleting user:", err);
+      logError("Error deleting user", err);
       toast.apiError(err.message || SYNC_LABEL.FAILED_TO_DELETE_USER);
     } finally {
       setDeleting(false);
@@ -123,7 +133,7 @@ const Users = () => {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_UPDATE_USER);
       }
     } catch (err) {
-      console.error("Error updating user:", err);
+      logError("Error updating user", err);
       toast.apiError(err.message || SYNC_LABEL.FAILED_TO_UPDATE_USER);
     }
   }, [editingUser, editForm, toast, fetchUsers]);
@@ -156,7 +166,7 @@ const Users = () => {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_CREATE_USER);
       }
     } catch (err) {
-      console.error("Error creating user:", err);
+      logError("Error creating user", err);
       toast.apiError(err.message || SYNC_LABEL.FAILED_TO_CREATE_USER);
     } finally {
       setCreating(false);

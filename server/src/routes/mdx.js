@@ -2,8 +2,10 @@ const express = require("express");
 const Post = require("../models/Post");
 const { authenticateToken } = require("../utils/auth");
 const { HTTP_STATUS, ERROR_MESSAGES, STRING_LIMITS, HTTP, MDX_CONFIG } = require("../constants");
+const { createLogger } = require("../utils/logger");
 
 const router = express.Router();
+const logger = createLogger("MDX");
 
 // GET /api/mdx/:id - generate MDX content for a post
 router.get("/:id", authenticateToken, async (req, res) => {
@@ -50,7 +52,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
     res.setHeader(HTTP.HEADERS.CONTENT_DISPOSITION, `attachment; filename="${filename}"`);
     return res.status(HTTP_STATUS.OK).send(mdxContent);
   } catch (error) {
-    console.error(ERROR_MESSAGES.MDX_GENERATION_ERROR_LOG, error);
+    logger.error(ERROR_MESSAGES.MDX_GENERATION_ERROR_LOG, error);
     return res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
       .json({ success: false, error: ERROR_MESSAGES.FAILED_TO_GENERATE_MDX });
