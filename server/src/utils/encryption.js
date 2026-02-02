@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const { config } = require("../config");
+const { logger } = require("./logger");
 
 // Ensure the key is exactly 32 bytes (256 bits) for AES-256
 const key = Buffer.from((config.encryption.key || "").padEnd(32, "!").slice(0, 32), "utf8");
@@ -22,7 +23,7 @@ function encrypt(text) {
 
     return encrypted;
   } catch (error) {
-    console.error("Encryption error:", error);
+    logger.error("Encryption error", error);
     throw new Error("Failed to encrypt data");
   }
 }
@@ -43,7 +44,7 @@ function decrypt(encryptedText) {
 
     return decrypted;
   } catch (error) {
-    console.error("Decryption error:", error);
+    logger.error("Decryption error", error);
     throw new Error("Failed to decrypt data");
   }
 }
