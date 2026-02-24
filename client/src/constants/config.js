@@ -10,7 +10,7 @@ export const APP_CONFIG = Object.freeze({
 
   // API
   API_TIMEOUT: 10000, // 10 seconds
-  API_AI_TIMEOUT: 60000, // 60 seconds for AI (outline/draft/comedian can be slow, especially with grounding)
+  API_AI_TIMEOUT: 60000, // 60 seconds for AI (outline/draft can be slow, especially with grounding)
   REQUEST_TIMEOUT: 10000,
 
   // Pagination

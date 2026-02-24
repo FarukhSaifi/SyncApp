@@ -14,7 +14,7 @@ module.exports = Object.freeze({
   // Post fields
   POST_FIELDS: {
     LIST_SELECT: "title slug status tags cover_image canonical_url createdAt updatedAt author platform_status",
-    UPDATABLE_FIELDS: ["title", "content_markdown", "status", "tags", "cover_image", "canonical_url"],
+    UPDATABLE_FIELDS: ["title", "content_markdown", "status", "tags", "cover_image"],
     PLATFORM_STATUS_PREFIX: "platform_status",
   },
 

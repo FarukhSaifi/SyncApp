@@ -159,7 +159,7 @@ export class ApiClient {
     }
   }
 
-  // AI (AI Sandwich: outline → draft → comedian) — longer timeout for Vertex AI / grounding
+  // AI (outline → draft) — longer timeout for Vertex AI / grounding
   aiOutline(keyword) {
     return this.request(`${API_PATHS.AI}/outline`, {
       method: HTTP_METHODS.POST,
@@ -171,13 +171,6 @@ export class ApiClient {
     return this.request(`${API_PATHS.AI}/draft`, {
       method: HTTP_METHODS.POST,
       body: { outline },
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
-    });
-  }
-  aiComedian(content, tone = "medium") {
-    return this.request(`${API_PATHS.AI}/comedian`, {
-      method: HTTP_METHODS.POST,
-      body: { content, tone },
       timeout: APP_CONFIG.API_AI_TIMEOUT,
     });
   }

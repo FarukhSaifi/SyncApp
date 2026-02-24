@@ -31,6 +31,8 @@ const config = {
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
   aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL !== "false",
+  // Base URL for auto-generated canonical URLs (from post slug). e.g. https://yourblog.com/blog
+  canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || process.env.SITE_URL || "").trim().replace(/\/$/, ""),
 };
 
 module.exports = { config, requireEnv };

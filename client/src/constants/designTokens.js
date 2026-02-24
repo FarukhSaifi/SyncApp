@@ -1,7 +1,7 @@
 /**
  * Get UI–inspired design tokens (Figma reference: Get UI - FREE Figma UI kit).
  * Use these for consistent colors, radius, and typography across the app.
- * 
+ *
  * Color Scheme:
  * - Primary: Purple (#8B5CF6) - Main CTAs, links, primary actions
  * - Secondary: Light Purple - Subtle backgrounds and supporting elements
@@ -50,6 +50,8 @@ export const BUTTON_VARIANTS = Object.freeze({
   ACCENT: "accent",
   WARNING: "warning",
   DANGER: "danger",
+  /** Alias for danger/destructive styling (e.g. delete confirmations) */
+  DESTRUCTIVE: "destructive",
   POSITIVE: "positive",
   OUTLINE: "outline",
   GHOST: "ghost",

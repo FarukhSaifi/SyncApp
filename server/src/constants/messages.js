@@ -89,7 +89,6 @@ const ERROR_MESSAGES = Object.freeze({
     "The specified Gemini model was not found or your project does not have access. Set GOOGLE_AI_MODEL to a valid version (e.g. gemini-2.0-flash-001). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
   AI_OUTLINE_FAILED: "Failed to generate outline",
   AI_DRAFT_FAILED: "Failed to generate draft",
-  AI_COMEDIAN_FAILED: "Failed to add humor and personality",
   AI_GENERATE_FAILED: "Failed to generate content",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",
   AI_OUTLINE_REQUIRED: "Outline is required",

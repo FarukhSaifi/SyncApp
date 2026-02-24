@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const createSlug = require("slugify");
 const { v4: uuidv4 } = require("uuid");
 const { STRING_LIMITS, NUMERIC_LIMITS, VALID_POST_STATUS, POST_STATUS } = require("../constants");
+const { config } = require("../config");
 
 const postSchema = new mongoose.Schema(
   {
@@ -65,7 +66,7 @@ const postSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Indexes for better performance
@@ -105,6 +106,16 @@ async function generateUniqueSlug(doc) {
 postSchema.pre("validate", async function () {
   if (!this.isModified("title") && this.slug) return;
   this.slug = await generateUniqueSlug(this);
+});
+
+// Set canonical_url from slug and config base URL (no user input)
+postSchema.pre("save", function () {
+  const base = config.canonicalBaseUrl;
+  if (base && this.slug) {
+    this.canonical_url = `${base}/${this.slug}`;
+  } else if (!base) {
+    this.canonical_url = "";
+  }
 });
 
 // Virtual for formatted dates

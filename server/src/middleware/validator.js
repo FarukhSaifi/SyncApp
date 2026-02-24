@@ -61,7 +61,6 @@ const schemas = {
       .default(POST_STATUS.DRAFT),
     tags: Joi.array().items(Joi.string().trim()).default([]),
     cover_image: Joi.string().uri().allow("").optional(),
-    canonical_url: Joi.string().uri().allow("").optional(),
   }),
 
   updatePost: Joi.object({
@@ -72,7 +71,6 @@ const schemas = {
       .optional(),
     tags: Joi.array().items(Joi.string().trim()).optional(),
     cover_image: Joi.string().uri().allow("").optional(),
-    canonical_url: Joi.string().uri().allow("").optional(),
   }),
 
   // Credential schemas

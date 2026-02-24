@@ -1,13 +1,22 @@
 const Post = require("../models/Post");
+const { config } = require("../config");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ForbiddenError } = require("../middleware/errorHandler");
 const { DEFAULT_VALUES, ERROR_MESSAGES, POST_STATUS, FIELDS, VALIDATION_ERRORS } = require("../constants");
 
+/** Build canonical URL from slug (server config). Used when update uses findByIdAndUpdate (no save hook). */
+function buildCanonicalUrl(slug) {
+  const base = config.canonicalBaseUrl;
+  if (!base || !slug) return "";
+  return `${base}/${slug}`;
+}
+
 /**
  * Create a new post
+ * canonical_url is set from slug in Post model pre-save hook.
  */
 async function createPost(input) {
-  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, canonical_url, author } = input;
+  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, author } = input;
 
   if (!title || !content_markdown) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
@@ -19,7 +28,6 @@ async function createPost(input) {
     status,
     tags: tags || [],
     cover_image,
-    canonical_url,
     author,
   });
 
@@ -158,11 +166,12 @@ async function updatePost(id, updates, userId) {
     throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
-  // Only allow specific fields to be updated
+  // Only allow specific fields to be updated (canonical_url is derived from slug, not from input)
   const updateData = {};
   FIELDS.POST_FIELDS.UPDATABLE_FIELDS.forEach((k) => {
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
+  updateData.canonical_url = buildCanonicalUrl(post.slug);
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     new: true,
