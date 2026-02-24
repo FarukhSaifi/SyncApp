@@ -19,7 +19,7 @@
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.1.1",
+    "mongoose": "^8.23.0",
     "slugify": "^1.6.6",
     "uuid": "^13.0.0"
   },

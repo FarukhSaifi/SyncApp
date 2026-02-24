@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FiArrowLeft, FiArrowUp, FiEye, FiEyeOff, FiGlobe, FiSave, FiSend } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+// import ReactQuill from "react-quill";
+// import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -113,8 +113,8 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     editorRef.current?.focus();
   };
 
-  const handleQuillChange = (html) => {
-    setFormData((prev) => ({ ...prev, content_markdown: html }));
+  const handleQuillChange = (value) => {
+    setFormData((prev) => ({ ...prev, content_markdown: value }));
   };
 
   const handleDownloadMdx = async () => {
@@ -470,99 +470,22 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
               </CardContent>
             </Card>
 
-            {/* Rich Text Editor (React Quill) */}
+            {/* Rich Text Editor (Textarea) */}
             <Card className="shadow-sm border">
               <CardHeader className="p-3 sm:p-6 pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
                   <CardTitle className="text-base sm:text-lg">{SYNC_LABEL.CONTENT}</CardTitle>
-                  <div className="text-xs sm:text-sm text-muted-foreground">{SYNC_LABEL.RICH_TEXT_EDITOR}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Markdown Editor</div>
                 </div>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-3">
-                <div className="editor-wrapper">
-                  <style>{`
-                    .editor-wrapper .ql-toolbar {
-                      padding: 6px 4px;
-                      border-top-left-radius: 0.375rem;
-                      border-top-right-radius: 0.375rem;
-                      display: flex;
-                      flex-wrap: wrap;
-                      gap: 2px;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-toolbar {
-                        padding: 8px;
-                        gap: 0;
-                      }
-                    }
-                    .editor-wrapper .ql-toolbar .ql-formats {
-                      margin-right: 4px;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-toolbar .ql-formats {
-                        margin-right: 8px;
-                      }
-                    }
-                    .editor-wrapper .ql-toolbar button {
-                      width: 28px;
-                      height: 28px;
-                      padding: 4px;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-toolbar button {
-                        width: 32px;
-                        height: 32px;
-                        padding: 5px;
-                      }
-                    }
-                    .editor-wrapper .ql-container {
-                      min-height: 200px;
-                      font-size: 14px;
-                      border-bottom-left-radius: 0.375rem;
-                      border-bottom-right-radius: 0.375rem;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-container {
-                        min-height: 300px;
-                        font-size: 16px;
-                      }
-                    }
-                    .editor-wrapper .ql-editor {
-                      min-height: 200px;
-                      padding: 12px 15px;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-editor {
-                        min-height: 300px;
-                        padding: 15px;
-                      }
-                    }
-                    .editor-wrapper .ql-editor.ql-blank::before {
-                      font-size: 14px;
-                      color: #9ca3af;
-                    }
-                    @media (min-width: 640px) {
-                      .editor-wrapper .ql-editor.ql-blank::before {
-                        font-size: 16px;
-                      }
-                    }
-                  `}</style>
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.content_markdown}
-                    onChange={handleQuillChange}
-                    placeholder={SYNC_LABEL.PLACEHOLDER_POST_CONTENT}
-                    modules={{
-                      toolbar: [
-                        [{ header: [1, 2, 3, false] }],
-                        ["bold", "italic", "underline", "strike"],
-                        [{ list: "ordered" }, { list: "bullet" }],
-                        ["link", "image", "code-block"],
-                        ["clean"],
-                      ],
-                    }}
-                  />
-                </div>
+                <textarea
+                  value={formData.content_markdown}
+                  onChange={(e) => handleQuillChange(e.target.value)}
+                  placeholder={SYNC_LABEL.PLACEHOLDER_POST_CONTENT}
+                  className="w-full min-h-[300px] p-4 border border-input rounded-md bg-background text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                  style={{ fontFamily: 'inherit' }}
+                />
               </CardContent>
             </Card>
 
