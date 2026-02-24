@@ -28,7 +28,6 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
   const [aiKeyword, setAiKeyword] = useState("");
   const [aiOutline, setAiOutline] = useState("");
   const [aiLoading, setAiLoading] = useState("");
-  const [aiTone, setAiTone] = useState("medium");
   const [formData, setFormData] = useState({ ...INITIAL_EDITOR_FORM });
 
   const { quill, quillRef } = useQuill({
@@ -168,31 +167,6 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     }
   };
 
-  const handleMakeFunnier = async () => {
-    const content = formData.content_markdown?.trim();
-    if (!content) {
-      toast.validationError("Add some content first, then use Make it Funnier.");
-      return;
-    }
-    setAiLoading("comedian");
-    try {
-      const response = await apiClient.aiComedian(content, aiTone);
-      if (response?.success && response.data?.content) {
-        setFormData((prev) => ({
-          ...prev,
-          content_markdown: response.data.content,
-        }));
-        toast.success("Humor added", "Content updated with more personality.");
-      } else {
-        toast.apiError(response?.error || "Failed to add humor");
-      }
-    } catch (error) {
-      toast.apiError(error.message || "Failed to add humor");
-    } finally {
-      setAiLoading("");
-    }
-  };
-
   // Sync Quill text changes to formData
   useEffect(() => {
     if (quill) {
@@ -274,6 +248,12 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
       devLog("💾 Save response:", response);
 
       if (response?.success) {
+        if (response.data) {
+          setFormData((prev) => ({
+            ...prev,
+            canonical_url: response.data.canonical_url ?? prev.canonical_url,
+          }));
+        }
         if (id) {
           onPostUpdate(response.data);
           toast.saveSuccess(true);
@@ -515,7 +495,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
           </div>
         </div>
 
-        {/* AI Assistant – SEO outline → draft → comedian */}
+        {/* AI Assistant – SEO outline → draft */}
         <Card className="bg-white dark:bg-card shadow-md border border-border rounded-lg">
           <CardContent className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -536,7 +516,6 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={handleGenerateOutline}
                 disabled={!!aiLoading}
                 className="shrink-0"
@@ -550,14 +529,13 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 <textarea
                   value={aiOutline}
                   onChange={(e) => setAiOutline(e.target.value)}
-                  rows={4}
+                  rows={20}
                   className="w-full text-sm rounded-md border border-border bg-background px-3 py-2 font-mono"
                   placeholder="Outline will appear here…"
                 />
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
+                  variant="primary"
                   onClick={handleGenerateDraft}
                   disabled={!!aiLoading}
                   className="mt-2"
@@ -566,29 +544,6 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 </Button>
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-              <span className="text-xs font-medium text-muted-foreground">{SYNC_LABEL.AI_TONE}</span>
-              <select
-                value={aiTone}
-                onChange={(e) => setAiTone(e.target.value)}
-                className="text-sm rounded-md border border-border bg-background px-2 py-1"
-                aria-label={SYNC_LABEL.AI_TONE}
-              >
-                <option value="low">{SYNC_LABEL.AI_TONE_LOW}</option>
-                <option value="medium">{SYNC_LABEL.AI_TONE_MEDIUM}</option>
-                <option value="high">{SYNC_LABEL.AI_TONE_HIGH}</option>
-              </select>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleMakeFunnier}
-                disabled={!!aiLoading}
-                className="shrink-0"
-              >
-                {aiLoading === "comedian" ? SYNC_LABEL.AI_LOADING : SYNC_LABEL.AI_MAKE_FUNNIER}
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
@@ -738,7 +693,7 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     placeholder={SYNC_LABEL.ADD_TAG}
                     className="flex-1 text-sm sm:text-base bg-background border-border rounded-md"
                   />
-                  <Button type="button" variant="default" size="sm" onClick={handleAddTag} className="shrink-0">
+                  <Button type="button" variant="default" onClick={handleAddTag} className="shrink-0">
                     {SYNC_LABEL.ADD}
                   </Button>
                 </div>
@@ -762,23 +717,6 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Canonical URL */}
-              <div>
-                <label htmlFor="editor-canonical-url" className="block text-sm font-medium text-foreground mb-1.5">
-                  {SYNC_LABEL.CANONICAL_URL}
-                </label>
-                <Input
-                  id="editor-canonical-url"
-                  name="canonical_url"
-                  type="url"
-                  value={formData.canonical_url}
-                  onChange={handleInputChange}
-                  placeholder={SYNC_LABEL.PLACEHOLDER_CANONICAL_URL}
-                  className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
-                />
-                <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.CANONICAL_URL_HINT}</p>
               </div>
 
               {/* Featured Image URL */}
@@ -808,6 +746,19 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-3 sm:mb-4">
                   {formData.title || SYNC_LABEL.UNTITLED_POST}
                 </h1>
+                {formData.canonical_url && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                    <span className="font-medium">{SYNC_LABEL.CANONICAL_URL_LABEL}: </span>
+                    <a
+                      href={formData.canonical_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {formData.canonical_url}
+                    </a>
+                  </p>
+                )}
                 {formData.cover_image && (
                   <img
                     src={formData.cover_image}

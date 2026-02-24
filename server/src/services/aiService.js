@@ -1,6 +1,6 @@
 /**
- * AI Service – Google Vertex AI (Gemini) for the AI Sandwich workflow
- * Steps: SEO Analyst (outline, optional Google Search grounding) → Drafter (draft) → Comedian (add humor via systemInstruction)
+ * AI Service – Google Vertex AI (Gemini) for outline and draft
+ * Steps: SEO Analyst (outline) → Drafter (draft)
  * Uses GOOGLE_APPLICATION_CREDENTIALS or default credentials (e.g. gcloud auth application-default login).
  */
 
@@ -31,7 +31,7 @@ function getBaseModel() {
   const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
   return vertexAI.getGenerativeModel({
     model: modelName,
-    generationConfig: { maxOutputTokens: AI_CONFIG.MAX_COMEDIAN_TOKENS },
+    generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
   });
 }
 
@@ -141,52 +141,20 @@ async function generateDraft(outline) {
 }
 
 /**
- * Step 3: Comedian – add personality and humor (systemInstruction for humor style)
+ * Full flow: outline → draft (no humor step)
  */
-async function addHumor(content, tone = AI_CONFIG.COMEDIAN_DEFAULT_TONE) {
-  if (!content || typeof content !== "string" || !content.trim()) {
-    throw new AppError(ERROR_MESSAGES.AI_CONTENT_REQUIRED, HTTP_STATUS.BAD_REQUEST);
-  }
-  const validTones = AI_CONFIG.COMEDIAN_TONES;
-  const toneValue = validTones.includes(String(tone).toLowerCase())
-    ? String(tone).toLowerCase()
-    : AI_CONFIG.COMEDIAN_DEFAULT_TONE;
-  try {
-    const model = getBaseModel();
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: AI_PROMPTS.COMEDIAN_USER(content.trim(), toneValue) }],
-        },
-      ],
-      systemInstruction: AI_PROMPTS.COMEDIAN_SYSTEM,
-      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_COMEDIAN_TOKENS },
-    });
-    return extractText(result);
-  } catch (err) {
-    normalizeVertexError(err, ERROR_MESSAGES.AI_COMEDIAN_FAILED);
-  }
-}
-
-/**
- * Full AI Sandwich: outline → draft → comedian (optional tone)
- */
-async function generatePost(keyword, options = {}) {
-  const { tone = "medium", skipComedian = false } = options;
+async function generatePost(keyword) {
   const outline = await generateOutline(keyword);
   const draft = await generateDraft(outline);
-  const finalContent = skipComedian ? draft : await addHumor(draft, tone);
   return {
     outline,
     draft,
-    content: finalContent,
+    content: draft,
   };
 }
 
 module.exports = {
   generateOutline,
   generateDraft,
-  addHumor,
   generatePost,
 };

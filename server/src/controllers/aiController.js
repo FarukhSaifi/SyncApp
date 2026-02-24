@@ -1,5 +1,5 @@
 /**
- * AI Controller – handles AI Sandwich workflow (outline, draft, comedian, full generate)
+ * AI Controller – outline, draft, and full generate
  */
 
 const aiService = require("../services/aiService");
@@ -18,21 +18,14 @@ const postDraft = asyncHandler(async (req, res) => {
   res.status(HTTP_STATUS.OK).json({ success: true, data: { draft } });
 });
 
-const postComedian = asyncHandler(async (req, res) => {
-  const { content, tone } = req.body;
-  const result = await aiService.addHumor(content, tone);
-  res.status(HTTP_STATUS.OK).json({ success: true, data: { content: result } });
-});
-
 const postGenerate = asyncHandler(async (req, res) => {
-  const { keyword, tone, skipComedian } = req.body;
-  const result = await aiService.generatePost(keyword, { tone, skipComedian });
+  const { keyword } = req.body;
+  const result = await aiService.generatePost(keyword);
   res.status(HTTP_STATUS.OK).json({ success: true, data: result });
 });
 
 module.exports = {
   postOutline,
   postDraft,
-  postComedian,
   postGenerate,
 };
