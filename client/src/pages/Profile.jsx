@@ -3,7 +3,7 @@ import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { SYNC_LABEL } from "../constants";
+import { COLOR_CLASSES, SYNC_LABEL } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../hooks/useToast";
 
@@ -324,7 +324,7 @@ const Profile = () => {
                     <img src={user.avatar} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xl sm:text-2xl font-semibold text-foreground">
-                      {(user?.firstName?.[0] || user?.username?.[0] || "U").toUpperCase()}
+                      {(user?.firstName?.[0] || user?.username?.[0] || SYNC_LABEL.DEFAULT_AVATAR_LETTER).toUpperCase()}
                     </span>
                   )}
                 </div>

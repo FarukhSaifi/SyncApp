@@ -5,6 +5,7 @@
  */
 
 const { config } = require("../config");
+const DEFAULT_VALUES = require("../constants/defaultValues");
 const { SENSITIVE_KEYS, REDACT_PLACEHOLDER } = require("../constants/logging");
 
 const LOG_LEVELS = {
@@ -42,7 +43,7 @@ function redactSensitive(obj) {
 class Logger {
   constructor(context = "APP") {
     this.context = context;
-    this.isDevelopment = config.nodeEnv === "development";
+    this.isDevelopment = config.nodeEnv === DEFAULT_VALUES.NODE_ENV_DEVELOPMENT;
   }
 
   /** Return meta safe for the current environment (redact in production) */

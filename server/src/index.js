@@ -5,7 +5,7 @@ const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 
 const { config } = require("./config");
-const { DEFAULT_VALUES, ERROR_MESSAGES, HTTP } = require("./constants");
+const { DATABASE, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP, ROUTES } = require("./constants");
 const connectDB = require("./database/connection");
 const apiRoutes = require("./routes");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
@@ -26,12 +26,12 @@ if (!isVercel) {
   // For Vercel serverless, connect on first request (with caching)
   let dbConnected = false;
   app.use(async (req, res, next) => {
-    if (!dbConnected && mongoose.connection.readyState !== 1) {
+    if (!dbConnected && mongoose.connection.readyState !== DATABASE.MONGOOSE_STATE.CONNECTED) {
       try {
         await connectDB();
         dbConnected = true;
       } catch (error) {
-        logger.error("Failed to connect to database", error);
+        logger.error(HEALTH.LOG.DB_CONNECT_FAILED, error);
         // Continue anyway - some routes might not need DB
       }
     }
@@ -68,8 +68,8 @@ const corsOptions = {
     config.nodeEnv === "development"
       ? true // Allow all origins in development
       : allowedOrigins.length
-      ? allowedOrigins
-      : DEFAULT_VALUES.DEFAULT_DEV_ORIGINS,
+        ? allowedOrigins
+        : DEFAULT_VALUES.DEFAULT_DEV_ORIGINS,
   credentials: true,
   methods: HTTP.METHODS,
   allowedHeaders: HTTP.CORS_HEADERS.ALLOWED,
@@ -84,7 +84,7 @@ app.use(
   express.urlencoded({
     extended: true,
     limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT,
-  })
+  }),
 );
 
 // Request logging middleware
@@ -92,19 +92,20 @@ app.use(requestLogger);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
+  const dbConnected = mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED;
   const healthInfo = {
-    status: "OK",
+    status: HEALTH.STATUS.OK,
     timestamp: new Date().toISOString(),
-    uptime: Number(process.uptime().toFixed(2)), // seconds (float, 2 decimals)
+    uptime: Number(process.uptime().toFixed(2)),
     environment: config.nodeEnv,
     database: {
-      status: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-      host: mongoose.connection.host || "unknown",
-      name: mongoose.connection.name || "unknown",
+      status: dbConnected ? HEALTH.DB.CONNECTED : HEALTH.DB.DISCONNECTED,
+      host: mongoose.connection.host || HEALTH.STATUS.UNKNOWN,
+      name: mongoose.connection.name || HEALTH.STATUS.UNKNOWN,
     },
     services: {
-      mongodb: mongoose.connection.readyState === 1 ? "healthy" : "unhealthy",
-      server: "healthy",
+      mongodb: dbConnected ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
+      server: HEALTH.SERVICE.HEALTHY,
     },
   };
 
@@ -118,7 +119,7 @@ app.get("/health", (req, res) => {
   res.json(healthInfo);
 });
 
-// API routes (all under /api)
+// API routes (all under /api - route paths defined in constants/routes.js)
 app.use("/api", apiRoutes);
 
 // 404 handler (must be after routes)
@@ -135,11 +136,11 @@ if (isVercel) {
 } else {
   // Start server for local development or other platforms (Railway, Render, etc.)
   app.listen(PORT, () => {
-    logger.info(`Server started successfully`, {
+    logger.info(HEALTH.LOG.SERVER_STARTED, {
       port: PORT,
       environment: config.nodeEnv,
       corsOrigin: config.corsOrigin,
-      healthCheck: `http://localhost:${PORT}/health`,
+      healthCheck: HEALTH.HEALTH_URL_LOCAL(PORT),
     });
   });
 }

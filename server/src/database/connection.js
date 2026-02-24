@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { config } = require("../config");
 const { DATABASE } = require("../constants");
+const { DB_LOG } = require("../constants/logging");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("DB");
@@ -15,34 +16,34 @@ const connectDB = async () => {
   try {
     // Check if already connected (useful for serverless/function reuse)
     if (mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED) {
-      logger.info("MongoDB already connected");
+      logger.info(DB_LOG.ALREADY_CONNECTED);
       return mongoose.connection;
     }
 
     const conn = await mongoose.connect(config.mongoUri, mongooseOptions);
-    logger.info("Connected to MongoDB database");
+    logger.info(DB_LOG.CONNECTED);
     return conn;
   } catch (error) {
-    logger.error("MongoDB connection error", error);
+    logger.error(DB_LOG.CONNECTION_ERROR, error);
     throw error;
   }
 };
 
 mongoose.connection.on("connected", () => {
-  logger.info("Mongoose connected to MongoDB");
+  logger.info(DB_LOG.MONGOOSE_CONNECTED);
 });
 
 mongoose.connection.on("error", (err) => {
-  logger.error("Mongoose connection error", err);
+  logger.error(DB_LOG.MONGOOSE_CONNECTION_ERROR, err);
 });
 
 mongoose.connection.on("disconnected", () => {
-  logger.warn("Mongoose disconnected from MongoDB");
+  logger.warn(DB_LOG.MONGOOSE_DISCONNECTED);
 });
 
 process.on("SIGINT", async () => {
   await mongoose.connection.close();
-  logger.info("MongoDB connection closed through app termination");
+  logger.info(DB_LOG.CONNECTION_CLOSED);
   process.exit(0);
 });
 

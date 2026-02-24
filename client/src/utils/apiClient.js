@@ -1,7 +1,7 @@
 // Centralized API client using axios with auth, query building, and robust error handling
 import axios from "axios";
 import qs from "qs";
-import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, STORAGE_KEYS } from "../constants";
+import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "../constants";
 import { devLog, logError } from "./logger";
 
 export class ApiClient {
@@ -25,7 +25,7 @@ export class ApiClient {
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // Normalize responses and errors (dev: full logs; production: no sensitive response/error details)
@@ -52,7 +52,7 @@ export class ApiClient {
           // Something else happened
           return Promise.reject(new Error(error.message || "Request failed"));
         }
-      }
+      },
     );
   }
 
@@ -133,14 +133,14 @@ export class ApiClient {
   async downloadMdx(postId) {
     // Use full URL with API_BASE for fetch (which doesn't use axios baseURL)
     const url = `${API_BASE}/mdx/${postId}`;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     const response = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    if (!response.ok) throw new Error("Failed to download MDX");
+    if (!response.ok) throw new Error(MDX_DOWNLOAD.FAILED_MESSAGE);
     const blob = await response.blob();
     const disposition = response.headers.get("content-disposition") || "";
-    let filename = `post-${postId}.mdx`;
+    let filename = `${MDX_DOWNLOAD.FILENAME_PREFIX}${postId}${MDX_DOWNLOAD.FILENAME_EXT}`;
     const match = disposition.match(/filename\*=UTF-8''([^;\n]*)|filename="?([^";\n]*)"?/i);
     if (match) {
       filename = decodeURIComponent(match[1] || match[2] || filename);

@@ -1,7 +1,7 @@
 const Post = require("../models/Post");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ForbiddenError } = require("../middleware/errorHandler");
-const { ERROR_MESSAGES, POST_STATUS, FIELDS, VALIDATION_ERRORS } = require("../constants");
+const { DEFAULT_VALUES, ERROR_MESSAGES, POST_STATUS, FIELDS, VALIDATION_ERRORS } = require("../constants");
 
 /**
  * Create a new post
@@ -35,11 +35,14 @@ async function createPost(input) {
  * Get posts with pagination and caching
  */
 async function getPosts({ page = 1, limit = 20, userId }) {
-  const safePage = Math.max(parseInt(page, 10) || 1, 1);
-  const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const safePage = Math.max(parseInt(page, 10) || DEFAULT_VALUES.DEFAULT_PAGE, DEFAULT_VALUES.DEFAULT_PAGE);
+  const safeLimit = Math.min(
+    Math.max(parseInt(limit, 10) || DEFAULT_VALUES.DEFAULT_PAGE_SIZE, 1),
+    DEFAULT_VALUES.MAX_PAGE_SIZE,
+  );
 
   // Try cache first
-  const cacheKey = cacheKeys.posts.list(userId || "public", safePage, safeLimit);
+  const cacheKey = cacheKeys.posts.list(userId || DEFAULT_VALUES.CACHE_KEY_PUBLIC, safePage, safeLimit);
   const cached = cache.get(cacheKey);
   if (cached) {
     return cached;
@@ -71,7 +74,7 @@ async function getPosts({ page = 1, limit = 20, userId }) {
   };
 
   // Cache for 2 minutes
-  cache.set(cacheKey, result, 120000);
+  cache.set(cacheKey, result, DEFAULT_VALUES.CACHE_TTL_POSTS_LIST_MS);
 
   return result;
 }

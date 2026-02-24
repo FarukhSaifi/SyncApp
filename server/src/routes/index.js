@@ -1,8 +1,9 @@
 /**
  * Central API route registration. Mounts all feature routes under /api.
- * Single place to add or remove API modules.
+ * Route paths from constants/routes.js.
  */
 const express = require("express");
+const { ROUTES } = require("../constants");
 const authRoutes = require("./auth");
 const postsRoutes = require("./posts");
 const credentialsRoutes = require("./credentials");
@@ -13,12 +14,12 @@ const aiRoutes = require("./ai");
 
 const router = express.Router();
 
-router.use("/auth", authRoutes);
-router.use("/posts", postsRoutes);
-router.use("/credentials", credentialsRoutes);
-router.use("/publish", publishRoutes);
-router.use("/mdx", mdxRoutes);
-router.use("/users", usersRoutes);
-router.use("/ai", aiRoutes);
+router.use(ROUTES.AUTH, authRoutes);
+router.use(ROUTES.POSTS, postsRoutes);
+router.use(ROUTES.CREDENTIALS, credentialsRoutes);
+router.use(ROUTES.PUBLISH, publishRoutes);
+router.use(ROUTES.MDX, mdxRoutes);
+router.use(ROUTES.USERS, usersRoutes);
+router.use(ROUTES.AI, aiRoutes);
 
 module.exports = router;

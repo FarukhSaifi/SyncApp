@@ -2,7 +2,11 @@ const jwt = require("jsonwebtoken");
 const { config } = require("../config");
 const { ERROR_MESSAGES } = require("../constants/messages");
 const { USER_ROLES } = require("../constants/userRoles");
+const HTTP_STATUS = require("../constants/httpStatus");
+const HTTP_CONSTANTS = require("../constants/http");
 const { logger } = require("./logger");
+
+const BEARER_PREFIX = `${HTTP_CONSTANTS.AUTH_SCHEMES.BEARER} `;
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -22,9 +26,9 @@ const verifyToken = (token) => {
 
 // Extract token from Authorization header
 const extractToken = (req) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7);
+  const authHeader = req.headers[HTTP_CONSTANTS.HEADERS.AUTHORIZATION.toLowerCase()];
+  if (authHeader && authHeader.startsWith(BEARER_PREFIX)) {
+    return authHeader.substring(BEARER_PREFIX.length);
   }
   return null;
 };
@@ -34,7 +38,7 @@ const authenticateToken = (req, res, next) => {
   const token = extractToken(req);
 
   if (!token) {
-    return res.status(401).json({
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: false,
       error: ERROR_MESSAGES.ACCESS_TOKEN_REQUIRED,
     });
@@ -42,7 +46,7 @@ const authenticateToken = (req, res, next) => {
 
   const decoded = verifyToken(token);
   if (!decoded) {
-    return res.status(401).json({
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: false,
       error: ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN,
     });
@@ -73,14 +77,14 @@ const requireAdmin = async (req, res, next) => {
     const user = await User.findById(req.userId).select("role");
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         error: ERROR_MESSAGES.USER_NOT_FOUND,
       });
     }
 
     if (user.role !== USER_ROLES.ADMIN) {
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
         error: ERROR_MESSAGES.ADMIN_ACCESS_REQUIRED,
       });
@@ -88,8 +92,8 @@ const requireAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
-    logger.error("Admin check error", error);
-    res.status(500).json({
+    logger.error(ERROR_MESSAGES.ADMIN_CHECK_ERROR_LOG, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.FAILED_TO_VERIFY_ADMIN,
       details: error.message,

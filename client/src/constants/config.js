@@ -27,6 +27,20 @@ export const APP_CONFIG = Object.freeze({
   CACHE_TTL_SHORT: 120000, // 2 minutes
   CACHE_TTL_MEDIUM: 300000, // 5 minutes
   CACHE_TTL_LONG: 600000, // 10 minutes
+
+  // Post list display
+  TAGS_DISPLAY_LIMIT_CARD: 5,
+  TAGS_DISPLAY_LIMIT_ROW: 3,
+
+  // Toast / UI timing
+  SAVED_TOAST_DURATION_MS: 3000,
+
+  // Validation (min lengths)
+  VALIDATION_MIN_PASSWORD: 6,
+  VALIDATION_MIN_USERNAME: 3,
+
+  // Search
+  SEARCH_DEBOUNCE_MS: 300,
 });
 
 export const EXTERNAL_LINKS = Object.freeze({

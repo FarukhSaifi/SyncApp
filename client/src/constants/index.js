@@ -4,6 +4,7 @@ export * from "./config";
 export * from "./designTokens";
 export * from "./editor";
 export * from "./messages";
+export * from "./seo";
 export * from "./userRoles";
 
 // Re-export message types for easier access (explicit exports for better IDE support)
@@ -59,11 +60,26 @@ export const UI_TEXT = Object.freeze({
   appName: "SyncApp",
 });
 
+export const THEME_VALUES = Object.freeze({
+  LIGHT: "light",
+  DARK: "dark",
+});
+
 // Pagination defaults
 export const DEFAULT_PAGINATION = Object.freeze({
   page: 1,
   limit: DEFAULT_PAGE_SIZE,
 });
+
+// Post status values (for comparisons and API)
+export const POST_STATUS = Object.freeze({
+  DRAFT: "draft",
+  PUBLISHED: "published",
+  ARCHIVED: "archived",
+});
+
+/** Dashboard filter value for "all" (no status filter) */
+export const FILTER_STATUS_ALL = "all";
 
 // Post status display config (Get UI–inspired semantic colors)
 export const STATUS_CONFIG = Object.freeze({
@@ -110,4 +126,5 @@ export const HTTP_METHODS = Object.freeze({
  */
 export const STORAGE_KEYS = Object.freeze({
   AUTH_TOKEN: "token",
+  THEME: "theme",
 });

@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import LoadingScreen from "./components/common/LoadingScreen";
 import { Toaster, ToasterProvider } from "./components/ui/Toaster";
 import { ProtectedRoutes, PublicRoutes } from "./config/routes";
+import { INFO_MESSAGES } from "./constants";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { usePosts } from "./hooks/usePosts";
@@ -14,7 +15,7 @@ function AppContent() {
   const { posts, loading: postsLoading, error: postsError, refreshPosts, addPost, updatePost, deletePost } = usePosts();
 
   if (authLoading) {
-    return <LoadingScreen message="Loading..." />;
+    return <LoadingScreen message={INFO_MESSAGES.LOADING} />;
   }
 
   const postsProps = {

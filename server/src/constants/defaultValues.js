@@ -2,6 +2,10 @@
  * Default Values and Configuration Constants
  */
 module.exports = Object.freeze({
+  // Environment
+  NODE_ENV_PRODUCTION: "production",
+  NODE_ENV_DEVELOPMENT: "development",
+
   // Pagination
   DEFAULT_PAGE: 1,
   DEFAULT_PAGE_SIZE: 20,
@@ -32,4 +36,13 @@ module.exports = Object.freeze({
 
   // Port
   DEFAULT_PORT: 9000,
+
+  // Cache TTL (ms)
+  CACHE_TTL_DEFAULT_MS: 300000, // 5 minutes
+  CACHE_TTL_POSTS_LIST_MS: 120000, // 2 minutes
+  /** Cache key segment for unauthenticated/public list requests */
+  CACHE_KEY_PUBLIC: "public",
+
+  // Google Cloud / AI
+  DEFAULT_GOOGLE_CLOUD_LOCATION: "us-central1",
 });

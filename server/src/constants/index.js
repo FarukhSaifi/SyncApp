@@ -14,6 +14,8 @@ const DEFAULT_PASSWORDS = require("./defaultPasswords");
 const HTTP_CONSTANTS = require("./http");
 const MDX_CONFIG = require("./mdx");
 const { AI_PROMPTS, AI_CONFIG } = require("./ai");
+const ROUTES = require("./routes");
+const HEALTH = require("./health");
 
 // Platform identifiers
 const PLATFORMS = Object.freeze({
@@ -80,6 +82,10 @@ module.exports = {
   // AI
   AI_PROMPTS,
   AI_CONFIG,
+
+  // Routes & Health
+  ROUTES,
+  HEALTH,
 
   // Platforms
   PLATFORMS,

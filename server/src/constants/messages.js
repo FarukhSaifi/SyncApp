@@ -16,6 +16,8 @@ const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_VERIFY_ADMIN: "Failed to verify admin access",
   INVALID_ROLE: "Invalid role. Must be 'user' or 'admin'",
   USER_ALREADY_EXISTS: "User with this email or username already exists",
+  INVALID_FIELD: (path, value) => `Invalid value for field '${path}': ${value}`,
+  FIELD_ALREADY_EXISTS: "already exists",
   // Posts
   ACCESS_DENIED_POST: "Access denied",
   POST_NOT_FOUND: "Post not found",
@@ -46,6 +48,7 @@ const ERROR_MESSAGES = Object.freeze({
   PLATFORM_NOT_SUPPORTED: "Platform not supported",
   PUBLISHING_FAILED: "Publishing failed",
   INVALID_PLATFORM: "Invalid platform",
+  INVALID_PLATFORM_PARAM: (platform) => `Invalid platform: ${platform}`,
   // Credentials
   CREDENTIALS_NOT_FOUND_PLATFORM: "Credentials not found for this platform",
   CREDENTIAL_NOT_FOUND: "Credential not found",
@@ -70,6 +73,9 @@ const ERROR_MESSAGES = Object.freeze({
   CHANGE_PASSWORD_ERROR_LOG: "Change password error:",
   MDX_GENERATION_ERROR_LOG: "Error generating MDX:",
   DECRYPTION_ERROR_LOG: "Failed to decrypt API key:",
+  ADMIN_CHECK_ERROR_LOG: "Admin check error",
+  ENCRYPTION_ERROR_LOG: "Encryption error",
+  DECRYPTION_ERROR_LOG_GENERIC: "Decryption error",
   // AI (Vertex AI)
   VERTEX_AI_PROJECT_MISSING:
     "Google Cloud project is not configured. Set GOOGLE_CLOUD_PROJECT and ensure GOOGLE_APPLICATION_CREDENTIALS (or gcloud auth application-default login) is set.",
@@ -85,6 +91,11 @@ const ERROR_MESSAGES = Object.freeze({
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_COMEDIAN_FAILED: "Failed to add humor and personality",
   AI_GENERATE_FAILED: "Failed to generate content",
+  AI_KEYWORD_REQUIRED: "Keyword or topic is required",
+  AI_OUTLINE_REQUIRED: "Outline is required",
+  AI_CONTENT_REQUIRED: "Content is required",
+  AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",
+  AI_EMPTY_RESPONSE: "Empty response from Vertex AI",
 });
 
 // Success Messages
@@ -107,9 +118,11 @@ const SUCCESS_MESSAGES = Object.freeze({
   // Users
   USER_CREATED: "User created successfully",
   // Publishing success
+  PUBLISHED_TO_PLATFORM: (name) => `Post published to ${name} successfully`,
   PUBLISHED_TO_PLATFORMS: (platforms) => `Published to ${platforms.join(", ")} with some errors`,
   PUBLISHED_TO_ALL: (platforms) => `Post published to all platforms successfully (${platforms.join(", ")})`,
   FAILED_TO_PUBLISH_ALL: "Failed to publish to any platform",
+  UNPUBLISHED_FROM_PLATFORM: (name) => `Post unpublished from ${name}`,
 });
 
 module.exports = {

@@ -1,10 +1,11 @@
 import React, { memo, useState } from "react";
 import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { COLOR_CLASSES, STATUS_CONFIG, SYNC_LABEL } from "../../constants";
+import { APP_CONFIG, COLOR_CLASSES, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "../../constants";
 import { apiClient } from "../../utils/apiClient";
 import Button from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
+import SeoScoreBadge from "./SeoScoreBadge";
 
 /**
  * Mobile-friendly post card component
@@ -18,15 +19,15 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
     try {
       const response = await apiClient.unpublishFromPlatform(platform, postId);
       if (response?.success) {
-        toast?.success?.("Unpublished", `Post removed from ${platform}`);
+        toast?.success?.(SYNC_LABEL.UNPUBLISHED, SYNC_LABEL.REMOVED_FROM_PLATFORM(platform));
         if (onUpdate) {
           onUpdate({ ...post, platform_status: response.data.platformStatus });
         }
       } else {
-        toast?.error?.("Error", response?.error || `Failed to unpublish from ${platform}`);
+        toast?.error?.(SYNC_LABEL.ERROR_TITLE, response?.error || SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform));
       }
     } catch (error) {
-      toast?.error?.("Error", `Failed to unpublish from ${platform}: ${error.message}`);
+      toast?.error?.(SYNC_LABEL.ERROR_TITLE, SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform, error.message));
     } finally {
       setUnpublishing(null);
     }
@@ -50,7 +51,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
           >
             <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
-            <span>Medium</span>
+            <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
           </a>
           <button
             onClick={() => handleUnpublish("medium")}
@@ -60,7 +61,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -74,7 +75,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
           >
             <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
-            <span>DEV.to</span>
+            <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
           </a>
           <button
             onClick={() => handleUnpublish("devto")}
@@ -84,7 +85,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -98,7 +99,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
           >
             <span className="text-primary">●</span>
-            <span>WordPress</span>
+            <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
           </a>
           <button
             onClick={() => handleUnpublish("wordpress")}
@@ -108,7 +109,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -139,16 +140,19 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{post.title}</h3>
               {post.cover_image && (
-                <div className="text-xs text-muted-foreground mt-0.5 sm:mt-1">📷 Has cover image</div>
+                <div className="text-xs text-muted-foreground mt-0.5 sm:mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>
               )}
             </div>
-            <div className="ml-1 sm:ml-2 shrink-0">{getStatusBadge(post.status)}</div>
+            <div className="ml-1 sm:ml-2 shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
+              <SeoScoreBadge post={post} />
+              {getStatusBadge(post.status)}
+            </div>
           </div>
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, 5).map((tag, index) => (
+              {post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD).map((tag, index) => (
                 <span
                   key={index}
                   className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/15 text-primary text-xs rounded-full truncate max-w-[120px] sm:max-w-none"
@@ -157,8 +161,10 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
                   #{tag}
                 </span>
               ))}
-              {post.tags.length > 5 && (
-                <span className="text-muted-foreground text-xs self-center">+{post.tags.length - 5} more</span>
+              {post.tags.length > APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD && (
+                <span className="text-muted-foreground text-xs self-center">
+                  {SYNC_LABEL.TAGS_MORE(post.tags.length - APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD)}
+                </span>
               )}
             </div>
           )}
@@ -190,7 +196,7 @@ const PostCard = memo(({ post, onDelete, onUpdate, toast }) => {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 pt-2 border-t">
-            <Link to={`/editor/${postId}`} className="flex-1 min-w-0">
+            <Link to={`${ROUTES.EDITOR}/${postId}`} className="flex-1 min-w-0">
               <Button variant="outline" size="sm" className="w-full">
                 <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
                 <span className="truncate">{SYNC_LABEL.EDIT}</span>

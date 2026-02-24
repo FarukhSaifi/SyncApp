@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminRoute from "../components/AdminRoute";
 import LoadingScreen from "../components/common/LoadingScreen";
 import ProtectedRoute from "../components/ProtectedRoute";
-import { ROUTES } from "../constants";
+import { INFO_MESSAGES, ROUTES } from "../constants";
 
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Editor = lazy(() => import("../pages/Editor"));
@@ -13,7 +13,7 @@ const Register = lazy(() => import("../pages/Register"));
 const Settings = lazy(() => import("../pages/Settings"));
 const Users = lazy(() => import("../pages/Users"));
 
-const SuspenseFallback = () => <LoadingScreen inline message="Loading..." />;
+const SuspenseFallback = () => <LoadingScreen inline message={INFO_MESSAGES.LOADING} />;
 
 /**
  * Protected (authenticated) routes. Pass posts and editor callbacks from App.

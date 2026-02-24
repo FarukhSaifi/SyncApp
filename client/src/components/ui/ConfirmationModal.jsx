@@ -1,6 +1,6 @@
 import React from "react";
 import { FiAlertTriangle } from "react-icons/fi";
-import { COLOR_CLASSES } from "../../constants";
+import { BUTTON_LABELS, BUTTON_VARIANTS, COLOR_CLASSES, INFO_MESSAGES, MODAL_TITLES } from "../../constants";
 import Button from "./Button";
 import Modal from "./Modal";
 
@@ -14,7 +14,7 @@ import Modal from "./Modal";
  * @param {string|ReactNode} message - Confirmation message
  * @param {string} confirmText - Confirm button text (default: "Confirm")
  * @param {string} cancelText - Cancel button text (default: "Cancel")
- * @param {string} variant - Button variant for confirm: 'default' | 'destructive' (default: 'destructive')
+ * @param {string} variant - Button variant for confirm (default: BUTTON_VARIANTS.DESTRUCTIVE)
  * @param {boolean} isLoading - Show loading state on confirm button (default: false)
  * @param {string} size - Modal size: 'sm' | 'md' | 'lg' (default: 'md')
  */
@@ -22,11 +22,11 @@ const ConfirmationModal = ({
   isOpen,
   onClose,
   onConfirm,
-  title = "Confirm Action",
+  title = MODAL_TITLES.CONFIRM_ACTION,
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  variant = "destructive",
+  confirmText = BUTTON_LABELS.CONFIRM,
+  cancelText = BUTTON_LABELS.CANCEL,
+  variant = BUTTON_VARIANTS.DESTRUCTIVE,
   isLoading = false,
   size = "md",
 }) => {
@@ -48,7 +48,7 @@ const ConfirmationModal = ({
             {cancelText}
           </Button>
           <Button variant={variant} onClick={handleConfirm} disabled={isLoading}>
-            {isLoading ? "Processing..." : confirmText}
+            {isLoading ? INFO_MESSAGES.PROCESSING : confirmText}
           </Button>
         </div>
       }

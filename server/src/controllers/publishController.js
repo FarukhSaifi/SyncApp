@@ -3,13 +3,12 @@ const Credential = require("../models/Credential");
 const { publishToMedium, publishToDevto, publishToWordpress } = require("../services/publishService");
 const { unpublishFromPlatform, getPlatformStatus } = require("../services/platformService");
 const { asyncHandler, NotFoundError, ValidationError } = require("../middleware/errorHandler");
-const { ERROR_MESSAGES, SUCCESS_MESSAGES, PLATFORM_CONFIG, POST_STATUS } = require("../constants");
+const { ERROR_MESSAGES, PLATFORMS, PLATFORM_CONFIG, POST_STATUS, SUCCESS_MESSAGES } = require("../constants");
 
-// Add publish functions to platform config
 const PLATFORM_CONFIG_WITH_FUNCTIONS = {
-  medium: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
-  devto: { ...PLATFORM_CONFIG.devto, publishFn: publishToDevto },
-  wordpress: { ...PLATFORM_CONFIG.wordpress, publishFn: publishToWordpress },
+  [PLATFORMS.MEDIUM]: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
+  [PLATFORMS.DEVTO]: { ...PLATFORM_CONFIG.devto, publishFn: publishToDevto },
+  [PLATFORMS.WORDPRESS]: { ...PLATFORM_CONFIG.wordpress, publishFn: publishToWordpress },
 };
 
 /**
@@ -61,16 +60,16 @@ function publishToPlatform(platformName) {
     // Update post with platform status
     const updatedPost = await Post.findByIdAndUpdate(
       post._id,
-      { status: "published", ...updates },
-      { new: true, runValidators: true }
+      { status: POST_STATUS.PUBLISHED, ...updates },
+      { new: true, runValidators: true },
     );
 
     res.json({
       success: true,
-      message: `Post published to ${config.name} successfully`,
+      message: SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(config.name),
       data: {
         postId: updatedPost._id,
-        status: "published",
+        status: POST_STATUS.PUBLISHED,
         platformStatus: updatedPost.platform_status?.[platformName],
       },
     });
@@ -80,17 +79,17 @@ function publishToPlatform(platformName) {
 /**
  * Publish to Medium
  */
-const publishMedium = publishToPlatform("medium");
+const publishMedium = publishToPlatform(PLATFORMS.MEDIUM);
 
 /**
  * Publish to DEV.to
  */
-const publishDevto = publishToPlatform("devto");
+const publishDevto = publishToPlatform(PLATFORMS.DEVTO);
 
 /**
  * Publish to WordPress
  */
-const publishWordpress = publishToPlatform("wordpress");
+const publishWordpress = publishToPlatform(PLATFORMS.WORDPRESS);
 
 /**
  * Publish to all active platforms
@@ -100,7 +99,7 @@ const publishAll = asyncHandler(async (req, res) => {
   const credentials = await Credential.find({ is_active: true });
 
   if (credentials.length === 0) {
-    throw new ValidationError("No active platform credentials found. Please configure at least one platform.");
+    throw new ValidationError(ERROR_MESSAGES.NO_ACTIVE_CREDENTIALS);
   }
 
   const results = {};
@@ -128,14 +127,14 @@ const publishAll = asyncHandler(async (req, res) => {
           error: error.message || ERROR_MESSAGES.PUBLISHING_FAILED,
         });
       }
-    })
+    }),
   );
 
   // Update post with all successful results
   const updatedPost = await Post.findByIdAndUpdate(
     post._id,
     { status: POST_STATUS.PUBLISHED, ...results },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   // Determine response
@@ -186,14 +185,14 @@ const unpublishPlatform = asyncHandler(async (req, res) => {
   const { postId, platform } = req.params;
 
   if (!PLATFORM_CONFIG[platform]) {
-    throw new ValidationError(`Invalid platform: ${platform}`);
+    throw new ValidationError(ERROR_MESSAGES.INVALID_PLATFORM_PARAM(platform));
   }
 
   const updatedPost = await unpublishFromPlatform(postId, platform);
 
   res.json({
     success: true,
-    message: `Post unpublished from ${PLATFORM_CONFIG[platform].name}`,
+    message: SUCCESS_MESSAGES.UNPUBLISHED_FROM_PLATFORM(PLATFORM_CONFIG[platform].name),
     data: {
       postId: updatedPost._id,
       platformStatus: updatedPost.platform_status,

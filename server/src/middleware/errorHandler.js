@@ -8,7 +8,7 @@ const { HTTP_STATUS, ERROR_MESSAGES } = require("../constants");
 const { logger } = require("../utils/logger");
 
 class AppError extends Error {
-  constructor(message, statusCode = 500, details = null) {
+  constructor(message, statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR, details = null) {
     super(message);
     this.statusCode = statusCode;
     this.details = details;
@@ -20,25 +20,25 @@ class AppError extends Error {
 // Error types for common scenarios
 class ValidationError extends AppError {
   constructor(message, details = null) {
-    super(message, 400, details);
+    super(message, HTTP_STATUS.BAD_REQUEST, details);
   }
 }
 
 class NotFoundError extends AppError {
-  constructor(message = "Resource not found") {
-    super(message, 404);
+  constructor(message = ERROR_MESSAGES.RESOURCE_NOT_FOUND) {
+    super(message, HTTP_STATUS.NOT_FOUND);
   }
 }
 
 class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
-    super(message, 401);
+  constructor(message = ERROR_MESSAGES.UNAUTHORIZED_ACCESS) {
+    super(message, HTTP_STATUS.UNAUTHORIZED);
   }
 }
 
 class ForbiddenError extends AppError {
-  constructor(message = "Access denied") {
-    super(message, 403);
+  constructor(message = ERROR_MESSAGES.ACCESS_DENIED) {
+    super(message, HTTP_STATUS.FORBIDDEN);
   }
 }
 
@@ -108,7 +108,8 @@ function errorHandler(err, req, res, next) {
     response.details = error.details;
   }
 
-  if (config.nodeEnv === "development") {
+  const { DEFAULT_VALUES } = require("../constants");
+  if (config.nodeEnv === DEFAULT_VALUES.NODE_ENV_DEVELOPMENT) {
     response.stack = err.stack;
   }
 

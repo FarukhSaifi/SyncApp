@@ -3,6 +3,8 @@
  * Optimizes frequently accessed data
  */
 
+const { DEFAULT_VALUES } = require("../constants");
+
 class Cache {
   constructor() {
     this.cache = new Map();
@@ -15,7 +17,7 @@ class Cache {
    * @param {*} value - Value to cache
    * @param {number} ttl - Time to live in milliseconds (default: 5 minutes)
    */
-  set(key, value, ttl = 300000) {
+  set(key, value, ttl = DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS) {
     // Clear existing timer
     if (this.timers.has(key)) {
       clearTimeout(this.timers.get(key));
@@ -93,7 +95,7 @@ class Cache {
    * @param {number} ttl - Time to live in milliseconds
    * @returns {Promise<*>}
    */
-  async getOrSet(key, fetchFn, ttl = 300000) {
+  async getOrSet(key, fetchFn, ttl = DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS) {
     if (this.has(key)) {
       return this.get(key);
     }
@@ -145,4 +147,3 @@ module.exports = {
   cacheKeys,
   Cache,
 };
-

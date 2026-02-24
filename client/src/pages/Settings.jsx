@@ -3,7 +3,7 @@ import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "r
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { API_PATHS, COLOR_CLASSES, EXTERNAL_LINKS, SYNC_LABEL } from "../constants";
+import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 import { devError, devLog, devWarn } from "../utils/logger";
@@ -30,9 +30,9 @@ const Settings = () => {
 
         if (result?.success && Array.isArray(result.data)) {
           const creds = result.data;
-          const medium = creds.find((c) => c.platform_name === "medium");
-          const devto = creds.find((c) => c.platform_name === "devto");
-          const wordpress = creds.find((c) => c.platform_name === "wordpress");
+          const medium = creds.find((c) => c.platform_name === PLATFORMS.MEDIUM);
+          const devto = creds.find((c) => c.platform_name === PLATFORMS.DEVTO);
+          const wordpress = creds.find((c) => c.platform_name === PLATFORMS.WORDPRESS);
 
           if (medium) {
             setSaved((prev) => ({ ...prev, medium: true }));
@@ -55,7 +55,7 @@ const Settings = () => {
         }
       } catch (e) {
         devError("Failed to load credentials:", e);
-        toast.apiError(`${SYNC_LABEL.FAILED_TO_LOAD_CREDENTIALS}: ${e.message}`);
+        toast.apiError(`${SYNC_LABEL.FAILED_TO_LOAD_CREDENTIALS}: ${e?.message || ""}`);
       }
     };
     loadCredentials();
@@ -71,21 +71,20 @@ const Settings = () => {
     setLoading(true);
     try {
       devLog("Saving Medium credentials");
-      const result = await apiClient.upsertCredential("medium", {
+      const result = await apiClient.upsertCredential(PLATFORMS.MEDIUM, {
         api_key: mediumApiKey.trim(),
       });
 
       if (result?.success) {
         setSaved((prev) => ({ ...prev, medium: true }));
-        setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), 3000);
-        toast.credentialsSaved("Medium");
-        // Keep the key in the input so user can see it
+        setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_MEDIUM);
       } else {
-        toast.credentialsError("Medium", result?.error || "Failed to save credentials");
+        toast.credentialsError(SYNC_LABEL.PLATFORM_MEDIUM, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving Medium credentials:", error);
-      toast.credentialsError("Medium", error.message);
+      toast.credentialsError(SYNC_LABEL.PLATFORM_MEDIUM, error?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
     } finally {
       setLoading(false);
     }
@@ -100,7 +99,7 @@ const Settings = () => {
     setLoading(true);
     try {
       devLog("Saving DEV.to credentials");
-      const result = await apiClient.upsertCredential("devto", {
+      const result = await apiClient.upsertCredential(PLATFORMS.DEVTO, {
         api_key: devtoApiKey.trim(),
         platform_config: {
           devto_username: devtoUsername.trim(),
@@ -109,15 +108,14 @@ const Settings = () => {
 
       if (result?.success) {
         setSaved((prev) => ({ ...prev, devto: true }));
-        setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), 3000);
-        toast.credentialsSaved("DEV.to");
-        // Keep the key in the input so user can see it
+        setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_DEVTO);
       } else {
-        toast.credentialsError("DEV.to", result?.error || "Failed to save credentials");
+        toast.credentialsError(SYNC_LABEL.PLATFORM_DEVTO, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving DEV.to credentials:", error);
-      toast.credentialsError("DEV.to", error.message);
+      toast.credentialsError(SYNC_LABEL.PLATFORM_DEVTO, error?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
     } finally {
       setLoading(false);
     }
@@ -129,7 +127,6 @@ const Settings = () => {
       return;
     }
 
-    // Validate WordPress site URL
     if (!wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
       toast.validationError(SYNC_LABEL.VALID_WORDPRESS_URL);
       return;
@@ -138,22 +135,21 @@ const Settings = () => {
     setLoading(true);
     try {
       devLog("Saving WordPress credentials");
-      const result = await apiClient.upsertCredential("wordpress", {
+      const result = await apiClient.upsertCredential(PLATFORMS.WORDPRESS, {
         api_key: wordpressApiKey.trim(),
         site_url: wordpressSiteUrl.trim(),
       });
 
       if (result?.success) {
         setSaved((prev) => ({ ...prev, wordpress: true }));
-        setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), 3000);
-        toast.credentialsSaved("WordPress");
-        // Keep the key in the input so user can see it
+        setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_WORDPRESS);
       } else {
-        toast.credentialsError("WordPress", result?.error || "Failed to save credentials");
+        toast.credentialsError(SYNC_LABEL.PLATFORM_WORDPRESS, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving WordPress credentials:", error);
-      toast.credentialsError("WordPress", error.message);
+      toast.credentialsError(SYNC_LABEL.PLATFORM_WORDPRESS, error?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
     } finally {
       setLoading(false);
     }
@@ -544,10 +540,10 @@ const Settings = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <a
-            href="https://medium.com/me/settings"
+            href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
               <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
@@ -557,10 +553,10 @@ const Settings = () => {
           </a>
 
           <a
-            href="https://dev.to/settings/account"
+            href={EXTERNAL_LINKS.DEVTO_SETTINGS}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
               <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
@@ -570,10 +566,10 @@ const Settings = () => {
           </a>
 
           <a
-            href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/"
+            href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
               <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
@@ -586,7 +582,7 @@ const Settings = () => {
             href={EXTERNAL_LINKS.GITHUB_REPO}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
           >
             <div className="flex items-center space-x-2 sm:space-x-3">
               <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />

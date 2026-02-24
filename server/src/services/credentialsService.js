@@ -2,7 +2,7 @@ const Credential = require("../models/Credential");
 const { encrypt, decrypt } = require("../utils/encryption");
 const { cache, cacheKeys } = require("../utils/cache");
 const { NotFoundError, ValidationError } = require("../middleware/errorHandler");
-const { ERROR_MESSAGES, SUCCESS_MESSAGES } = require("../constants");
+const { ERROR_MESSAGES, PLATFORMS, SUCCESS_MESSAGES } = require("../constants");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("CREDENTIALS");
@@ -58,12 +58,11 @@ async function upsertCredential(platformName, data) {
   const { api_key, site_url, platform_config } = data;
 
   if (!api_key) {
-    throw new ValidationError("API key is required");
+    throw new ValidationError(ERROR_MESSAGES.API_KEY_REQUIRED);
   }
 
-  // Validate platform-specific requirements
-  if (platformName === "wordpress" && !site_url) {
-    throw new ValidationError("WordPress site URL is required");
+  if (platformName === PLATFORMS.WORDPRESS && !site_url) {
+    throw new ValidationError(ERROR_MESSAGES.WORDPRESS_SITE_URL_REQUIRED);
   }
 
   // Encrypt API key
@@ -126,7 +125,7 @@ async function toggleCredentialStatus(platformName, isActive) {
   const credential = await Credential.findOneAndUpdate(
     { platform_name: platformName },
     { is_active: isActive },
-    { new: true }
+    { new: true },
   ).lean();
 
   if (!credential) {

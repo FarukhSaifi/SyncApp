@@ -40,7 +40,7 @@ const getPostBySlug = asyncHandler(async (req, res) => {
  */
 const updatePost = asyncHandler(async (req, res) => {
   const post = await postsService.updatePost(req.params.id, req.body, req.userId);
-  res.json({ success: true, data: post, message: "Post updated successfully" });
+  res.json({ success: true, data: post, message: SUCCESS_MESSAGES.POST_UPDATED });
 });
 
 /**
@@ -51,11 +51,11 @@ const deletePost = asyncHandler(async (req, res) => {
   res.json({ success: true, message: SUCCESS_MESSAGES.POST_DELETED });
 });
 
-module.exports = { 
-  createPost, 
-  getPosts, 
-  getPostById, 
-  getPostBySlug, 
-  updatePost, 
-  deletePost 
+module.exports = {
+  createPost,
+  getPosts,
+  getPostById,
+  getPostBySlug,
+  updatePost,
+  deletePost,
 };
