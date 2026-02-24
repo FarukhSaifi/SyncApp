@@ -13,7 +13,17 @@ import {
   FiX,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { APP_CONFIG, PLACEHOLDERS, ROUTES, USER_ROLES } from "../constants";
+import {
+  APP_CONFIG,
+  BUTTON_LABELS,
+  INFO_MESSAGES,
+  PAGE_TITLES,
+  PLACEHOLDERS,
+  ROUTES,
+  THEME_VALUES,
+  UI_TEXT,
+  USER_ROLES,
+} from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -28,10 +38,10 @@ const Layout = ({ children }) => {
   const mobileMenuRef = useRef(null);
 
   const navigation = [
-    { name: "Dashboard", href: ROUTES.DASHBOARD, icon: FiHome },
-    { name: "New Post", href: ROUTES.EDITOR, icon: FiPlus },
-    { name: "Settings", href: ROUTES.SETTINGS, icon: FiSettings },
-    ...(user?.role === USER_ROLES.ADMIN ? [{ name: "Users", href: ROUTES.USERS, icon: FiUsers }] : []),
+    { name: PAGE_TITLES.DASHBOARD, href: ROUTES.DASHBOARD, icon: FiHome },
+    { name: BUTTON_LABELS.NEW_POST, href: ROUTES.EDITOR, icon: FiPlus },
+    { name: PAGE_TITLES.SETTINGS, href: ROUTES.SETTINGS, icon: FiSettings },
+    ...(user?.role === USER_ROLES.ADMIN ? [{ name: PAGE_TITLES.USERS, href: ROUTES.USERS, icon: FiUsers }] : []),
   ];
 
   const handleLogout = () => {
@@ -78,9 +88,9 @@ const Layout = ({ children }) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to={ROUTES.DASHBOARD} className="flex items-center space-x-2">
               <FiFileText className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">SyncApp</span>
+              <span className="text-2xl font-bold text-foreground">{UI_TEXT.appName}</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -96,7 +106,7 @@ const Layout = ({ children }) => {
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-primary/20"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -111,11 +121,11 @@ const Layout = ({ children }) => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 sm:p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center touch-manipulation"
-                aria-label="Toggle theme"
-                title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                className="p-2.5 sm:p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center touch-manipulation"
+                aria-label={INFO_MESSAGES.TOGGLE_THEME_ARIA}
+                title={INFO_MESSAGES.TOGGLE_THEME(theme === THEME_VALUES.DARK ? THEME_VALUES.LIGHT : THEME_VALUES.DARK)}
               >
-                {theme === "dark" ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
+                {theme === THEME_VALUES.DARK ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
               </button>
 
               {/* Profile Menu */}
@@ -125,8 +135,8 @@ const Layout = ({ children }) => {
                     setShowProfileMenu(!showProfileMenu);
                     setShowMobileMenu(false);
                   }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  aria-label="User menu"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors"
+                  aria-label={INFO_MESSAGES.USER_MENU_ARIA}
                   aria-expanded={showProfileMenu}
                 >
                   <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center">
@@ -144,16 +154,16 @@ const Layout = ({ children }) => {
                     </div>
                     <Link
                       to={ROUTES.PROFILE}
-                      className="block px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 items-center touch-manipulation"
+                      className="block px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 items-center touch-manipulation"
                       onClick={() => setShowProfileMenu(false)}
                     >
-                      Profile Settings
+                      {INFO_MESSAGES.PROFILE_SETTINGS_LINK}
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
+                      className="w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
                     >
-                      Sign Out
+                      {BUTTON_LABELS.SIGN_OUT}
                     </button>
                   </div>
                 )}
@@ -162,12 +172,12 @@ const Layout = ({ children }) => {
               {/* Mobile Menu Button */}
               <div className="md:hidden relative" ref={mobileMenuRef}>
                 <button
-                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors"
                   onClick={() => {
                     setShowMobileMenu(!showMobileMenu);
                     setShowProfileMenu(false);
                   }}
-                  aria-label="Open mobile menu"
+                  aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
                   aria-expanded={showMobileMenu}
                 >
                   {showMobileMenu ? (
@@ -197,7 +207,7 @@ const Layout = ({ children }) => {
                           key={item.name}
                           to={item.href}
                           className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
-                            isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
+                            isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-primary/20"
                           }`}
                           onClick={() => setShowMobileMenu(false)}
                         >
@@ -211,18 +221,18 @@ const Layout = ({ children }) => {
                     <div className="border-t mt-2 pt-2">
                       <Link
                         to={ROUTES.PROFILE}
-                        className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
+                        className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
                         onClick={() => setShowMobileMenu(false)}
                       >
                         <FiUser className="h-4 w-4 shrink-0" />
-                        <span>Profile Settings</span>
+                        <span>{INFO_MESSAGES.PROFILE_SETTINGS_LINK}</span>
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-2 w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-accent transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
+                        className="flex items-center space-x-2 w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
                       >
                         <FiLogOut className="h-4 w-4" />
-                        <span>Sign Out</span>
+                        <span>{BUTTON_LABELS.SIGN_OUT}</span>
                       </button>
                     </div>
                   </div>

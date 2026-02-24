@@ -8,14 +8,14 @@ import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import ConfirmationModal from "../components/ui/ConfirmationModal";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "../components/ui/Table";
-import { COLOR_CLASSES, SYNC_LABEL } from "../constants";
+import { BUTTON_VARIANTS, COLOR_CLASSES, FILTER_STATUS_ALL, POST_STATUS, ROUTES, SYNC_LABEL } from "../constants";
 import { useToast } from "../hooks/useToast";
 import { apiClient } from "../utils/apiClient";
 import { devError, devLog } from "../utils/logger";
 
 const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }) => {
   const toast = useToast();
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState(FILTER_STATUS_ALL);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, postId: null });
   const [deleting, setDeleting] = useState(false);
 
@@ -57,7 +57,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
   }, [deleteConfirm, onPostDelete, toast]);
 
   const filteredPosts = useMemo(() => {
-    if (filterStatus === "all") return posts;
+    if (filterStatus === FILTER_STATUS_ALL) return posts;
     return posts.filter((p) => p.status === filterStatus);
   }, [posts, filterStatus]);
 
@@ -90,7 +90,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
             <FiRefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
             {SYNC_LABEL.REFRESH}
           </Button>
-          <Link to="/editor" className="w-full sm:w-auto">
+          <Link to={ROUTES.EDITOR} className="w-full sm:w-auto">
             <Button className="flex items-center justify-center space-x-2 w-full sm:w-auto">
               <FiPlus className="h-4 w-4 mr-1" />
               {SYNC_LABEL.NEW_POST}
@@ -123,22 +123,22 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
           title={SYNC_LABEL.TOTAL_POSTS}
           value={posts.length}
           icon={() => <FiGlobe className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />}
-          isActive={filterStatus === "all"}
-          onClick={() => setFilterStatus("all")}
+          isActive={filterStatus === FILTER_STATUS_ALL}
+          onClick={() => setFilterStatus(FILTER_STATUS_ALL)}
         />
         <StatsCard
           title={SYNC_LABEL.PUBLISHED}
-          value={posts.filter((post) => post.status === "published").length}
+          value={posts.filter((post) => post.status === POST_STATUS.PUBLISHED).length}
           icon={() => <FiCheckCircle className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.POSITIVE}`} />}
-          isActive={filterStatus === "published"}
-          onClick={() => setFilterStatus("published")}
+          isActive={filterStatus === POST_STATUS.PUBLISHED}
+          onClick={() => setFilterStatus(POST_STATUS.PUBLISHED)}
         />
         <StatsCard
           title={SYNC_LABEL.DRAFTS}
-          value={posts.filter((post) => post.status === "draft").length}
+          value={posts.filter((post) => post.status === POST_STATUS.DRAFT).length}
           icon={() => <FiEdit3 className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />}
-          isActive={filterStatus === "draft"}
-          onClick={() => setFilterStatus("draft")}
+          isActive={filterStatus === POST_STATUS.DRAFT}
+          onClick={() => setFilterStatus(POST_STATUS.DRAFT)}
         />
         <StatsCard
           title={SYNC_LABEL.PLATFORMS}
@@ -146,7 +146,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
             posts.filter(
               (post) =>
                 post.platform_status &&
-                (post.platform_status.medium?.published || post.platform_status.devto?.published)
+                (post.platform_status.medium?.published || post.platform_status.devto?.published),
             ).length
           }
           icon={() => <FiShare2 className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />}
@@ -165,9 +165,9 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                 {filteredPosts.length === 0 ? SYNC_LABEL.NO_POSTS_YET : SYNC_LABEL.SHOWING_POSTS(filteredPosts.length)}
               </CardDescription>
             </div>
-            {filterStatus !== "all" && (
+            {filterStatus !== FILTER_STATUS_ALL && (
               <button
-                onClick={() => setFilterStatus("all")}
+                onClick={() => setFilterStatus(FILTER_STATUS_ALL)}
                 className="text-sm text-primary underline-offset-4 hover:underline"
               >
                 {SYNC_LABEL.CLEAR_FILTER}
@@ -181,7 +181,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               <FiGlobe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">{SYNC_LABEL.NO_POSTS_TITLE}</h3>
               <p className="text-muted-foreground mb-4">{SYNC_LABEL.NO_POSTS_DESCRIPTION}</p>
-              <Link to="/editor">
+              <Link to={ROUTES.EDITOR}>
                 <Button>{SYNC_LABEL.CREATE_FIRST_POST}</Button>
               </Link>
             </div>
@@ -207,6 +207,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                     <TableRow>
                       <TableHead>{SYNC_LABEL.TABLE_TITLE}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_STATUS}</TableHead>
+                      <TableHead>{SYNC_LABEL.TABLE_SEO}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_TAGS}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_PUBLISHED_ON}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_CREATED}</TableHead>
@@ -240,7 +241,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
         message={SYNC_LABEL.DELETE_POST_CONFIRM}
         confirmText={SYNC_LABEL.DELETE}
         cancelText={SYNC_LABEL.CANCEL}
-        variant="destructive"
+        variant={BUTTON_VARIANTS.DESTRUCTIVE}
         isLoading={deleting}
         size="md"
       />

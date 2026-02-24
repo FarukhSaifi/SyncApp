@@ -7,14 +7,17 @@
 const { VertexAI } = require("@google-cloud/vertexai");
 const { config } = require("../config");
 const { AI_PROMPTS, AI_CONFIG } = require("../constants");
+const { DEFAULT_VALUES } = require("../constants/defaultValues");
 const { ERROR_MESSAGES } = require("../constants/messages");
+const HTTP_STATUS = require("../constants/httpStatus");
 const { AppError } = require("../middleware/errorHandler");
 
 function getVertexAI() {
   const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
-  const location = config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+  const location =
+    config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
   if (!project || project.trim() === "") {
-    throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, 503);
+    throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
   const opts = { project, location };
   if (config.googleApplicationCredentials) {
@@ -35,11 +38,11 @@ function getBaseModel() {
 function extractText(result) {
   const response = result.response;
   if (!response?.candidates?.length) {
-    throw new Error("Empty or blocked response from Vertex AI");
+    throw new Error(ERROR_MESSAGES.AI_EMPTY_OR_BLOCKED_RESPONSE);
   }
   const parts = response.candidates[0].content?.parts;
   if (!parts?.length || !parts[0].text) {
-    throw new Error("Empty response from Vertex AI");
+    throw new Error(ERROR_MESSAGES.AI_EMPTY_RESPONSE);
   }
   return parts[0].text.trim();
 }
@@ -55,7 +58,10 @@ function normalizeVertexError(err, fallbackMessage) {
     const billingUrl = project
       ? `https://console.cloud.google.com/billing/enable?project=${project}`
       : ERROR_MESSAGES.VERTEX_AI_BILLING_ENABLE_URL;
-    throw new AppError(`${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}`, 403);
+    throw new AppError(
+      `${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}`,
+      HTTP_STATUS.FORBIDDEN,
+    );
   }
 
   const isApiDisabled = msg.includes("Vertex AI API") && (msg.includes("not been used") || msg.includes("disabled"));
@@ -63,10 +69,10 @@ function normalizeVertexError(err, fallbackMessage) {
     const enableUrl = project
       ? `https://console.cloud.google.com/apis/api/aiplatform.googleapis.com/overview?project=${project}`
       : ERROR_MESSAGES.VERTEX_AI_API_ENABLE_URL;
-    throw new AppError(`${ERROR_MESSAGES.VERTEX_AI_API_DISABLED} Enable it here: ${enableUrl}`, 403);
+    throw new AppError(`${ERROR_MESSAGES.VERTEX_AI_API_DISABLED} Enable it here: ${enableUrl}`, HTTP_STATUS.FORBIDDEN);
   }
 
-  throw new AppError(err.message || fallbackMessage, err.status || 502, err.details);
+  throw new AppError(err.message || fallbackMessage, err.status || HTTP_STATUS.BAD_GATEWAY, err.details);
 }
 
 /**
@@ -74,7 +80,7 @@ function normalizeVertexError(err, fallbackMessage) {
  */
 async function generateOutline(keyword) {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
-    throw new AppError("Keyword or topic is required", 400);
+    throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
   try {
     const vertexAI = getVertexAI();
@@ -114,7 +120,7 @@ async function generateOutline(keyword) {
  */
 async function generateDraft(outline) {
   if (!outline || typeof outline !== "string" || !outline.trim()) {
-    throw new AppError("Outline is required", 400);
+    throw new AppError(ERROR_MESSAGES.AI_OUTLINE_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
   try {
     const model = getBaseModel();
@@ -125,7 +131,7 @@ async function generateDraft(outline) {
           parts: [{ text: AI_PROMPTS.DRAFTER_USER(outline.trim()) }],
         },
       ],
-      systemInstruction: AI_PROMPTS.DRAFTER_SYSTEM,
+      systemInstruction: AI_PROMPTS.DRAFTER_SYSTEM(outline.trim()),
       generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
     });
     return extractText(result);
@@ -137,12 +143,14 @@ async function generateDraft(outline) {
 /**
  * Step 3: Comedian – add personality and humor (systemInstruction for humor style)
  */
-async function addHumor(content, tone = "medium") {
+async function addHumor(content, tone = AI_CONFIG.COMEDIAN_DEFAULT_TONE) {
   if (!content || typeof content !== "string" || !content.trim()) {
-    throw new AppError("Content is required", 400);
+    throw new AppError(ERROR_MESSAGES.AI_CONTENT_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
-  const validTones = ["low", "medium", "high"];
-  const toneValue = validTones.includes(String(tone).toLowerCase()) ? String(tone).toLowerCase() : "medium";
+  const validTones = AI_CONFIG.COMEDIAN_TONES;
+  const toneValue = validTones.includes(String(tone).toLowerCase())
+    ? String(tone).toLowerCase()
+    : AI_CONFIG.COMEDIAN_DEFAULT_TONE;
   try {
     const model = getBaseModel();
     const result = await model.generateContent({

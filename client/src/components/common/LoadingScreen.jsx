@@ -1,6 +1,7 @@
 import React from "react";
+import { INFO_MESSAGES } from "../../constants";
 
-const DEFAULT_MESSAGE = "Loading...";
+const DEFAULT_MESSAGE = INFO_MESSAGES.LOADING;
 
 /**
  * Full-page or inline loading indicator. Use for auth check and route Suspense.

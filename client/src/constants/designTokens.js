@@ -33,6 +33,14 @@ export const SEMANTIC_NAMES = Object.freeze({
   SELECTED: "selected",
 });
 
+/** Button size keys for UI */
+export const BUTTON_SIZES = Object.freeze({
+  DEFAULT: "default",
+  SM: "sm",
+  LG: "lg",
+  ICON: "icon",
+});
+
 /** Button variant keys for UI */
 export const BUTTON_VARIANTS = Object.freeze({
   DEFAULT: "default",

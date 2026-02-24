@@ -1,6 +1,13 @@
 import React, { memo } from "react";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
-import { COLOR_CLASSES, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS } from "../../constants";
+import {
+  COLOR_CLASSES,
+  ROLE_CONFIG,
+  SYNC_LABEL,
+  USER_ROLES,
+  USER_ROLE_OPTIONS,
+  VERIFIED_CONFIG,
+} from "../../constants";
 import Button from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
 
@@ -34,7 +41,7 @@ const UserCard = memo(({ user, onEdit, onDelete, formatDate }) => {
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <span
               className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                user.role === USER_ROLES.ADMIN ? "bg-purple-100 text-purple-800" : "bg-muted text-muted-foreground"
+                (ROLE_CONFIG[user.role] || ROLE_CONFIG.user).className
               }`}
             >
               {user.role === USER_ROLES.ADMIN ? (
@@ -55,7 +62,7 @@ const UserCard = memo(({ user, onEdit, onDelete, formatDate }) => {
             </span>
             <span
               className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                user.isVerified ? COLOR_CLASSES.BADGE.VERIFIED : COLOR_CLASSES.BADGE.UNVERIFIED
+                (user.isVerified ? VERIFIED_CONFIG.verified : VERIFIED_CONFIG.unverified).className
               }`}
             >
               {user.isVerified ? (

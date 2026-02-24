@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DEFAULT_PAGINATION } from "../constants";
+import { DEFAULT_PAGINATION, ERROR_MESSAGES, POST_STATUS } from "../constants";
 import { apiClient } from "../utils/apiClient";
 import { devError, devLog, devWarn } from "../utils/logger";
 
@@ -27,12 +27,12 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
         }
       } else {
         devWarn("API returned unsuccessful response:", response);
-        setError(response?.error || "Failed to fetch posts");
+        setError(response?.error || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
         setPosts([]);
       }
     } catch (err) {
       devError("Error fetching posts:", err);
-      setError(err.message || "Failed to fetch posts");
+      setError(err?.message || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
       setPosts([]);
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
         const postId = post.id || post._id;
         const updatedId = updatedPost.id || updatedPost._id;
         return postId === updatedId ? { ...post, ...updatedPost } : post;
-      })
+      }),
     );
   }, []);
 
@@ -62,7 +62,7 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
       prev.filter((post) => {
         const currentId = post.id || post._id;
         return currentId !== postId;
-      })
+      }),
     );
   }, []);
 
@@ -73,17 +73,17 @@ export function usePosts(initialPagination = DEFAULT_PAGINATION) {
   const stats = useMemo(
     () => ({
       total: posts.length,
-      published: posts.filter((p) => p.status === "published").length,
-      drafts: posts.filter((p) => p.status === "draft").length,
+      published: posts.filter((p) => p.status === POST_STATUS.PUBLISHED).length,
+      drafts: posts.filter((p) => p.status === POST_STATUS.DRAFT).length,
       withPlatforms: posts.filter(
         (p) =>
           p.platform_status &&
           (p.platform_status.medium?.published ||
             p.platform_status.devto?.published ||
-            p.platform_status.wordpress?.published)
+            p.platform_status.wordpress?.published),
       ).length,
     }),
-    [posts]
+    [posts],
   );
 
   return {

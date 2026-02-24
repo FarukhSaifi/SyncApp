@@ -24,7 +24,7 @@ const getUserById = asyncHandler(async (req, res) => {
  */
 const createUser = asyncHandler(async (req, res) => {
   const user = await usersService.createUser(req.body);
-  res.status(201).json({ success: true, data: user, message: "User created successfully" });
+  res.status(HTTP_STATUS.CREATED).json({ success: true, data: user, message: SUCCESS_MESSAGES.USER_CREATED });
 });
 
 /**

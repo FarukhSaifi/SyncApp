@@ -42,7 +42,7 @@ function validateQuery(schema) {
 
     if (error) {
       const errors = error.details.map((detail) => detail.message);
-      return next(new ValidationError("Query validation failed", errors));
+      return next(new ValidationError(VALIDATION_ERRORS.QUERY_VALIDATION_FAILED, errors));
     }
 
     req.query = value;
@@ -56,7 +56,9 @@ const schemas = {
   createPost: Joi.object({
     title: Joi.string().required().max(STRING_LIMITS.POST_TITLE_MAX).trim(),
     content_markdown: Joi.string().required().trim(),
-    status: Joi.string().valid(...VALID_POST_STATUS).default(POST_STATUS.DRAFT),
+    status: Joi.string()
+      .valid(...VALID_POST_STATUS)
+      .default(POST_STATUS.DRAFT),
     tags: Joi.array().items(Joi.string().trim()).default([]),
     cover_image: Joi.string().uri().allow("").optional(),
     canonical_url: Joi.string().uri().allow("").optional(),
@@ -65,7 +67,9 @@ const schemas = {
   updatePost: Joi.object({
     title: Joi.string().max(STRING_LIMITS.POST_TITLE_MAX).trim().optional(),
     content_markdown: Joi.string().trim().optional(),
-    status: Joi.string().valid(...VALID_POST_STATUS).optional(),
+    status: Joi.string()
+      .valid(...VALID_POST_STATUS)
+      .optional(),
     tags: Joi.array().items(Joi.string().trim()).optional(),
     cover_image: Joi.string().uri().allow("").optional(),
     canonical_url: Joi.string().uri().allow("").optional(),
@@ -116,8 +120,14 @@ const schemas = {
   // Query schemas
   getPosts: Joi.object({
     page: Joi.number().integer().min(NUMERIC_LIMITS.PAGE_MIN).default(NUMERIC_LIMITS.PAGE_MIN),
-    limit: Joi.number().integer().min(NUMERIC_LIMITS.LIMIT_MIN).max(NUMERIC_LIMITS.LIMIT_MAX).default(NUMERIC_LIMITS.DEFAULT_LIMIT),
-    status: Joi.string().valid(...VALID_POST_STATUS).optional(),
+    limit: Joi.number()
+      .integer()
+      .min(NUMERIC_LIMITS.LIMIT_MIN)
+      .max(NUMERIC_LIMITS.LIMIT_MAX)
+      .default(NUMERIC_LIMITS.DEFAULT_LIMIT),
+    status: Joi.string()
+      .valid(...VALID_POST_STATUS)
+      .optional(),
   }),
 };
 
@@ -126,4 +136,3 @@ module.exports = {
   validateQuery,
   schemas,
 };
-
