@@ -1,9 +1,9 @@
 import React from "react";
-import { BUTTON_VARIANTS } from "../../constants/designTokens";
+import { BUTTON_SIZES, BUTTON_VARIANTS } from "../../constants/designTokens";
 
 const Button = React.forwardRef(
   (
-    { className = "", variant = BUTTON_VARIANTS.DEFAULT, size = "default", disabled = false, children, ...props },
+    { className = "", variant = BUTTON_VARIANTS.DEFAULT, size = BUTTON_SIZES.DEFAULT, disabled = false, children, ...props },
     ref
   ) => {
     const baseClasses =
@@ -22,18 +22,19 @@ const Button = React.forwardRef(
       [BUTTON_VARIANTS.GHOST]: "hover:bg-accent hover:text-accent-foreground",
       [BUTTON_VARIANTS.LINK]: "underline-offset-4 hover:underline text-primary",
       [BUTTON_VARIANTS.SELECTED]: "bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-foreground",
-      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+      [BUTTON_VARIANTS.DANGER]: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+      [BUTTON_VARIANTS.DESTRUCTIVE]: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
     };
 
     const sizes = {
-      default: "h-10 py-2 px-4 text-sm",
-      sm: "h-8 px-3 rounded-md text-xs",
-      lg: "h-11 px-6 rounded-lg text-sm",
-      icon: "h-10 w-10",
+      [BUTTON_SIZES.DEFAULT]: "h-10 py-2 px-4 text-sm",
+      [BUTTON_SIZES.SM]: "h-8 px-3 rounded-md text-xs",
+      [BUTTON_SIZES.LG]: "h-11 px-6 rounded-lg text-sm",
+      [BUTTON_SIZES.ICON]: "h-10 w-10",
     };
 
     const resolvedVariant = variants[variant] ?? variants[BUTTON_VARIANTS.DEFAULT];
-    const resolvedSize = sizes[size] ?? sizes.default;
+    const resolvedSize = sizes[size] ?? sizes[BUTTON_SIZES.DEFAULT];
     const classes = `${baseClasses} ${resolvedVariant} ${resolvedSize} ${className}`.trim();
 
     return (

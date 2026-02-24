@@ -1,10 +1,11 @@
 import React, { memo, useState } from "react";
 import { FiEdit3, FiTrash2, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { COLOR_CLASSES, STATUS_CONFIG, SYNC_LABEL } from "../../constants";
+import { APP_CONFIG, COLOR_CLASSES, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "../../constants";
 import { apiClient } from "../../utils/apiClient";
 import Button from "../ui/Button";
 import { TableCell, TableRow } from "../ui/Table";
+import SeoScoreBadge from "./SeoScoreBadge";
 
 /**
  * Memoized post row component for better performance
@@ -18,16 +19,15 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
     try {
       const response = await apiClient.unpublishFromPlatform(platform, postId);
       if (response?.success) {
-        toast?.success?.("Unpublished", `Post removed from ${platform}`);
-        // Update the post in parent component
+        toast?.success?.(SYNC_LABEL.UNPUBLISHED, SYNC_LABEL.REMOVED_FROM_PLATFORM(platform));
         if (onUpdate) {
           onUpdate({ ...post, platform_status: response.data.platformStatus });
         }
       } else {
-        toast?.error?.("Error", response?.error || `Failed to unpublish from ${platform}`);
+        toast?.error?.(SYNC_LABEL.ERROR_TITLE, response?.error || SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform));
       }
     } catch (error) {
-      toast?.error?.("Error", `Failed to unpublish from ${platform}: ${error.message}`);
+      toast?.error?.(SYNC_LABEL.ERROR_TITLE, SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform, error.message));
     } finally {
       setUnpublishing(null);
     }
@@ -51,7 +51,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
             <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
-            <span>Medium</span>
+            <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
           </a>
           <button
             onClick={() => handleUnpublish("medium")}
@@ -61,7 +61,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -75,7 +75,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
             <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
-            <span>DEV.to</span>
+            <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
           </a>
           <button
             onClick={() => handleUnpublish("devto")}
@@ -85,7 +85,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -99,7 +99,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
             className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
           >
             <span className="text-primary">●</span>
-            <span>WordPress</span>
+            <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
           </a>
           <button
             onClick={() => handleUnpublish("wordpress")}
@@ -109,7 +109,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
           >
             <FiX className="h-3 w-3" />
           </button>
-        </div>
+        </div>,
       );
     }
 
@@ -136,14 +136,17 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
       <TableCell className="font-medium">
         <div className="max-w-xs">
           <div className="truncate">{post.title}</div>
-          {post.cover_image && <div className="text-xs text-muted-foreground mt-1">📷 Has cover image</div>}
+          {post.cover_image && <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>}
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(post.status)}</TableCell>
       <TableCell>
+        <SeoScoreBadge post={post} />
+      </TableCell>
+      <TableCell>
         <div className="flex flex-wrap gap-1 max-w-32">
           {post.tags && post.tags.length > 0 ? (
-            post.tags.slice(0, 3).map((tag, index) => (
+            post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW).map((tag, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-primary/15 text-primary text-xs rounded-full truncate"
@@ -155,8 +158,10 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
           ) : (
             <span className="text-muted-foreground text-sm">{SYNC_LABEL.NO_TAGS}</span>
           )}
-          {post.tags && post.tags.length > 3 && (
-            <span className="text-muted-foreground text-xs">+{post.tags.length - 3} more</span>
+          {post.tags && post.tags.length > APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW && (
+            <span className="text-muted-foreground text-xs">
+              {SYNC_LABEL.TAGS_MORE(post.tags.length - APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW)}
+            </span>
           )}
         </div>
       </TableCell>
@@ -164,7 +169,7 @@ const PostRow = memo(({ post, onDelete, onUpdate, toast }) => {
       <TableCell>{formatDate(post.created_at || post.createdAt)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end space-x-2">
-          <Link to={`/editor/${postId}`}>
+          <Link to={`${ROUTES.EDITOR}/${postId}`}>
             <Button variant="outline" size="sm" className="flex items-center space-x-1">
               <FiEdit3 className="h-4 w-4" />
               <span>{SYNC_LABEL.EDIT}</span>

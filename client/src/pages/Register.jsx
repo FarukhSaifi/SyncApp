@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "../constants";
+import { APP_CONFIG, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "../constants";
 import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
@@ -38,12 +38,12 @@ const Register = () => {
       return false;
     }
 
-    if (formData.password.length < 6) {
+    if (formData.password.length < APP_CONFIG.VALIDATION_MIN_PASSWORD) {
       setError(SYNC_LABEL.PASSWORD_MIN_LENGTH_REGISTER);
       return false;
     }
 
-    if (formData.username.length < 3) {
+    if (formData.username.length < APP_CONFIG.VALIDATION_MIN_USERNAME) {
       setError(SYNC_LABEL.USERNAME_MIN_LENGTH);
       return false;
     }

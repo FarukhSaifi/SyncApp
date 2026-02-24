@@ -92,7 +92,7 @@ const Login = () => {
                 onRightIconClick={() => setShowPassword(!showPassword)}
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder={SYNC_LABEL.PLACEHOLDER_NEW_PASSWORD}
+                placeholder={SYNC_LABEL.PLACEHOLDER_PASSWORD}
                 autoComplete="current-password"
               />
 

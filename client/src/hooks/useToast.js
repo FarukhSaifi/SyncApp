@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useToaster } from "../components/ui/Toaster";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, TOAST_TITLES } from "../constants";
 
 /**
  * Enhanced toast hook with common app-specific toast patterns
@@ -10,103 +11,103 @@ export const useToast = () => {
 
   // Memoize all methods to ensure stability and prevent re-renders
   const apiSuccess = useCallback(
-    (message, title = "Success") => {
+    (message, title = TOAST_TITLES.SUCCESS) => {
       toaster.success(title, message);
     },
-    [toaster]
+    [toaster],
   );
 
   const apiError = useCallback(
-    (message, title = "Error") => {
+    (message, title = TOAST_TITLES.ERROR) => {
       toaster.error(title, message);
     },
-    [toaster]
+    [toaster],
   );
 
   const apiLoading = useCallback(
-    (message, title = "Loading") => {
+    (message, title = TOAST_TITLES.LOADING) => {
       return toaster.loading(title, message);
     },
-    [toaster]
+    [toaster],
   );
 
   const validationError = useCallback(
     (message) => {
-      toaster.error("Validation Error", message);
+      toaster.error(TOAST_TITLES.VALIDATION_ERROR, message);
     },
-    [toaster]
+    [toaster],
   );
 
   const networkError = useCallback(() => {
-    toaster.error("Network Error", "Unable to connect to server. Please check your connection.");
+    toaster.error(TOAST_TITLES.NETWORK_ERROR, ERROR_MESSAGES.NETWORK_ERROR);
   }, [toaster]);
 
   const authError = useCallback(
-    (message = "Authentication failed") => {
-      toaster.error("Authentication Error", message);
+    (message = TOAST_TITLES.AUTH_ERROR) => {
+      toaster.error(TOAST_TITLES.AUTH_ERROR, message);
     },
-    [toaster]
+    [toaster],
   );
 
   const publishSuccess = useCallback(
     (platform) => {
-      toaster.success("Published!", `Post successfully published to ${platform}`);
+      toaster.success(TOAST_TITLES.PUBLISHED, SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(platform));
     },
-    [toaster]
+    [toaster],
   );
 
   const publishError = useCallback(
     (platform, error) => {
-      toaster.error("Publish Failed", `Failed to publish to ${platform}: ${error}`);
+      toaster.error(TOAST_TITLES.PUBLISH_FAILED, ERROR_MESSAGES.FAILED_TO_PUBLISH_PLATFORM(platform, error));
     },
-    [toaster]
+    [toaster],
   );
 
   const saveSuccess = useCallback(
     (isUpdate = false) => {
-      toaster.success("Saved!", isUpdate ? "Post updated successfully" : "Post created successfully");
+      toaster.success(TOAST_TITLES.SAVED, isUpdate ? SUCCESS_MESSAGES.POST_UPDATED : SUCCESS_MESSAGES.POST_CREATED);
     },
-    [toaster]
+    [toaster],
   );
 
   const deleteSuccess = useCallback(() => {
-    toaster.success("Deleted!", "Post deleted successfully");
+    toaster.success(TOAST_TITLES.DELETED, SUCCESS_MESSAGES.POST_DELETED);
   }, [toaster]);
 
   const credentialsSaved = useCallback(
     (platform) => {
-      toaster.success("Credentials Saved", `${platform} API credentials saved successfully`);
+      toaster.success(TOAST_TITLES.CREDENTIALS_SAVED, SUCCESS_MESSAGES.CREDENTIALS_SAVED(platform));
     },
-    [toaster]
+    [toaster],
   );
 
   const credentialsError = useCallback(
     (platform, error) => {
-      toaster.error("Credentials Error", `Failed to save ${platform} credentials: ${error}`);
+      toaster.error(TOAST_TITLES.CREDENTIALS_ERROR, ERROR_MESSAGES.CREDENTIALS_SAVE_FAILED(platform, error));
     },
-    [toaster]
+    [toaster],
   );
 
   const exportSuccess = useCallback(
     (format) => {
-      toaster.success("Exported!", `Post exported as ${format} successfully`);
+      toaster.success(TOAST_TITLES.EXPORTED, SUCCESS_MESSAGES.EXPORT_SUCCESS(format));
     },
-    [toaster]
+    [toaster],
   );
 
   const exportError = useCallback(
     (format, error) => {
-      toaster.error("Export Failed", `Failed to export as ${format}: ${error}`);
+      toaster.error(TOAST_TITLES.EXPORT_FAILED, ERROR_MESSAGES.EXPORT_FAILED(format, error));
     },
-    [toaster]
+    [toaster],
   );
 
   const withToast = useCallback(
     (promise, options = {}) => {
       const {
-        loading = "Loading...",
-        success = "Success!",
-        error = "Operation failed",
+        loading = TOAST_TITLES.LOADING,
+        success = TOAST_TITLES.SUCCESS,
+        error = ERROR_MESSAGES.OPERATION_FAILED,
         loadingMessage,
         successMessage,
         errorMessage,
@@ -121,7 +122,7 @@ export const useToast = () => {
         errorMessage,
       });
     },
-    [toaster]
+    [toaster],
   );
 
   // Return stable object with all toast methods
@@ -161,7 +162,7 @@ export const useToast = () => {
       exportSuccess,
       exportError,
       withToast,
-    ]
+    ],
   );
 };
 

@@ -76,6 +76,7 @@ const createSuccessMessages = () => {
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
+    REMOVED_FROM_PLATFORM: (platform) => `Post removed from ${platform}`,
     // Credentials
     CREDENTIALS_SAVED: (platform) => `${platform} API credentials saved successfully`,
     // Export
@@ -130,8 +131,13 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_UNPUBLISH: (platform, error) => `Failed to unpublish from ${platform}: ${error}`,
   // Credentials
   CREDENTIALS_SAVE_FAILED: (platform, error) => `Failed to save ${platform} credentials: ${error}`,
+  FAILED_TO_SAVE_CREDENTIALS: "Failed to save credentials",
+  FAILED_TO_FETCH_POSTS: "Failed to fetch posts",
   // Export
   EXPORT_FAILED: (format, error) => `Failed to export as ${format}: ${error}`,
+  // Unpublish
+  FAILED_TO_UNPUBLISH_PLATFORM: (platform, error) =>
+    error ? `Failed to unpublish from ${platform}: ${error}` : `Failed to unpublish from ${platform}`,
 });
 
 // ============================================================================
@@ -230,12 +236,18 @@ export const LABELS = Object.freeze({
   TABLE_TAGS: "Tags",
   TABLE_PUBLISHED_ON: "Published On",
   TABLE_CREATED: "Created",
+  TABLE_SEO: "SEO",
+  SEO_BADGE_LABEL: "SEO",
+  SEO_SCORE_UNKNOWN: "—",
   TABLE_ACTIONS: "Actions",
   TABLE_USER: "User",
   TABLE_EMAIL: "Email",
   TABLE_ROLE: "Role",
   TABLE_JOINED: "Joined",
   TABLE_LAST_LOGIN: "Last Login",
+  // Profile page aliases
+  USERNAME_LABEL: "Username",
+  ROLE_LABEL: "Role",
 });
 
 // ============================================================================
@@ -343,7 +355,9 @@ export const BUTTON_LABELS = Object.freeze({
   // Auth
   SIGN_IN: "Sign In",
   SIGN_UP: "Sign Up",
+  SIGN_OUT: "Sign Out",
   CREATE_ACCOUNT: "Create Account",
+  CREATE_ACCOUNT_BUTTON: "Create Account",
   // Dashboard
   CREATE_FIRST_POST: "Create Your First Post",
   CLEAR_FILTER: "Clear filter",
@@ -356,9 +370,14 @@ export const BUTTON_LABELS = Object.freeze({
 // ============================================================================
 export const PAGE_TITLES = Object.freeze({
   DASHBOARD: "Dashboard",
+  DASHBOARD_TITLE: "Dashboard",
   USER_MANAGEMENT: "User Management",
+  USER_MANAGEMENT_TITLE: "User Management",
+  USERS: "Users",
   PROFILE_SETTINGS: "Profile Settings",
+  PROFILE_SETTINGS_TITLE: "Profile Settings",
   SETTINGS: "Settings",
+  SETTINGS_TITLE: "Settings",
   EDIT_POST: "Edit Post",
   NEW_POST: "New Post",
   SIGN_IN: "Sign In",
@@ -372,14 +391,20 @@ export const PAGE_TITLES = Object.freeze({
 // ============================================================================
 export const PAGE_DESCRIPTIONS = Object.freeze({
   DASHBOARD: "Manage your blog posts and publishing status",
+  DASHBOARD_DESCRIPTION: "Manage your blog posts and publishing status",
   USER_MANAGEMENT: "Manage users and their permissions",
+  USER_MANAGEMENT_DESCRIPTION: "Manage users and their permissions",
   PROFILE_SETTINGS: "Manage your account information and security settings",
+  PROFILE_SETTINGS_DESCRIPTION: "Manage your account information and security settings",
   SETTINGS: "Configure your API credentials and platform settings",
   UPDATE_POST: "Update your blog post",
   CREATE_POST: "Create a new blog post",
   EDITOR_SUBTITLE: "Write and preview your blog post in Markdown.",
   SIGN_IN: "Sign in to your account to continue",
+  SIGN_IN_DESCRIPTION: "Sign in to your account to continue",
   SIGN_IN_FORM: "Enter your credentials to access your account",
+  SIGN_IN_DESCRIPTION_2: "Enter your credentials to access your account",
+  SETTINGS_DESCRIPTION: "Configure your API credentials and platform settings",
   JOIN_SYNCAPP: "Join SyncApp to start publishing your blog posts",
   FILL_DETAILS: "Fill in your details to create an account",
 });
@@ -459,6 +484,28 @@ export const INFO_MESSAGES = Object.freeze({
   WORDPRESS_URL_INFO: "Your WordPress site URL (e.g., https://yoursite.com)",
   WORDPRESS_API_KEY_INFO: "Your WordPress username:password or application password",
   BOTH_REQUIRED_WORDPRESS: "Both site URL and API key are required for WordPress integration",
+  // Error boundary
+  SOMETHING_WENT_WRONG: "Something went wrong",
+  UNEXPECTED_ERROR_TRY_AGAIN: "An unexpected error occurred. Please try again.",
+  GO_TO_DASHBOARD: "Go to Dashboard",
+  // Layout / Nav
+  TOGGLE_THEME: (mode) => `Switch to ${mode} mode`,
+  TOGGLE_THEME_ARIA: "Toggle theme",
+  USER_MENU_ARIA: "User menu",
+  OPEN_MOBILE_MENU_ARIA: "Open mobile menu",
+  PROFILE_SETTINGS_LINK: "Profile Settings",
+  // Toast titles (unpublish, errors)
+  UNPUBLISHED: "Unpublished",
+  ERROR_TITLE: "Error",
+  // Filters
+  FILTER_ALL: "All",
+  CLEAR_ALL_FILTERS: "Clear all filters",
+  // Post list
+  TAGS_MORE: (n) => `+${n} more`,
+  // SEO
+  SEO_SCORE_ARIA: (score, maxScore, summary) => `SEO score: ${score} out of ${maxScore}. ${summary || ""}`,
+  // Profile default avatar
+  DEFAULT_AVATAR_LETTER: "U",
   // Editor
   RICH_TEXT_EDITOR: "Rich text editor",
   POST_METADATA: "Post Metadata",

@@ -1,29 +1,32 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { STORAGE_KEYS, THEME_VALUES } from "../constants";
 
-const ThemeContext = createContext({ theme: "light", setTheme: () => {}, toggleTheme: () => {} });
+const ThemeContext = createContext({
+  theme: THEME_VALUES.LIGHT,
+  setTheme: () => {},
+  toggleTheme: () => {},
+});
 
 export const ThemeProvider = ({ children }) => {
-  // Always default to "light" theme unless user explicitly set one
   const getInitialTheme = () => {
     try {
-      const stored = localStorage.getItem("theme");
-      if (stored === "dark" || stored === "light") return stored;
+      const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (stored === THEME_VALUES.DARK || stored === THEME_VALUES.LIGHT) return stored;
     } catch {}
-    // No system preference checks! Default to "light"
-    return "light";
+    return THEME_VALUES.LIGHT;
   };
 
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
+    if (theme === THEME_VALUES.DARK) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
     try {
-      localStorage.setItem("theme", theme);
+      localStorage.setItem(STORAGE_KEYS.THEME, theme);
     } catch {}
     root.style.colorScheme = theme;
   }, [theme]);
@@ -32,9 +35,9 @@ export const ThemeProvider = ({ children }) => {
     () => ({
       theme,
       setTheme,
-      toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+      toggleTheme: () => setTheme((t) => (t === THEME_VALUES.DARK ? THEME_VALUES.LIGHT : THEME_VALUES.DARK)),
     }),
-    [theme]
+    [theme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

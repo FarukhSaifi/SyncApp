@@ -3,19 +3,20 @@ const { config } = require("../config");
 const connectDB = require("./connection");
 const Credential = require("../models/Credential");
 const { DATABASE, PLATFORMS } = require("../constants");
+const { DB_LOG } = require("../constants/logging");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("DB-SETUP");
 
 async function setupDatabase() {
   try {
-    logger.info("Setting up MongoDB database...");
-    logger.info("Connecting to MongoDB", {
+    logger.info(DB_LOG.SETUP_START);
+    logger.info(DB_LOG.CONNECTING, {
       mongoUri: config.mongoUri.replace(/\/\/[^:]+:[^@]+@/, "//***:***@"),
     });
 
     await connectDB();
-    logger.info("MongoDB connection established");
+    logger.info(DB_LOG.CONNECTION_ESTABLISHED);
 
     const existingMediumCredentials = await Credential.findOne({
       platform_name: PLATFORMS.MEDIUM,
@@ -26,28 +27,28 @@ async function setupDatabase() {
 
     if (!existingMediumCredentials) {
       await Credential.create(DATABASE.DEFAULT_PLATFORM_CREDENTIALS.MEDIUM);
-      logger.info("Default Medium credentials record created");
+      logger.info(DB_LOG.DEFAULT_MEDIUM_CREATED);
     } else {
-      logger.info("Medium credentials already exist");
+      logger.info(DB_LOG.MEDIUM_EXISTS);
     }
 
     if (!existingDevtoCredentials) {
       await Credential.create(DATABASE.DEFAULT_PLATFORM_CREDENTIALS.DEVTO);
-      logger.info("Default DEV.to credentials record created");
+      logger.info(DB_LOG.DEFAULT_DEVTO_CREATED);
     } else {
-      logger.info("DEV.to credentials already exist");
+      logger.info(DB_LOG.DEVTO_EXISTS);
     }
 
-    logger.info("Database setup completed successfully");
-    logger.info("Update API keys in settings", {
+    logger.info(DB_LOG.SETUP_COMPLETED);
+    logger.info(DB_LOG.SETUP_UPDATE_KEYS, {
       medium: DATABASE.SETUP_URLS.MEDIUM_SETTINGS,
       devto: DATABASE.SETUP_URLS.DEVTO_SETTINGS,
     });
   } catch (error) {
-    logger.error("Database setup failed", error);
+    logger.error(DB_LOG.SETUP_FAILED, error);
 
     if (error.message && error.message.includes("ECONNREFUSED")) {
-      logger.info("MongoDB not running - start MongoDB or use Atlas", {
+      logger.info(DB_LOG.MONGODB_NOT_RUNNING, {
         atlas: DATABASE.SETUP_URLS.MONGODB_ATLAS,
       });
     }
@@ -57,7 +58,7 @@ async function setupDatabase() {
     const mongoose = require("mongoose");
     if (mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED) {
       await mongoose.connection.close();
-      logger.info("MongoDB connection closed");
+      logger.info(DB_LOG.CONNECTION_CLOSED_SETUP);
     }
   }
 }

@@ -228,6 +228,12 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
     prevContentRef.current = formData.content_markdown;
   }, [quill, formData.content_markdown, activeTab]);
 
+  // Source for preview: live from Quill when mounted, else formData (so preview is always current)
+  const previewContent =
+    (quill?.root?.innerHTML?.trim() && quill.root.innerHTML !== "<p><br></p>" ? quill.root.innerHTML : null) ||
+    formData.content_markdown ||
+    "";
+
   const handleDownloadMdx = async () => {
     try {
       const postId = id;
@@ -621,31 +627,35 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
           </div>
 
           <>
-            {activeTab === "edit" ? (
-              <CardContent className="p-4 sm:p-6 space-y-5 sm:space-y-6 bg-white dark:bg-card">
-                {/* Title */}
-                <div>
-                  <label htmlFor="editor-title" className="block text-sm font-medium text-foreground mb-1.5">
-                    {SYNC_LABEL.POST_TITLE}
-                  </label>
-                  <Input
-                    id="editor-title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder={SYNC_LABEL.PLACEHOLDER_POST_TITLE}
-                    className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.TITLE_SLUG_INFO}</p>
-                </div>
+            <CardContent
+              className={`p-4 sm:p-6 space-y-5 sm:space-y-6 bg-white dark:bg-card ${
+                activeTab !== "edit" ? "hidden" : ""
+              }`}
+              aria-hidden={activeTab !== "edit"}
+            >
+              {/* Title */}
+              <div>
+                <label htmlFor="editor-title" className="block text-sm font-medium text-foreground mb-1.5">
+                  {SYNC_LABEL.POST_TITLE}
+                </label>
+                <Input
+                  id="editor-title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder={SYNC_LABEL.PLACEHOLDER_POST_TITLE}
+                  className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.TITLE_SLUG_INFO}</p>
+              </div>
 
-                {/* Content (Markdown) - Rich Text Editor */}
-                <div>
-                  <label id="editor-content-label" className="block text-sm font-medium text-foreground mb-1.5">
-                    {SYNC_LABEL.CONTENT_MARKDOWN}
-                  </label>
-                  <div className="editor-wrapper border border-border rounded-md overflow-hidden bg-background">
-                    <style>{`
+              {/* Content (Markdown) - Rich Text Editor */}
+              <div>
+                <label id="editor-content-label" className="block text-sm font-medium text-foreground mb-1.5">
+                  {SYNC_LABEL.CONTENT_MARKDOWN}
+                </label>
+                <div className="editor-wrapper border border-border rounded-md overflow-hidden bg-background">
+                  <style>{`
                     .editor-wrapper .ql-toolbar {
                       padding: 6px 4px;
                       border-top-left-radius: 0.375rem;
@@ -712,170 +722,173 @@ const Editor = ({ onPostCreate, onPostUpdate }) => {
                       }
                     }
                   `}</style>
-                    <div ref={quillRef} className="editor-wrapper" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.CONTENT_MARKDOWN_HINT}</p>
+                  <div ref={quillRef} className="editor-wrapper" />
                 </div>
+                <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.CONTENT_MARKDOWN_HINT}</p>
+              </div>
 
-                {/* Tags: input + Add (dark button) + pills */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">{SYNC_LABEL.TAGS_LABEL}</label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleTagKeyDown}
-                      placeholder={SYNC_LABEL.ADD_TAG}
-                      className="flex-1 text-sm sm:text-base bg-background border-border rounded-md"
-                    />
-                    <Button type="button" variant="default" size="sm" onClick={handleAddTag} className="shrink-0">
-                      {SYNC_LABEL.ADD}
-                    </Button>
-                  </div>
-                  {tagList.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {tagList.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-muted/80 text-foreground border border-border"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveTag(tag)}
-                            className="p-0.5 rounded hover:bg-muted-foreground/20 focus:outline-none focus:ring-2 focus:ring-primary"
-                            aria-label={`Remove ${tag}`}
-                          >
-                            <FiX className="h-3.5 w-3.5" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Canonical URL */}
-                <div>
-                  <label htmlFor="editor-canonical-url" className="block text-sm font-medium text-foreground mb-1.5">
-                    {SYNC_LABEL.CANONICAL_URL}
-                  </label>
+              {/* Tags: input + Add (dark button) + pills */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{SYNC_LABEL.TAGS_LABEL}</label>
+                <div className="flex gap-2">
                   <Input
-                    id="editor-canonical-url"
-                    name="canonical_url"
-                    type="url"
-                    value={formData.canonical_url}
-                    onChange={handleInputChange}
-                    placeholder={SYNC_LABEL.PLACEHOLDER_CANONICAL_URL}
-                    className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder={SYNC_LABEL.ADD_TAG}
+                    className="flex-1 text-sm sm:text-base bg-background border-border rounded-md"
                   />
-                  <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.CANONICAL_URL_HINT}</p>
+                  <Button type="button" variant="default" size="sm" onClick={handleAddTag} className="shrink-0">
+                    {SYNC_LABEL.ADD}
+                  </Button>
                 </div>
-
-                {/* Featured Image URL */}
-                <div>
-                  <label htmlFor="editor-cover-image" className="block text-sm font-medium text-foreground mb-1.5">
-                    {SYNC_LABEL.FEATURED_IMAGE_URL}
-                  </label>
-                  <Input
-                    id="editor-cover-image"
-                    name="cover_image"
-                    type="url"
-                    value={formData.cover_image}
-                    onChange={handleInputChange}
-                    placeholder={SYNC_LABEL.PLACEHOLDER_COVER_IMAGE}
-                    className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
-                  />
-                </div>
-              </CardContent>
-            ) : (
-              /* Preview tab — same card styling as Edit */
-              <CardContent className="p-4 sm:p-6 max-h-[calc(100vh-280px)] overflow-auto bg-white dark:bg-card">
-                <div className="prose prose-sm sm:prose-base max-w-none text-foreground">
-                  <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-3 sm:mb-4">
-                    {formData.title || SYNC_LABEL.UNTITLED_POST}
-                  </h1>
-                  {formData.cover_image && (
-                    <img
-                      src={formData.cover_image}
-                      alt="Cover"
-                      className="w-full h-auto max-h-48 sm:max-h-64 object-cover rounded-lg mb-3 sm:mb-4"
-                    />
-                  )}
-                  <div className="text-foreground leading-relaxed text-sm sm:text-base">
-                    {isLikelyHtml(formData.content_markdown) ? (
-                      <div
-                        className="prose prose-sm sm:prose-base max-w-none [&_img]:rounded-md [&_pre]:rounded-lg"
-                        dangerouslySetInnerHTML={{
-                          __html: formData.content_markdown || SYNC_LABEL.NO_CONTENT_YET,
-                        }}
-                      />
-                    ) : (
-                      <ReactMarkdown
-                        components={{
-                          code({ node, inline, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || "");
-                            if (!inline && match) {
-                              return (
-                                <div className="overflow-x-auto -mx-3 sm:mx-0 my-3 sm:my-4">
-                                  <SyntaxHighlighter
-                                    style={oneDark}
-                                    language={match[1]}
-                                    PreTag="div"
-                                    customStyle={{
-                                      borderRadius: 8,
-                                      fontSize: "0.75rem",
-                                      padding: "1rem",
-                                      margin: 0,
-                                      fontFamily:
-                                        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                      lineHeight: 1.6,
-                                    }}
-                                    {...props}
-                                  >
-                                    {String(children).replace(/\n$/, "")}
-                                  </SyntaxHighlighter>
-                                </div>
-                              );
-                            }
-                            return (
-                              <code
-                                className={`font-mono text-xs sm:text-sm bg-muted rounded px-1.5 sm:px-2 py-0.5 ${
-                                  className || ""
-                                }`}
-                                style={{
-                                  fontFamily:
-                                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                }}
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            );
-                          },
-                          img({ src, alt }) {
-                            return <img src={src || ""} alt={alt || ""} className="w-full h-auto rounded-md" />;
-                          },
-                        }}
+                {tagList.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tagList.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-muted/80 text-foreground border border-border"
                       >
-                        {formData.content_markdown || SYNC_LABEL.NO_CONTENT_YET}
-                      </ReactMarkdown>
-                    )}
-                  </div>
-                  {tagList.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4 sm:mt-6">
-                      {tagList.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 sm:px-3 py-0.5 sm:py-1 bg-primary/15 text-primary text-xs sm:text-sm rounded-full font-medium"
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="p-0.5 rounded hover:bg-muted-foreground/20 focus:outline-none focus:ring-2 focus:ring-primary"
+                          aria-label={`Remove ${tag}`}
                         >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
+                          <FiX className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Canonical URL */}
+              <div>
+                <label htmlFor="editor-canonical-url" className="block text-sm font-medium text-foreground mb-1.5">
+                  {SYNC_LABEL.CANONICAL_URL}
+                </label>
+                <Input
+                  id="editor-canonical-url"
+                  name="canonical_url"
+                  type="url"
+                  value={formData.canonical_url}
+                  onChange={handleInputChange}
+                  placeholder={SYNC_LABEL.PLACEHOLDER_CANONICAL_URL}
+                  className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{SYNC_LABEL.CANONICAL_URL_HINT}</p>
+              </div>
+
+              {/* Featured Image URL */}
+              <div>
+                <label htmlFor="editor-cover-image" className="block text-sm font-medium text-foreground mb-1.5">
+                  {SYNC_LABEL.FEATURED_IMAGE_URL}
+                </label>
+                <Input
+                  id="editor-cover-image"
+                  name="cover_image"
+                  type="url"
+                  value={formData.cover_image}
+                  onChange={handleInputChange}
+                  placeholder={SYNC_LABEL.PLACEHOLDER_COVER_IMAGE}
+                  className="w-full text-sm sm:text-base bg-background border-border rounded-md min-h-[44px] sm:min-h-0"
+                />
+              </div>
+            </CardContent>
+            {/* Preview tab — always in DOM so Quill stays mounted when hidden */}
+            <CardContent
+              className={`p-4 sm:p-6 max-h-[calc(100vh-280px)] overflow-auto bg-white dark:bg-card ${
+                activeTab !== "preview" ? "hidden" : ""
+              }`}
+              aria-hidden={activeTab !== "preview"}
+            >
+              <div className="prose prose-sm sm:prose-base max-w-none text-foreground">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-3 sm:mb-4">
+                  {formData.title || SYNC_LABEL.UNTITLED_POST}
+                </h1>
+                {formData.cover_image && (
+                  <img
+                    src={formData.cover_image}
+                    alt="Cover"
+                    className="w-full h-auto max-h-48 sm:max-h-64 object-cover rounded-lg mb-3 sm:mb-4"
+                  />
+                )}
+                <div className="text-foreground leading-relaxed text-sm sm:text-base">
+                  {isLikelyHtml(previewContent) ? (
+                    <div
+                      className="prose prose-sm sm:prose-base max-w-none [&_img]:rounded-md [&_pre]:rounded-lg"
+                      dangerouslySetInnerHTML={{
+                        __html: previewContent || SYNC_LABEL.NO_CONTENT_YET,
+                      }}
+                    />
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || "");
+                          if (!inline && match) {
+                            return (
+                              <div className="overflow-x-auto -mx-3 sm:mx-0 my-3 sm:my-4">
+                                <SyntaxHighlighter
+                                  style={oneDark}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  customStyle={{
+                                    borderRadius: 8,
+                                    fontSize: "0.75rem",
+                                    padding: "1rem",
+                                    margin: 0,
+                                    fontFamily:
+                                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                    lineHeight: 1.6,
+                                  }}
+                                  {...props}
+                                >
+                                  {String(children).replace(/\n$/, "")}
+                                </SyntaxHighlighter>
+                              </div>
+                            );
+                          }
+                          return (
+                            <code
+                              className={`font-mono text-xs sm:text-sm bg-muted rounded px-1.5 sm:px-2 py-0.5 ${
+                                className || ""
+                              }`}
+                              style={{
+                                fontFamily:
+                                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                              }}
+                              {...props}
+                            >
+                              {children}
+                            </code>
+                          );
+                        },
+                        img({ src, alt }) {
+                          return <img src={src || ""} alt={alt || ""} className="w-full h-auto rounded-md" />;
+                        },
+                      }}
+                    >
+                      {previewContent || SYNC_LABEL.NO_CONTENT_YET}
+                    </ReactMarkdown>
                   )}
                 </div>
-              </CardContent>
-            )}
+                {tagList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4 sm:mt-6">
+                    {tagList.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 sm:px-3 py-0.5 sm:py-1 bg-primary/15 text-primary text-xs sm:text-sm rounded-full font-medium"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
           </>
         </Card>
 
