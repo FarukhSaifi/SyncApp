@@ -25,6 +25,7 @@
 **Frontend:**
 
 - React 18 with Vite
+- TypeScript support (strict mode, gradual migration; see `client/src/types/` and `docs/ARCHITECTURE.md`)
 - React Router v6 for routing
 - Axios for API calls
 - Tailwind CSS for styling
@@ -35,6 +36,7 @@
 **Backend:**
 
 - Node.js with Express
+- TypeScript support (type-check only; see `server/src/types/` and `docs/ARCHITECTURE.md`). Full migration plan: `docs/TS_MIGRATION_AND_CLEANUP_ROADMAP.md`
 - MongoDB with Mongoose ODM
 - JWT for authentication
 - Joi for validation
@@ -220,6 +222,7 @@ Helper scripts for convenience:
 - `npm start` - Start server in production mode
 - `npm run dev` - Start server with nodemon (auto-reload)
 - `npm run db:setup` - Initialize database schema
+- `npm run typecheck` - Run TypeScript type-check (no emit)
 
 See **[server/README.md](./server/README.md)** for more details.
 
@@ -229,6 +232,7 @@ See **[server/README.md](./server/README.md)** for more details.
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npm run typecheck` - Run TypeScript type-check (no emit)
 
 See **[client/README.md](./client/README.md)** for more details.
 
