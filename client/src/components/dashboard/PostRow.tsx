@@ -2,7 +2,7 @@ import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
 import React, { memo, useState } from "react";
 import { FiEdit3, FiTrash2, FiX } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 import { apiClient } from "@utils/apiClient";
 
@@ -194,7 +194,7 @@ const PostRow = memo<PostRowProps>(({ post, onDelete, onUpdate, toast }) => {
       <TableCell>{formatDate(post.created_at || post.createdAt || "")}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end space-x-2">
-          <Link to={`${ROUTES.EDITOR}/${postId}`}>
+          <Link href={`${ROUTES.EDITOR}/${postId}`}>
             <Button variant="outline" size="sm" className="flex items-center space-x-1">
               <FiEdit3 className="h-4 w-4" />
               <span>{SYNC_LABEL.EDIT}</span>

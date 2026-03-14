@@ -91,6 +91,6 @@ export interface Credential {
 
 declare global {
   interface Window {
-    __syncapp_env?: ImportMetaEnv;
+    __syncapp_env?: Record<string, unknown>;
   }
 }

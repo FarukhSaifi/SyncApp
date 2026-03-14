@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
 
@@ -336,8 +337,7 @@ const Profile = () => {
               <div className="flex flex-col items-center text-center space-y-3 p-4 border rounded-lg">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center ring-2 ring-primary/20">
                   {user?.avatar ? (
-                    // eslint-disable-next-line jsx-a11y/alt-text
-                    <img src={user.avatar} className="w-full h-full object-cover" />
+                    <img src={user.avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xl sm:text-2xl font-semibold text-foreground">
                       {(user?.firstName?.[0] || user?.username?.[0] || SYNC_LABEL.DEFAULT_AVATAR_LETTER).toUpperCase()}

@@ -42,10 +42,26 @@ interface UsePostsReturn {
   setPagination: React.Dispatch<React.SetStateAction<Pagination>>;
 }
 
-export function usePosts(initialPagination: Pagination = DEFAULT_PAGINATION): UsePostsReturn {
+export interface UsePostsOptions {
+  /** When false, no initial fetch or refresh; use when user is not authenticated. Default true. */
+  enabled?: boolean;
+  pagination?: Pagination;
+}
+
+export function usePosts(
+  initialPaginationOrOptions: Pagination | UsePostsOptions = DEFAULT_PAGINATION,
+): UsePostsReturn {
+  const options: UsePostsOptions =
+    initialPaginationOrOptions &&
+    typeof initialPaginationOrOptions === "object" &&
+    "enabled" in initialPaginationOrOptions
+      ? (initialPaginationOrOptions as UsePostsOptions)
+      : { enabled: true, pagination: initialPaginationOrOptions as Pagination };
+  const { enabled = true, pagination: paginationOpt = DEFAULT_PAGINATION } = options;
+
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState<Pagination>(initialPagination);
+  const [loading, setLoading] = useState(enabled);
+  const [pagination, setPagination] = useState<Pagination>(paginationOpt);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async (opts: Partial<Pagination> = {}) => {
@@ -79,8 +95,13 @@ export function usePosts(initialPagination: Pagination = DEFAULT_PAGINATION): Us
   }, []);
 
   useEffect(() => {
-    fetchPosts();
-  }, []); // Only run once on mount
+    if (enabled) {
+      fetchPosts();
+    } else {
+      setLoading(false);
+      setError(null);
+    }
+  }, [enabled, fetchPosts]); // Fetch when enabled (e.g. user becomes authenticated)
 
   const addPost = useCallback((newPost: Post) => {
     setPosts((prev) => [newPost, ...prev]);

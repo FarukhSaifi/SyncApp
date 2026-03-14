@@ -14,18 +14,20 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggleTheme: () => {},
 });
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const getInitialTheme = (): string => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.THEME);
-      if (stored === THEME_VALUES.DARK || stored === THEME_VALUES.LIGHT) return stored;
-    } catch {}
-    return THEME_VALUES.LIGHT;
-  };
+function getInitialTheme(): string {
+  if (typeof window === "undefined") return THEME_VALUES.LIGHT;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+    if (stored === THEME_VALUES.DARK || stored === THEME_VALUES.LIGHT) return stored;
+  } catch {}
+  return THEME_VALUES.LIGHT;
+}
 
-  const [theme, setTheme] = useState<string>(getInitialTheme);
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [theme, setTheme] = useState<string>(() => getInitialTheme());
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
     const root = document.documentElement;
     if (theme === THEME_VALUES.DARK) {
       root.classList.add("dark");
@@ -33,7 +35,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       root.classList.remove("dark");
     }
     try {
-      localStorage.setItem(STORAGE_KEYS.THEME, theme);
+      if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEYS.THEME, theme);
     } catch {}
     root.style.colorScheme = theme;
   }, [theme]);

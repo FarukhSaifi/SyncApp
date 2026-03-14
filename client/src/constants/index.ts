@@ -89,15 +89,13 @@ export const STATUS_CONFIG = Object.freeze({
 } as const);
 
 // API base and paths
-// In development, Vite proxy handles /api, so we use relative path
-// In production, VITE_API_BACKEND_URL should be set to full backend URL (e.g., https://api.example.com/api)
+// Next.js rewrites proxy /api in dev; in production set NEXT_PUBLIC_API_BACKEND_URL (e.g. https://api.example.com/api)
 const getApiBase = (): string => {
-  const envUrl = import.meta.env.VITE_API_BACKEND_URL;
+  if (typeof window === "undefined") return "/api";
+  const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
   if (envUrl) {
-    // If full URL is provided, use it as-is
     return envUrl.endsWith("/api") ? envUrl : `${envUrl}/api`;
   }
-  // Default to relative path for Vite proxy in development
   return "/api";
 };
 

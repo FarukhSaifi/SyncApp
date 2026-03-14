@@ -34,26 +34,42 @@ export const useAuth = (): AuthContextValue => {
   return context;
 };
 
+function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
-    if (token) {
-      fetchUserProfile();
+    const stored = getStoredToken();
+    setToken(stored);
+    if (stored) {
+      fetchUserProfile(stored);
     } else {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount, not when token changes
+  }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (tokenToUse?: string) => {
+    const authToken = tokenToUse ?? token;
+    if (!authToken) {
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch(`${API_BASE}/auth/me`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -90,7 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { user: userData, token: authToken } = data.data;
         setUser(userData);
         setToken(authToken);
-        localStorage.setItem(TOKEN_KEY, authToken);
+        if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, authToken);
         toast.success(TOAST_TITLES.WELCOME_BACK, SYNC_LABEL.WELCOME_MESSAGE(userData.firstName || userData.username));
         return { success: true };
       } else {
@@ -120,7 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { user: newUser, token: authToken } = data.data;
         setUser(newUser);
         setToken(authToken);
-        localStorage.setItem(TOKEN_KEY, authToken);
+        if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, authToken);
         toast.success(
           TOAST_TITLES.WELCOME,
           SYNC_LABEL.ACCOUNT_CREATED_SUCCESS?.(newUser.firstName || newUser.username) ?? "",
@@ -140,7 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem(TOKEN_KEY);
+    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
     toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
   };
 

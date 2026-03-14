@@ -2,7 +2,7 @@ import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
 import React, { memo, useState } from "react";
 import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 import { apiClient } from "@utils/apiClient";
 
@@ -221,7 +221,7 @@ const PostCard = memo<PostCardProps>(({ post, onDelete, onUpdate, toast }) => {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 pt-2 border-t">
-            <Link to={`${ROUTES.EDITOR}/${postId}`} className="flex-1 min-w-0">
+            <Link href={`${ROUTES.EDITOR}/${postId}`} className="flex-1 min-w-0">
               <Button variant="outline" size="sm" className="w-full">
                 <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
                 <span className="truncate">{SYNC_LABEL.EDIT}</span>

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FiChevronDown,
@@ -12,7 +14,6 @@ import {
   FiUsers,
   FiX,
 } from "react-icons/fi";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@contexts/AuthContext";
 import { useTheme } from "@contexts/ThemeContext";
@@ -34,8 +35,8 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -54,7 +55,7 @@ const Layout = ({ children }: LayoutProps) => {
     setShowProfileMenu(false);
     setShowMobileMenu(false);
     logout();
-    navigate(ROUTES.LOGIN);
+    router.push(ROUTES.LOGIN);
   };
 
   // Close menus when clicking outside
@@ -78,7 +79,7 @@ const Layout = ({ children }: LayoutProps) => {
   useEffect(() => {
     setShowProfileMenu(false);
     setShowMobileMenu(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   if (!isAuthenticated) {
     return <>{children}</>;
@@ -94,7 +95,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to={ROUTES.DASHBOARD} className="flex items-center space-x-2">
+            <Link href={ROUTES.DASHBOARD} className="flex items-center space-x-2">
               <FiFileText className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold text-foreground">{UI_TEXT.appName}</span>
             </Link>
@@ -103,12 +104,12 @@ const Layout = ({ children }: LayoutProps) => {
             <nav className="hidden md:flex items-center space-x-6">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.href;
+                const isActive = pathname === item.href;
 
                 return (
                   <Link
                     key={item.name}
-                    to={item.href}
+                    href={item.href}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
@@ -159,7 +160,7 @@ const Layout = ({ children }: LayoutProps) => {
                       <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     <Link
-                      to={ROUTES.PROFILE}
+                      href={ROUTES.PROFILE}
                       className="block px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 items-center touch-manipulation"
                       onClick={() => setShowProfileMenu(false)}
                     >
@@ -206,12 +207,12 @@ const Layout = ({ children }: LayoutProps) => {
                     {/* Navigation Links */}
                     {navigation.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.href;
+                      const isActive = pathname === item.href;
 
                       return (
                         <Link
                           key={item.name}
-                          to={item.href}
+                          href={item.href}
                           className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
                             isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-primary/20"
                           }`}
@@ -226,7 +227,7 @@ const Layout = ({ children }: LayoutProps) => {
                     {/* Profile & Logout */}
                     <div className="border-t mt-2 pt-2">
                       <Link
-                        to={ROUTES.PROFILE}
+                        href={ROUTES.PROFILE}
                         className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
                         onClick={() => setShowMobileMenu(false)}
                       >

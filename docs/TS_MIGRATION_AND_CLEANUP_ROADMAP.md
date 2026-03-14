@@ -22,7 +22,7 @@ This document outlines the phased plan to **clean up**, **refactor**, **optimize
 - [ ] **Server:** Convert 2–3 modules to `.ts` (e.g. `constants/httpStatus.ts`, `constants/http.ts`, `utils/auth.ts` or one service) – deferred to Phase 2.
 - [x] **Client:** Convert `src/utils/apiClient.js` → `apiClient.ts` using `src/types/index.d.ts`; add `RequestOptions` and typed API methods.
 - [ ] **Client:** Optionally convert one small component to `.tsx` (e.g. `LoadingScreen.tsx`) – deferred.
-- [x] **Cleanup:** Fix missing `devError` import in Editor.jsx; add `declare module` for `qs` and `file-saver` in `vite-env.d.ts`.
+- [x] **Cleanup:** Fix missing `devError` import in Editor; add `declare module` for `qs` and `file-saver` (client now Next.js/TypeScript).
 
 **Exit criteria:** `npm run typecheck` passes on both client and server; no new lint errors; one API path and one client flow fully typed.
 
@@ -63,28 +63,35 @@ This document outlines the phased plan to **clean up**, **refactor**, **optimize
 
 ## Phase 6: Client – Components & Pages
 
-- [ ] Convert `config/routes.jsx` → `routes.tsx`.
-- [ ] Convert contexts to `.tsx` / `.ts`.
-- [ ] Convert UI components (`components/ui/*`, `components/common/*`) to `.tsx`.
-- [ ] Convert feature components and pages to `.tsx`.
-- [ ] Convert `App.jsx` and `main.jsx` to `.tsx`.
+- [x] **Client:** Migrated to Next.js 16 (App Router). Routes live in `app/`; no `config/routes`.
+- [x] Contexts and UI components are `.tsx`; screen components live in `src/views/` (imported by `app/` pages).
+- [x] Entry is `app/layout.tsx` and `app/providers.tsx` (no `App.jsx` / `main.jsx`).
+- [ ] **Optional:** Convert any remaining `.js` in client to `.ts`/`.tsx` (utils, hooks already TypeScript).
 
 ---
 
 ## Phase 7: Cleanup & Optimization Pass
 
-- [ ] **Cleanup:** Remove any remaining dead code, unused imports, and obsolete files (per code-cleanup-architect).
-- [ ] **Optimization:** Review OPTIMIZATION.md; ensure caching, validation, and error handling are consistent.
-- [ ] **Constants:** Audit for any new magic strings; move to constants (CONSTANTS_COMPLETE.md).
-- [ ] Enable `checkJs: true` on both tsconfigs for stricter checking of any remaining `.js`/`.jsx`.
+- [x] **Cleanup:** Removed dead code: duplicate `src/views/pages/` (kept flat `src/views/`), unused `ProtectedRoute.tsx`, `AdminRoute.tsx`.
+- [x] **Constants:** Loading spinner/sizing moved to `designTokens.ts` (`LOADING_UI`); no new magic strings in shared components.
+- [x] **Optimization:** Lazy state init in `ThemeContext` (`useState(() => getInitialTheme())`); design system rules added for Figma-driven work.
+- [ ] Review OPTIMIZATION.md; ensure caching and error handling are consistent across server.
+- [ ] Enable `checkJs: true` on both tsconfigs when all `.js`/`.jsx` are converted.
 
 ---
 
 ## Phase 8: Build & Runtime (Optional)
 
 - [ ] **Server:** If desired, switch to `ts-node` or `tsc --outDir dist` and `main: "dist/index.js"` for production.
-- [ ] **Client:** Already builds with Vite; ensure all entry points are `.tsx`/`.ts`.
+- [x] **Client:** Builds with Next.js 16 (`npm run build`); all entry points are `.tsx`/`.ts`.
 - [ ] CI: Run `npm run typecheck` and `npm run build` (both packages) on every PR.
+
+---
+
+## Figma & Design System
+
+- **Design system rules:** `.cursor/rules/figma-design-system.mdc` – token locations, component paths, Tailwind/theme usage, required Figma MCP flow (get_design_context → get_screenshot → implement). Applied when working in `client/src/**/*.tsx` and `client/app/**/*.tsx`.
+- **Code Connect:** Use Figma MCP `get_code_connect_suggestions` with a Figma URL that includes `node-id` to map Figma components to code under `client/src/components/` or `client/src/views/`. Requires published components and Org/Enterprise plan.
 
 ---
 

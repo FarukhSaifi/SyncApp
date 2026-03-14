@@ -1,3 +1,4 @@
+"use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
@@ -28,13 +29,10 @@ import {
   TOAST_TITLES,
   USER_ROLES,
   USER_ROLE_OPTIONS,
+  USER_VERIFIED_FILTER,
   type UserRoleOption,
 } from "@constants";
 import type { User } from "@types";
-
-const VERIFIED_FILTER_ALL = "all";
-const VERIFIED_FILTER_VERIFIED = "verified";
-const VERIFIED_FILTER_UNVERIFIED = "unverified";
 
 interface AddUserForm extends Record<string, unknown> {
   username: string;
@@ -115,7 +113,7 @@ const Users = () => {
   const [searchInput, setSearchInput] = useState<string>("");
   const debouncedSearch = useDebounce(searchInput, APP_CONFIG.SEARCH_DEBOUNCE_MS);
   const [roleFilter, setRoleFilter] = useState<string>("");
-  const [verifiedFilter, setVerifiedFilter] = useState<string>(VERIFIED_FILTER_ALL);
+  const [verifiedFilter, setVerifiedFilter] = useState<string>(USER_VERIFIED_FILTER.ALL);
   const [page, setPage] = useState<number>(1);
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
@@ -170,17 +168,17 @@ const Users = () => {
   }, [fetchUsers]);
 
   const filteredByVerified = useMemo(() => {
-    if (verifiedFilter === VERIFIED_FILTER_ALL) return users;
-    if (verifiedFilter === VERIFIED_FILTER_VERIFIED) return users.filter((u) => u.isVerified);
+    if (verifiedFilter === USER_VERIFIED_FILTER.ALL) return users;
+    if (verifiedFilter === USER_VERIFIED_FILTER.VERIFIED) return users.filter((u) => u.isVerified);
     return users.filter((u) => !u.isVerified);
   }, [users, verifiedFilter]);
 
-  const hasActiveFilters = Boolean(searchInput?.trim() || roleFilter || verifiedFilter !== VERIFIED_FILTER_ALL);
+  const hasActiveFilters = Boolean(searchInput?.trim() || roleFilter || verifiedFilter !== USER_VERIFIED_FILTER.ALL);
 
   const clearAllFilters = useCallback(() => {
     setSearchInput("");
     setRoleFilter("");
-    setVerifiedFilter(VERIFIED_FILTER_ALL);
+    setVerifiedFilter(USER_VERIFIED_FILTER.ALL);
     setPage(1);
   }, []);
 
@@ -360,9 +358,9 @@ const Users = () => {
                   className="w-full sm:w-36 px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                   aria-label={SYNC_LABEL.TABLE_STATUS}
                 >
-                  <option value={VERIFIED_FILTER_ALL}>{SYNC_LABEL.FILTER_ALL}</option>
-                  <option value={VERIFIED_FILTER_VERIFIED}>{SYNC_LABEL.VERIFIED}</option>
-                  <option value={VERIFIED_FILTER_UNVERIFIED}>{SYNC_LABEL.UNVERIFIED}</option>
+                  <option value={USER_VERIFIED_FILTER.ALL}>{SYNC_LABEL.FILTER_ALL}</option>
+                  <option value={USER_VERIFIED_FILTER.VERIFIED}>{SYNC_LABEL.VERIFIED}</option>
+                  <option value={USER_VERIFIED_FILTER.UNVERIFIED}>{SYNC_LABEL.UNVERIFIED}</option>
                 </select>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
@@ -387,9 +385,9 @@ const Users = () => {
                     Role: {USER_ROLE_OPTIONS.find((o: UserRoleOption) => o.value === roleFilter)?.label ?? roleFilter}
                   </span>
                 )}
-                {verifiedFilter !== VERIFIED_FILTER_ALL && (
+                {verifiedFilter !== USER_VERIFIED_FILTER.ALL && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                    Status: {verifiedFilter === VERIFIED_FILTER_VERIFIED ? SYNC_LABEL.VERIFIED : SYNC_LABEL.UNVERIFIED}
+                    Status: {verifiedFilter === USER_VERIFIED_FILTER.VERIFIED ? SYNC_LABEL.VERIFIED : SYNC_LABEL.UNVERIFIED}
                   </span>
                 )}
               </div>

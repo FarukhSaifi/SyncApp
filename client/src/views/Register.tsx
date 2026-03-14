@@ -1,6 +1,8 @@
+"use client";
 import React, { useState } from "react";
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
@@ -34,7 +36,7 @@ const Register = () => {
   const [error, setError] = useState<string>("");
 
   const { register } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -78,7 +80,7 @@ const Register = () => {
       const result = await register(registrationData);
 
       if (result.success) {
-        navigate(ROUTES.DASHBOARD);
+        router.push(ROUTES.DASHBOARD);
       } else {
         setError(result.error ?? SYNC_LABEL.UNEXPECTED_ERROR);
       }
@@ -210,7 +212,7 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 {SYNC_LABEL.ALREADY_HAVE_ACCOUNT}{" "}
-                <Link to={ROUTES.LOGIN} className="font-medium text-primary hover:text-primary/90 transition-colors">
+                <Link href={ROUTES.LOGIN} className="font-medium text-primary hover:text-primary/90 transition-colors">
                   {SYNC_LABEL.SIGN_IN_HERE}
                 </Link>
               </p>

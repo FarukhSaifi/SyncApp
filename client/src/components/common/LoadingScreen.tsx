@@ -1,4 +1,5 @@
 import { INFO_MESSAGES } from "@constants";
+import { LOADING_UI } from "@constants/designTokens";
 
 interface LoadingScreenProps {
   message?: string;
@@ -14,7 +15,7 @@ function LoadingScreen({ message = DEFAULT_MESSAGE, inline = false }: LoadingScr
   if (inline) {
     return (
       <div
-        className="min-h-[300px] flex items-center justify-center text-muted-foreground"
+        className={`${LOADING_UI.INLINE_MIN_HEIGHT_CLASS} flex items-center justify-center text-muted-foreground`}
         role="status"
         aria-live="polite"
       >
@@ -27,7 +28,7 @@ function LoadingScreen({ message = DEFAULT_MESSAGE, inline = false }: LoadingScr
     <div className="min-h-screen bg-background flex items-center justify-center" role="status" aria-live="polite">
       <div className="text-center">
         <div
-          className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto mb-4"
+          className={`animate-spin rounded-full ${LOADING_UI.SPINNER_SIZE_CLASS} ${LOADING_UI.SPINNER_BORDER_CLASS} mx-auto mb-4`}
           aria-hidden
         />
         <p className="text-muted-foreground">{message}</p>
