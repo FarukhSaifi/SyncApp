@@ -65,3 +65,10 @@ export const INPUT_SIZES = Object.freeze({
   MD: "md",
   LG: "lg",
 } as const);
+
+/** Loading / spinner UI (single source for sizing) */
+export const LOADING_UI = Object.freeze({
+  SPINNER_SIZE_CLASS: "h-12 w-12",
+  SPINNER_BORDER_CLASS: "border-2 border-primary border-t-transparent",
+  INLINE_MIN_HEIGHT_CLASS: "min-h-[300px]",
+} as const);

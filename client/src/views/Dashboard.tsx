@@ -1,6 +1,7 @@
+"use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiEdit3, FiGlobe, FiPlus, FiRefreshCw, FiShare2 } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
@@ -109,7 +110,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
             <FiRefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
             {SYNC_LABEL.REFRESH}
           </Button>
-          <Link to={ROUTES.EDITOR} className="w-full sm:w-auto">
+          <Link href={ROUTES.EDITOR} className="w-full sm:w-auto">
             <Button className="flex items-center justify-center space-x-2 w-full sm:w-auto">
               <FiPlus className="h-4 w-4 mr-1" />
               {SYNC_LABEL.NEW_POST}
@@ -200,7 +201,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               <FiGlobe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">{SYNC_LABEL.NO_POSTS_TITLE}</h3>
               <p className="text-muted-foreground mb-4">{SYNC_LABEL.NO_POSTS_DESCRIPTION}</p>
-              <Link to={ROUTES.EDITOR}>
+              <Link href={ROUTES.EDITOR}>
                 <Button>{SYNC_LABEL.CREATE_FIRST_POST}</Button>
               </Link>
             </div>

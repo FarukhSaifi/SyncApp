@@ -3,7 +3,8 @@
  * - Development: full logs (debug, errors with details).
  * - Production: no sensitive details (errors log message only, no stack/data).
  */
-const isDev = (): boolean => import.meta.env.DEV || import.meta.env.MODE === "development";
+const isDev = (): boolean =>
+  process.env.NODE_ENV === "development";
 
 /** Dev-only; no-op in production. Use for debug logs. */
 export const devLog = (...args: unknown[]): void => {

@@ -24,3 +24,10 @@ export const USER_ROLE_OPTIONS: UserRoleOption[] = [
 ];
 
 export const VALID_USER_ROLES = Object.values(USER_ROLES);
+
+/** Verified filter values for user list (Users page) */
+export const USER_VERIFIED_FILTER = Object.freeze({
+  ALL: "all",
+  VERIFIED: "verified",
+  UNVERIFIED: "unverified",
+} as const);

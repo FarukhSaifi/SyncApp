@@ -11,6 +11,8 @@ export const APP_CONFIG = Object.freeze({
   // API
   API_TIMEOUT: 10000, // 10 seconds
   API_AI_TIMEOUT: 60000, // 60 seconds for AI (outline/draft can be slow, especially with grounding)
+  API_AI_IMAGE_TIMEOUT: 65000, // 65 seconds for AI image generation
+  API_COVER_UPLOAD_TIMEOUT: 30000, // 30 seconds for cover image upload
   REQUEST_TIMEOUT: 10000,
 
   // Pagination
