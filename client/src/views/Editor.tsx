@@ -1,11 +1,12 @@
+"use client";
 import "quill/dist/quill.snow.css";
 import React, { useEffect, useRef, useState } from "react";
 import { FiArrowUp, FiEdit2, FiEye, FiGlobe, FiImage, FiSave, FiSend, FiUpload, FiX, FiZap } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import { useQuill } from "react-quilljs";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter, useParams } from "next/navigation";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark";
 
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
@@ -42,8 +43,9 @@ interface FormData {
 }
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
-  const { id } = useParams<{ id?: string }>();
-  const navigate = useNavigate();
+  const params = useParams();
+  const id = params?.id as string | undefined;
+  const router = useRouter();
   const toast = useToast();
   const [loading, setLoading] = useState<boolean>(false);
   const [publishing, setPublishing] = useState<boolean>(false);
@@ -355,7 +357,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         }
 
         if (status === "draft") {
-          navigate("/");
+          router.push("/");
         }
       } else {
         toast.apiError(response?.error || "Failed to save post");
@@ -402,7 +404,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       if (publishResponse?.success) {
         if (publishResponse.data) onPostUpdate(publishResponse.data);
         toast.publishSuccess("Medium");
-        navigate("/");
+        router.push("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to Medium");
       }
@@ -448,7 +450,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       if (publishResponse?.success) {
         if (publishResponse.data) onPostUpdate(publishResponse.data);
         toast.publishSuccess("DEV.to");
-        navigate("/");
+        router.push("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to DEV.to");
       }
@@ -494,7 +496,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       if (publishResponse?.success) {
         if (publishResponse.data) onPostUpdate(publishResponse.data);
         toast.publishSuccess("WordPress");
-        navigate("/");
+        router.push("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to WordPress");
       }
@@ -540,7 +542,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       if (publishResponse?.success) {
         if (publishResponse.data) onPostUpdate(publishResponse.data);
         toast.success("Published Everywhere!", "Post published to all platforms successfully!");
-        navigate("/");
+        router.push("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to all platforms");
       }
@@ -567,7 +569,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => router.push("/")}
               className="flex items-center gap-2 border-border bg-background"
               aria-label={SYNC_LABEL.CANCEL}
             >

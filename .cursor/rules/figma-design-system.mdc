@@ -1,0 +1,86 @@
+---
+description: Rules for implementing Figma designs in SyncApp client. Covers component organization, design tokens, Tailwind/CSS variables, asset handling, and the required Figma-to-code workflow.
+globs: ["client/src/**/*.tsx", "client/app/**/*.tsx"]
+alwaysApply: true
+---
+
+# Figma MCP Integration Rules – SyncApp Client
+
+These rules define how to translate Figma inputs into code for this project. Follow them for every Figma-driven change.
+
+## Required Flow (do not skip)
+
+1. Run **get_design_context** first to fetch the structured representation for the exact node(s).
+2. If the response is too large or truncated, run **get_metadata** to get the high-level node map, then re-fetch only the required node(s) with **get_design_context**.
+3. Run **get_screenshot** for a visual reference of the node variant being implemented.
+4. Only after you have both **get_design_context** and **get_screenshot**, download any assets needed and start implementation.
+5. Translate the output (e.g. React + Tailwind) into this project's conventions, tokens, and framework.
+6. Validate against Figma for 1:1 look and behavior before marking complete.
+
+## Design System Structure
+
+### Token Definitions
+
+- **CSS variables (colors, radius):** `client/app/globals.css` – `:root` and `.dark` define HSL values (e.g. `--primary: 263 70% 58%`). Tailwind v4 maps these via `@theme` (e.g. `--color-primary: hsl(var(--primary))`).
+- **Semantic tokens (component-level):** `client/src/constants/designTokens.ts` – `BUTTON_SIZES`, `BUTTON_VARIANTS`, `INPUT_SIZES`, `RADIUS`, `SEMANTIC_NAMES`, `LOADING_UI`. Use these for variants and sizing; do not invent new magic strings.
+- **App constants:** `client/src/constants/index.ts` – `ROUTES`, `API_BASE`, `STORAGE_KEYS`, `POST_STATUS`, `STATUS_CONFIG`, etc. Re-export from `@constants`.
+- **Messages and labels:** `client/src/constants/messages.ts` – all user-facing strings (TOAST_TITLES, SYNC_LABEL, BUTTON_LABELS, etc.). Never hardcode UI copy.
+- **App config:** `client/src/constants/config.ts` – `APP_CONFIG`, `EXTERNAL_LINKS`, `ROLE_CONFIG`, `VERIFIED_CONFIG`.
+
+### Component Library
+
+- **Location:** `client/src/components/` – reusable UI.
+  - `common/` – Button, Card, Input, Modal, Table, Textarea, Toaster, LoadingScreen, ConfirmationModal.
+  - `dashboard/` – PostCard, PostRow, StatsCard, SeoScoreBadge.
+  - `users/` – UserCard, UserTableRow.
+  - `Layout.tsx`, `ErrorBoundary.tsx` at `components/` root.
+- **Views (route-level screens):** `client/src/views/` – Login, Register, Dashboard, Editor, Profile, Settings, Users. These are used by `client/app/` route pages via dynamic import.
+- **Path aliases:** Use `@components/*`, `@views/*`, `@constants`, `@constants/designTokens`, `@hooks/*`, `@contexts/*`, `@utils/*`, `@types`.
+
+### Frameworks & Libraries
+
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript.
+- **Styling:** Tailwind CSS v4. Use utility classes; map Figma colors to Tailwind theme classes (e.g. `bg-primary`, `text-muted-foreground`, `border-border`).
+- **Icons:** `react-icons` (e.g. `FiHome`, `FiSettings`). Do not add new icon libraries; use react-icons or assets from Figma.
+- **Build:** Next.js (Turbopack in dev).
+
+### Styling Approach
+
+- **IMPORTANT:** Use Tailwind utility classes only. Design tokens are exposed as Tailwind theme (see `app/globals.css`).
+- **IMPORTANT:** Never hardcode colors – use semantic classes: `bg-primary`, `text-muted-foreground`, `bg-positive/15`, `border-border`, etc.
+- **Dark mode:** Class-based (`.dark` on root). Use `dark:` prefix where needed.
+- **Responsive:** Use Tailwind breakpoints (`sm:`, `md:`, `lg:`). Follow existing patterns in Layout and dashboard components.
+- **Spacing/sizing:** Prefer tokens from `designTokens.ts` (e.g. `LOADING_UI.SPINNER_SIZE_CLASS`) for repeated values; otherwise Tailwind scale (e.g. `p-4`, `gap-2`).
+
+### Asset Management
+
+- **IMPORTANT:** If the Figma MCP server returns a localhost source for an image or SVG, use that source directly.
+- **IMPORTANT:** Do not add new icon packages – use assets from the Figma payload or existing `react-icons`.
+- **IMPORTANT:** Do not use or create placeholders if a localhost source is provided.
+- Static assets: `client/public/` (if used). Reference via `/asset-name`.
+
+### Implementation Rules
+
+- Treat Figma MCP output (e.g. React + Tailwind) as design and behavior reference, not final code style.
+- Reuse existing components from `@components/common`, `@components/dashboard`, `@components/users` instead of duplicating.
+- Use the project's color system (Tailwind theme from globals.css), typography, and spacing consistently.
+- All new UI strings must go in `constants/messages.ts` (or appropriate constants file) and be imported; no inline copy.
+- New components that accept variants should use `designTokens.ts` (e.g. BUTTON_VARIANTS, BUTTON_SIZES) or extend with `as const` in a constants file.
+- Prefer direct imports from `@components/common/Button` etc. for critical paths; barrel `@components/common` is available for convenience.
+
+### Project Structure (Client)
+
+- `client/app/` – Next.js App Router (layout, providers, route groups `(auth)`, `(dashboard)`).
+- `client/src/views/` – Screen components (Login, Dashboard, Editor, etc.).
+- `client/src/components/` – Reusable components.
+- `client/src/constants/` – All constants and tokens.
+- `client/src/contexts/` – AuthContext, ThemeContext.
+- `client/src/hooks/` – usePosts, useToast, useDebounce.
+- `client/src/utils/` – apiClient, logger, contentUtils, seoScorecard.
+- `client/src/types/` – Shared types (`index.d.ts`).
+
+### Code Connect (Figma ↔ Code)
+
+- When connecting Figma components to code, use **get_code_connect_suggestions** with a Figma URL that includes `node-id`.
+- Map to existing components under `client/src/components/` or `client/src/views/` when possible; use `source` path relative to **project root** (e.g. `client/src/components/common/Button.tsx`).
+- Label: `React` for TSX components.

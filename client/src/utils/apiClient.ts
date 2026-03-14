@@ -1,5 +1,6 @@
 /**
- * Centralized API client using axios with auth, query building, and robust error handling.
+ * Centralized API client: single place for all backend calls.
+ * Used by hooks (e.g. usePosts) and views; keeps auth, serialization, and error handling in one layer.
  * Typed with ApiResponse<T> and domain types from src/types.
  */
 import axios, { type AxiosInstance } from "axios";
@@ -31,10 +32,12 @@ export class ApiClient {
 
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-        if (token) {
-          config.headers = config.headers || {};
-          config.headers.Authorization = `Bearer ${token}`;
+        if (typeof window !== "undefined") {
+          const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+          if (token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
+          }
         }
         return config;
       },
@@ -145,7 +148,7 @@ export class ApiClient {
   // MDX export
   async downloadMdx(postId: string): Promise<void> {
     const url = `${API_BASE}/mdx/${postId}`;
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const token = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
     const response = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
@@ -161,6 +164,7 @@ export class ApiClient {
       const { saveAs } = await import("file-saver");
       saveAs(blob, filename);
     } catch {
+      if (typeof document === "undefined") throw new Error("Download is only supported in the browser");
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = filename;
@@ -202,7 +206,7 @@ export class ApiClient {
     return this.request(`${API_PATHS.AI}/generate-image`, {
       method: HTTP_METHODS.POST,
       body: { outline },
-      timeout: 65_000,
+      timeout: APP_CONFIG.API_AI_IMAGE_TIMEOUT,
     });
   }
 
@@ -210,7 +214,7 @@ export class ApiClient {
     return this.request(`${API_PATHS.POSTS}/${postId}/cover`, {
       method: HTTP_METHODS.PUT,
       body: { image: imageDataUrl },
-      timeout: 30_000,
+      timeout: APP_CONFIG.API_COVER_UPLOAD_TIMEOUT,
     });
   }
 
