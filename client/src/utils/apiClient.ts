@@ -210,6 +210,14 @@ export class ApiClient {
     });
   }
 
+  aiEdit(action: string, text: string): Promise<ApiResponse<{ result: string }>> {
+    return this.request(`${API_PATHS.AI}/edit`, {
+      method: HTTP_METHODS.POST,
+      body: { action, text },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
   uploadPostCover(postId: string, imageDataUrl: string): Promise<ApiResponse<{ url: string; post: unknown }>> {
     return this.request(`${API_PATHS.POSTS}/${postId}/cover`, {
       method: HTTP_METHODS.PUT,

@@ -9,5 +9,6 @@ router.post('/outline', authenticateToken, aiController.postOutline);
 router.post('/draft', authenticateToken, aiController.postDraft);
 router.post('/generate', authenticateToken, aiController.postGenerate);
 router.post('/generate-image', authenticateToken, aiController.postGenerateImage);
+router.post('/edit', authenticateToken, aiController.postEdit);
 
 export default router;

@@ -251,17 +251,24 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 flex-1">{children}</main>
+      {pathname?.startsWith("/editor") ? (
+        /* Editor: full-bleed, no container, no footer */
+        <main className="flex-1 overflow-hidden">{children}</main>
+      ) : (
+        <>
+          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 flex-1">{children}</main>
 
-      {/* Footer */}
-      <footer className="border-t bg-card mt-auto">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center text-sm text-muted-foreground">
-            <p>{APP_CONFIG.COPYRIGHT}</p>
-            <p className="mt-1">{APP_CONFIG.APP_DESCRIPTION}</p>
-          </div>
-        </div>
-      </footer>
+          {/* Footer */}
+          <footer className="border-t bg-card mt-auto">
+            <div className="container mx-auto px-4 py-6">
+              <div className="text-center text-sm text-muted-foreground">
+                <p>{APP_CONFIG.COPYRIGHT}</p>
+                <p className="mt-1">{APP_CONFIG.APP_DESCRIPTION}</p>
+              </div>
+            </div>
+          </footer>
+        </>
+      )}
     </div>
   );
 };

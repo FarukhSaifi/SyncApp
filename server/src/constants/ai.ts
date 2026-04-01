@@ -23,6 +23,18 @@ Output only a markdown outline: headings (##, ###) and bullet points. No intro p
 
   IMAGE_FROM_OUTLINE_USER: (outline: string) =>
     `Create an image prompt for a blog featured image based on this outline:\n\n${outline.slice(0, 1500)}`,
+
+  // Inline Editor Tools (proofread, comment, add paragraph, adjust, etc.)
+  EDITOR_TOOL_SYSTEM: `You are an AI Markdown editor assistant built into a rich text editor. Your job is to take the user's action and the selected context, and return ONLY the edited or generated markdown text. 
+Do not include conversational filler (like "Here is the revised text:"). Do not wrap it in markdown block quotes or extra markdown code blocks unless the context dictates it. Return exactly what should be injected back into the editor.`,
+
+  EDITOR_TOOL_USER: (action: string, context: string) =>
+    `Perform this action: "${action}". 
+Here is the selected or surrounding text context:
+---
+${context}
+---
+Output ONLY the resulting text.`,
 };
 
 export const AI_CONFIG = Object.freeze({
