@@ -122,7 +122,6 @@ export function getSeoScorecard(post: Partial<Post>): SeoScorecard {
     checks.push({ label: SEO_CHECK_LABELS.LINKS_OPEN_POST, ok: null, warning: false });
   }
 
-  let score = 0;
   const titleScore =
     titleLen >= TITLE_MIN && titleLen <= TITLE_MAX ? SEO_WEIGHTS.TITLE : titleLen > 0 ? SEO_WEIGHTS.TITLE_PARTIAL : 0;
   const tagsScore = tags.length > 0 ? SEO_WEIGHTS.TAGS : 0;
@@ -139,7 +138,7 @@ export function getSeoScorecard(post: Partial<Post>): SeoScorecard {
           : 0;
     linksScore = internalLinks > 0 ? SEO_WEIGHTS.INTERNAL_LINKS : 0;
   }
-  score = titleScore + tagsScore + coverScore + canonicalScore + metaScore + linksScore;
+  const score = titleScore + tagsScore + coverScore + canonicalScore + metaScore + linksScore;
   const displayScore = hasContent ? score : Math.round((score / SCORE_WITHOUT_CONTENT_DIVISOR) * SCORE_MAX);
 
   return {

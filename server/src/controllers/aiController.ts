@@ -30,3 +30,9 @@ export const postGenerateImage = asyncHandler(async (req: Request, res: Response
   const result = await aiService.generateImageFromOutline(outline);
   res.status(HTTP_STATUS.OK).json({ success: true, data: result });
 });
+
+export const postEdit = asyncHandler(async (req: Request, res: Response) => {
+  const { action, text } = req.body as { action: string; text: string };
+  const editedText = await aiService.generateEdit(action, text);
+  res.status(HTTP_STATUS.OK).json({ success: true, data: { result: editedText } });
+});

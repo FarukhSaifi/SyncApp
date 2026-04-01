@@ -2,7 +2,7 @@
 
 ## Overview
 
-- **Client**: React (Vite), route-based code splitting, centralized constants and API client.
+- **Client**: Next.js 16 (App Router), route-based code splitting, centralized constants and API client.
 - **Server**: Express, MongoDB, layered structure (routes → controllers → services → models).
 
 ## Client Structure
