@@ -14,7 +14,12 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
 
+let cachedVertexAI: VertexAI | null = null;
+let cachedGoogleAuthClient: GoogleAuth | null = null;
+
 function getVertexAI(): VertexAI {
+  if (cachedVertexAI) return cachedVertexAI;
+
   const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
   const location =
     config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
@@ -25,7 +30,9 @@ function getVertexAI(): VertexAI {
   if (config.googleApplicationCredentials) {
     (opts as Record<string, unknown>).googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
   }
-  return new VertexAI(opts);
+  
+  cachedVertexAI = new VertexAI(opts);
+  return cachedVertexAI;
 }
 
 function getBaseModel() {
@@ -199,8 +206,11 @@ export async function generateImageFromOutline(outline: string): Promise<{ image
   const imagePrompt = await generateImagePromptFromOutline(outline);
 
   try {
-    const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
-    const client = await auth.getClient();
+    if (!cachedGoogleAuthClient) {
+      const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+      cachedGoogleAuthClient = auth;
+    }
+    const client = await cachedGoogleAuthClient.getClient();
     const token = await client.getAccessToken();
     if (!token.token) {
       return { imageDataUrl: placeholderFeaturedImageDataUrl() };
@@ -233,4 +243,28 @@ export async function generateImageFromOutline(outline: string): Promise<{ image
   }
 
   return { imageDataUrl: placeholderFeaturedImageDataUrl() };
+}
+
+/**
+ * Handle inline editing tasks (proofread, adjust, comment, add paragraph)
+ */
+export async function generateEdit(action: string, contextText: string): Promise<string> {
+  if (!contextText || typeof contextText !== "string" || !contextText.trim()) {
+    throw new AppError("Context text is required for AI edit actions", HTTP_STATUS.BAD_REQUEST);
+  }
+  try {
+    const vertexAI = getVertexAI();
+    const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
+    const model = vertexAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
+    });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()) }] }],
+      systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
+    });
+    return extractText(result);
+  } catch (err) {
+    normalizeVertexError(err, "Failed to perform AI edit");
+  }
 }

@@ -21,6 +21,15 @@ interface Pagination {
   totalPages?: number;
 }
 
+interface CacheEntry {
+  data: Post[];
+  pagination: Pagination;
+  timestamp: number;
+}
+
+const CACHE_TTL_MS = 60000; // 1 minute
+const postsCache = new Map<string, CacheEntry>();
+
 interface PostsStats {
   total: number;
   published: number;
@@ -70,15 +79,33 @@ export function usePosts(
 
     try {
       const params = opts.page !== undefined || opts.limit !== undefined ? opts : { page: 1, limit: 20 };
-      devLog("Fetching posts with params:", params);
+      const cacheKey = JSON.stringify(params);
 
+      // Check cache first
+      const cached = postsCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        devLog("Using cached posts for params:", params);
+        setPosts(cached.data);
+        setPagination(cached.pagination);
+        setLoading(false);
+        return;
+      }
+
+      devLog("Fetching posts with params:", params);
       const response = (await apiClient.getPosts(params)) as unknown as PostsApiResponse;
 
       if (response && response.success) {
         devLog("Posts fetched:", response.data?.length ?? 0);
-        setPosts(response.data || []);
+        const fetchedData = response.data || [];
+        setPosts(fetchedData);
         if (response.pagination) {
           setPagination(response.pagination);
+          // Set cache
+          postsCache.set(cacheKey, {
+            data: fetchedData,
+            pagination: response.pagination,
+            timestamp: Date.now(),
+          });
         }
       } else {
         devWarn("API returned unsuccessful response:", response);
@@ -112,9 +139,11 @@ export function usePosts(
       prev.map((post) => {
         const postId = post._id;
         const updatedId = updatedPost._id || updatedPost.id;
-        return postId === updatedId ? { ...post, ...updatedPost } : post;
+        return postId === updatedId ? { ...post, ...updatedPost } as Post : post;
       }),
     );
+    // Invalidate global cache to prevent stale data reading
+    postsCache.clear();
   }, []);
 
   const deletePost = useCallback((postId: string) => {
@@ -124,6 +153,8 @@ export function usePosts(
         return currentId !== postId;
       }),
     );
+    // Invalidate global cache
+    postsCache.clear();
   }, []);
 
   const refreshPosts = useCallback(() => {

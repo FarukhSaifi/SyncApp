@@ -83,8 +83,10 @@ export async function getPosts({ page = 1, limit = 20, userId }: GetPostsParams 
     Post.countDocuments(query),
   ]);
 
+  const hydratedItems = items.map(p => hydrateLeanPost(p as unknown as LeanPost));
+
   const result = {
-    data: items,
+    data: hydratedItems,
     pagination: {
       page: safePage,
       limit: safeLimit,
@@ -98,8 +100,36 @@ export async function getPosts({ page = 1, limit = 20, userId }: GetPostsParams 
   return result;
 }
 
-type PopulatedAuthor = { _id: { toString(): string } };
-type LeanPost = { status?: string; author?: PopulatedAuthor } & Record<string, unknown>;
+type PopulatedAuthor = { _id: { toString(): string }, name?: string, email?: string };
+type LeanPost = { 
+  _id?: unknown;
+  status?: string; 
+  author?: PopulatedAuthor;
+  createdAt?: Date;
+  updatedAt?: Date;
+  platform_status?: Record<string, { published: boolean }>;
+} & Record<string, unknown>;
+
+/**
+ * Hydrates Mongoose lean() documents with fields normally provided by Schema virtuals.
+ * This restores client compatibility while maintaining lean() speed advantages.
+ */
+function hydrateLeanPost(post: LeanPost): LeanPost {
+  if (!post) return post;
+  
+  // Restore virtual dates
+  post.created_at = post.createdAt;
+  post.updated_at = post.updatedAt;
+  
+  // Calculate `is_published_anywhere` locally since .lean() removed the virtual
+  let isPublishedAnywhere = false;
+  if (post.platform_status) {
+    isPublishedAnywhere = Object.values(post.platform_status).some(p => p.published);
+  }
+  post.is_published_anywhere = isPublishedAnywhere;
+  
+  return post;
+}
 
 /**
  * Get post by ID with caching
@@ -127,9 +157,10 @@ export async function getPostById(id: string, userId?: string) {
     throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
-  cache.set(cacheKey, post, 300000);
+  const hydratedPost = hydrateLeanPost(post);
+  cache.set(cacheKey, hydratedPost, 300000);
 
-  return post;
+  return hydratedPost;
 }
 
 /**
@@ -158,9 +189,10 @@ export async function getPostBySlug(slug: string, userId?: string) {
     throw new ForbiddenError(ERROR_MESSAGES.ACCESS_DENIED_POST);
   }
 
-  cache.set(cacheKey, post, 300000);
+  const hydratedPost = hydrateLeanPost(post);
+  cache.set(cacheKey, hydratedPost, 300000);
 
-  return post;
+  return hydratedPost;
 }
 
 /**
