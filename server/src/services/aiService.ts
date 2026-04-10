@@ -20,21 +20,30 @@ let cachedGoogleAuthClient: GoogleAuth | null = null;
 function getVertexAI(): VertexAI {
   if (cachedVertexAI) return cachedVertexAI;
 
-  const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
+  let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
   const location =
     config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
-  if (!project || project.trim() === "") {
-    throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
-  }
-  const opts: ConstructorParameters<typeof VertexAI>[0] = { project, location };
-  
+    
+  let credentialsObj: any = null;
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
     try {
-      const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-      (opts as Record<string, unknown>).googleAuthOptions = { credentials };
+      credentialsObj = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+      if (!project && credentialsObj && credentialsObj.project_id) {
+        project = credentialsObj.project_id;
+      }
     } catch (e) {
       throw new AppError("Invalid GOOGLE_CREDENTIALS_JSON environment variable", HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  if (!project || project.trim() === "") {
+    throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
+  }
+
+  const opts: ConstructorParameters<typeof VertexAI>[0] = { project, location };
+  
+  if (credentialsObj) {
+    (opts as Record<string, unknown>).googleAuthOptions = { credentials: credentialsObj };
   } else if (config.googleApplicationCredentials) {
     (opts as Record<string, unknown>).googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
   }
@@ -207,7 +216,7 @@ export async function generateImagePromptFromOutline(outline: string): Promise<s
  * Generate a featured image from a blog outline: Gemini builds prompt, then Imagen (or placeholder)
  */
 export async function generateImageFromOutline(outline: string): Promise<{ imageDataUrl: string }> {
-  const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
+  let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
   const location =
     config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
 
@@ -219,7 +228,11 @@ export async function generateImageFromOutline(outline: string): Promise<{ image
       const authOpts: any = { scopes: ["https://www.googleapis.com/auth/cloud-platform"] };
       if (process.env.GOOGLE_CREDENTIALS_JSON) {
         try {
-          authOpts.credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+          const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+          authOpts.credentials = creds;
+          if (!project && creds && creds.project_id) {
+            project = creds.project_id;
+          }
         } catch {
           // ignore
         }
@@ -227,8 +240,18 @@ export async function generateImageFromOutline(outline: string): Promise<{ image
         authOpts.keyFilename = config.googleApplicationCredentials;
       }
       
+      // Safety fallback incase project is still not set
+      if (!project && process.env.GOOGLE_CREDENTIALS_JSON) {
+         try { project = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON).project_id; } catch {}
+      }
+
       const auth = new GoogleAuth(authOpts);
       cachedGoogleAuthClient = auth;
+    }
+    
+    // Safety check just in case we hit cached client path but lack project
+    if (!project && process.env.GOOGLE_CREDENTIALS_JSON) {
+       try { project = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON).project_id; } catch {}
     }
     const client = await cachedGoogleAuthClient.getClient();
     const token = await client.getAccessToken();
