@@ -103,10 +103,11 @@
 | `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID for Vertex AI (AI Assistant) | _(not set)_ |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID (optional if using GOOGLE_CREDENTIALS_JSON) | _(not set)_ |
 | `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (or use `gcloud auth application-default login`) | _(not set)_ |
-| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-2.0-flash-001` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (for local development) | _(not set)_ |
+| `GOOGLE_CREDENTIALS_JSON` | Raw JSON string of service account (for Vercel deployment) | _(not set)_ |
+| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-3-flash-preview` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
 
 ## 🏗️ Tech Stack
@@ -215,7 +216,7 @@ server/
 - `POST /api/ai/comedian` - Add humor to content (body: `{ content, tone? }`, tone: low/medium/high)
 - `POST /api/ai/generate` - Full chain: outline → draft → comedian (body: `{ keyword, tone?, skipComedian? }`)
 
-Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account JSON, or `gcloud auth application-default login`). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
+Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account file locally, or `GOOGLE_CREDENTIALS_JSON` containing the raw JSON for Vercel). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
 
 ### System
 
@@ -262,6 +263,7 @@ Vercel supports serverless functions for Express apps. The server is configured 
    ENCRYPTION_IV=your_16_byte_hex_string_here
    NODE_ENV=production
    CORS_ORIGIN=https://your-frontend-url.vercel.app,https://sync-app-client.vercel.app
+   GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"..."}
    PORT=9000
    ```
 

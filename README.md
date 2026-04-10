@@ -427,6 +427,14 @@ CORS_ORIGIN=http://localhost:3000
 # Rate Limiting (Optional)
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
+
+# Google Vertex AI (Optional for AI workflows)
+# Local development: specify a file path
+GOOGLE_APPLICATION_CREDENTIALS=./server/google-credentials.json
+# Vercel deployment: paste exact JSON string contents to avoid uploading physical keys
+GOOGLE_CREDENTIALS_JSON='{"type": "service_account", "project_id": "..."}'
+# The default model is gemini-3-flash-preview. To override:
+GOOGLE_AI_MODEL=gemini-3-flash-preview
 ```
 
 ### Frontend Environment Variables
@@ -439,7 +447,7 @@ VITE_API_BACKEND_URL=http://localhost:9000/api
 
 # App Configuration (optional)
 VITE_APP_NAME=SyncApp
-VITE_APP_VERSION=1.0.0
+VITE_APP_VERSION=2.0.0
 ```
 
 ## 🧪 Testing

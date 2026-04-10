@@ -1,6 +1,6 @@
 {
   "name": "syncapp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Blog syndication application for publishing to multiple platforms",
   "private": true,
   "scripts": {
