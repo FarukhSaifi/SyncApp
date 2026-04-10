@@ -1,5 +1,5 @@
 import cors from "cors";
-import type { Application, NextFunction, Request, Response } from "express";
+import type { Application, Request, Response } from "express";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
@@ -16,24 +16,12 @@ import { logger, requestLogger } from "./utils/logger";
 const app: Application = express();
 const PORT = config.port;
 
-const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
-
-if (!isVercel) {
-  connectDB();
-} else {
-  let dbConnected = false;
-  app.use(async (req: Request, res: Response, next: NextFunction) => {
-    if (!dbConnected && mongoose.connection.readyState !== DATABASE.MONGOOSE_STATE.CONNECTED) {
-      try {
-        await connectDB();
-        dbConnected = true;
-      } catch (error) {
-        logger.error(HEALTH.LOG.DB_CONNECT_FAILED, error as Error);
-      }
-    }
-    next();
-  });
-}
+// Connect to DB on startup.
+// On Vercel (serverless), Mongoose reuses the connection across warm invocations
+// via its built-in readyState check inside connectDB().
+connectDB().catch((err) => {
+  logger.error(HEALTH.LOG.DB_CONNECT_FAILED, err as Error);
+});
 
 // Security middleware
 app.use(helmet());
@@ -124,10 +112,8 @@ app.use(notFoundHandler);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Export app for Vercel serverless functions, or start server for local/other platforms
-if (isVercel) {
-  module.exports = app;
-} else {
+// Export app for Vercel (serverless). The server is only started in non-serverless envs.
+if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
   app.listen(PORT, () => {
     logger.info(HEALTH.LOG.SERVER_STARTED, {
       port: PORT,
