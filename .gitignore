@@ -103,3 +103,7 @@ Thumbs.db
 *.backup
 *.old
 server/google-credentials.json
+
+# Postman Collections
+*Postman_Collection.json
+.agent
