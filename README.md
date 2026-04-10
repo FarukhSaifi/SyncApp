@@ -645,9 +645,9 @@ Returns:
 
 - [ ] Team collaboration
 - [ ] Content calendar
-- [ ] AI-powered writing assistance
+- [x] AI-powered writing assistance
 - [ ] Multi-language support
-- [ ] Mobile app
+- [x] Mobile app
 
 ## 📄 License
 
