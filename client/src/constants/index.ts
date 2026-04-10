@@ -91,11 +91,16 @@ export const STATUS_CONFIG = Object.freeze({
 // API base and paths
 // Next.js rewrites proxy /api in dev; in production set NEXT_PUBLIC_API_BACKEND_URL (e.g. https://api.example.com/api)
 const getApiBase = (): string => {
-  if (typeof window === "undefined") return "/api";
-  const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
-  if (envUrl) {
-    return envUrl.endsWith("/api") ? envUrl : `${envUrl}/api`;
+  if (typeof window === "undefined") {
+    // Server-side (SSR/SSG): Must use absolute URL to reach the backend
+    const isProd = process.env.NODE_ENV === "production";
+    const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
+    const base = envUrl || (isProd ? "https://sync-app-server.vercel.app" : "http://localhost:5000");
+    return base.endsWith("/api") ? base : `${base}/api`;
   }
+  
+  // Client-side: Always use relative path to route through Next.js proxy (via next.config.ts)
+  // This completely eliminates CORS issues because the browser sees it as a same-origin request.
   return "/api";
 };
 
