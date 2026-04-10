@@ -3,23 +3,23 @@
  */
 
 export const HEALTH_STATUS = Object.freeze({
-  OK: "OK",
-  UNKNOWN: "unknown",
+  OK: "OK ✅",
+  UNKNOWN: "unknown ❌",
 } as const);
 
 export const HEALTH_DB = Object.freeze({
-  CONNECTED: "connected",
-  DISCONNECTED: "disconnected",
+  CONNECTED: "connected ✅",
+  DISCONNECTED: "disconnected ❌",
 } as const);
 
 export const HEALTH_SERVICE = Object.freeze({
-  HEALTHY: "healthy",
-  UNHEALTHY: "unhealthy",
+  HEALTHY: "healthy ✅",
+  UNHEALTHY: "unhealthy ⚠️",
 } as const);
 
 export const HEALTH_LOG = Object.freeze({
-  DB_CONNECT_FAILED: "Failed to connect to database",
-  SERVER_STARTED: "Server started successfully",
+  DB_CONNECT_FAILED: "Failed to connect to database ❌",
+  SERVER_STARTED: "Server started successfully ✅",
 } as const);
 
 export const HEALTH_URL_LOCAL = (port: number) => `http://localhost:${port}/health`;
