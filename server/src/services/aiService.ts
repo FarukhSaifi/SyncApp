@@ -27,7 +27,15 @@ function getVertexAI(): VertexAI {
     throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
   const opts: ConstructorParameters<typeof VertexAI>[0] = { project, location };
-  if (config.googleApplicationCredentials) {
+  
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    try {
+      const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+      (opts as Record<string, unknown>).googleAuthOptions = { credentials };
+    } catch (e) {
+      throw new AppError("Invalid GOOGLE_CREDENTIALS_JSON environment variable", HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+  } else if (config.googleApplicationCredentials) {
     (opts as Record<string, unknown>).googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
   }
   
@@ -207,7 +215,19 @@ export async function generateImageFromOutline(outline: string): Promise<{ image
 
   try {
     if (!cachedGoogleAuthClient) {
-      const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+      // Use raw JSON creds if provided (Vercel), otherwise default to file
+      const authOpts: any = { scopes: ["https://www.googleapis.com/auth/cloud-platform"] };
+      if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        try {
+          authOpts.credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+        } catch {
+          // ignore
+        }
+      } else if (config.googleApplicationCredentials) {
+        authOpts.keyFilename = config.googleApplicationCredentials;
+      }
+      
+      const auth = new GoogleAuth(authOpts);
       cachedGoogleAuthClient = auth;
     }
     const client = await cachedGoogleAuthClient.getClient();
