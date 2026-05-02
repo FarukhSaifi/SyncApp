@@ -24,7 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.3",
     "slugify": "^1.6.8",
-    "uuid": "^9.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
