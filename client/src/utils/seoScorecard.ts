@@ -57,8 +57,7 @@ export function getSeoScorecard(post: Partial<Post>): SeoScorecard {
   const hasCover = Boolean(post.cover_image && post.cover_image.trim());
   const hasCanonical = Boolean(post.canonical_url && post.canonical_url.trim());
   const content = post.content_markdown || "";
-  const plainText = stripHtml(content);
-  const metaLen = plainText.length;
+  const metaLen = (post.meta_description || "").trim().length;
   const internalLinks = countInternalLinks(content);
   const hasContent = content.length > 0;
 

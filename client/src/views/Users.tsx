@@ -1,4 +1,5 @@
 "use client";
+import dayjs from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
@@ -260,11 +261,7 @@ const Users = () => {
 
   const formatDate = useCallback((dateString: string | undefined): string => {
     if (!dateString) return PLACEHOLDERS.N_A;
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
   }, []);
 
   if (loading && users.length === 0) {

@@ -10,4 +10,7 @@ export const ROUTES = Object.freeze({
   MDX: "/mdx",
   USERS: "/users",
   AI: "/ai",
+  UPLOAD: "/upload",
+  CRON: "/cron",
+  ANALYTICS: "/analytics",
 } as const);

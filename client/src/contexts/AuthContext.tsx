@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 import { useToast } from "@hooks/useToast";
 
-import { API_BASE, HTTP_METHODS, STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "@constants";
+import { STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "@constants";
 import type { User } from "@types";
+import { apiClient } from "@utils/apiClient";
 import { logError } from "@utils/logger";
 
 interface AuthResult {
@@ -49,33 +50,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
-  useEffect(() => {
-    const stored = getStoredToken();
-    setToken(stored);
-    if (stored) {
-      fetchUserProfile(stored);
-    } else {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
+    toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
+  }, [toast]);
 
-  const fetchUserProfile = async (tokenToUse?: string) => {
+  const fetchUserProfile = useCallback(async (tokenToUse?: string) => {
     const authToken = tokenToUse ?? token;
     if (!authToken) {
       setLoading(false);
       return;
     }
+    if (typeof window !== "undefined" && tokenToUse) {
+      localStorage.setItem(TOKEN_KEY, tokenToUse);
+    }
+    
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const data = await apiClient.getMe();
 
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.data);
+      if (data.success) {
+        setUser(data.data as User);
       } else {
         // Token is invalid, remove it
         toast.authError(SYNC_LABEL.SESSION_EXPIRED);
@@ -88,21 +84,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, toast, logout]);
+
+  useEffect(() => {
+    const stored = getStoredToken();
+    setToken(stored);
+    if (stored) {
+      fetchUserProfile(stored);
+    } else {
+      setLoading(false);
+    }
+  }, [fetchUserProfile]);
 
   const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: HTTP_METHODS.POST,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiClient.login({ email, password });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (data.success && data.data) {
         const { user: userData, token: authToken } = data.data;
         setUser(userData);
         setToken(authToken);
@@ -122,17 +120,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const register = async (userData: Record<string, unknown>): Promise<AuthResult> => {
     try {
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: HTTP_METHODS.POST,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
+      const data = await apiClient.register(userData);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (data.success && data.data) {
         const { user: newUser, token: authToken } = data.data;
         setUser(newUser);
         setToken(authToken);
@@ -153,28 +143,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
-    toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
-  };
+
 
   const updateProfile = async (profileData: Record<string, unknown>): Promise<AuthResult> => {
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
-        method: HTTP_METHODS.PUT,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileData),
-      });
+      const data = await apiClient.updateProfile(profileData);
 
-      const data = await response.json();
-
-      if (data.success) {
-        setUser(data.data);
+      if (data.success && data.data) {
+        setUser(data.data as User);
         toast.success(TOAST_TITLES.PROFILE_UPDATED, SYNC_LABEL.PROFILE_UPDATED_SUCCESS);
         return { success: true };
       } else {
@@ -190,16 +166,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
     try {
-      const response = await fetch(`${API_BASE}/auth/change-password`, {
-        method: HTTP_METHODS.PUT,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const data = await response.json();
+      const data = await apiClient.changePassword({ currentPassword, newPassword });
 
       if (data.success) {
         toast.success(TOAST_TITLES.PASSWORD_CHANGED, SYNC_LABEL.PASSWORD_CHANGED_SUCCESS);

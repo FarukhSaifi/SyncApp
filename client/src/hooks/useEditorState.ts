@@ -17,10 +17,12 @@ import type { Post } from "@types";
 export interface EditorFormData {
   title: string;
   content_markdown: string;
-  status: string;
+  meta_description: string;
   cover_image: string;
   canonical_url: string;
-  [key: string]: string;
+  scheduled_for: string;
+  status: string;
+  [key: string]: string | string[];
 }
 
 interface UseEditorStateOptions {
@@ -44,17 +46,61 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const isDirtyRef = useRef(isDirty);
-  isDirtyRef.current = isDirty;
   const formDataRef = useRef(formData);
-  formDataRef.current = formData;
   const tagListRef = useRef(tagList);
-  tagListRef.current = tagList;
+
+  // Sync ref values safely inside useEffect to avoid render-phase mutation warnings in React 19
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+    formDataRef.current = formData;
+    tagListRef.current = tagList;
+  }, [isDirty, formData, tagList]);
+
+  const fetchPost = useCallback(async () => {
+    try {
+      devLog("Fetching post:", id);
+      const response = await apiClient.getPost(id!);
+      if (response?.success && response.data) {
+        const post = response.data;
+        setFormData({
+          title: post.title || "",
+          content_markdown: post.content_markdown || "",
+          meta_description: post.meta_description || "",
+          status: post.status,
+          cover_image: post.cover_image || "",
+          canonical_url: post.canonical_url || "",
+          scheduled_for: post.scheduled_for || "",
+        });
+        setTagList(Array.isArray(post.tags) ? post.tags : []);
+        setIsDirty(false);
+      } else {
+        toast.apiError(response?.error || "Failed to fetch post");
+      }
+    } catch (error) {
+      devError("Error fetching post:", error);
+      toast.apiError(`Failed to fetch post: ${(error as Error).message}`);
+    }
+  }, [id, toast]);
+
+  /** Silent save (for autosave) — no navigation, no toast */
+  const handleSaveQuiet = useCallback(async () => {
+    if (!id || !formDataRef.current.title.trim() || !formDataRef.current.content_markdown.trim()) return;
+    try {
+      const postData = { ...formDataRef.current, tags: tagListRef.current };
+      await apiClient.updatePost(id, postData);
+      setIsDirty(false);
+      setLastSavedAt(new Date());
+    } catch {
+      // Silent fail for autosave
+    }
+  }, [id]);
 
   // Fetch post on mount if editing
   useEffect(() => {
-    if (id) fetchPost();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (id) {
+      fetchPost();
+    }
+  }, [id, fetchPost]);
 
   // Track dirty state
   useEffect(() => {
@@ -81,32 +127,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       }
     }, AUTOSAVE_INTERVAL_MS);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const fetchPost = async () => {
-    try {
-      devLog("Fetching post:", id);
-      const response = await apiClient.getPost(id!);
-      if (response?.success && response.data) {
-        const post = response.data;
-        setFormData({
-          title: post.title,
-          content_markdown: post.content_markdown,
-          status: post.status,
-          cover_image: post.cover_image || "",
-          canonical_url: post.canonical_url || "",
-        });
-        setTagList(Array.isArray(post.tags) ? post.tags : []);
-        setIsDirty(false);
-      } else {
-        toast.apiError(response?.error || "Failed to fetch post");
-      }
-    } catch (error) {
-      devError("Error fetching post:", error);
-      toast.apiError(`Failed to fetch post: ${(error as Error).message}`);
-    }
-  };
+  }, [id, handleSaveQuiet]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -135,19 +156,6 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       handleAddTag();
     }
   }, [handleAddTag]);
-
-  /** Silent save (for autosave) — no navigation, no toast */
-  const handleSaveQuiet = useCallback(async () => {
-    if (!id || !formDataRef.current.title.trim() || !formDataRef.current.content_markdown.trim()) return;
-    try {
-      const postData = { ...formDataRef.current, tags: tagListRef.current };
-      await apiClient.updatePost(id, postData);
-      setIsDirty(false);
-      setLastSavedAt(new Date());
-    } catch {
-      // Silent fail for autosave
-    }
-  }, [id]);
 
   const handleSave = useCallback(async (status = "draft") => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {

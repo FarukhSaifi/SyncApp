@@ -51,7 +51,7 @@ interface UsePostsReturn {
   setPagination: React.Dispatch<React.SetStateAction<Pagination>>;
 }
 
-export interface UsePostsOptions {
+interface UsePostsOptions {
   /** When false, no initial fetch or refresh; use when user is not authenticated. Default true. */
   enabled?: boolean;
   pagination?: Pagination;
@@ -192,4 +192,3 @@ export function usePosts(
   };
 }
 
-export default usePosts;

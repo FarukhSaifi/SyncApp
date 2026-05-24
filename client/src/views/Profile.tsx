@@ -72,7 +72,7 @@ const Profile = () => {
       } else {
         // Error toast is already handled in AuthContext
       }
-    } catch (error) {
+    } catch {
       toast.apiError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ const Profile = () => {
       } else {
         // Error toast is already handled in AuthContext
       }
-    } catch (error) {
+    } catch {
       toast.apiError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setPasswordLoading(false);

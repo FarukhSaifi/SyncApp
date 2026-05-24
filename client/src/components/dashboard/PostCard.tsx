@@ -1,6 +1,7 @@
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
 import React, { memo, useState } from "react";
+import dayjs from "dayjs";
 import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
 import Link from "next/link";
 
@@ -146,12 +147,7 @@ const PostCard = memo<PostCardProps>(({ post, onDelete, onUpdate, toast }) => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
   };
 
   const postId = post.id || post._id;

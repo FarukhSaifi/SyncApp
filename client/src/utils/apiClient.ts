@@ -10,7 +10,7 @@ import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KE
 import type { ApiResponse, ListResponse, PaginatedResponse, Post, User } from "@types";
 import { devLog, logError } from "@utils/logger";
 
-export interface RequestOptions {
+interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: Record<string, unknown> | FormData;
@@ -18,7 +18,7 @@ export interface RequestOptions {
   timeout?: number;
 }
 
-export class ApiClient {
+class ApiClient {
   private client: AxiosInstance;
 
   constructor(baseURL: string = API_BASE) {
@@ -38,6 +38,11 @@ export class ApiClient {
             config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
           }
+        }
+
+        // Remove Content-Type if sending FormData so browser can set boundary
+        if (config.data instanceof FormData && config.headers) {
+          delete config.headers["Content-Type"];
         }
         return config;
       },
@@ -78,6 +83,39 @@ export class ApiClient {
       ...(timeout != null && { timeout }),
     });
     return response as T;
+  }
+
+  // Auth
+  login(body: Record<string, unknown>): Promise<ApiResponse<{ user: User; token: string }>> {
+    return this.request(`${API_PATHS.AUTH}/login`, {
+      method: HTTP_METHODS.POST,
+      body,
+    });
+  }
+
+  register(body: Record<string, unknown>): Promise<ApiResponse<{ user: User; token: string }>> {
+    return this.request(`${API_PATHS.AUTH}/register`, {
+      method: HTTP_METHODS.POST,
+      body,
+    });
+  }
+
+  getMe(): Promise<ApiResponse<User>> {
+    return this.request(`${API_PATHS.AUTH}/me`);
+  }
+
+  updateProfile(body: Record<string, unknown>): Promise<ApiResponse<User>> {
+    return this.request(`${API_PATHS.AUTH}/me`, {
+      method: HTTP_METHODS.PUT,
+      body,
+    });
+  }
+
+  changePassword(body: Record<string, unknown>): Promise<ApiResponse<unknown>> {
+    return this.request(`${API_PATHS.AUTH}/change-password`, {
+      method: HTTP_METHODS.PUT,
+      body,
+    });
   }
 
   // Posts
@@ -145,6 +183,11 @@ export class ApiClient {
     });
   }
 
+  /** Analytics */
+  async getAnalyticsStats(): Promise<ApiResponse<any>> {
+    return this.request("/analytics/stats");
+  }
+
   // MDX export
   async downloadMdx(postId: string): Promise<void> {
     const url = `${API_BASE}/mdx/${postId}`;
@@ -175,26 +218,10 @@ export class ApiClient {
   }
 
   // AI
-  aiOutline(keyword: string): Promise<ApiResponse<{ outline: string }>> {
-    return this.request(`${API_PATHS.AI}/outline`, {
-      method: HTTP_METHODS.POST,
-      body: { keyword },
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
-    });
-  }
-
-  aiDraft(outline: string): Promise<ApiResponse<{ draft: string }>> {
-    return this.request(`${API_PATHS.AI}/draft`, {
-      method: HTTP_METHODS.POST,
-      body: { outline },
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
-    });
-  }
-
   aiGenerate(
     keyword: string,
     options: Record<string, unknown> = {},
-  ): Promise<ApiResponse<{ outline: string; draft: string; content: string }>> {
+  ): Promise<ApiResponse<{ title: string; meta_description: string; tags: string[]; content: string }>> {
     return this.request(`${API_PATHS.AI}/generate`, {
       method: HTTP_METHODS.POST,
       body: { keyword, ...options },
@@ -202,10 +229,10 @@ export class ApiClient {
     });
   }
 
-  aiGenerateImage(outline: string): Promise<ApiResponse<{ imageDataUrl: string }>> {
+  aiGenerateImage(topic: string, additionalPrompt?: string): Promise<ApiResponse<{ imageDataUrl: string }>> {
     return this.request(`${API_PATHS.AI}/generate-image`, {
       method: HTTP_METHODS.POST,
-      body: { outline },
+      body: { topic, additionalPrompt },
       timeout: APP_CONFIG.API_AI_IMAGE_TIMEOUT,
     });
   }
@@ -223,6 +250,20 @@ export class ApiClient {
       method: HTTP_METHODS.PUT,
       body: { image: imageDataUrl },
       timeout: APP_CONFIG.API_COVER_UPLOAD_TIMEOUT,
+    });
+  }
+
+  uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
+    const formData = new FormData();
+    formData.append("image", file);
+    return this.request(`${API_PATHS.UPLOAD}`, {
+      method: HTTP_METHODS.POST,
+      body: formData,
+      headers: {
+        // Axios will automatically set the correct Content-Type for FormData
+        // but we ensure it doesn't default to application/json
+      },
+      timeout: APP_CONFIG.API_COVER_UPLOAD_TIMEOUT, // use same generous timeout
     });
   }
 

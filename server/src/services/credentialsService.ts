@@ -1,11 +1,11 @@
-import Credential from '../models/Credential';
-import { encrypt, decrypt } from '../utils/encryption';
-import { cache, cacheKeys } from '../utils/cache';
-import { NotFoundError, ValidationError } from '../middleware/errorHandler';
-import { ERROR_MESSAGES, PLATFORMS } from '../constants';
-import { createLogger } from '../utils/logger';
+import { ERROR_MESSAGES, PLATFORMS } from "../constants";
+import { NotFoundError, ValidationError } from "../middleware/errorHandler";
+import Credential from "../models/Credential";
+import { cache, cacheKeys } from "../utils/cache";
+import { decrypt, encrypt } from "../utils/encryption";
+import { createLogger } from "../utils/logger";
 
-const logger = createLogger('CREDENTIALS');
+const logger = createLogger("CREDENTIALS");
 
 /**
  * Get all credentials (without decrypted API keys)
@@ -28,9 +28,9 @@ export async function getAllCredentials() {
  * Get credential by platform (with decrypted API key for client display)
  */
 export async function getCredentialByPlatform(platformName: string) {
-  const credential = await Credential.findOne({
+  const credential = (await Credential.findOne({
     platform_name: platformName,
-  }).lean() as Record<string, unknown> | null;
+  }).lean()) as Record<string, unknown> | null;
 
   if (!credential) {
     return null;
@@ -41,7 +41,7 @@ export async function getCredentialByPlatform(platformName: string) {
       credential.api_key = decrypt(credential.api_key as string);
     } catch (error) {
       logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error as Error);
-      credential.api_key = '';
+      credential.api_key = "";
     }
   }
 
@@ -80,11 +80,11 @@ export async function upsertCredential(
     updateData.platform_config = platform_config;
   }
 
-  const credential = await Credential.findOneAndUpdate({ platform_name: platformName }, updateData, {
+  const credential = (await Credential.findOneAndUpdate({ platform_name: platformName }, updateData, {
     upsert: true,
     new: true,
     runValidators: true,
-  }).lean() as unknown as Record<string, unknown>;
+  }).lean()) as unknown as Record<string, unknown>;
 
   cache.delete(cacheKeys.credentials.single(platformName));
   cache.delete(cacheKeys.credentials.list());
@@ -110,26 +110,4 @@ export async function deleteCredential(platformName: string) {
   cache.delete(cacheKeys.credentials.list());
 
   return result;
-}
-
-/**
- * Toggle credential active status
- */
-export async function toggleCredentialStatus(platformName: string, isActive: boolean) {
-  const credential = await Credential.findOneAndUpdate(
-    { platform_name: platformName },
-    { is_active: isActive },
-    { new: true },
-  ).lean() as unknown as Record<string, unknown> | null;
-
-  if (!credential) {
-    throw new NotFoundError(ERROR_MESSAGES.CREDENTIAL_NOT_FOUND);
-  }
-
-  cache.delete(cacheKeys.credentials.single(platformName));
-  cache.delete(cacheKeys.credentials.list());
-
-  delete credential.api_key;
-
-  return credential;
 }

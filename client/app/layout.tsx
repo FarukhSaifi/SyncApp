@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from "@components/common/Toaster";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

@@ -24,8 +24,11 @@ import {
   FiUnderline,
 } from "react-icons/fi";
 import dynamic from "next/dynamic";
+import { useToast } from "@hooks/useToast";
 
+import { apiClient } from "@utils/apiClient";
 import { isLikelyMarkdown, markdownToHtml } from "@utils/contentUtils";
+import { ERROR_MESSAGES, INFO_MESSAGES, SUCCESS_MESSAGES } from "@constants/messages";
 import type { EditorFormData } from "@hooks/useEditorState";
 import { AIToolkitDropdown } from "./AIToolkitDropdown";
 
@@ -288,6 +291,7 @@ const extensions = [
 ];
 
 const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, tagList }: EditorContentProps) => {
+  const toast = useToast();
   const editor = useEditor({
     extensions,
     content: "",
@@ -296,6 +300,73 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
       attributes: {
         class: "tiptap-editor",
       },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+        
+        for (const item of Array.from(items)) {
+          if (item.type.startsWith("image")) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (!file) return false;
+            
+            const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_IMAGE);
+            apiClient.uploadImage(file)
+              .then(res => {
+                if (res.success && res.data?.url) {
+                  const { schema } = view.state;
+                  const node = schema.nodes.image.create({ src: res.data.url });
+                  const tr = view.state.tr.replaceSelectionWith(node);
+                  view.dispatch(tr);
+                  toast.removeToast(toastId);
+                  toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
+                }
+              })
+              .catch(err => {
+                toast.removeToast(toastId);
+                toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_IMAGE);
+              });
+            return true; // handled
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.startsWith("image")) {
+            event.preventDefault();
+            
+            const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+            const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_DROPPED_IMAGE);
+            
+            apiClient.uploadImage(file)
+              .then(res => {
+                if (res.success && res.data?.url) {
+                  const { schema } = view.state;
+                  const node = schema.nodes.image.create({ src: res.data.url });
+                  
+                  // if dropped at a specific point
+                  if (coordinates) {
+                    const tr = view.state.tr.insert(coordinates.pos, node);
+                    view.dispatch(tr);
+                  } else {
+                    const tr = view.state.tr.replaceSelectionWith(node);
+                    view.dispatch(tr);
+                  }
+                  toast.removeToast(toastId);
+                  toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
+                }
+              })
+              .catch(err => {
+                toast.removeToast(toastId);
+                toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_DROPPED_IMAGE);
+              });
+            return true;
+          }
+        }
+        return false;
+      }
     },
     onUpdate: ({ editor: e }) => {
       onContentChange(e.getHTML());

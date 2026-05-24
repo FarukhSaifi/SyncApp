@@ -4,30 +4,31 @@
  * Production: no sensitive data (redacted keys, no stacks, safe request meta).
  */
 
-import { config } from '../config';
-import { DEFAULT_VALUES } from '../constants/defaultValues';
-import { SENSITIVE_KEYS, REDACT_PLACEHOLDER } from '../constants/logging';
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from "express";
+import dayjs from "dayjs";
+import { config } from "../config";
+import { DEFAULT_VALUES } from "../constants/defaultValues";
+import { REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "../constants/logging";
 
 const LOG_LEVELS = {
-  ERROR: 'ERROR',
-  WARN: 'WARN',
-  INFO: 'INFO',
-  DEBUG: 'DEBUG',
+  ERROR: "ERROR",
+  WARN: "WARN",
+  INFO: "INFO",
+  DEBUG: "DEBUG",
 } as const;
 
 type LogLevel = keyof typeof LOG_LEVELS;
 
-const COLORS: Record<LogLevel | 'RESET', string> = {
-  ERROR: '\x1b[31m', // Red
-  WARN: '\x1b[33m',  // Yellow
-  INFO: '\x1b[36m',  // Cyan
-  DEBUG: '\x1b[35m', // Magenta
-  RESET: '\x1b[0m',
+const COLORS: Record<LogLevel | "RESET", string> = {
+  ERROR: "\x1b[31m", // Red
+  WARN: "\x1b[33m", // Yellow
+  INFO: "\x1b[36m", // Cyan
+  DEBUG: "\x1b[35m", // Magenta
+  RESET: "\x1b[0m",
 };
 
 function redactSensitive(obj: unknown): unknown {
-  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(redactSensitive);
 
   const out: Record<string, unknown> = {};
@@ -37,28 +38,34 @@ function redactSensitive(obj: unknown): unknown {
     if (isSensitive) {
       out[key] = REDACT_PLACEHOLDER;
     } else {
-      out[key] = typeof value === 'object' && value !== null ? redactSensitive(value) : value;
+      out[key] = typeof value === "object" && value !== null ? redactSensitive(value) : value;
     }
   }
   return out;
 }
 
-export interface ILogger {
+interface ILogger {
   error(message: string, error?: Error | null, meta?: Record<string, unknown>): void;
   warn(message: string, meta?: Record<string, unknown>): void;
   info(message: string, meta?: Record<string, unknown>): void;
   debug(message: string, meta?: Record<string, unknown>): void;
   request(req: Request, res: Response, duration: number): void;
   query(operation: string, model: string, duration: number, meta?: Record<string, unknown>): void;
-  externalApi(service: string, endpoint: string, duration: number, status: number | string, meta?: Record<string, unknown>): void;
+  externalApi(
+    service: string,
+    endpoint: string,
+    duration: number,
+    status: number | string,
+    meta?: Record<string, unknown>,
+  ): void;
   cache(operation: string, key: string, hit?: boolean | null): void;
 }
 
-export class Logger implements ILogger {
+class Logger implements ILogger {
   private context: string;
   private isDevelopment: boolean;
 
-  constructor(context = 'APP') {
+  constructor(context = "APP") {
     this.context = context;
     this.isDevelopment = config.nodeEnv === DEFAULT_VALUES.NODE_ENV_DEVELOPMENT;
   }
@@ -69,7 +76,7 @@ export class Logger implements ILogger {
   }
 
   formatMessage(level: LogLevel, message: string, meta: Record<string, unknown> = {}): string {
-    const timestamp = new Date().toISOString();
+    const timestamp = dayjs().toISOString();
     const color = COLORS[level] ?? COLORS.RESET;
     const reset = COLORS.RESET;
 
@@ -87,7 +94,7 @@ export class Logger implements ILogger {
     const logMeta = this.safeMeta(meta);
 
     if (error) {
-      logMeta['error'] = this.isDevelopment
+      logMeta["error"] = this.isDevelopment
         ? { message: error.message, stack: error.stack, ...(error as unknown as Record<string, unknown>) }
         : { message: error.message };
     }
@@ -116,7 +123,7 @@ export class Logger implements ILogger {
       method: req.method,
       url: req.originalUrl,
       ip: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
       statusCode: res.statusCode,
       duration: `${duration}ms`,
     };
@@ -141,7 +148,13 @@ export class Logger implements ILogger {
     });
   }
 
-  externalApi(service: string, endpoint: string, duration: number, status: number | string, meta: Record<string, unknown> = {}): void {
+  externalApi(
+    service: string,
+    endpoint: string,
+    duration: number,
+    status: number | string,
+    meta: Record<string, unknown> = {},
+  ): void {
     this.info(`External API: ${service} ${endpoint}`, {
       service,
       endpoint,
@@ -155,19 +168,19 @@ export class Logger implements ILogger {
     this.debug(`Cache ${operation}`, {
       operation,
       key,
-      hit: hit !== null ? (hit ? 'HIT' : 'MISS') : undefined,
+      hit: hit !== null ? (hit ? "HIT" : "MISS") : undefined,
     });
   }
 }
 
 export const createLogger = (context: string): Logger => new Logger(context);
 
-export const logger = new Logger('APP');
+export const logger = new Logger("APP");
 
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
 
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
     logger.request(req, res, duration);
   });

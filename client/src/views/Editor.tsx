@@ -4,8 +4,8 @@
  * Composes EditorToolbar, EditorContent, EditorSidebarLeft, EditorSidebarRight, EditorStatusBar.
  * All business logic lives in useEditorState and useEditorAI hooks.
  */
+import { useCallback, useState } from "react";
 import "../components/editor/editor.css";
-import React, { useCallback, useState } from "react";
 
 import EditorContent from "@components/editor/EditorContent";
 import EditorSidebarLeft from "@components/editor/EditorSidebarLeft";
@@ -30,8 +30,20 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
   const ai = useEditorAI({
     postId: state.id,
-    onDraftGenerated: (draft) => {
-      state.setFormData((prev) => ({ ...prev, content_markdown: draft }));
+    onDraftGenerated: (data) => {
+      // Populate all fields the AI returns: title, meta_description, tags, and content
+      state.setFormData((prev) => ({ 
+        ...prev, 
+        content_markdown: data.content || "",
+        title: data.title || prev.title,
+        meta_description: data.meta_description || prev.meta_description,
+      }));
+      if (data.tags && data.tags.length > 0) {
+        state.setTagList(data.tags);
+      }
+      // Auto-trigger image generation for the cover image (SEO boost)
+      // Uses a short delay so the post data settles first
+      setTimeout(() => ai.handleGenerateImage(), 500);
     },
     onCoverImageSet: (url) => {
       state.setFormData((prev) => ({ ...prev, cover_image: url }));
@@ -55,7 +67,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     onEscape: closeSidebars,
   });
 
-  // Content change handler (called by EditorContent Quill)
+  // Content change handler (called by EditorContent TipTap)
   const handleContentChange = useCallback(
     (html: string) => {
       state.setFormData((prev) => {
@@ -128,16 +140,18 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onPublishToPlatform={state.handlePublishToPlatform}
         onPublishToAll={state.handlePublishToAll}
         onDownloadMdx={state.handleDownloadMdx}
+        // Scheduling
+        scheduledFor={state.formData.scheduled_for}
+        onScheduleChange={(val) => state.updateFormField("scheduled_for", val)}
         // AI
         aiKeyword={ai.aiKeyword}
         setAiKeyword={ai.setAiKeyword}
-        aiOutline={ai.aiOutline}
-        setAiOutline={ai.setAiOutline}
+        aiImagePrompt={ai.aiImagePrompt}
+        setAiImagePrompt={ai.setAiImagePrompt}
         aiLoading={ai.aiLoading}
         generatedImageDataUrl={ai.generatedImageDataUrl}
         uploadingCover={ai.uploadingCover}
-        onGenerateOutline={ai.handleGenerateOutline}
-        onGenerateDraft={ai.handleGenerateDraft}
+        onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}
         onUseAsFeaturedImage={ai.handleUseAsFeaturedImage}
         onUploadAndAttach={ai.handleUploadAndAttach}
