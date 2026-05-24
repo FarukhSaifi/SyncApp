@@ -1,17 +1,18 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import createSlug from 'slugify';
-import { v4 as uuidv4 } from 'uuid';
-import { STRING_LIMITS, NUMERIC_LIMITS, VALID_POST_STATUS, POST_STATUS } from '../constants';
-import { config } from '../config';
-import type { IPost, IPlatformStatus } from '../types/index';
+import mongoose, { Document, Model, Schema } from "mongoose";
+import createSlug from "slugify";
+import { v4 as uuidv4 } from "uuid";
+import { config } from "../config";
+import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "../constants";
+import type { IPlatformStatus, IPost } from "../types/index";
 
-export interface IPostDocument extends Document, Omit<IPost, '_id' | 'author'> {
+export interface IPostDocument extends Document, Omit<IPost, "_id" | "author"> {
   author: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
   created_at: Date;
   updated_at: Date;
   is_published_anywhere: boolean;
+  meta_description?: string;
 }
 
 const postSchema = new Schema<IPostDocument>(
@@ -25,18 +26,18 @@ const postSchema = new Schema<IPostDocument>(
     },
     author: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     title: {
       type: String,
-      required: [true, 'Title is required'],
+      required: [true, "Title is required"],
       trim: true,
       maxlength: [STRING_LIMITS.POST_TITLE_MAX, `Title cannot exceed ${STRING_LIMITS.POST_TITLE_MAX} characters`],
     },
     content_markdown: {
       type: String,
-      required: [true, 'Content is required'],
+      required: [true, "Content is required"],
     },
     status: {
       type: String,
@@ -64,36 +65,45 @@ const postSchema = new Schema<IPostDocument>(
       },
     },
     tags: [String],
+    meta_description: {
+      type: String,
+      trim: true,
+      maxlength: [160, "Meta description cannot exceed 160 characters"],
+    },
     cover_image: String,
     canonical_url: String,
+    scheduled_for: {
+      type: Date,
+      index: true,
+    },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 postSchema.index({ author: 1, status: 1 });
 postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ status: 1 });
 postSchema.index({ createdAt: -1 });
-postSchema.index({ title: 'text', content_markdown: 'text' });
+postSchema.index({ title: "text", content_markdown: "text" });
 postSchema.index({ tags: 1 });
 
 async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
   const base =
-    createSlug(doc.title || 'untitled-post', {
+    createSlug(doc.title || "untitled-post", {
       lower: true,
       strict: true,
       trim: true,
-      locale: 'en',
-    }).slice(0, STRING_LIMITS.POST_SLUG_MAX) || 'untitled-post';
+      locale: "en",
+    }).slice(0, STRING_LIMITS.POST_SLUG_MAX) || "untitled-post";
 
   let candidate = base;
   let suffix = 2;
 
-  while (await mongoose.model('Post').exists({ slug: candidate, _id: { $ne: doc._id } })) {
+  while (await mongoose.model("Post").exists({ slug: candidate, _id: { $ne: doc._id } })) {
     if (suffix <= NUMERIC_LIMITS.SLUG_MAX_SUFFIX_ATTEMPTS) {
       candidate = `${base}-${suffix++}`;
     } else {
@@ -104,34 +114,34 @@ async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
   return candidate;
 }
 
-postSchema.pre('validate', async function (this: IPostDocument) {
-  if (!this.isModified('title') && this.slug) return;
+postSchema.pre("validate", async function (this: IPostDocument) {
+  if (!this.isModified("title") && this.slug) return;
   this.slug = await generateUniqueSlug(this);
 });
 
-postSchema.pre('save', function (this: IPostDocument) {
+postSchema.pre("save", function (this: IPostDocument) {
   const base = config.canonicalBaseUrl as string | undefined;
   if (base && this.slug) {
     this.canonical_url = `${base}/${this.slug}`;
   } else if (!base) {
-    this.canonical_url = '';
+    this.canonical_url = "";
   }
 });
 
-postSchema.virtual('created_at').get(function (this: IPostDocument) {
+postSchema.virtual("created_at").get(function (this: IPostDocument) {
   return this.createdAt;
 });
 
-postSchema.virtual('updated_at').get(function (this: IPostDocument) {
+postSchema.virtual("updated_at").get(function (this: IPostDocument) {
   return this.updatedAt;
 });
 
-postSchema.virtual('is_published_anywhere').get(function (this: IPostDocument) {
+postSchema.virtual("is_published_anywhere").get(function (this: IPostDocument) {
   const platformStatus = this.platform_status as Record<string, IPlatformStatus> | undefined;
   if (!platformStatus) return false;
   return Object.values(platformStatus).some((platform) => platform.published);
 });
 
-const Post: Model<IPostDocument> = mongoose.model<IPostDocument>('Post', postSchema);
+const Post: Model<IPostDocument> = mongoose.model<IPostDocument>("Post", postSchema);
 
 export default Post;

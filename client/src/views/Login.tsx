@@ -50,7 +50,7 @@ const Login = () => {
       } else {
         setError(result.error ?? SYNC_LABEL.UNEXPECTED_ERROR);
       }
-    } catch (err) {
+    } catch {
       setError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setLoading(false);

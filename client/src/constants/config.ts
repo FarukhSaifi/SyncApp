@@ -43,6 +43,10 @@ export const APP_CONFIG = Object.freeze({
 
   // Search
   SEARCH_DEBOUNCE_MS: 300,
+
+  // Date Format
+  DATE_FORMAT: "DD-MM-YYYY",
+  DATE_FORMAT_WITH_TIME: "DD-MM-YYYY HH:mm",
 } as const);
 
 export const EXTERNAL_LINKS = Object.freeze({

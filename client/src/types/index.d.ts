@@ -17,8 +17,10 @@ export interface Post {
   content_markdown: string;
   status: "draft" | "published" | "archived";
   tags: string[];
+  meta_description?: string;
   cover_image?: string;
   canonical_url?: string;
+  scheduled_for?: string;
   author: UserRef | string;
   platform_status?: {
     medium?: PlatformStatus;

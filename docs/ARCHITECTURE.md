@@ -20,13 +20,13 @@ client/src/
 
 ### Standards
 
-- **Constants**: Use `constants/` for all magic strings and config (e.g. `STORAGE_KEYS.AUTH_TOKEN`, `INITIAL_EDITOR_FORM`, `QUILL_MODULES`). No hardcoded "token" or repeated config in components.
+- **Constants**: Use `constants/` for all magic strings and config (e.g. `STORAGE_KEYS.AUTH_TOKEN`, `INITIAL_EDITOR_FORM`, `TIPTAP_CONFIG`). No hardcoded "token" or repeated config in components.
 - **Logging**: Use `utils/logger.js` (`devLog`, `devWarn`, `devError`) for debug logs so production builds stay quiet.
 - **Routes**: Route definitions live in `config/routes.jsx`; App composes `ProtectedRoutes` and `PublicRoutes` and passes props (e.g. posts callbacks, editor callbacks).
 - **Loading**: Shared `LoadingScreen` for auth check and Suspense fallbacks.
 - **Import sequence** (use this order in every file; groups separated by a blank line):
   1. **React** – `react`, `react-dom` (when needed)
-  2. **React-related libraries** – `react-router-dom`, `react-icons`, `react-markdown`, `react-quilljs`, etc.
+  2. **React-related libraries** – `react-router-dom`, `react-icons`, `react-markdown`, `@tiptap/react`, etc.
   3. **Common components** – `components/common/*` (e.g. `LoadingScreen`)
   4. **Context** – `contexts/*` (e.g. `AuthContext`, `ThemeContext`)
   5. **Pages** – `pages/*` (only when importing page components)

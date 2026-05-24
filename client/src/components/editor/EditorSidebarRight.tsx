@@ -1,7 +1,9 @@
 "use client";
-import React, { useRef, useState, useEffect } from "react";
+import dayjs from "dayjs";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FiChevronDown,
+  FiClock,
   FiDownload,
   FiGlobe,
   FiImage,
@@ -13,6 +15,7 @@ import {
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 
+import { APP_CONFIG } from "@constants";
 import { PUBLISH_SECTIONS } from "@constants/editor";
 import { SYNC_LABEL } from "@constants/messages";
 
@@ -26,16 +29,18 @@ interface EditorSidebarRightProps {
   onPublishToPlatform: (platform: string) => void;
   onPublishToAll: () => void;
   onDownloadMdx: () => void;
+  // Scheduling
+  scheduledFor: string;
+  onScheduleChange: (value: string) => void;
   // AI
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
-  aiOutline: string;
-  setAiOutline: (v: string) => void;
+  aiImagePrompt: string;
+  setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
   uploadingCover: boolean;
-  onGenerateOutline: () => void;
-  onGenerateDraft: () => void;
+  onGeneratePost: () => void;
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;
   onUploadAndAttach: () => void;
@@ -83,16 +88,17 @@ const EditorSidebarRight = ({
   onPublishToPlatform,
   onPublishToAll,
   onDownloadMdx,
+  scheduledFor,
+  onScheduleChange,
   // AI props
   aiKeyword,
   setAiKeyword,
-  aiOutline,
-  setAiOutline,
+  aiImagePrompt,
+  setAiImagePrompt,
   aiLoading,
   generatedImageDataUrl,
   uploadingCover,
-  onGenerateOutline,
-  onGenerateDraft,
+  onGeneratePost,
   onGenerateImage,
   onUseAsFeaturedImage,
   onUploadAndAttach,
@@ -120,20 +126,33 @@ const EditorSidebarRight = ({
         icon={<FiSend className="h-3.5 w-3.5" />}
       >
         <div className="space-y-3">
-          {/* Status badge */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{PUBLISH_SECTIONS.STATUS}</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                status === "published"
-                  ? "bg-positive/15 text-positive"
-                  : status === "archived"
-                    ? "bg-warning/15 text-warning"
-                    : "bg-muted text-muted-foreground"
-              }`}
-            >
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              Status
+            </span>
+            <span className={`status-badge status-badge--${status}`}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
+          </div>
+
+          {/* Scheduling */}
+          <div className="space-y-1.5 pt-1 border-t border-border/40">
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              <FiClock className="h-3 w-3" />
+              Schedule Publication
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduledFor ? dayjs(scheduledFor).format("YYYY-MM-DDTHH:mm") : ""}
+              onChange={(e) => onScheduleChange(e.target.value)}
+              className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none"
+              disabled={status === "published" || publishing}
+            />
+            {scheduledFor && dayjs(scheduledFor).isAfter(dayjs()) && (
+              <p className="text-[10px] text-primary/80 italic">
+                Post will automatically publish on {dayjs(scheduledFor).format(APP_CONFIG.DATE_FORMAT_WITH_TIME)}
+              </p>
+            )}
           </div>
 
           {/* Action buttons */}
@@ -242,7 +261,7 @@ const EditorSidebarRight = ({
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">{SYNC_LABEL.AI_ASSISTANT_HINT}</p>
 
-          {/* Keyword + Generate Outline */}
+          {/* Keyword + Generate Actions */}
           <div className="space-y-2">
             <Input
               value={aiKeyword}
@@ -253,58 +272,45 @@ const EditorSidebarRight = ({
             />
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               size="sm"
-              onClick={onGenerateOutline}
+              onClick={onGeneratePost}
               disabled={!!aiLoading}
               className="w-full justify-center"
             >
-              {aiLoading === "outline" ? SYNC_LABEL.AI_LOADING : SYNC_LABEL.AI_GENERATE_OUTLINE}
+              <FiZap className="h-3.5 w-3.5 mr-1.5" />
+              {aiLoading === "post" ? "Generating Post..." : "Generate Full Post"}
             </Button>
-          </div>
-
-          {/* Outline textarea + Generate Draft */}
-          {aiOutline && (
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-foreground">
-                {SYNC_LABEL.AI_OUTLINE_LABEL}
+            
+            {/* Additional Image Instructions */}
+            <div className="pt-2 border-t border-border mt-2">
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Additional image instructions (optional)
               </label>
               <textarea
-                value={aiOutline}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiOutline(e.target.value)}
-                rows={10}
-                className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 font-mono resize-y"
-                placeholder="Outline will appear here…"
+                value={aiImagePrompt}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiImagePrompt(e.target.value)}
+                rows={2}
+                className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y mb-2"
+                placeholder="e.g. minimalist, blue tones, abstract..."
               />
-              <div className="flex flex-col gap-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={onGenerateDraft}
-                  disabled={!!aiLoading}
-                  className="w-full justify-center"
-                >
-                  {aiLoading === "draft" ? SYNC_LABEL.AI_LOADING : SYNC_LABEL.AI_GENERATE_DRAFT}
-                </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onGenerateImage}
+                disabled={!!aiLoading}
+                className="w-full justify-center"
+              >
+              <FiImage className="h-3.5 w-3.5 mr-1.5" />
+              {aiLoading === "image"
+                ? SYNC_LABEL.AI_IMAGE_LOADING
+                : SYNC_LABEL.AI_GENERATE_IMAGE}
+            </Button>
+            </div>
+          </div>
 
-                {/* Generate Image */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onGenerateImage}
-                  disabled={!!aiLoading}
-                  className="w-full justify-center"
-                >
-                  <FiImage className="h-3.5 w-3.5 mr-1.5" />
-                  {aiLoading === "image"
-                    ? SYNC_LABEL.AI_IMAGE_LOADING
-                    : SYNC_LABEL.AI_GENERATE_IMAGE}
-                </Button>
-              </div>
-
-              {/* Generated Image Preview */}
+          {/* Generated Image Preview */}
               {generatedImageDataUrl && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-foreground">
@@ -341,8 +347,6 @@ const EditorSidebarRight = ({
                   </div>
                 </div>
               )}
-            </div>
-          )}
         </div>
       </Section>
     </aside>

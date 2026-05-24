@@ -51,7 +51,7 @@ export const AIToolkitDropdown = ({ editor, onAction }: AIToolkitDropdownProps) 
       return;
     }
 
-    let text = "";
+    let text: string;
     let isSelection = true;
     const { from, to } = editor.state.selection;
     

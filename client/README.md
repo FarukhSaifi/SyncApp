@@ -77,7 +77,7 @@ In development, the Vite server proxies `/api` requests to the backend automatic
 - **React Router v6** - Routing
 - **Axios** - HTTP client
 - **Tailwind CSS** - Styling
-- **React Quill** - Rich text editor
+- **TipTap** - Rich text editor
 - **React Markdown** - Markdown preview
 - **React Icons** - Icon library
 

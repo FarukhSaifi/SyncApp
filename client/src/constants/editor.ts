@@ -5,16 +5,18 @@
 export const INITIAL_EDITOR_FORM = Object.freeze({
   title: "",
   content_markdown: "",
+  meta_description: "",
   status: "draft",
   cover_image: "",
   canonical_url: "",
+  scheduled_for: "",
 } as const);
 
 
 export const SCROLL_TO_TOP_THRESHOLD = 300;
 
 /** Autosave interval (ms). Drafts are saved automatically when dirty. */
-export const AUTOSAVE_INTERVAL_MS = 30_000;
+export const AUTOSAVE_INTERVAL_MS = 60000;
 
 /** Average reading speed used for "X min read" calculation. */
 export const READING_SPEED_WPM = 238;

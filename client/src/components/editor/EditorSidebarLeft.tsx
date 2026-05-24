@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { FiChevronDown, FiImage, FiLink, FiTag, FiX } from "react-icons/fi";
+import { FiChevronDown, FiImage, FiLink, FiTag, FiX, FiBarChart2, FiCheckCircle, FiAlertTriangle, FiAlertCircle } from "react-icons/fi";
 
 import Input from "@components/common/Input";
 import Button from "@components/common/Button";
@@ -155,6 +155,24 @@ const EditorSidebarLeft = ({
         </div>
       </Section>
 
+      {/* Meta Description */}
+      <Section title="Meta Description" icon={<FiCheckCircle className="h-3.5 w-3.5" />}>
+        <div className="space-y-2">
+          <textarea
+            name="meta_description"
+            value={formData.meta_description || ""}
+            onChange={onInputChange as any}
+            placeholder="A brief summary for SEO (120-160 chars)"
+            rows={3}
+            className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Characters: {formData.meta_description?.length || 0}</span>
+            <span className={formData.meta_description?.length >= 120 && formData.meta_description?.length <= 160 ? "text-green-500" : "text-yellow-500"}>Aim: 120-160</span>
+          </div>
+        </div>
+      </Section>
+
       {/* Featured Image */}
       <Section title={SIDEBAR_SECTIONS.FEATURED_IMAGE} icon={<FiImage className="h-3.5 w-3.5" />}>
         <div className="space-y-2">
@@ -194,7 +212,7 @@ const EditorSidebarLeft = ({
       </Section>
 
       {/* SEO Score */}
-      <Section title={SIDEBAR_SECTIONS.SEO_SCORE} icon={<span className="text-xs">📊</span>} defaultOpen={true}>
+      <Section title={SIDEBAR_SECTIONS.SEO_SCORE} icon={<FiBarChart2 className="h-3.5 w-3.5" />} defaultOpen={true}>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <SeoRing score={seo.score} maxScore={seo.maxScore} />
@@ -209,7 +227,17 @@ const EditorSidebarLeft = ({
             {seo.checks.map((check, idx) => (
               <li key={idx} className="flex items-start gap-2 text-xs">
                 <span className="mt-0.5 shrink-0">
-                  {check.ok === true ? "✅" : check.ok === false ? (check.warning ? "⚠️" : "❌") : "—"}
+                  {check.ok === true ? (
+                    <FiCheckCircle className="h-3 w-3 text-green-500" />
+                  ) : check.ok === false ? (
+                    check.warning ? (
+                      <FiAlertTriangle className="h-3 w-3 text-yellow-500" />
+                    ) : (
+                      <FiAlertCircle className="h-3 w-3 text-red-500" />
+                    )
+                  ) : (
+                    <span className="w-3 h-px bg-muted" />
+                  )}
                 </span>
                 <span className="text-muted-foreground">{check.label}</span>
               </li>

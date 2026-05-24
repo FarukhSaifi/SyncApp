@@ -23,12 +23,17 @@ interface AppConfig {
   googleCloudProject: string;
   googleCloudLocation: string;
   googleApplicationCredentials: string;
+  gcpBucketName: string;
   aiUseGoogleSearchRetrieval: boolean;
   canonicalBaseUrl: string;
+  cronSecret: string;
 }
 
 export function requireEnv(name: string, fallback?: string, options: { optional?: boolean } = {}): string {
-  const value = process.env[name] ?? fallback;
+  if (name === "__proto__" || name === "constructor" || name === "prototype") {
+    throw new Error("Invalid env var name");
+  }
+  const value = Object.prototype.hasOwnProperty.call(process.env, name) ? process.env[name] : fallback;
   if (!options.optional && (value === undefined || value === null || value === "")) {
     throw new Error(`Missing required env var: ${name}`);
   }
@@ -54,7 +59,9 @@ export const config: AppConfig = {
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
-  aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL !== "false",
+  gcpBucketName: process.env.GCS_BUCKET_NAME || process.env.GOOGLE_CLOUD_BUCKET || "",
+  aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL === "true",
   // Base URL for auto-generated canonical URLs (from post slug). e.g. https://yourblog.com/blog
   canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || process.env.SITE_URL || "").trim().replace(/\/$/, ""),
+  cronSecret: process.env.CRON_SECRET || "",
 };

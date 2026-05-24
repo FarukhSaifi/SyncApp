@@ -22,44 +22,42 @@
         "name": "next"
       }
     ],
-    "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
       "@components/*": [
-        "src/components/*"
+        "./src/components/*"
       ],
       "@constants": [
-        "src/constants"
+        "./src/constants"
       ],
       "@constants/*": [
-        "src/constants/*"
+        "./src/constants/*"
       ],
       "@hooks/*": [
-        "src/hooks/*"
+        "./src/hooks/*"
       ],
       "@views/*": [
-        "src/views/*"
+        "./src/views/*"
       ],
       "@services/*": [
-        "src/services/*"
+        "./src/services/*"
       ],
       "@types": [
-        "src/types"
+        "./src/types"
       ],
       "@utils/*": [
-        "src/utils/*"
+        "./src/utils/*"
       ],
       "@assets/*": [
-        "src/assets/*"
+        "./src/assets/*"
       ],
       "@styles/*": [
-        "src/styles/*"
+        "./src/styles/*"
       ],
       "@config/*": [
-        "src/config/*"
+        "./src/config/*"
       ],
       "@contexts/*": [
-        "src/contexts/*"
+        "./src/contexts/*"
       ]
     }
   },

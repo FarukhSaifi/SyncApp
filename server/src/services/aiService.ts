@@ -1,29 +1,27 @@
 /**
- * AI Service – Google Vertex AI (Gemini) for outline and draft; optional Imagen for featured image
+ * AI Service – Google Gen AI SDK for outline and draft; optional Imagen for featured image
  * Steps: SEO Analyst (outline) → Drafter (draft)
  * Uses GOOGLE_APPLICATION_CREDENTIALS or default credentials (e.g. gcloud auth application-default login).
  */
 
-import { VertexAI } from "@google-cloud/vertexai";
-import axios from "axios";
-import { GoogleAuth } from "google-auth-library";
+import { GoogleGenAI } from "@google/genai";
 import { config } from "../config";
-import { AI_CONFIG, AI_PROMPTS } from "../constants";
+import { AI_CONFIG, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
+import { sanitizeJsonString } from "../utils/sanitizeJson";
 
-let cachedVertexAI: VertexAI | null = null;
-let cachedGoogleAuthClient: GoogleAuth | null = null;
+let cachedGoogleGenAI: GoogleGenAI | null = null;
 
-function getVertexAI(): VertexAI {
-  if (cachedVertexAI) return cachedVertexAI;
+function getGoogleGenAI(): GoogleGenAI {
+  if (cachedGoogleGenAI) return cachedGoogleGenAI;
 
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
   const location =
     config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
-    
+
   let credentialsObj: any = null;
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
     try {
@@ -40,38 +38,28 @@ function getVertexAI(): VertexAI {
     throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
 
-  const opts: ConstructorParameters<typeof VertexAI>[0] = { project, location };
-  
+  const opts: any = {
+    vertexai: true,
+    project,
+    location,
+  };
+
   if (credentialsObj) {
-    (opts as Record<string, unknown>).googleAuthOptions = { credentials: credentialsObj };
+    opts.googleAuthOptions = { credentials: credentialsObj };
   } else if (config.googleApplicationCredentials) {
-    (opts as Record<string, unknown>).googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
+    opts.googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
   }
-  
-  cachedVertexAI = new VertexAI(opts);
-  return cachedVertexAI;
+
+  cachedGoogleGenAI = new GoogleGenAI(opts);
+  return cachedGoogleGenAI;
 }
 
-function getBaseModel() {
-  const vertexAI = getVertexAI();
-  const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
-  return vertexAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
-  });
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractText(result: any): string {
-  const response = result.response;
-  if (!response?.candidates?.length) {
-    throw new Error(ERROR_MESSAGES.AI_EMPTY_OR_BLOCKED_RESPONSE);
-  }
-  const parts = response.candidates[0].content?.parts;
-  if (!parts?.length || !parts[0].text) {
+function getText(result: any): string {
+  const text = result.text;
+  if (!text) {
     throw new Error(ERROR_MESSAGES.AI_EMPTY_RESPONSE);
   }
-  return parts[0].text.trim() as string;
+  return text.trim();
 }
 
 /** Normalize Vertex AI 403 (API not enabled or billing disabled) into a clear message for the client. */
@@ -80,6 +68,7 @@ function normalizeVertexError(err: unknown, fallbackMessage: string): never {
   const error = err as Error & { status?: number; details?: unknown };
   const msg = error.message || "";
   const is403 = msg.includes("403") || msg.includes("PERMISSION_DENIED") || msg.includes("Forbidden");
+  const is404 = msg.includes("404") || msg.includes("NOT_FOUND");
   const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
 
   if (is403 && (msg.includes("BILLING_DISABLED") || msg.includes("billing to be enabled"))) {
@@ -100,86 +89,121 @@ function normalizeVertexError(err: unknown, fallbackMessage: string): never {
     throw new AppError(`${ERROR_MESSAGES.VERTEX_AI_API_DISABLED} Enable it here: ${enableUrl}`, HTTP_STATUS.FORBIDDEN);
   }
 
+  if (is404 && (msg.includes("/publishers/google/models/") || msg.includes("Publisher Model"))) {
+    throw new AppError(ERROR_MESSAGES.VERTEX_AI_MODEL_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
+  }
+
   throw new AppError(error.message || fallbackMessage, error.status || HTTP_STATUS.BAD_GATEWAY, error.details);
 }
 
+export interface GeneratePostResult {
+  title: string;
+  meta_description: string;
+  tags: string[];
+  content: string;
+}
+
+function parseJSONContent(rawText: string): GeneratePostResult {
+  // Helper to map a parsed object to the result shape
+  const toResult = (parsed: Record<string, unknown>): GeneratePostResult => ({
+    title: (parsed.title as string) || "",
+    meta_description: (parsed.meta_description as string) || "",
+    tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : [],
+    content: (parsed.content_markdown as string) || "",
+  });
+
+  // Strip markdown code fences (handles trailing newlines, plain ``` or ```json)
+  const stripped = rawText
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+
+  // Attempt 1: direct parse (works when model returns clean JSON)
+  try {
+    return toResult(JSON.parse(stripped));
+  } catch {
+    // ignore – try sanitized parse below
+  }
+
+  // Attempt 2: sanitize literal control characters inside JSON strings, then parse
+  try {
+    return toResult(JSON.parse(sanitizeJsonString(stripped)));
+  } catch {
+    // ignore
+  }
+
+  // Attempt 3: extract the first {...} block and sanitize
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return toResult(JSON.parse(sanitizeJsonString(jsonMatch[0])));
+    } catch {
+      // ignore
+    }
+  }
+
+  // Last resort: return raw text as content so the user at least sees something
+  return { title: "", meta_description: "", tags: [], content: rawText };
+}
+
 /**
- * Step 1: SEO Analyst – generate outline from keyword (optional: Google Search grounding for SEO)
+ * Generate full post in a single pass (including trending keywords research)
  */
-export async function generateOutline(keyword: string): Promise<string> {
+export async function generatePost(keyword: string): Promise<GeneratePostResult> {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
-  try {
-    const vertexAI = getVertexAI();
-    const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
-    const useGoogleSearch = config.aiUseGoogleSearchRetrieval !== false;
-    const userMessage = AI_PROMPTS.SEO_ANALYST_USER(keyword.trim());
 
-    if (useGoogleSearch) {
-      const generativeModel = vertexAI.preview.getGenerativeModel({
+  const ai = getGoogleGenAI();
+  const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
+  const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
+
+  // Google Search grounding path
+  if (config.aiUseGoogleSearchRetrieval) {
+    try {
+      const result = await ai.models.generateContent({
         model: modelName,
-        generationConfig: { maxOutputTokens: AI_CONFIG.MAX_OUTLINE_TOKENS },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tools: [{ googleSearch: {} } as any],
-      });
-      const result = await generativeModel.generateContent({
-        contents: [{ role: "user", parts: [{ text: userMessage }] }],
-        systemInstruction: AI_PROMPTS.SEO_ANALYST_SYSTEM,
-      });
-      return extractText(result);
-    }
-
-    const generativeModel = vertexAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_OUTLINE_TOKENS },
-    });
-    const result = await generativeModel.generateContent({
-      contents: [{ role: "user", parts: [{ text: userMessage }] }],
-      systemInstruction: AI_PROMPTS.SEO_ANALYST_SYSTEM,
-    });
-    return extractText(result);
-  } catch (err) {
-    normalizeVertexError(err, ERROR_MESSAGES.AI_OUTLINE_FAILED);
-  }
-}
-
-/**
- * Step 2: Drafter – write full content from an outline
- */
-export async function generateDraft(outline: string): Promise<string> {
-  if (!outline || typeof outline !== "string" || !outline.trim()) {
-    throw new AppError(ERROR_MESSAGES.AI_OUTLINE_REQUIRED, HTTP_STATUS.BAD_REQUEST);
-  }
-  try {
-    const model = getBaseModel();
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: AI_PROMPTS.DRAFTER_USER(outline.trim()) }],
+        contents: userMessage,
+        safetySettings: AI_SAFETY_SETTINGS,
+        safety_settings: AI_SAFETY_SETTINGS,
+        config: {
+          systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
+          maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
+          responseMimeType: "application/json",
+          responseSchema: AI_RESPONSE_SCHEMA,
+          safetySettings: AI_SAFETY_SETTINGS,
+          tools: [{ googleSearch: {} }],
         },
-      ],
-      systemInstruction: AI_PROMPTS.DRAFTER_SYSTEM(outline.trim()),
-      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
-    });
-    return extractText(result);
-  } catch (err) {
-    normalizeVertexError(err, ERROR_MESSAGES.AI_DRAFT_FAILED);
+      } as any);
+      const parsed = parseJSONContent(getText(result));
+      // Only use grounded result if parsing actually extracted structured fields
+      if (parsed.title && parsed.content) return parsed;
+      // Otherwise fall through to standard model
+    } catch {
+      // Google Search grounding not enabled – fall through to standard model below.
+    }
   }
-}
 
-/**
- * Full flow: outline → draft (no humor step)
- */
-export async function generatePost(keyword: string): Promise<{ outline: string; draft: string; content: string }> {
-  const outline = await generateOutline(keyword);
-  const draft = await generateDraft(outline);
-  return {
-    outline,
-    draft,
-    content: draft,
-  };
+  // Standard (non-grounded) path
+  try {
+    const result = await ai.models.generateContent({
+      model: modelName,
+      contents: userMessage,
+      safetySettings: AI_SAFETY_SETTINGS,
+      safety_settings: AI_SAFETY_SETTINGS,
+      config: {
+        systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
+        maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
+        responseMimeType: "application/json",
+        responseSchema: AI_RESPONSE_SCHEMA,
+        safetySettings: AI_SAFETY_SETTINGS,
+      },
+    } as any);
+    return parseJSONContent(getText(result));
+  } catch (err) {
+    return normalizeVertexError(err, ERROR_MESSAGES.AI_DRAFT_FAILED);
+  }
 }
 
 /** Placeholder featured image (SVG) when Imagen is not available or fails */
@@ -189,96 +213,56 @@ function placeholderFeaturedImageDataUrl(): string {
 }
 
 /**
- * Build a short image prompt from a blog outline using Gemini
+ * Build a short image prompt from a blog topic using Gemini
  */
-export async function generateImagePromptFromOutline(outline: string): Promise<string> {
-  if (!outline || typeof outline !== "string" || !outline.trim()) {
-    throw new AppError(ERROR_MESSAGES.AI_OUTLINE_REQUIRED, HTTP_STATUS.BAD_REQUEST);
+async function generateImagePromptFromTopic(topic: string, additionalPrompt?: string): Promise<string> {
+  if (!topic || typeof topic !== "string" || !topic.trim()) {
+    throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
   try {
-    const vertexAI = getVertexAI();
+    const ai = getGoogleGenAI();
     const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
-    const model = vertexAI.getGenerativeModel({
+    const result = await ai.models.generateContent({
       model: modelName,
-      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS },
-    });
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: AI_PROMPTS.IMAGE_FROM_OUTLINE_USER(outline.trim()) }] }],
-      systemInstruction: AI_PROMPTS.IMAGE_FROM_OUTLINE_SYSTEM,
-    });
-    return extractText(result);
+      contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
+      safetySettings: AI_SAFETY_SETTINGS,
+      safety_settings: AI_SAFETY_SETTINGS,
+      config: {
+        systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
+        maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS,
+        safetySettings: AI_SAFETY_SETTINGS,
+      },
+    } as any);
+    return getText(result);
   } catch (err) {
-    normalizeVertexError(err, ERROR_MESSAGES.AI_IMAGE_FAILED);
+    return normalizeVertexError(err, ERROR_MESSAGES.AI_IMAGE_FAILED);
   }
 }
 
 /**
- * Generate a featured image from a blog outline: Gemini builds prompt, then Imagen (or placeholder)
+ * Generate a featured image from a blog topic: Gemini builds prompt, then Imagen (or placeholder)
  */
-export async function generateImageFromOutline(outline: string): Promise<{ imageDataUrl: string }> {
-  let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
-  const location =
-    config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
-
-  const imagePrompt = await generateImagePromptFromOutline(outline);
-
+export async function generateImageFromTopic(topic: string, additionalPrompt?: string): Promise<{ imageDataUrl: string }> {
   try {
-    if (!cachedGoogleAuthClient) {
-      // Use raw JSON creds if provided (Vercel), otherwise default to file
-      const authOpts: any = { scopes: ["https://www.googleapis.com/auth/cloud-platform"] };
-      if (process.env.GOOGLE_CREDENTIALS_JSON) {
-        try {
-          const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-          authOpts.credentials = creds;
-          if (!project && creds && creds.project_id) {
-            project = creds.project_id;
-          }
-        } catch {
-          // ignore
-        }
-      } else if (config.googleApplicationCredentials) {
-        authOpts.keyFilename = config.googleApplicationCredentials;
-      }
-      
-      // Safety fallback incase project is still not set
-      if (!project && process.env.GOOGLE_CREDENTIALS_JSON) {
-         try { project = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON).project_id; } catch {}
-      }
-
-      const auth = new GoogleAuth(authOpts);
-      cachedGoogleAuthClient = auth;
-    }
-    
-    // Safety check just in case we hit cached client path but lack project
-    if (!project && process.env.GOOGLE_CREDENTIALS_JSON) {
-       try { project = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON).project_id; } catch {}
-    }
-    const client = await cachedGoogleAuthClient.getClient();
-    const token = await client.getAccessToken();
-    if (!token.token) {
-      return { imageDataUrl: placeholderFeaturedImageDataUrl() };
-    }
-
+    const imagePrompt = additionalPrompt && additionalPrompt.trim()
+      ? additionalPrompt.trim()
+      : await generateImagePromptFromTopic(topic, additionalPrompt);
+    const ai = getGoogleGenAI();
     const modelId = process.env.IMAGEN_MODEL || AI_CONFIG.IMAGEN_MODEL;
-    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
-    const { data } = await axios.post(
-      url,
-      {
-        instances: [{ prompt: imagePrompt }],
-        parameters: { sampleCount: 1, aspectRatio: "16:9" },
+    const response = await ai.models.generateImages({
+      model: modelId,
+      prompt: imagePrompt,
+      config: {
+        numberOfImages: 1,
+        aspectRatio: "16:9",
       },
-      {
-        headers: { Authorization: `Bearer ${token.token}`, "Content-Type": "application/json" },
-        timeout: 60_000,
-        validateStatus: () => true,
-      },
-    );
+    });
 
-    const predictions = data?.predictions;
-    if (predictions?.length && predictions[0].bytesBase64Encoded) {
-      const mime = predictions[0].mimeType || "image/png";
-      const base64 = predictions[0].bytesBase64Encoded;
+    if (response?.generatedImages?.[0]?.image) {
+      const img = response.generatedImages[0].image;
+      const base64 = img.imageBytes;
+      const mime = img.mimeType || "image/png";
       return { imageDataUrl: `data:${mime};base64,${base64}` };
     }
   } catch {
@@ -296,18 +280,21 @@ export async function generateEdit(action: string, contextText: string): Promise
     throw new AppError("Context text is required for AI edit actions", HTTP_STATUS.BAD_REQUEST);
   }
   try {
-    const vertexAI = getVertexAI();
+    const ai = getGoogleGenAI();
     const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
-    const model = vertexAI.getGenerativeModel({
+    const result = await ai.models.generateContent({
       model: modelName,
-      generationConfig: { maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS },
-    });
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()) }] }],
-      systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
-    });
-    return extractText(result);
+      contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
+      safetySettings: AI_SAFETY_SETTINGS,
+      safety_settings: AI_SAFETY_SETTINGS,
+      config: {
+        systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
+        maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
+        safetySettings: AI_SAFETY_SETTINGS,
+      },
+    } as any);
+    return getText(result);
   } catch (err) {
-    normalizeVertexError(err, "Failed to perform AI edit");
+    return normalizeVertexError(err, "Failed to perform AI edit");
   }
 }

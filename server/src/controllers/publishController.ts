@@ -1,12 +1,12 @@
-import type { Request, Response } from 'express';
-import Post from '../models/Post';
-import Credential from '../models/Credential';
-import type { ICredentialDocument } from '../models/Credential';
-import type { IPostDocument } from '../models/Post';
-import { publishToMedium, publishToDevto, publishToWordpress } from '../services/publishService';
-import { unpublishFromPlatform } from '../services/platformService';
-import { asyncHandler, NotFoundError, ValidationError } from '../middleware/errorHandler';
-import { ERROR_MESSAGES, PLATFORMS, PLATFORM_CONFIG, POST_STATUS, SUCCESS_MESSAGES } from '../constants';
+import type { Request, Response } from "express";
+import { ERROR_MESSAGES, PLATFORM_CONFIG, PLATFORMS, POST_STATUS, SUCCESS_MESSAGES } from "../constants";
+import { asyncHandler, NotFoundError, ValidationError } from "../middleware/errorHandler";
+import type { ICredentialDocument } from "../models/Credential";
+import Credential from "../models/Credential";
+import type { IPostDocument } from "../models/Post";
+import Post from "../models/Post";
+import { unpublishFromPlatform } from "../services/platformService";
+import { performPublishToAll, publishToDevto, publishToMedium, publishToWordpress } from "../services/publishService";
 
 type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<Record<string, unknown>>;
 
@@ -46,7 +46,9 @@ async function ensureCredential(platformName: string): Promise<ICredentialDocume
   const credential = await Credential.findOne({ platform_name: platformName });
 
   if (!credential) {
-    const platformCfg = PLATFORM_CONFIG[platformName as keyof typeof PLATFORM_CONFIG] as { errorMessage?: string } | undefined;
+    const platformCfg = PLATFORM_CONFIG[platformName as keyof typeof PLATFORM_CONFIG] as
+      | { errorMessage?: string }
+      | undefined;
     throw new ValidationError(platformCfg?.errorMessage || `${platformName} credentials not found`);
   }
 
@@ -108,67 +110,16 @@ export const publishWordpress = publishToPlatform(PLATFORMS.WORDPRESS);
  */
 export const publishAll = asyncHandler(async (req: Request, res: Response) => {
   const post = await ensurePost(req.body.postId as string | undefined);
-  const credentials = await Credential.find({ is_active: true });
-
-  if (credentials.length === 0) {
-    throw new ValidationError(ERROR_MESSAGES.NO_ACTIVE_CREDENTIALS);
-  }
-
-  const results: Record<string, unknown> = {};
-  const errors: Array<{ platform: string; error: string }> = [];
-  const successes: string[] = [];
-
-  await Promise.allSettled(
-    credentials.map(async (credential) => {
-      const platformName = credential.platform_name;
-      const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
-
-      if (!platformCfg) {
-        errors.push({ platform: platformName, error: ERROR_MESSAGES.PLATFORM_NOT_SUPPORTED });
-        return;
-      }
-
-      try {
-        const updates = await platformCfg.publishFn(post, credential);
-        Object.assign(results, updates);
-        successes.push(platformCfg.name);
-      } catch (error) {
-        errors.push({
-          platform: platformCfg.name,
-          error: (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED,
-        });
-      }
-    }),
-  );
-
-  const updatedPost = await Post.findByIdAndUpdate(
-    post._id,
-    { status: POST_STATUS.PUBLISHED, ...results },
-    { new: true, runValidators: true },
-  );
-
-  if (!updatedPost) throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
-
-  const hasErrors = errors.length > 0;
-  const hasSuccesses = successes.length > 0;
-
-  let message: string;
-  if (!hasSuccesses) {
-    message = SUCCESS_MESSAGES.FAILED_TO_PUBLISH_ALL;
-  } else if (hasErrors) {
-    message = SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORMS(successes);
-  } else {
-    message = SUCCESS_MESSAGES.PUBLISHED_TO_ALL(successes);
-  }
+  const result = await performPublishToAll(post);
 
   res.json({
-    success: hasSuccesses,
-    message,
+    success: result.success,
+    message: result.message,
     data: {
-      postId: updatedPost._id,
+      postId: result.post?._id,
       status: POST_STATUS.PUBLISHED,
-      successes,
-      errors: errors.length ? errors : undefined,
+      successes: result.successes,
+      errors: result.errors,
     },
   });
 });

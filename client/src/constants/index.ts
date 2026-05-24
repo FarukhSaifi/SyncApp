@@ -10,30 +10,13 @@ export * from "./userRoles";
 // Re-export message types for easier access (explicit exports for better IDE support)
 // Note: All exports are also available via "export * from './messages'" above
 export {
-  // Individual Message Types
-  BUTTON_LABELS,
-  ERROR_MESSAGES,
-  INFO_MESSAGES,
-  LABELS,
-  MODAL_DESCRIPTIONS,
-  MODAL_TITLES,
-  PAGE_DESCRIPTIONS,
-  PAGE_TITLES,
-  SERVER_ERROR_MESSAGES,
-  SERVER_MESSAGES,
-  SERVER_SUCCESS_MESSAGES,
-  SUCCESS_MESSAGES,
-  SYNC_LABEL,
-  TOAST_TITLES,
-  UI_BUTTONS,
-  UI_DESCRIPTIONS,
-  // Grouped UI Exports (Recommended for new code)
   UI_LABELS,
   UI_MESSAGES,
   UI_PLACEHOLDERS,
   UI_TITLES,
-  VALIDATION_MESSAGES,
-  WARNING_MESSAGES,
+  UI_DESCRIPTIONS,
+  UI_BUTTONS,
+  SYNC_LABEL,
 } from "./messages";
 
 // Shared UI constants
@@ -54,6 +37,7 @@ export const ROUTES = Object.freeze({
   USERS: "/users",
   LOGIN: "/login",
   REGISTER: "/register",
+  ANALYTICS: "/analytics",
 } as const);
 
 export const UI_TEXT = Object.freeze({
@@ -95,7 +79,7 @@ const getApiBase = (): string => {
     // Server-side (SSR/SSG): Must use absolute URL to reach the backend
     const isProd = process.env.NODE_ENV === "production";
     const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
-    const base = envUrl || (isProd ? "https://sync-app-server.vercel.app" : "http://localhost:5000");
+    const base = envUrl || (isProd ? "https://sync-app-server.vercel.app" : "http://localhost:9000");
     return base.endsWith("/api") ? base : `${base}/api`;
   }
   
@@ -113,6 +97,8 @@ export const API_PATHS = Object.freeze({
   MDX: `${API_BASE}/mdx`,
   USERS: `${API_BASE}/users`,
   AI: `${API_BASE}/ai`,
+  UPLOAD: `${API_BASE}/upload`,
+  ANALYTICS: `${API_BASE}/analytics`,
 } as const);
 
 // HTTP methods

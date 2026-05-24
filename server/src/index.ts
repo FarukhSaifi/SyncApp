@@ -4,7 +4,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoose from "mongoose";
-import path from "path";
+import dayjs from "dayjs";
 
 import { config } from "./config";
 import { DATABASE, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
@@ -76,7 +76,7 @@ app.get("/health", (req: Request, res: Response) => {
   const dbConnected = mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED;
   const healthInfo = {
     status: HEALTH.STATUS.OK,
-    timestamp: new Date().toISOString(),
+    timestamp: dayjs().toISOString(),
     uptime: Number(process.uptime().toFixed(2)),
     environment: config.nodeEnv,
     database: {
@@ -102,9 +102,6 @@ app.get("/health", (req: Request, res: Response) => {
 
 // API routes (all under /api - route paths defined in constants/routes.ts)
 app.use("/api", apiRoutes);
-
-// Serve uploaded cover images (e.g. /api/uploads/covers/xxx.png)
-app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 404 handler (must be after routes)
 app.use(notFoundHandler);

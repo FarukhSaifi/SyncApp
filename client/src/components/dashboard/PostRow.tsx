@@ -1,8 +1,9 @@
 import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
+import dayjs from "dayjs";
+import Link from "next/link";
 import React, { memo, useState } from "react";
 import { FiEdit3, FiTrash2, FiX } from "react-icons/fi";
-import Link from "next/link";
 
 import { apiClient } from "@utils/apiClient";
 
@@ -58,7 +59,14 @@ const PostRow = memo<PostRowProps>(({ post, onDelete, onUpdate, toast }) => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, scheduledFor?: string) => {
+    if (status === "draft" && scheduledFor && dayjs(scheduledFor).isAfter(dayjs())) {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary">
+          Scheduled
+        </span>
+      );
+    }
     const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
   };
@@ -146,12 +154,7 @@ const PostRow = memo<PostRowProps>(({ post, onDelete, onUpdate, toast }) => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
   };
 
   const postId = post.id || post._id;
@@ -162,9 +165,14 @@ const PostRow = memo<PostRowProps>(({ post, onDelete, onUpdate, toast }) => {
         <div className="max-w-xs">
           <div className="truncate">{post.title}</div>
           {post.cover_image && <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>}
+          {post.scheduled_for && dayjs(post.scheduled_for).isAfter(dayjs()) && (
+            <div className="text-[10px] text-primary mt-0.5 font-medium">
+              Schedules for {formatDate(post.scheduled_for)}
+            </div>
+          )}
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(post.status)}</TableCell>
+      <TableCell>{getStatusBadge(post.status, post.scheduled_for)}</TableCell>
       <TableCell>
         <SeoScoreBadge post={post} />
       </TableCell>

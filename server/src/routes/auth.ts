@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import User from '../models/User';
+import dayjs from 'dayjs';
 import { generateToken, authenticateToken } from '../utils/auth';
 import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES, FIELDS } from '../constants';
 import { createLogger } from '../utils/logger';
@@ -91,7 +92,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    user.lastLogin = new Date();
+    user.lastLogin = dayjs().toDate();
     await user.save();
 
     const token = generateToken(user._id.toString());

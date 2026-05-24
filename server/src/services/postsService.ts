@@ -1,13 +1,16 @@
-import Post from '../models/Post';
-import { config } from '../config';
-import { cache, cacheKeys } from '../utils/cache';
-import { NotFoundError, ForbiddenError } from '../middleware/errorHandler';
-import { DEFAULT_VALUES, ERROR_MESSAGES, POST_STATUS, FIELDS, VALIDATION_ERRORS } from '../constants';
+import { config } from "../config";
+import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, POST_STATUS, VALIDATION_ERRORS, type PostStatus } from "../constants";
+import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
+import Post from "../models/Post";
+import dayjs from "dayjs";
+import { cache, cacheKeys } from "../utils/cache";
+import { logger } from "../utils/logger";
+import { performPublishToAll } from "./publishService";
 
 /** Build canonical URL from slug (server config). Used when update uses findByIdAndUpdate (no save hook). */
 function buildCanonicalUrl(slug: string): string {
   const base = config.canonicalBaseUrl;
-  if (!base || !slug) return '';
+  if (!base || !slug) return "";
   return `${base}/${slug}`;
 }
 
@@ -34,7 +37,7 @@ export async function createPost(input: CreatePostInput) {
   const created = await Post.create({
     title,
     content_markdown,
-    status,
+    status: status as PostStatus,
     tags: tags || [],
     cover_image,
     author,
@@ -83,7 +86,7 @@ export async function getPosts({ page = 1, limit = 20, userId }: GetPostsParams 
     Post.countDocuments(query),
   ]);
 
-  const hydratedItems = items.map(p => hydrateLeanPost(p as unknown as LeanPost));
+  const hydratedItems = items.map((p) => hydrateLeanPost(p as unknown as LeanPost));
 
   const result = {
     data: hydratedItems,
@@ -100,10 +103,10 @@ export async function getPosts({ page = 1, limit = 20, userId }: GetPostsParams 
   return result;
 }
 
-type PopulatedAuthor = { _id: { toString(): string }, name?: string, email?: string };
-type LeanPost = { 
+type PopulatedAuthor = { _id: { toString(): string }; name?: string; email?: string };
+type LeanPost = {
   _id?: unknown;
-  status?: string; 
+  status?: string;
   author?: PopulatedAuthor;
   createdAt?: Date;
   updatedAt?: Date;
@@ -116,18 +119,18 @@ type LeanPost = {
  */
 function hydrateLeanPost(post: LeanPost): LeanPost {
   if (!post) return post;
-  
+
   // Restore virtual dates
   post.created_at = post.createdAt;
   post.updated_at = post.updatedAt;
-  
+
   // Calculate `is_published_anywhere` locally since .lean() removed the virtual
   let isPublishedAnywhere = false;
   if (post.platform_status) {
-    isPublishedAnywhere = Object.values(post.platform_status).some(p => p.published);
+    isPublishedAnywhere = Object.values(post.platform_status).some((p) => p.published);
   }
   post.is_published_anywhere = isPublishedAnywhere;
-  
+
   return post;
 }
 
@@ -145,9 +148,9 @@ export async function getPostById(id: string, userId?: string) {
     return cached;
   }
 
-  const post = await Post.findById(id)
+  const post = (await Post.findById(id)
     .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
-    .lean() as LeanPost | null;
+    .lean()) as LeanPost | null;
 
   if (!post) {
     throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
@@ -158,7 +161,7 @@ export async function getPostById(id: string, userId?: string) {
   }
 
   const hydratedPost = hydrateLeanPost(post);
-  cache.set(cacheKey, hydratedPost, 300000);
+  cache.set(cacheKey, hydratedPost, DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS);
 
   return hydratedPost;
 }
@@ -177,9 +180,9 @@ export async function getPostBySlug(slug: string, userId?: string) {
     return cached;
   }
 
-  const post = await Post.findOne({ slug })
+  const post = (await Post.findOne({ slug })
     .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
-    .lean() as LeanPost | null;
+    .lean()) as LeanPost | null;
 
   if (!post) {
     throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
@@ -190,7 +193,7 @@ export async function getPostBySlug(slug: string, userId?: string) {
   }
 
   const hydratedPost = hydrateLeanPost(post);
-  cache.set(cacheKey, hydratedPost, 300000);
+  cache.set(cacheKey, hydratedPost, DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS);
 
   return hydratedPost;
 }
@@ -213,7 +216,7 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   FIELDS.POST_FIELDS.UPDATABLE_FIELDS.forEach((k) => {
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
-  updateData.canonical_url = buildCanonicalUrl(post.slug || '');
+  updateData.canonical_url = buildCanonicalUrl(post.slug || "");
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     new: true,
@@ -223,7 +226,7 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
     .lean();
 
   cache.delete(cacheKeys.posts.single(id));
-  cache.delete(cacheKeys.posts.slug(post.slug || ''));
+  cache.delete(cacheKeys.posts.slug(post.slug || ""));
   cache.invalidatePattern(cacheKeys.posts.all());
 
   return updatedPost;
@@ -246,6 +249,49 @@ export async function deletePost(id: string, userId: string) {
   await Post.findByIdAndDelete(id);
 
   cache.delete(cacheKeys.posts.single(id));
-  cache.delete(cacheKeys.posts.slug(post.slug || ''));
+  cache.delete(cacheKeys.posts.slug(post.slug || ""));
   cache.invalidatePattern(cacheKeys.posts.all());
+}
+
+/**
+ * Find posts scheduled for now or earlier and publish them.
+ * This is triggered by the automated Cron job.
+ */
+export async function publishScheduledPosts() {
+  const now = dayjs().toDate();
+  const scheduledPosts = await Post.find({
+    status: POST_STATUS.DRAFT,
+    scheduled_for: { $lte: now },
+  });
+
+  if (scheduledPosts.length === 0) {
+    return { count: 0, results: [] };
+  }
+
+  const results = await Promise.all(
+    scheduledPosts.map(async (post) => {
+      try {
+        const result = await performPublishToAll(post);
+        return {
+          postId: post._id,
+          success: result.success,
+          successes: result.successes,
+          errors: result.errors,
+        };
+      } catch (error) {
+        logger.error(`Scheduled publish failed for post ${post._id}`, error as Error);
+        return {
+          postId: post._id,
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    }),
+  );
+
+  cache.invalidatePattern(cacheKeys.posts.all());
+  return {
+    count: scheduledPosts.length,
+    results,
+  };
 }
