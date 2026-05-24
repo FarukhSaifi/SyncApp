@@ -74,7 +74,7 @@ export const uploadPostCover = asyncHandler(async (req: Request, res: Response) 
   const buffer = Buffer.from(match[2], "base64");
   const filename = `cover-${postId}-${Date.now()}.png`;
 
-  const url = await uploadToGCS(buffer, filename, mimetype);
+  const url = await uploadToGCS(buffer, filename, mimetype, true);
   const post = await postsService.updatePost(postId, { cover_image: url }, req.userId!);
 
   res.status(HTTP_STATUS.OK).json({ success: true, data: { url, post } });

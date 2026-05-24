@@ -13,7 +13,7 @@ export async function uploadImage(req: Request, res: Response, next: NextFunctio
     logger.debug("Processing image upload to GCS:", { filename: req.file.originalname });
 
     // GCS requires the buffer, original name, and mimetype
-    const url = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype);
+    const url = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype, true);
 
     logger.debug("Image uploaded successfully:", { url });
 
