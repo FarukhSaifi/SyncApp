@@ -2,28 +2,85 @@
  * useEditorAI — AI assistant state and handlers for the editor.
  * Extracted from the monolithic Editor.tsx to keep concerns separated.
  */
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
 
 import { apiClient } from "@utils/apiClient";
 
+export interface GeneratedPostData {
+  title: string;
+  meta_description: string;
+  tags: string[];
+  content: string;
+}
+
+/** 
+ * Strips markdown code fences and parses JSON from a string.
+ * Returns null if the string is not valid JSON after stripping fences.
+ */
+function tryParseJSON(raw: string): Record<string, unknown> | null {
+  try {
+    const clean = raw
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/i, "")
+      .trim();
+    return JSON.parse(clean);
+  } catch {
+    // Try extracting first { ... } block
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+/**
+ * Normalises the raw API response into a clean GeneratedPostData.
+ * Handles the case where the server returns the full JSON as a code-fenced
+ * string inside the `content` field instead of parsed fields.
+ */
+function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
+  // Happy path: server already parsed everything correctly
+  if (raw.title && raw.content) return raw;
+
+  // Fallback: content holds the raw JSON string – parse it client-side
+  if (raw.content) {
+    const parsed = tryParseJSON(raw.content);
+    if (parsed) {
+      return {
+        title: (parsed.title as string) || raw.title || "",
+        meta_description: (parsed.meta_description as string) || raw.meta_description || "",
+        tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : raw.tags ?? [],
+        content: (parsed.content_markdown as string) || (parsed.content as string) || raw.content,
+      };
+    }
+  }
+
+  return raw;
+}
+
 interface UseEditorAIOptions {
   postId?: string;
-  onDraftGenerated: (draft: string) => void;
+  onDraftGenerated: (data: GeneratedPostData) => void;
   onCoverImageSet: (url: string) => void;
 }
 
 interface UseEditorAIReturn {
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
-  aiOutline: string;
-  setAiOutline: (v: string) => void;
+  aiImagePrompt: string;
+  setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
   uploadingCover: boolean;
-  handleGenerateOutline: () => Promise<void>;
-  handleGenerateDraft: () => Promise<void>;
+  handleGeneratePost: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
@@ -32,65 +89,48 @@ interface UseEditorAIReturn {
 export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
-  const [aiOutline, setAiOutline] = useState("");
+  const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
 
-  const handleGenerateOutline = useCallback(async () => {
+  const handleGeneratePost = useCallback(async () => {
     const keyword = aiKeyword.trim();
     if (!keyword) {
       toast.validationError("Enter a keyword or topic");
       return;
     }
-    setAiLoading("outline");
+    setAiLoading("post");
     try {
-      const response = await apiClient.aiOutline(keyword);
-      if (response?.success && response.data?.outline) {
-        setAiOutline(response.data.outline);
-        toast.success("Outline generated", "You can now generate a draft from it.");
+      const response = await apiClient.aiGenerate(keyword);
+      if (response?.success && response.data) {
+        const data = parseAIResponse(response.data as GeneratedPostData);
+        if (!data.content) {
+          toast.apiError(response?.error || "Failed to generate post");
+          return;
+        }
+        onDraftGenerated(data);
+        toast.success("Post generated", "Full content has been added to the editor.");
       } else {
-        toast.apiError(response?.error || "Failed to generate outline");
+        toast.apiError(response?.error || "Failed to generate post");
       }
     } catch (error) {
-      toast.apiError((error as Error).message || "Failed to generate outline");
+      toast.apiError((error as Error).message || "Failed to generate post");
     } finally {
       setAiLoading("");
     }
-  }, [aiKeyword, toast]);
-
-  const handleGenerateDraft = useCallback(async () => {
-    const outline = aiOutline.trim();
-    if (!outline) {
-      toast.validationError("Generate an outline first, or paste one above.");
-      return;
-    }
-    setAiLoading("draft");
-    try {
-      const response = await apiClient.aiDraft(outline);
-      if (response?.success && response.data?.draft) {
-        onDraftGenerated(response.data.draft);
-        toast.success("Draft generated", "Content added to the editor.");
-      } else {
-        toast.apiError(response?.error || "Failed to generate draft");
-      }
-    } catch (error) {
-      toast.apiError((error as Error).message || "Failed to generate draft");
-    } finally {
-      setAiLoading("");
-    }
-  }, [aiOutline, onDraftGenerated, toast]);
+  }, [aiKeyword, onDraftGenerated, toast]);
 
   const handleGenerateImage = useCallback(async () => {
-    const outline = aiOutline.trim();
-    if (!outline) {
-      toast.validationError("Generate an outline first, then generate an image from it.");
+    const topic = aiKeyword.trim();
+    if (!topic) {
+      toast.validationError("Enter a keyword or topic first to generate an image.");
       return;
     }
     setAiLoading("image");
     setGeneratedImageDataUrl(null);
     try {
-      const response = await apiClient.aiGenerateImage(outline);
+      const response = await apiClient.aiGenerateImage(topic, aiImagePrompt.trim() || undefined);
       if (response?.success && response.data?.imageDataUrl) {
         setGeneratedImageDataUrl(response.data.imageDataUrl);
         toast.success("Image generated", "Preview below. Use as featured image or upload to attach.");
@@ -102,7 +142,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     } finally {
       setAiLoading("");
     }
-  }, [aiOutline, toast]);
+  }, [aiKeyword, aiImagePrompt, toast]);
 
   const handleUseAsFeaturedImage = useCallback(() => {
     if (!generatedImageDataUrl) return;
@@ -132,13 +172,12 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
   return {
     aiKeyword,
     setAiKeyword,
-    aiOutline,
-    setAiOutline,
+    aiImagePrompt,
+    setAiImagePrompt,
     aiLoading,
     generatedImageDataUrl,
     uploadingCover,
-    handleGenerateOutline,
-    handleGenerateDraft,
+    handleGeneratePost,
     handleGenerateImage,
     handleUseAsFeaturedImage,
     handleUploadAndAttach,

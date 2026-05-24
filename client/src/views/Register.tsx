@@ -76,7 +76,8 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const { confirmPassword, ...registrationData } = formData;
+      const registrationData = { ...formData };
+      delete (registrationData as Record<string, unknown>).confirmPassword;
       const result = await register(registrationData);
 
       if (result.success) {
@@ -84,7 +85,7 @@ const Register = () => {
       } else {
         setError(result.error ?? SYNC_LABEL.UNEXPECTED_ERROR);
       }
-    } catch (err) {
+    } catch {
       setError(SYNC_LABEL.UNEXPECTED_ERROR);
     } finally {
       setLoading(false);

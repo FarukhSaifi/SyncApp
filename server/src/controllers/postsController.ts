@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import { HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
+import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
 import { AppError, asyncHandler } from "../middleware/errorHandler";
 import * as postsService from "../services/postsService";
-import { saveCoverImage } from "../utils/uploadCover";
+import { uploadToGCS } from "../services/storage";
 
 /**
  * Create a new post
@@ -54,16 +54,28 @@ export const deletePost = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * Upload cover image for a post (from generated or pasted image data URL).
- * Saves to uploads/covers when possible and updates post.cover_image.
+ * Upload cover image for a post (data URL from AI-generated or pasted image).
+ * Uploads to Google Cloud Storage and updates post.cover_image with the GCS URL.
  */
 export const uploadPostCover = asyncHandler(async (req: Request, res: Response) => {
   const postId = req.params.id as string;
   const { image: imageDataUrl } = req.body as { image?: string };
+
   if (!imageDataUrl || typeof imageDataUrl !== "string") {
-    throw new AppError("Image data URL is required", HTTP_STATUS.BAD_REQUEST);
+    throw new AppError(ERROR_MESSAGES.UPLOAD_IMAGE_DATA_URL_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
-  const result = await saveCoverImage(postId, imageDataUrl);
-  const post = await postsService.updatePost(postId, { cover_image: result.url }, req.userId!);
-  res.status(HTTP_STATUS.OK).json({ success: true, data: { url: result.url, post } });
+
+  // Parse data URL → buffer for GCS upload
+  const match = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    throw new AppError(ERROR_MESSAGES.UPLOAD_IMAGE_DATA_URL_REQUIRED, HTTP_STATUS.BAD_REQUEST);
+  }
+  const mimetype = match[1];
+  const buffer = Buffer.from(match[2], "base64");
+  const filename = `cover-${postId}-${Date.now()}.png`;
+
+  const url = await uploadToGCS(buffer, filename, mimetype);
+  const post = await postsService.updatePost(postId, { cover_image: url }, req.userId!);
+
+  res.status(HTTP_STATUS.OK).json({ success: true, data: { url, post } });
 });

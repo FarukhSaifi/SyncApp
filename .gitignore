@@ -106,4 +106,6 @@ server/google-credentials.json
 
 # Postman Collections
 *Postman_Collection.json
+postman
+.postman
 .agent

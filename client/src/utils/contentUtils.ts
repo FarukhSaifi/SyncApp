@@ -1,6 +1,6 @@
 /**
  * Content format helpers for the editor.
- * AI returns markdown; Quill uses HTML. We detect format and convert for display.
+ * AI returns markdown; TipTap uses HTML. We detect format and convert for display.
  */
 import { marked } from "marked";
 
@@ -29,21 +29,10 @@ export function isLikelyMarkdown(content: string): boolean {
   );
 }
 
-/** Convert markdown to HTML for Quill. Safe for empty input. */
+/** Convert markdown to HTML for TipTap. Safe for empty input. */
 export function markdownToHtml(markdown: string): string {
   if (!markdown || typeof markdown !== "string") return "";
   const html = marked.parse(markdown.trim(), { async: false });
   return typeof html === "string" ? html : String(html ?? "");
 }
 
-/**
- * Content suitable for pasting into Quill (HTML).
- * If input is markdown, convert to HTML; otherwise return as-is (assume HTML).
- */
-export function contentForQuill(content: string): string {
-  if (!content || typeof content !== "string") return "";
-  const trimmed = content.trim();
-  if (!trimmed) return "";
-  if (isLikelyMarkdown(trimmed)) return markdownToHtml(trimmed);
-  return trimmed;
-}

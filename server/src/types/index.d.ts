@@ -25,6 +25,7 @@ export interface IPost {
   tags: string[];
   cover_image?: string;
   canonical_url?: string;
+  scheduled_for?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

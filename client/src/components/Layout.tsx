@@ -5,7 +5,9 @@ import {
   FiChevronDown,
   FiFileText,
   FiHome,
+  FiBarChart2,
   FiLogOut,
+  FiMenu,
   FiMoon,
   FiPlus,
   FiSettings,
@@ -46,6 +48,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navigation = [
     { name: PAGE_TITLES.DASHBOARD, href: ROUTES.DASHBOARD, icon: FiHome },
+    { name: "Analytics", href: ROUTES.ANALYTICS, icon: FiBarChart2 },
     { name: BUTTON_LABELS.NEW_POST, href: ROUTES.EDITOR, icon: FiPlus },
     { name: PAGE_TITLES.SETTINGS, href: ROUTES.SETTINGS, icon: FiSettings },
     ...(user?.role === USER_ROLES.ADMIN ? [{ name: PAGE_TITLES.USERS, href: ROUTES.USERS, icon: FiUsers }] : []),
@@ -190,9 +193,7 @@ const Layout = ({ children }: LayoutProps) => {
                   {showMobileMenu ? (
                     <FiX className="h-6 w-6" />
                   ) : (
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
+                    <FiMenu className="h-6 w-6" />
                   )}
                 </button>
 

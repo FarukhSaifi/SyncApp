@@ -86,7 +86,7 @@ export const ERROR_MESSAGES = {
     "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes.",
   VERTEX_AI_BILLING_ENABLE_URL: "https://console.cloud.google.com/billing/enable",
   VERTEX_AI_MODEL_NOT_FOUND:
-    "The specified Gemini model was not found or your project does not have access. Set GOOGLE_AI_MODEL to a valid version (e.g. gemini-3-flash-preview). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
+    "The specified Gemini model was not found or your project does not have access. Set GOOGLE_AI_MODEL to a valid version (e.g. gemini-2.5-flash). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
   AI_OUTLINE_FAILED: "Failed to generate outline",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_GENERATE_FAILED: "Failed to generate content",
@@ -96,6 +96,9 @@ export const ERROR_MESSAGES = {
   AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",
   AI_EMPTY_RESPONSE: "Empty response from Vertex AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
+  // Upload
+  UPLOAD_NO_FILE: "No file provided",
+  UPLOAD_IMAGE_DATA_URL_REQUIRED: "Image data URL is required",
 } as const;
 
 // Success Messages

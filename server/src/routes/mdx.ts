@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import createSlug from 'slugify';
 import Post from '../models/Post';
+import dayjs from 'dayjs';
 import { authenticateToken } from '../utils/auth';
 import { HTTP_STATUS, ERROR_MESSAGES, STRING_LIMITS, HTTP, MDX_CONFIG } from '../constants';
 import { createLogger } from '../utils/logger';
@@ -46,7 +47,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
       locale: 'en',
     }).slice(0, STRING_LIMITS.POST_SLUG_MAX);
 
-    const datePrefix = (post.createdAt || new Date()).toISOString().slice(0, MDX_CONFIG.FILENAME.DATE_FORMAT_LENGTH);
+    const datePrefix = dayjs(post.createdAt || dayjs()).format('YYYY-MM-DD');
     const filename = `${datePrefix}-${titleSlug}${MDX_CONFIG.FILENAME.EXTENSION}`;
 
     res.setHeader(HTTP.HEADERS.CONTENT_TYPE, HTTP.CONTENT_TYPES.MARKDOWN);

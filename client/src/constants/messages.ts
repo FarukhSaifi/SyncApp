@@ -73,6 +73,7 @@ const createSuccessMessages = () => {
     POST_CREATED: "Post created successfully",
     POST_UPDATED: "Post updated successfully",
     POST_DELETED: "Post deleted successfully",
+    IMAGE_UPLOADED: "Image uploaded successfully",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
@@ -142,6 +143,9 @@ export const ERROR_MESSAGES = Object.freeze({
   // Unpublish
   FAILED_TO_UNPUBLISH_PLATFORM: (platform: string, error?: string) =>
     error ? `Failed to unpublish from ${platform}: ${error}` : `Failed to unpublish from ${platform}`,
+  // Uploads
+  FAILED_TO_UPLOAD_IMAGE: "Failed to upload image",
+  FAILED_TO_UPLOAD_DROPPED_IMAGE: "Failed to upload dropped image",
 } as const);
 
 // ============================================================================
@@ -445,6 +449,8 @@ export const INFO_MESSAGES = Object.freeze({
   SIGNING_IN: "Signing in...",
   CREATING_ACCOUNT: "Creating account...",
   CHANGING_PASSWORD: "Changing Password...",
+  UPLOADING_IMAGE: "Uploading image...",
+  UPLOADING_DROPPED_IMAGE: "Uploading dropped image...",
   // Dashboard
   TOTAL_POSTS: "Total Posts",
   PUBLISHED: "Published",

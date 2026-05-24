@@ -32,6 +32,6 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "no-empty": ["error", { allowEmptyCatch: true }],
     },
-    settings: { react: { version: "detect" } },
+    settings: { react: { version: "19.2.4" } },
   },
 ];

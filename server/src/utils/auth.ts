@@ -1,22 +1,22 @@
-import jwt, { type SignOptions } from 'jsonwebtoken';
-import type { Request, Response, NextFunction } from 'express';
-import { config } from '../config';
-import { ERROR_MESSAGES } from '../constants/messages';
-import { USER_ROLES } from '../constants/userRoles';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { HTTP } from '../constants/http';
-import { logger } from './logger';
-import type { JwtPayload } from '../types/index';
+import type { NextFunction, Request, Response } from "express";
+import jwt, { type SignOptions } from "jsonwebtoken";
+import { config } from "../config";
+import { HTTP } from "../constants/http";
+import { HTTP_STATUS } from "../constants/httpStatus";
+import { ERROR_MESSAGES } from "../constants/messages";
+import { USER_ROLES } from "../constants/userRoles";
+import type { JwtPayload } from "../types/index";
+import { logger } from "./logger";
 
 const BEARER_PREFIX = `${HTTP.AUTH_SCHEMES.BEARER} `;
 
 export const generateToken = (userId: string): string => {
   return jwt.sign({ userId }, config.jwtSecret, {
-    expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'],
+    expiresIn: config.jwtExpiresIn as SignOptions["expiresIn"],
   });
 };
 
-export const verifyToken = (token: string): JwtPayload | null => {
+const verifyToken = (token: string): JwtPayload | null => {
   try {
     return jwt.verify(token, config.jwtSecret as string) as JwtPayload;
   } catch {
@@ -24,9 +24,9 @@ export const verifyToken = (token: string): JwtPayload | null => {
   }
 };
 
-export const extractToken = (req: Request): string | null => {
+const extractToken = (req: Request): string | null => {
   const authHeader = req.headers[HTTP.HEADERS.AUTHORIZATION.toLowerCase()];
-  if (typeof authHeader === 'string' && authHeader.startsWith(BEARER_PREFIX)) {
+  if (typeof authHeader === "string" && authHeader.startsWith(BEARER_PREFIX)) {
     return authHeader.substring(BEARER_PREFIX.length);
   }
   return null;
@@ -72,8 +72,8 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
 export const requireAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Dynamic import to avoid circular dependency
-    const User = (await import('../models/User')).default;
-    const user = await User.findById(req.userId).select('role');
+    const User = (await import("../models/User")).default;
+    const user = await User.findById(req.userId).select("role");
 
     if (!user) {
       res.status(HTTP_STATUS.NOT_FOUND).json({

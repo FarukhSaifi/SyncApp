@@ -7,7 +7,7 @@
 ## 🌟 Features
 
 - **Multi-Platform Publishing**: Publish to Medium, DEV.to, and WordPress from a single interface
-- **Rich Text Editor**: Built-in Quill editor with Markdown support and live preview
+- **Rich Text Editor**: Built-in TipTap editor with Markdown support and live preview
 - **User Authentication**: Secure JWT-based authentication with role management
 - **Platform Credentials Management**: Encrypted storage of API keys
 - **Tag Management**: SEO-friendly tagging system for better discoverability
@@ -29,7 +29,7 @@
 - React Router v6 for routing
 - Axios for API calls
 - Tailwind CSS for styling
-- React Quill for rich text editing
+- TipTap for rich text editing
 - React Markdown for preview
 - React Icons (Feather Icons)
 

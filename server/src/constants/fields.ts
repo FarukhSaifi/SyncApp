@@ -14,7 +14,7 @@ export const FIELDS = {
   // Post fields
   POST_FIELDS: {
     LIST_SELECT: "title slug status tags cover_image canonical_url createdAt updatedAt author platform_status",
-    UPDATABLE_FIELDS: ["title", "content_markdown", "status", "tags", "cover_image"],
+    UPDATABLE_FIELDS: ["title", "content_markdown", "status", "tags", "cover_image", "scheduled_for"],
     PLATFORM_STATUS_PREFIX: "platform_status",
   },
 
