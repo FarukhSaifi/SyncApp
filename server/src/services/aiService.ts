@@ -208,7 +208,7 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
 
 /** Placeholder featured image (SVG) when Imagen is not available or fails */
 function placeholderFeaturedImageDataUrl(): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="%23f0f0f0" width="800" height="450"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="24" fill="%23666">Featured image – generate with AI when Imagen is enabled</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="#f0f0f0" width="800" height="450"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#666">Featured image – generate with AI when Imagen is enabled</text></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 

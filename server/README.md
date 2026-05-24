@@ -107,7 +107,7 @@
 | `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (for local development) | _(not set)_ |
 | `GOOGLE_CREDENTIALS_JSON` | Raw JSON string of service account (for Vercel deployment) | _(not set)_ |
-| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-3-flash-preview` |
+| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-2.5-flash` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
 
 ## 🏗️ Tech Stack
