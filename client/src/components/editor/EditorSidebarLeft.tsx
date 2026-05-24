@@ -1,9 +1,9 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { FiChevronDown, FiImage, FiLink, FiTag, FiX, FiBarChart2, FiCheckCircle, FiAlertTriangle, FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiAlertTriangle, FiBarChart2, FiCheckCircle, FiChevronDown, FiImage, FiLink, FiTag, FiX } from "react-icons/fi";
 
-import Input from "@components/common/Input";
 import Button from "@components/common/Button";
+import Input from "@components/common/Input";
 
 import { getSeoScorecard } from "@utils/seoScorecard";
 
@@ -98,6 +98,14 @@ const EditorSidebarLeft = ({
   onRemoveTag,
   onTagKeyDown,
 }: EditorSidebarLeftProps) => {
+  const [imageError, setImageError] = useState(false);
+  const [lastCover, setLastCover] = useState(formData.cover_image);
+
+  if (formData.cover_image !== lastCover) {
+    setImageError(false);
+    setLastCover(formData.cover_image);
+  }
+
   const seo = useMemo(
     () =>
       getSeoScorecard({
@@ -186,14 +194,26 @@ const EditorSidebarLeft = ({
             size="sm"
           />
           {formData.cover_image && (
-            <img
-              src={formData.cover_image}
-              alt="Cover preview"
-              className="w-full h-28 object-cover rounded-md border border-border"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
+            <div className="relative w-full h-28 rounded-md overflow-hidden border border-border bg-muted flex items-center justify-center">
+              {imageError ? (
+                <div className="p-3 text-center flex flex-col items-center justify-center gap-1">
+                  <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <p className="text-[10px] font-semibold text-foreground leading-tight">
+                    Preview Unavailable (Private Bucket)
+                  </p>
+                  <p className="text-[9px] text-muted-foreground leading-normal max-w-[180px]">
+                    Make sure 'allUsers' has 'Storage Object Viewer' role on your bucket.
+                  </p>
+                </div>
+              ) : (
+                <img
+                  src={formData.cover_image}
+                  alt="Cover preview"
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              )}
+            </div>
           )}
         </div>
       </Section>
