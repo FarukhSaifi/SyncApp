@@ -101,6 +101,15 @@ export const API_PATHS = Object.freeze({
   ANALYTICS: `${API_BASE}/analytics`,
 } as const);
 
+/**
+ * Public-facing base URL of the blog where posts are readable.
+ * Set NEXT_PUBLIC_CANONICAL_BASE_URL in .env to enable full canonical URLs.
+ * If not set, the post slug is used as the canonical value.
+ * Example: https://yourblog.com/blog → canonical = https://yourblog.com/blog/my-post-slug
+ */
+export const CANONICAL_BASE_URL: string =
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_CANONICAL_BASE_URL?.trim()) || "";
+
 // HTTP methods
 export const HTTP_METHODS = Object.freeze({
   GET: "GET",
