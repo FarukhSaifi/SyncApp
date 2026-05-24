@@ -45,7 +45,7 @@ export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
   ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
   // Use a generally available Vertex Gemini model by default.
-  DEFAULT_MODEL: "gemini-3.1-flash",
+  DEFAULT_MODEL: "gemini-3.5-flash",
   MAX_OUTLINE_TOKENS: 1024,
   MAX_DRAFT_TOKENS: 16384,
   MAX_IMAGE_PROMPT_TOKENS: 1024,

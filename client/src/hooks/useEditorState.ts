@@ -68,7 +68,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           meta_description: post.meta_description || "",
           status: post.status,
           cover_image: post.cover_image || "",
-          canonical_url: post.canonical_url || "",
+          canonical_url: post.canonical_url || post.slug || "",
           scheduled_for: post.scheduled_for || "",
         });
         setTagList(Array.isArray(post.tags) ? post.tags : []);
@@ -180,7 +180,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         if (savedPost) {
           setFormData((prev) => ({
             ...prev,
-            canonical_url: savedPost.canonical_url ?? prev.canonical_url,
+            // Use || so an empty server response doesn't wipe a user-typed value.
+            // Also fall back to savedPost.slug so the field is always populated.
+            canonical_url: savedPost.canonical_url || savedPost.slug || prev.canonical_url,
             cover_image: savedPost.cover_image ?? prev.cover_image,
             content_markdown: savedPost.content_markdown ?? prev.content_markdown,
           }));
