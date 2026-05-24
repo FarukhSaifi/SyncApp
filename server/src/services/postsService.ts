@@ -1,17 +1,93 @@
+import dayjs from "dayjs";
 import { config } from "../config";
 import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, POST_STATUS, VALIDATION_ERRORS, type PostStatus } from "../constants";
 import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
 import Post from "../models/Post";
-import dayjs from "dayjs";
 import { cache, cacheKeys } from "../utils/cache";
 import { logger } from "../utils/logger";
 import { performPublishToAll } from "./publishService";
+import { uploadToGCS } from "./storage";
 
 /** Build canonical URL from slug (server config). Used when update uses findByIdAndUpdate (no save hook). */
 function buildCanonicalUrl(slug: string): string {
   const base = config.canonicalBaseUrl;
   if (!base || !slug) return "";
   return `${base}/${slug}`;
+}
+
+/**
+ * Detects base64 data URLs in cover image and uploads them to GCS/Firebase Storage
+ */
+async function processBase64CoverImage(coverImage?: string, postId?: string): Promise<string | undefined> {
+  if (!coverImage || typeof coverImage !== "string") {
+    return coverImage;
+  }
+
+  const match = coverImage.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    return coverImage;
+  }
+
+  const mimetype = match[1];
+  const base64Data = match[2];
+  const buffer = Buffer.from(base64Data, "base64");
+
+  const idSegment = postId || `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  const ext = mimetype.split("/")[1] || "png";
+  const filename = `cover-${idSegment}.${ext}`;
+
+  logger.debug(`Intercepted base64 cover image for post [${postId || "new"}]. Uploading to GCS/Firebase Storage...`);
+  
+  const url = await uploadToGCS(buffer, filename, mimetype, true);
+  return url;
+}
+
+/**
+ * Scans markdown content for base64 data URLs and uploads them to GCS/Firebase Storage
+ */
+async function processBase64MarkdownImages(contentMarkdown?: string, postId?: string): Promise<string | undefined> {
+  if (!contentMarkdown || typeof contentMarkdown !== "string") {
+    return contentMarkdown;
+  }
+
+  const base64Regex = /data:image\/([^;]+);base64,([A-Za-z0-9+/=]+)/g;
+  
+  let match;
+  let newContent = contentMarkdown;
+  let index = 1;
+
+  const matches: Array<{ fullMatch: string; mime: string; base64: string }> = [];
+  
+  base64Regex.lastIndex = 0;
+  while ((match = base64Regex.exec(contentMarkdown)) !== null) {
+    matches.push({
+      fullMatch: match[0],
+      mime: `image/${match[1]}`,
+      base64: match[2],
+    });
+  }
+
+  if (matches.length === 0) {
+    return contentMarkdown;
+  }
+
+  logger.debug(`Found ${matches.length} inline base64 images in post markdown. Processing uploads...`);
+
+  for (const item of matches) {
+    try {
+      const buffer = Buffer.from(item.base64.trim(), "base64");
+      const idSegment = postId || `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const ext = item.mime.split("/")[1] || "png";
+      const filename = `inline-${idSegment}-${index++}.${ext}`;
+      
+      const url = await uploadToGCS(buffer, filename, item.mime, true);
+      newContent = newContent.replace(item.fullMatch, url);
+    } catch (err) {
+      logger.error("Failed to upload inline markdown base64 image", err as Error);
+    }
+  }
+
+  return newContent;
 }
 
 interface CreatePostInput {
@@ -34,12 +110,15 @@ export async function createPost(input: CreatePostInput) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
   }
 
+  const processedCoverImage = await processBase64CoverImage(cover_image);
+  const processedContentMarkdown = await processBase64MarkdownImages(content_markdown);
+
   const created = await Post.create({
     title,
-    content_markdown,
+    content_markdown: processedContentMarkdown,
     status: status as PostStatus,
     tags: tags || [],
-    cover_image,
+    cover_image: processedCoverImage,
     author,
   });
 
@@ -113,6 +192,21 @@ type LeanPost = {
   platform_status?: Record<string, { published: boolean }>;
 } & Record<string, unknown>;
 
+function convertToFirebaseStorageUrl(url?: unknown): any {
+  if (!url || typeof url !== "string") return url;
+  
+  const match = url.match(/^https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/);
+  if (!match) return url;
+
+  const bucketName = match[1];
+  const filePath = match[2];
+
+  if (bucketName.endsWith("firebasestorage.app") || bucketName.endsWith("appspot.com")) {
+    return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filePath)}?alt=media`;
+  }
+  return url;
+}
+
 /**
  * Hydrates Mongoose lean() documents with fields normally provided by Schema virtuals.
  * This restores client compatibility while maintaining lean() speed advantages.
@@ -130,6 +224,22 @@ function hydrateLeanPost(post: LeanPost): LeanPost {
     isPublishedAnywhere = Object.values(post.platform_status).some((p) => p.published);
   }
   post.is_published_anywhere = isPublishedAnywhere;
+
+  // Dynamically map legacy GCS URLs to Firebase Storage public URL format
+  if (post.cover_image && typeof post.cover_image === "string") {
+    post.cover_image = convertToFirebaseStorageUrl(post.cover_image);
+  }
+  if (post.content_markdown && typeof post.content_markdown === "string") {
+    post.content_markdown = post.content_markdown.replace(
+      /https:\/\/storage\.googleapis\.com\/([^/]+)\/([^)\s"]+)/g,
+      (match, bucketName, filePath) => {
+        if (bucketName.endsWith("firebasestorage.app") || bucketName.endsWith("appspot.com")) {
+          return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filePath)}?alt=media`;
+        }
+        return match;
+      }
+    );
+  }
 
   return post;
 }
@@ -217,6 +327,14 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
   updateData.canonical_url = buildCanonicalUrl(post.slug || "");
+
+  // Intercept and upload base64 images to GCS/Firebase Storage
+  if (updateData.cover_image && typeof updateData.cover_image === "string") {
+    updateData.cover_image = await processBase64CoverImage(updateData.cover_image, id);
+  }
+  if (updateData.content_markdown && typeof updateData.content_markdown === "string") {
+    updateData.content_markdown = await processBase64MarkdownImages(updateData.content_markdown, id);
+  }
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     new: true,

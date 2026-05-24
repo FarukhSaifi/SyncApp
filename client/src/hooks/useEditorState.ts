@@ -2,15 +2,15 @@
  * useEditorState — Centralized editor form state, save/publish handlers, autosave, dirty tracking.
  * Extracted from the monolithic Editor.tsx.
  */
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
 
 import { useToast } from "@hooks/useToast";
 
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
 
-import { INITIAL_EDITOR_FORM, AUTOSAVE_INTERVAL_MS } from "@constants/editor";
+import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
 import { SYNC_LABEL } from "@constants/messages";
 import type { Post } from "@types";
 
@@ -181,6 +181,8 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           setFormData((prev) => ({
             ...prev,
             canonical_url: savedPost.canonical_url ?? prev.canonical_url,
+            cover_image: savedPost.cover_image ?? prev.cover_image,
+            content_markdown: savedPost.content_markdown ?? prev.content_markdown,
           }));
         }
         if (id) {

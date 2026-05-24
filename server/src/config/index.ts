@@ -59,7 +59,10 @@ export const config: AppConfig = {
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
-  gcpBucketName: process.env.GCS_BUCKET_NAME || process.env.GOOGLE_CLOUD_BUCKET || "",
+  gcpBucketName:
+    process.env.GCS_BUCKET_NAME ||
+    process.env.GOOGLE_CLOUD_BUCKET ||
+    (process.env.GOOGLE_CLOUD_PROJECT ? `${process.env.GOOGLE_CLOUD_PROJECT}.firebasestorage.app` : ""),
   aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL === "true",
   // Base URL for auto-generated canonical URLs (from post slug). e.g. https://yourblog.com/blog
   canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || process.env.SITE_URL || "").trim().replace(/\/$/, ""),
