@@ -11,8 +11,19 @@ import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
 
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
+import { CANONICAL_BASE_URL } from "@constants/index";
 import { SYNC_LABEL } from "@constants/messages";
 import type { Post } from "@types";
+
+/**
+ * Build a canonical URL from the post slug.
+ * - If NEXT_PUBLIC_CANONICAL_BASE_URL is set: `<base>/<slug>`
+ * - Otherwise falls back to just the slug.
+ */
+function buildClientCanonicalUrl(slug?: string): string {
+  if (!slug) return "";
+  return CANONICAL_BASE_URL ? `${CANONICAL_BASE_URL}/${slug}` : slug;
+}
 
 export interface EditorFormData {
   title: string;
@@ -68,7 +79,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           meta_description: post.meta_description || "",
           status: post.status,
           cover_image: post.cover_image || "",
-          canonical_url: post.canonical_url || post.slug || "",
+          canonical_url: post.canonical_url || buildClientCanonicalUrl(post.slug),
           scheduled_for: post.scheduled_for || "",
         });
         setTagList(Array.isArray(post.tags) ? post.tags : []);
@@ -180,9 +191,11 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         if (savedPost) {
           setFormData((prev) => ({
             ...prev,
-            // Use || so an empty server response doesn't wipe a user-typed value.
-            // Also fall back to savedPost.slug so the field is always populated.
-            canonical_url: savedPost.canonical_url || savedPost.slug || prev.canonical_url,
+            // Prefer server's canonical_url, then build from slug, then keep whatever user had.
+            canonical_url:
+              savedPost.canonical_url ||
+              buildClientCanonicalUrl(savedPost.slug) ||
+              prev.canonical_url,
             cover_image: savedPost.cover_image ?? prev.cover_image,
             content_markdown: savedPost.content_markdown ?? prev.content_markdown,
           }));
