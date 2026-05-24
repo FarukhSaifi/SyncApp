@@ -8,19 +8,21 @@ import { logger } from "../utils/logger";
 import { performPublishToAll } from "./publishService";
 import { uploadToGCS } from "./storage";
 
-/** Build canonical URL from slug (server config). Used when update uses findByIdAndUpdate (no save hook). */
+/**
+ * Build canonical URL from slug.
+ * - If CANONICAL_BASE_URL is set: returns `<base>/<slug>`
+ * - Otherwise falls back to just the slug (so the field is never left blank)
+ * Used when update uses findByIdAndUpdate (bypasses the pre-save hook).
+ */
 function buildCanonicalUrl(slug: string): string {
+  if (!slug) return "";
   const base = config.canonicalBaseUrl;
-  if (!base || !slug) return "";
-  return `${base}/${slug}`;
+  return base ? `${base}/${slug}` : slug;
 }
 
-/**
- * Detects base64 data URLs in cover image and uploads them to GCS/Firebase Storage
- */
-async function processBase64CoverImage(coverImage?: string, postId?: string): Promise<string | undefined> {
-  if (!coverImage || typeof coverImage !== "string") {
-    return coverImage;
+async function processBase64CoverImage(coverImage?: string | null, postId?: string): Promise<string | null> {
+  if (!coverImage || typeof coverImage !== "string" || coverImage.trim() === "") {
+    return null;
   }
 
   const match = coverImage.match(/^data:([^;]+);base64,(.+)$/);
@@ -95,7 +97,8 @@ interface CreatePostInput {
   content_markdown?: string;
   status?: string;
   tags?: string[];
-  cover_image?: string;
+  cover_image?: string | null;
+  canonical_url?: string;
   author?: string;
 }
 
@@ -104,7 +107,7 @@ interface CreatePostInput {
  * canonical_url is set from slug in Post model pre-save hook.
  */
 export async function createPost(input: CreatePostInput) {
-  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, author } = input;
+  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, canonical_url, author } = input;
 
   if (!title || !content_markdown) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
@@ -118,7 +121,8 @@ export async function createPost(input: CreatePostInput) {
     content_markdown: processedContentMarkdown,
     status: status as PostStatus,
     tags: tags || [],
-    cover_image: processedCoverImage,
+    cover_image: processedCoverImage as any,
+    canonical_url,
     author,
   });
 
@@ -326,7 +330,18 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   FIELDS.POST_FIELDS.UPDATABLE_FIELDS.forEach((k) => {
     if (updates[k] !== undefined) updateData[k] = updates[k];
   });
-  updateData.canonical_url = buildCanonicalUrl(post.slug || "");
+
+  // Explicitly check for slug update to keep canonical URL aligned
+  if (updates.slug !== undefined) {
+    updateData.slug = updates.slug;
+  }
+  const activeSlug = (updateData.slug as string) || post.slug || "";
+  
+  if (updates.canonical_url !== undefined && typeof updates.canonical_url === "string" && updates.canonical_url.trim() !== "") {
+    updateData.canonical_url = updates.canonical_url.trim();
+  } else {
+    updateData.canonical_url = buildCanonicalUrl(activeSlug);
+  }
 
   // Intercept and upload base64 images to GCS/Firebase Storage
   if (updateData.cover_image && typeof updateData.cover_image === "string") {

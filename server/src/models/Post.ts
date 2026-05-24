@@ -120,10 +120,16 @@ postSchema.pre("validate", async function (this: IPostDocument) {
 });
 
 postSchema.pre("save", function (this: IPostDocument) {
+  if (this.canonical_url && this.canonical_url.trim() !== "") return; // Respect custom canonical URL if set
+
   const base = config.canonicalBaseUrl as string | undefined;
   if (base && this.slug) {
+    // Full URL: https://yourblog.com/blog/my-post-slug
     this.canonical_url = `${base}/${this.slug}`;
-  } else if (!base) {
+  } else if (this.slug) {
+    // Fallback: use the slug itself so the field is never blank
+    this.canonical_url = this.slug;
+  } else {
     this.canonical_url = "";
   }
 });
