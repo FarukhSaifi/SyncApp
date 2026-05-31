@@ -3,12 +3,9 @@
  * Optimizes frequently accessed data
  */
 
-import { DEFAULT_VALUES } from '../constants';
+import { DEFAULT_VALUES } from "../constants";
+import type { CacheEntry } from "../types";
 
-interface CacheEntry<T> {
-  value: T;
-  timestamp: number;
-}
 
 export class Cache<T = unknown> {
   private cache: Map<string, CacheEntry<T>>;
@@ -130,7 +127,7 @@ export const cacheKeys = {
     all: (): RegExp => /^posts:/,
   },
   credentials: {
-    list: (): string => 'credentials:list',
+    list: (): string => "credentials:list",
     single: (platform: string): string => `credentials:${platform}`,
     all: (): RegExp => /^credentials:/,
   },

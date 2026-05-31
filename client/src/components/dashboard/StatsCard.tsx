@@ -1,14 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@components/common/Card";
 import React, { memo } from "react";
-import { IconType } from "react-icons";
 
-interface StatsCardProps {
-  title: string;
-  value: React.ReactNode;
-  icon?: IconType;
-  isActive?: boolean;
-  onClick?: () => void;
-}
+import type { StatsCardProps } from "@types";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@components/common/Card";
+
 
 /**
  * Memoized stats card component with responsive sizing for mobile

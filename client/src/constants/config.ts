@@ -3,6 +3,10 @@
  */
 
 export const APP_CONFIG = Object.freeze({
+  // Environment
+  NODE_ENV_PRODUCTION: "production",
+  NODE_ENV_DEVELOPMENT: "development",
+
   // App Info
   APP_NAME: "SyncApp",
   APP_DESCRIPTION: "Blog syndication made simple",
@@ -13,7 +17,6 @@ export const APP_CONFIG = Object.freeze({
   API_AI_TIMEOUT: 60000, // 60 seconds for AI (outline/draft can be slow, especially with grounding)
   API_AI_IMAGE_TIMEOUT: 65000, // 65 seconds for AI image generation
   API_COVER_UPLOAD_TIMEOUT: 30000, // 30 seconds for cover image upload
-  REQUEST_TIMEOUT: 10000,
 
   // Pagination
   DEFAULT_PAGE: 1,
@@ -23,12 +26,7 @@ export const APP_CONFIG = Object.freeze({
   // Toaster
   TOAST_MIN_WIDTH: "320px",
   TOAST_MAX_WIDTH: "480px",
-  TOAST_AUTO_CLOSE_DELAY: 100, // ms
-
-  // Cache
-  CACHE_TTL_SHORT: 120000, // 2 minutes
-  CACHE_TTL_MEDIUM: 300000, // 5 minutes
-  CACHE_TTL_LONG: 600000, // 10 minutes
+  TOAST_AUTO_CLOSE_DELAY: 4000, // ms — default toast visibility
 
   // Post list display
   TAGS_DISPLAY_LIMIT_CARD: 5,
@@ -77,3 +75,5 @@ export const VERIFIED_CONFIG = Object.freeze({
     className: "bg-warning/15 text-warning",
   },
 } as const);
+
+export const CACHE_TTL_MS = 60000; // 1 minute

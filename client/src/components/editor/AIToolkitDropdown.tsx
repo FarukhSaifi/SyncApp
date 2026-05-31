@@ -1,5 +1,9 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+
+import { useToast } from "@hooks/useToast";
+import type { AIToolkitDropdownProps } from "@types";
+import { apiClient } from "@utils/apiClient";
 import { 
   FiChevronDown, 
   FiMessageSquare, 
@@ -10,14 +14,7 @@ import {
   FiCheckSquare,
   FiLoader
 } from "react-icons/fi";
-import { useToast } from "@hooks/useToast";
-import { type Editor } from "@tiptap/react";
-import { apiClient } from "@utils/apiClient";
 
-interface AIToolkitDropdownProps {
-  editor?: Editor | null;
-  onAction?: (action: string) => void;
-}
 
 export const AIToolkitDropdown = ({ editor, onAction }: AIToolkitDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);

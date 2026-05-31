@@ -11,28 +11,6 @@
  * - Destructive: Red - Error and danger states
  */
 
-/** Border radius (slightly rounded, soft feel) */
-export const RADIUS = Object.freeze({
-  sm: "0.375rem", // 6px
-  md: "0.5rem", // 8px
-  lg: "0.625rem", // 10px
-  full: "9999px",
-} as const);
-
-/** Semantic color names aligned with Get UI kit */
-export const SEMANTIC_NAMES = Object.freeze({
-  PRIMARY: "primary",
-  SECONDARY: "secondary",
-  ACCENT: "accent",
-  SUBTLE: "subtle",
-  WARNING: "warning",
-  DANGER: "danger",
-  DESTRUCTIVE: "destructive",
-  POSITIVE: "positive",
-  DEFAULT: "default",
-  SELECTED: "selected",
-} as const);
-
 /** Button size keys for UI */
 export const BUTTON_SIZES = Object.freeze({
   DEFAULT: "default",
@@ -71,4 +49,15 @@ export const LOADING_UI = Object.freeze({
   SPINNER_SIZE_CLASS: "h-12 w-12",
   SPINNER_BORDER_CLASS: "border-2 border-primary border-t-transparent",
   INLINE_MIN_HEIGHT_CLASS: "min-h-[300px]",
+} as const);
+
+/** Modal sizes and their max-width styling classes */
+export const MODAL_SIZE_CLASSES = Object.freeze({
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  "2xl": "max-w-2xl",
+  "3xl": "max-w-3xl",
+  "4xl": "max-w-4xl",
 } as const);

@@ -34,6 +34,8 @@ export const ERROR_MESSAGES = {
   // Encryption
   FAILED_TO_ENCRYPT: "Failed to encrypt data",
   FAILED_TO_DECRYPT: "Failed to decrypt data",
+  CREDENTIAL_DECRYPT_FAILED:
+    "Could not decrypt stored API key. Use the same ENCRYPTION_KEY and ENCRYPTION_IV as when the key was saved, then re-enter it in Settings.",
   // Profile
   FAILED_TO_GET_PROFILE: "Failed to get profile",
   FAILED_TO_UPDATE_PROFILE: "Failed to update profile",
@@ -86,7 +88,7 @@ export const ERROR_MESSAGES = {
     "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes.",
   VERTEX_AI_BILLING_ENABLE_URL: "https://console.cloud.google.com/billing/enable",
   VERTEX_AI_MODEL_NOT_FOUND:
-    "The specified Gemini model was not found or your project does not have access. Set GOOGLE_AI_MODEL to a valid version (e.g. gemini-2.5-flash). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
+    "The specified Gemini model was not found or your project does not have access. Try GOOGLE_AI_MODEL=gemini-3.1-flash-lite with GOOGLE_CLOUD_LOCATION=global (or us-central1, europe-west1, asia-northeast1 where supported). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
   AI_OUTLINE_FAILED: "Failed to generate outline",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_GENERATE_FAILED: "Failed to generate content",
@@ -96,6 +98,7 @@ export const ERROR_MESSAGES = {
   AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",
   AI_EMPTY_RESPONSE: "Empty response from Vertex AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
+  AI_EDIT_FAILED: "Failed to perform AI edit",
   // Upload
   UPLOAD_NO_FILE: "No file provided",
   UPLOAD_IMAGE_DATA_URL_REQUIRED: "Image data URL is required",
@@ -122,6 +125,8 @@ export const SUCCESS_MESSAGES = {
   USER_CREATED: "User created successfully",
   // Publishing success
   PUBLISHED_TO_PLATFORM: (name: string) => `Post published to ${name} successfully`,
+  UPDATED_ON_PLATFORM: (name: string) => `Post updated on ${name} successfully`,
+  ALREADY_PUBLISHED_ON_PLATFORM: (name: string) => `Post is already published on ${name}`,
   PUBLISHED_TO_PLATFORMS: (platforms: string[]) => `Published to ${platforms.join(", ")} with some errors`,
   PUBLISHED_TO_ALL: (platforms: string[]) => `Post published to all platforms successfully (${platforms.join(", ")})`,
   FAILED_TO_PUBLISH_ALL: "Failed to publish to any platform",

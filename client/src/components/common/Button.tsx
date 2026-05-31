@@ -1,13 +1,10 @@
-import { BUTTON_SIZES, BUTTON_VARIANTS } from "@constants/designTokens";
 import React from "react";
 
-type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
-type ButtonSize = (typeof BUTTON_SIZES)[keyof typeof BUTTON_SIZES];
+import type { ButtonProps } from "@types";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}
+import { BUTTON_SIZES, BUTTON_VARIANTS } from "@constants/designTokens";
+
+
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (

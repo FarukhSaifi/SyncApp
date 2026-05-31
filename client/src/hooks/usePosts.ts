@@ -1,61 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CACHE_TTL_MS, DEFAULT_PAGINATION, ERROR_MESSAGES, POST_STATUS } from "@constants";
+import type {
+  Pagination,
+  Post,
+  PostsApiResponse,
+  PostsCacheEntry,
+  PostsStats,
+  UsePostsOptions,
+  UsePostsReturn,
+} from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog, devWarn } from "@utils/logger";
 
-import { DEFAULT_PAGINATION, ERROR_MESSAGES, POST_STATUS } from "@constants";
-import type { Post } from "@types";
-
-/** Shape the backend actually returns for the posts list endpoint */
-interface PostsApiResponse {
-  success: boolean;
-  data?: Post[];
-  pagination?: Pagination;
-  error?: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total?: number;
-  totalPages?: number;
-}
-
-interface CacheEntry {
-  data: Post[];
-  pagination: Pagination;
-  timestamp: number;
-}
-
-const CACHE_TTL_MS = 60000; // 1 minute
-const postsCache = new Map<string, CacheEntry>();
-
-interface PostsStats {
-  total: number;
-  published: number;
-  drafts: number;
-  withPlatforms: number;
-}
-
-interface UsePostsReturn {
-  posts: Post[];
-  loading: boolean;
-  error: string | null;
-  pagination: Pagination;
-  stats: PostsStats;
-  fetchPosts: (opts?: Partial<Pagination>) => Promise<void>;
-  refreshPosts: () => void;
-  addPost: (newPost: Post) => void;
-  updatePost: (updatedPost: Partial<Post> & { id?: string; _id?: string }) => void;
-  deletePost: (postId: string) => void;
-  setPagination: React.Dispatch<React.SetStateAction<Pagination>>;
-}
-
-interface UsePostsOptions {
-  /** When false, no initial fetch or refresh; use when user is not authenticated. Default true. */
-  enabled?: boolean;
-  pagination?: Pagination;
-}
+const postsCache = new Map<string, PostsCacheEntry>();
 
 export function usePosts(
   initialPaginationOrOptions: Pagination | UsePostsOptions = DEFAULT_PAGINATION,
@@ -78,7 +36,7 @@ export function usePosts(
     setError(null);
 
     try {
-      const params = opts.page !== undefined || opts.limit !== undefined ? opts : { page: 1, limit: 20 };
+      const params = opts.page !== undefined || opts.limit !== undefined ? opts : DEFAULT_PAGINATION;
       const cacheKey = JSON.stringify(params);
 
       // Check cache first
@@ -139,7 +97,7 @@ export function usePosts(
       prev.map((post) => {
         const postId = post._id;
         const updatedId = updatedPost._id || updatedPost.id;
-        return postId === updatedId ? { ...post, ...updatedPost } as Post : post;
+        return postId === updatedId ? ({ ...post, ...updatedPost } as Post) : post;
       }),
     );
     // Invalidate global cache to prevent stale data reading
@@ -191,4 +149,3 @@ export function usePosts(
     setPagination,
   };
 }
-

@@ -1,30 +1,20 @@
 import { memo } from "react";
+
+import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
+import type { UserTableRowProps } from "@types";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
 
-import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
-import type { User } from "@types";
 
-/** API responses may include both `_id` and `id`, plus `lastLogin` */
-type UserData = User & {
-  id?: string;
-  lastLogin?: string;
-};
 
-interface UserTableRowProps {
-  user: UserData;
-  formatDate: (dateString?: string) => string;
-  onEdit: (user: UserData) => void;
-  onDelete: (id: string, username: string) => void;
-}
 
 const UserTableRow = memo<UserTableRowProps>(({ user, formatDate, onEdit, onDelete }) => {
   const userId = user._id || user.id || "";
   const displayName =
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || SYNC_LABEL.N_A;
-  const roleConfig = ROLE_CONFIG[user.role] || ROLE_CONFIG.user;
+  const roleConfig = ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.user;
   const verifiedConfig = user.isVerified ? VERIFIED_CONFIG.verified : VERIFIED_CONFIG.unverified;
   const roleLabel = USER_ROLE_OPTIONS.find((opt) => opt.value === user.role)?.label ?? roleConfig.label;
 

@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from "react";
 
-import { useToaster } from "@components/common/Toaster";
-
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, TOAST_TITLES } from "@constants";
+
+import { useToaster } from "@components/common/Toaster";
 
 interface WithToastOptions {
   loading?: string;
@@ -60,8 +60,8 @@ export const useToast = () => {
   );
 
   const publishSuccess = useCallback(
-    (platform: string) => {
-      toaster.success(TOAST_TITLES.PUBLISHED, SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(platform));
+    (platform: string, message?: string) => {
+      toaster.success(TOAST_TITLES.PUBLISHED, message ?? SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(platform));
     },
     [toaster],
   );
@@ -174,4 +174,3 @@ export const useToast = () => {
     ],
   );
 };
-

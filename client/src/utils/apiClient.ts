@@ -3,20 +3,13 @@
  * Used by hooks (e.g. usePosts) and views; keeps auth, serialization, and error handling in one layer.
  * Typed with ApiResponse<T> and domain types from src/types.
  */
+
+import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
+import type { ApiResponse, ListResponse, PaginatedResponse, Post, User, RequestOptions } from "@types";
+import { devLog, logError } from "@utils/logger";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
 
-import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
-import type { ApiResponse, ListResponse, PaginatedResponse, Post, User } from "@types";
-import { devLog, logError } from "@utils/logger";
-
-interface RequestOptions {
-  method?: string;
-  headers?: Record<string, string>;
-  body?: Record<string, unknown> | FormData;
-  params?: Record<string, unknown>;
-  timeout?: number;
-}
 
 class ApiClient {
   private client: AxiosInstance;

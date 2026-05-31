@@ -1,10 +1,11 @@
-import mongoose from 'mongoose';
-import { config } from '../config';
-import { DATABASE } from '../constants';
-import { DB_LOG } from '../constants/logging';
-import { createLogger } from '../utils/logger';
+import mongoose from "mongoose";
 
-const logger = createLogger('DB');
+import { config } from "../config";
+import { DATABASE } from "../constants";
+import { DB_LOG } from "../constants/logging";
+import { createLogger } from "../utils/logger";
+
+const logger = createLogger("DB");
 
 const mongooseOptions: mongoose.ConnectOptions = {
   serverSelectionTimeoutMS: DATABASE.SERVER_SELECTION_TIMEOUT,
@@ -27,19 +28,19 @@ const connectDB = async (): Promise<mongoose.Connection | typeof mongoose> => {
   }
 };
 
-mongoose.connection.on('connected', () => {
+mongoose.connection.on("connected", () => {
   logger.info(DB_LOG.MONGOOSE_CONNECTED);
 });
 
-mongoose.connection.on('error', (err: Error) => {
+mongoose.connection.on("error", (err: Error) => {
   logger.error(DB_LOG.MONGOOSE_CONNECTION_ERROR, err);
 });
 
-mongoose.connection.on('disconnected', () => {
+mongoose.connection.on("disconnected", () => {
   logger.warn(DB_LOG.MONGOOSE_DISCONNECTED);
 });
 
-process.on('SIGINT', async () => {
+process.on("SIGINT", async () => {
   await mongoose.connection.close();
   logger.info(DB_LOG.CONNECTION_CLOSED);
   process.exit(0);

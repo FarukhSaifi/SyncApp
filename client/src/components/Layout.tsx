@@ -1,6 +1,21 @@
+import React, { useEffect, useRef, useState } from "react";
+
+import {
+  APP_CONFIG,
+  BUTTON_LABELS,
+  INFO_MESSAGES,
+  PAGE_TITLES,
+  PLACEHOLDERS,
+  ROUTES,
+  THEME_VALUES,
+  UI_TEXT,
+  USER_ROLES,
+} from "@constants";
+import { useAuth } from "@contexts/AuthContext";
+import { useTheme } from "@contexts/ThemeContext";
+import type { LayoutProps } from "@types";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
 import {
   FiChevronDown,
   FiFileText,
@@ -16,25 +31,6 @@ import {
   FiUsers,
   FiX,
 } from "react-icons/fi";
-
-import { useAuth } from "@contexts/AuthContext";
-import { useTheme } from "@contexts/ThemeContext";
-
-import {
-  APP_CONFIG,
-  BUTTON_LABELS,
-  INFO_MESSAGES,
-  PAGE_TITLES,
-  PLACEHOLDERS,
-  ROUTES,
-  THEME_VALUES,
-  UI_TEXT,
-  USER_ROLES,
-} from "@constants";
-
-interface LayoutProps {
-  children: React.ReactNode;
-}
 
 const Layout = ({ children }: LayoutProps) => {
   const pathname = usePathname();

@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
+
 import { ROUTES } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
 
 function ClientOnly({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);

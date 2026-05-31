@@ -44,12 +44,19 @@ export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_CLOUD_PROJECT: "GOOGLE_CLOUD_PROJECT",
   ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
   ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
-  // Use a generally available Vertex Gemini model by default.
-  DEFAULT_MODEL: "gemini-3.5-flash",
+  ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
+  /** Default model — Vertex AI usage-based free tier (~1,000 requests/day, rate-limited). */
+  DEFAULT_MODEL: "gemini-3.1-flash-lite",
+  /** Documented Vertex AI free-tier daily request cap for Gemini 3.1 Flash Lite. */
+  VERTEX_FREE_TIER_DAILY_REQUESTS: 1000,
+  /** Gemini 3.x may require global/us/eu endpoint when a regional location returns 404. */
+  VERTEX_GLOBAL_MODEL_PREFIXES: ["gemini-3-flash-preview", "gemini-3.1"] as readonly string[],
+  DEFAULT_VERTEX_LOCATION: "us-central1",
+  VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
   MAX_OUTLINE_TOKENS: 1024,
   MAX_DRAFT_TOKENS: 16384,
   MAX_IMAGE_PROMPT_TOKENS: 1024,
-  IMAGEN_MODEL: "imagen-3.0-generate-001",
+  IMAGEN_MODEL: "imagen-4.0-fast-generate-001",
 } as const);
 
 /**
@@ -68,13 +75,14 @@ export const AI_RESPONSE_SCHEMA = {
   properties: {
     title: { type: Type.STRING },
     meta_description: { type: Type.STRING },
-    tags: { 
-      type: Type.ARRAY, 
-      items: { type: Type.STRING } 
+    tags: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
     },
     content_markdown: { type: Type.STRING },
+    canonical_url: { type: Type.STRING },
   },
-  required: ["title", "meta_description", "tags", "content_markdown"],
+  required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
 };
 
 /**

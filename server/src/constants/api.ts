@@ -14,10 +14,13 @@ export const API_URLS = {
   DEVTO: {
     BASE_URL: "https://dev.to/api",
     ARTICLES_ENDPOINT: "https://dev.to/api/articles",
+    ARTICLE_BY_ID: (id: string) => `https://dev.to/api/articles/${id}`,
   },
 
   // WordPress API
   WORDPRESS: {
-    POSTS_ENDPOINT: (siteUrl: string) => `${siteUrl}/wp-json/wp/v2/posts`,
+    POSTS_ENDPOINT: (siteUrl: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`,
+    POST_BY_ID: (siteUrl: string, id: string) =>
+      `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts/${id}`,
   },
 } as const;

@@ -5,6 +5,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoose from "mongoose";
+import path from "path";
 
 import { config } from "./config";
 import { DATABASE, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
@@ -15,8 +16,6 @@ import { logger, requestLogger } from "./utils/logger";
 
 const app: Application = express();
 const PORT = config.port;
-
-import path from "path";
 
 // Connect to DB on startup.
 // On Vercel (serverless), Mongoose reuses the connection across warm invocations

@@ -1,14 +1,14 @@
+import React, { memo } from "react";
+
+import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, POST_STATUS, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
+import type { Post, PostCardProps } from "@types";
+import dayjs from "dayjs";
+import Link from "next/link";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
-import React, { memo, useState } from "react";
-import dayjs from "dayjs";
-import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
-import Link from "next/link";
 
-import { apiClient } from "@utils/apiClient";
-
-import { APP_CONFIG, COLOR_CLASSES, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
-import type { Post } from "@types";
 import SeoScoreBadge from "./SeoScoreBadge";
 
 /** API responses may include both camelCase and snake_case fields */
@@ -18,49 +18,12 @@ type PostData = Post & {
   published_at?: string;
 };
 
-interface ToastProp {
-  success?: (title: string, message: string) => void;
-  error?: (title: string, message: string) => void;
-}
-
-interface PostCardProps {
-  post: PostData;
-  onDelete: (id: string) => void;
-  onUpdate?: (post: PostData) => void;
-  toast?: ToastProp;
-}
-
 /**
  * Mobile-friendly post card component
  */
-const PostCard = memo<PostCardProps>(({ post, onDelete, onUpdate, toast }) => {
-  const [unpublishing, setUnpublishing] = useState<string | null>(null);
-
-  const handleUnpublish = async (platform: string) => {
-    const postId = post.id || post._id;
-    setUnpublishing(platform);
-    try {
-      const response = await apiClient.unpublishFromPlatform(platform, postId);
-      if (response?.success) {
-        toast?.success?.(SYNC_LABEL.UNPUBLISHED, SYNC_LABEL.REMOVED_FROM_PLATFORM(platform));
-        if (onUpdate) {
-          onUpdate({ ...post, platform_status: response.data?.platformStatus as Post["platform_status"] });
-        }
-      } else {
-        toast?.error?.(SYNC_LABEL.ERROR_TITLE, response?.error || SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform));
-      }
-    } catch (error) {
-      toast?.error?.(
-        SYNC_LABEL.ERROR_TITLE,
-        SYNC_LABEL.FAILED_TO_UNPUBLISH_PLATFORM(platform, (error as Error).message),
-      );
-    } finally {
-      setUnpublishing(null);
-    }
-  };
-
+const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
   const getStatusBadge = (status: string) => {
-    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
+    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[POST_STATUS.DRAFT];
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
   };
 
@@ -69,73 +32,46 @@ const PostCard = memo<PostCardProps>(({ post, onDelete, onUpdate, toast }) => {
 
     if (post.platform_status?.medium?.published) {
       platforms.push(
-        <div key="medium" className="inline-flex items-center space-x-1">
-          <a
-            href={post.platform_status.medium.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
-          >
-            <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
-            <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
-          </a>
-          <button
-            onClick={() => handleUnpublish("medium")}
-            disabled={unpublishing === "medium"}
-            className={`${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ml-0.5 sm:ml-1 shrink-0`}
-            title={SYNC_LABEL.REMOVE_FROM_MEDIUM}
-          >
-            <FiX className="h-3 w-3" />
-          </button>
-        </div>,
+        <a
+          key={PLATFORMS.MEDIUM}
+          href={post.platform_status.medium.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
+        >
+          <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
+          <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
+        </a>,
       );
     }
 
     if (post.platform_status?.devto?.published) {
       platforms.push(
-        <div key="devto" className="inline-flex items-center space-x-1">
-          <a
-            href={post.platform_status.devto.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
-          >
-            <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
-            <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
-          </a>
-          <button
-            onClick={() => handleUnpublish("devto")}
-            disabled={unpublishing === "devto"}
-            className={`${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ml-0.5 sm:ml-1 shrink-0`}
-            title={SYNC_LABEL.REMOVE_FROM_DEVTO}
-          >
-            <FiX className="h-3 w-3" />
-          </button>
-        </div>,
+        <a
+          key={PLATFORMS.DEVTO}
+          href={post.platform_status.devto.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
+        >
+          <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
+          <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
+        </a>,
       );
     }
 
     if (post.platform_status?.wordpress?.published) {
       platforms.push(
-        <div key="wordpress" className="inline-flex items-center space-x-1">
-          <a
-            href={post.platform_status.wordpress.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
-          >
-            <span className="text-primary">●</span>
-            <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
-          </a>
-          <button
-            onClick={() => handleUnpublish("wordpress")}
-            disabled={unpublishing === "wordpress"}
-            className={`${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ml-0.5 sm:ml-1 shrink-0`}
-            title={SYNC_LABEL.REMOVE_FROM_WORDPRESS}
-          >
-            <FiX className="h-3 w-3" />
-          </button>
-        </div>,
+        <a
+          key={PLATFORMS.WORDPRESS}
+          href={post.platform_status.wordpress.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
+        >
+          <span className="text-primary">●</span>
+          <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
+        </a>,
       );
     }
 
@@ -173,7 +109,7 @@ const PostCard = memo<PostCardProps>(({ post, onDelete, onUpdate, toast }) => {
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD).map((tag, index) => (
+              {post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD).map((tag: string, index: number) => (
                 <span
                   key={index}
                   className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/15 text-primary text-xs rounded-full truncate max-w-[120px] sm:max-w-none"

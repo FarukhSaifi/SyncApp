@@ -1,28 +1,16 @@
 "use client";
 import React, { useState } from "react";
+
+import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
+import { useAuth } from "@contexts/AuthContext";
+import { useToast } from "@hooks/useToast";
+import type { ProfileFormState, PasswordFormState } from "@types";
 import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
-import { useAuth } from "@contexts/AuthContext";
-import { useToast } from "@hooks/useToast";
-
-import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
-
-interface ProfileFormState extends Record<string, unknown> {
-  firstName: string;
-  lastName: string;
-  bio: string;
-  avatar: string;
-}
-
-interface PasswordFormState {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
 
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();

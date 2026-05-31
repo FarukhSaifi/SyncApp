@@ -586,6 +586,11 @@ export const INFO_MESSAGES = Object.freeze({
   // Form Helpers
   PASSWORD_OPTIONAL: "(optional - default will be generated)",
   REQUIRED_FIELD: "*",
+  // i18n
+  CHARACTERS: "Characters: ",
+  AIM_SEO: "Aim: 120-160",
+  PREVIEW_UNAVAILABLE: "Preview Unavailable (Private Bucket)",
+  STORAGE_VIEWER_ROLE_HINT: 'Make sure "allUsers" has "Storage Object Viewer" role on your bucket.',
 } as const);
 
 // ============================================================================
@@ -704,6 +709,68 @@ export const SERVER_MESSAGES = Object.freeze({
   ...SERVER_ERROR_MESSAGES,
   ...SERVER_SUCCESS_MESSAGES,
 });
+
+// ============================================================================
+// EDITOR UI STRINGS - Sidebar labels, status, schedule copy
+// ============================================================================
+export const EDITOR_UI = Object.freeze({
+  // Publish sidebar
+  STATUS_LABEL: "Status",
+  SCHEDULE_PUBLICATION_LABEL: "Schedule Publication",
+  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) =>
+    `Post will automatically publish on ${formattedDate}`,
+
+  // AI section (sidebar)
+  GENERATE_AI_COVER_IMAGE: "Generate AI Cover Image",
+  GENERATING_POST: "Generating Post...",
+  GENERATE_FULL_POST: "Generate Full Post",
+  CREATING_MASTERPIECE: "Creating Masterpiece...",
+  GENERATE_AI_IMAGE: "Generate AI Image",
+
+  // AI Image modal header
+  AI_IMAGE_MODAL_TITLE: "AI Cover Image Generator",
+  AI_IMAGE_MODAL_DESC:
+    "Create stunning, high-resolution featured cover images for your blog posts using Gemini AI.",
+
+  // Modal – settings pane labels
+  AI_IMAGE_TOPIC_LABEL: "Topic or Keyword",
+  AI_IMAGE_TOPIC_PLACEHOLDER: "e.g. Next.js performance tips",
+  AI_IMAGE_TOPIC_HINT:
+    "AI will use this to analyze context and construct the primary subject.",
+  AI_IMAGE_STYLE_LABEL: "Style / Theme Instructions",
+  AI_IMAGE_STYLE_PLACEHOLDER:
+    "e.g. minimalist illustration, modern flat design, tech blueprint vibes, deep indigo and violet colors...",
+  AI_IMAGE_STYLE_HINT:
+    "Specify artistic style, color palettes, background theme, or mood.",
+
+  // Modal – loading state
+  GENERATING_IMAGE: "Generating Image...",
+  GENERATING_IMAGE_HINT:
+    "Gemini is handcrafting your high-res blog cover. Please wait.",
+
+  // Modal – image overlay badges
+  AI_MASTERPIECE_BADGE: "AI Masterpiece",
+  ACTIVE_COVER_BADGE: "Active Cover",
+
+  // Modal – image captions
+  IMAGE_GENERATED_CAPTION:
+    "Successfully generated. Select an action below to attach it to your post.",
+  IMAGE_CURRENT_CAPTION: "Currently active post cover image.",
+
+  // Modal – empty state
+  NO_IMAGE_TITLE: "No image generated yet",
+  NO_IMAGE_HINT:
+    "Fill in the instructions on the left and click Generate to see the magic.",
+
+  // Modal – action buttons
+  APPLY_LOCALLY: "Apply Locally",
+  UPLOADING: "Uploading\u2026",
+  UPLOAD_AND_SAVE: "Upload & Save",
+
+  // Modal – no post-id warning
+  SAVE_DRAFT_FIRST_HINT:
+    "Save this post as a draft first to enable permanent cloud attachment.",
+} as const);
 
 // ============================================================================
 // LEGACY SYNC_LABEL - Backward compatibility

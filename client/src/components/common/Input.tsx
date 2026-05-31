@@ -1,17 +1,8 @@
-import { INPUT_SIZES } from "@constants/designTokens";
 import React from "react";
 
-type InputSize = (typeof INPUT_SIZES)[keyof typeof INPUT_SIZES];
+import type { InputProps } from "@types";
 
-interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
-  label?: string;
-  hint?: string;
-  error?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  onRightIconClick?: (e?: React.MouseEvent | React.KeyboardEvent) => void;
-  size?: InputSize;
-}
+import { INPUT_SIZES } from "@constants/designTokens";
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (

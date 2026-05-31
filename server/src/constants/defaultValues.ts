@@ -49,4 +49,19 @@ export const DEFAULT_VALUES = Object.freeze({
   // Google Cloud Storage
   GCS_UPLOAD_PREFIX: "uploads/",
   GCS_PUBLIC_URL_BASE: "https://storage.googleapis.com",
+
+  // File MIME mapping to safe extensions
+  MIME_TO_EXTENSION: {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+    "text/plain": "txt",
+    "text/html": "html",
+    "application/json": "json",
+    "application/pdf": "pdf",
+  },
+  DEFAULT_FILE_EXTENSION: "bin",
 } as const);

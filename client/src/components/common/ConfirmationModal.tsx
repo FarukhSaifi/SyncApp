@@ -1,25 +1,14 @@
-import Button from "@components/common/Button";
-import Modal from "@components/common/Modal";
 import React from "react";
-import { FiAlertTriangle } from "react-icons/fi";
+
 
 import { BUTTON_LABELS, BUTTON_VARIANTS, COLOR_CLASSES, INFO_MESSAGES, MODAL_TITLES } from "@constants";
+import type { ConfirmationModalProps } from "@types";
+import { FiAlertTriangle } from "react-icons/fi";
 
-type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
-type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
+import Button from "@components/common/Button";
+import Modal from "@components/common/Modal";
 
-interface ConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title?: string;
-  message?: React.ReactNode;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: ButtonVariant;
-  isLoading?: boolean;
-  size?: ModalSize;
-}
+
 
 /**
  * Reusable Confirmation Modal Component

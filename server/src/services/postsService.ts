@@ -1,10 +1,13 @@
-import dayjs from "dayjs";
-import { config } from "../config";
 import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, POST_STATUS, VALIDATION_ERRORS, type PostStatus } from "../constants";
-import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
-import Post from "../models/Post";
+import type { CreatePostInput, GetPostsParams } from "../types";
+
 import { cache, cacheKeys } from "../utils/cache";
 import { logger } from "../utils/logger";
+
+import dayjs from "dayjs";
+import { config } from "../config";
+import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
+import Post from "../models/Post";
 import { performPublishToAll } from "./publishService";
 import { uploadToGCS } from "./storage";
 
@@ -39,7 +42,7 @@ async function processBase64CoverImage(coverImage?: string | null, postId?: stri
   const filename = `cover-${idSegment}.${ext}`;
 
   logger.debug(`Intercepted base64 cover image for post [${postId || "new"}]. Uploading to GCS/Firebase Storage...`);
-  
+
   const url = await uploadToGCS(buffer, filename, mimetype, true);
   return url;
 }
@@ -53,13 +56,13 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
   }
 
   const base64Regex = /data:image\/([^;]+);base64,([A-Za-z0-9+/=]+)/g;
-  
+
   let match;
   let newContent = contentMarkdown;
   let index = 1;
 
   const matches: Array<{ fullMatch: string; mime: string; base64: string }> = [];
-  
+
   base64Regex.lastIndex = 0;
   while ((match = base64Regex.exec(contentMarkdown)) !== null) {
     matches.push({
@@ -81,7 +84,7 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
       const idSegment = postId || `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
       const ext = item.mime.split("/")[1] || "png";
       const filename = `inline-${idSegment}-${index++}.${ext}`;
-      
+
       const url = await uploadToGCS(buffer, filename, item.mime, true);
       newContent = newContent.replace(item.fullMatch, url);
     } catch (err) {
@@ -90,16 +93,6 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
   }
 
   return newContent;
-}
-
-interface CreatePostInput {
-  title?: string;
-  content_markdown?: string;
-  status?: string;
-  tags?: string[];
-  cover_image?: string | null;
-  canonical_url?: string;
-  author?: string;
 }
 
 /**
@@ -133,11 +126,7 @@ export async function createPost(input: CreatePostInput) {
   return post;
 }
 
-interface GetPostsParams {
-  page?: number | string;
-  limit?: number | string;
-  userId?: string;
-}
+// Imported from central types
 
 /**
  * Get posts with pagination and caching
@@ -198,7 +187,7 @@ type LeanPost = {
 
 function convertToFirebaseStorageUrl(url?: unknown): any {
   if (!url || typeof url !== "string") return url;
-  
+
   const match = url.match(/^https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/);
   if (!match) return url;
 
@@ -241,7 +230,7 @@ function hydrateLeanPost(post: LeanPost): LeanPost {
           return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filePath)}?alt=media`;
         }
         return match;
-      }
+      },
     );
   }
 
@@ -327,17 +316,24 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   }
 
   const updateData: Record<string, unknown> = {};
-  FIELDS.POST_FIELDS.UPDATABLE_FIELDS.forEach((k) => {
-    if (updates[k] !== undefined) updateData[k] = updates[k];
-  });
+  if (updates.title !== undefined) updateData.title = updates.title;
+  if (updates.content_markdown !== undefined) updateData.content_markdown = updates.content_markdown;
+  if (updates.status !== undefined) updateData.status = updates.status;
+  if (updates.tags !== undefined) updateData.tags = updates.tags;
+  if (updates.cover_image !== undefined) updateData.cover_image = updates.cover_image;
+  if (updates.scheduled_for !== undefined) updateData.scheduled_for = updates.scheduled_for;
 
   // Explicitly check for slug update to keep canonical URL aligned
   if (updates.slug !== undefined) {
     updateData.slug = updates.slug;
   }
   const activeSlug = (updateData.slug as string) || post.slug || "";
-  
-  if (updates.canonical_url !== undefined && typeof updates.canonical_url === "string" && updates.canonical_url.trim() !== "") {
+
+  if (
+    updates.canonical_url !== undefined &&
+    typeof updates.canonical_url === "string" &&
+    updates.canonical_url.trim() !== ""
+  ) {
     updateData.canonical_url = updates.canonical_url.trim();
   } else {
     updateData.canonical_url = buildCanonicalUrl(activeSlug);

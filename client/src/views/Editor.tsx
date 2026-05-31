@@ -12,18 +12,12 @@ import EditorSidebarLeft from "@components/editor/EditorSidebarLeft";
 import EditorSidebarRight from "@components/editor/EditorSidebarRight";
 import EditorStatusBar from "@components/editor/EditorStatusBar";
 import EditorToolbar from "@components/editor/EditorToolbar";
-
+import { POST_STATUS } from "@constants/postStatus";
 import { useEditorAI } from "@hooks/useEditorAI";
 import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
-
-import type { Post } from "@types";
-
-interface EditorProps {
-  onPostCreate: (post: Post) => void;
-  onPostUpdate: (post: Post) => void;
-}
+import type { EditorProps } from "@types";
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   // State hooks
@@ -32,8 +26,8 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     postId: state.id,
     onDraftGenerated: (data) => {
       // Populate all fields the AI returns: title, meta_description, tags, and content
-      state.setFormData((prev) => ({ 
-        ...prev, 
+      state.setFormData((prev) => ({
+        ...prev,
         content_markdown: data.content || "",
         title: data.title || prev.title,
         meta_description: data.meta_description || prev.meta_description,
@@ -62,7 +56,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onSave: () => state.handleSave("draft"),
+    onSave: () => state.handleSave(),
     onTogglePreview: state.togglePreview,
     onEscape: closeSidebars,
   });
@@ -87,7 +81,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         isEditing={!!state.id}
         activeTab={state.activeTab}
         onTogglePreview={state.togglePreview}
-        onSave={() => state.handleSave("draft")}
+        onSave={() => state.handleSave()}
         onBack={() => state.router.push("/")}
         loading={state.loading}
         isDirty={state.isDirty}
@@ -103,9 +97,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       />
 
       {/* Mobile drawer backdrop */}
-      {(leftSidebarOpen || rightSidebarOpen) && (
-        <div className="editor-drawer-backdrop" onClick={closeSidebars} />
-      )}
+      {(leftSidebarOpen || rightSidebarOpen) && <div className="editor-drawer-backdrop" onClick={closeSidebars} />}
 
       {/* Left Sidebar — Post Settings */}
       <EditorSidebarLeft
@@ -136,13 +128,15 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         status={state.formData.status}
         publishing={state.publishing}
         loading={state.loading}
-        onSaveDraft={() => state.handleSave("draft")}
+        onSaveDraft={() => state.handleSave(POST_STATUS.DRAFT)}
         onPublishToPlatform={state.handlePublishToPlatform}
         onPublishToAll={state.handlePublishToAll}
         onDownloadMdx={state.handleDownloadMdx}
         // Scheduling
         scheduledFor={state.formData.scheduled_for}
         onScheduleChange={(val) => state.updateFormField("scheduled_for", val)}
+        // Cover Image
+        coverImage={state.formData.cover_image}
         // AI
         aiKeyword={ai.aiKeyword}
         setAiKeyword={ai.setAiKeyword}

@@ -1,21 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
+
+import { BUTTON_LABELS, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
+import { useAuth } from "@contexts/AuthContext";
+import type { LoginFormState } from "@types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
-import { useAuth } from "@contexts/AuthContext";
-
-import { BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
-
-interface LoginFormState {
-  email: string;
-  password: string;
-}
 
 const Login = () => {
   const [formData, setFormData] = useState<LoginFormState>({
@@ -116,7 +112,7 @@ const Login = () => {
                   SYNC_LABEL.SIGNING_IN
                 ) : (
                   <>
-                    <span>{SYNC_LABEL.SIGN_IN}</span>
+                    <span>{BUTTON_LABELS.SIGN_IN}</span>
                     <FiArrowRight className="h-4 w-4" />
                   </>
                 )}
