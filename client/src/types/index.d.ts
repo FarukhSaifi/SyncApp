@@ -70,12 +70,12 @@ export interface User {
   role: "user" | "admin";
   createdAt?: string;
   updatedAt?: string;
+  lastLogin?: string;
 }
 
-/** API responses may include both `_id` and `id`, plus `lastLogin` */
+/** API responses may include both `_id` and `id` */
 export type UserData = User & {
   id?: string;
-  lastLogin?: string;
 };
 
 export interface ApiResponse<T = unknown> {
@@ -304,7 +304,6 @@ export interface PostCardProps {
 
 export interface UserTableRowProps {
   user: UserData;
-  formatDate: (dateString?: string) => string;
   onEdit: (user: UserData) => void;
   onDelete: (id: string, username: string) => void;
 }
@@ -313,7 +312,6 @@ export interface UserCardProps {
   user: UserData;
   onEdit: (user: UserData) => void;
   onDelete: (id: string, username: string) => void;
-  formatDate: (dateString?: string) => string;
 }
 
 export interface EditorPreviewProps {

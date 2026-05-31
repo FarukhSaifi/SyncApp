@@ -254,6 +254,7 @@ export const LABELS = Object.freeze({
   TABLE_ROLE: "Role",
   TABLE_JOINED: "Joined",
   TABLE_LAST_LOGIN: "Last Login",
+  NEVER_LOGGED_IN: "Never",
   // Profile page aliases
   USERNAME_LABEL: "Username",
   ROLE_LABEL: "Role",

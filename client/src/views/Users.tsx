@@ -21,7 +21,6 @@ import { useDebounce } from "@hooks/useDebounce";
 import { useToast } from "@hooks/useToast";
 import type { AddUserForm, EditForm, PaginationState, User, UserDeleteConfirmState } from "@types";
 import { apiClient } from "@utils/apiClient";
-import { formatDateTime } from "@utils/dateUtils";
 import { logError } from "@utils/logger";
 import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
@@ -232,8 +231,6 @@ const Users = () => {
     }
   }, [addForm, toast, fetchUsers]);
 
-  const formatDate = useCallback((dateString: string | undefined): string => formatDateTime(dateString), []);
-
   if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -403,13 +400,7 @@ const Users = () => {
             <>
               <div className="md:hidden space-y-4">
                 {filteredByVerified.map((user) => (
-                  <UserCard
-                    key={user._id}
-                    user={user}
-                    onEdit={handleEdit}
-                    onDelete={handleDeleteClick}
-                    formatDate={formatDate}
-                  />
+                  <UserCard key={user._id} user={user} onEdit={handleEdit} onDelete={handleDeleteClick} />
                 ))}
               </div>
               <div className="hidden md:block overflow-x-auto">
@@ -428,13 +419,7 @@ const Users = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredByVerified.map((user) => (
-                      <UserTableRow
-                        key={user._id}
-                        user={user}
-                        formatDate={formatDate}
-                        onEdit={handleEdit}
-                        onDelete={handleDeleteClick}
-                      />
+                      <UserTableRow key={user._id} user={user} onEdit={handleEdit} onDelete={handleDeleteClick} />
                     ))}
                   </TableBody>
                 </Table>

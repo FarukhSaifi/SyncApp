@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
 import type { UserCardProps } from "@types";
+import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
 import Button from "@components/common/Button";
@@ -10,7 +11,7 @@ import { Card, CardContent } from "@components/common/Card";
 /**
  * Mobile-friendly user card component
  */
-const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete, formatDate }) => {
+const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete }) => {
   const userId = user._id || user.id || "";
   const userDisplayName =
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || "N/A";
@@ -76,15 +77,15 @@ const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete, formatDate }) =>
           <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
             <div>
               <div className="text-xs text-muted-foreground">{SYNC_LABEL.TABLE_JOINED}</div>
-              <div className="text-foreground truncate">{formatDate(user.createdAt)}</div>
+              <div className="text-foreground truncate">{formatDateTime(user.createdAt)}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">{SYNC_LABEL.TABLE_UPDATED}</div>
-              <div className="text-foreground truncate">{formatDate(user.updatedAt)}</div>
+              <div className="text-foreground truncate">{formatDateTime(user.updatedAt)}</div>
             </div>
             <div className="col-span-2">
               <div className="text-xs text-muted-foreground">{SYNC_LABEL.TABLE_LAST_LOGIN}</div>
-              <div className="text-foreground truncate">{formatDate(user.lastLogin)}</div>
+              <div className="text-foreground truncate">{formatLastLogin(user.lastLogin)}</div>
             </div>
           </div>
 

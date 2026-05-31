@@ -1,16 +1,16 @@
-import { Router } from 'express';
-import type { Request, Response } from 'express';
-import User from '../models/User';
-import dayjs from 'dayjs';
-import { generateToken, authenticateToken } from '../utils/auth';
-import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES, FIELDS } from '../constants';
-import { createLogger } from '../utils/logger';
+import dayjs from "dayjs";
+import type { Request, Response } from "express";
+import { Router } from "express";
+import { ERROR_MESSAGES, FIELDS, HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
+import User from "../models/User";
+import { authenticateToken, generateToken } from "../utils/auth";
+import { createLogger } from "../utils/logger";
 
 const router: Router = Router();
-const logger = createLogger('AUTH');
+const logger = createLogger("AUTH");
 
 // User registration
-router.post('/register', async (req: Request, res: Response) => {
+router.post("/register", async (req: Request, res: Response) => {
   try {
     const { username, email, password, firstName, lastName } = req.body as {
       username: string;
@@ -38,6 +38,7 @@ router.post('/register', async (req: Request, res: Response) => {
       password,
       firstName,
       lastName,
+      lastLogin: dayjs().toDate(),
     });
 
     await user.save();
@@ -70,7 +71,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // User login
-router.post('/login', async (req: Request, res: Response) => {
+router.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
 
@@ -123,7 +124,7 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // Get current user profile
-router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+router.get("/me", authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.userId).select(FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD);
 
@@ -150,7 +151,7 @@ router.get('/me', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Update user profile
-router.put('/me', authenticateToken, async (req: Request, res: Response) => {
+router.put("/me", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, bio, avatar } = req.body as {
       firstName?: string;
@@ -191,7 +192,7 @@ router.put('/me', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Change password
-router.put('/change-password', authenticateToken, async (req: Request, res: Response) => {
+router.put("/change-password", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
 

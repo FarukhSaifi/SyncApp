@@ -2,12 +2,13 @@ import { memo } from "react";
 
 import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
 import type { UserTableRowProps } from "@types";
+import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
 
-const UserTableRow = memo<UserTableRowProps>(({ user, formatDate, onEdit, onDelete }) => {
+const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
   const userId = user._id || user.id || "";
   const displayName =
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || SYNC_LABEL.N_A;
@@ -57,9 +58,15 @@ const UserTableRow = memo<UserTableRowProps>(({ user, formatDate, onEdit, onDele
           )}
         </span>
       </TableCell>
-      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.createdAt)}</TableCell>
-      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.updatedAt)}</TableCell>
-      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.lastLogin)}</TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+        {formatDateTime(user.createdAt)}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+        {formatDateTime(user.updatedAt)}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+        {formatLastLogin(user.lastLogin)}
+      </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => onEdit(user)} className="flex items-center gap-1">
