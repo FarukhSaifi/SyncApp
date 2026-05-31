@@ -1,27 +1,29 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { FiAlertCircle, FiAlertTriangle, FiBarChart2, FiCheckCircle, FiChevronDown, FiImage, FiLink, FiTag, FiX } from "react-icons/fi";
+
+import type { EditorSidebarLeftProps } from "@types";
+import { getSeoScorecard } from "@utils/seoScorecard";
+import {
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiBarChart2,
+  FiCheckCircle,
+  FiChevronDown,
+  FiImage,
+  FiLink,
+  FiTag,
+  FiX,
+} from "react-icons/fi";
+
+import { SIDEBAR_SECTIONS } from "@constants/editor";
+import { SYNC_LABEL } from "@constants/messages";
 
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 
-import { getSeoScorecard } from "@utils/seoScorecard";
 
-import { SIDEBAR_SECTIONS } from "@constants/editor";
-import { SYNC_LABEL } from "@constants/messages";
-import type { EditorFormData } from "@hooks/useEditorState";
 
-interface EditorSidebarLeftProps {
-  isOpen: boolean;
-  formData: EditorFormData;
-  tagList: string[];
-  tagInput: string;
-  setTagInput: (v: string) => void;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAddTag: () => void;
-  onRemoveTag: (tag: string) => void;
-  onTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-}
+
 
 /** Collapsible sidebar section */
 const Section = ({
@@ -38,17 +40,12 @@ const Section = ({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="sidebar-section">
-      <button
-        type="button"
-        className="sidebar-section-header"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
+      <button type="button" className="sidebar-section-header" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="flex items-center gap-2">
           {icon}
           {title}
         </span>
-        <FiChevronDown className="h-4 w-4" />
+        <FiChevronDown className="sidebar-section-chevron h-4 w-4" />
       </button>
       {open && <div className="sidebar-section-body">{children}</div>}
     </div>
@@ -61,8 +58,7 @@ const SeoRing = ({ score, maxScore }: { score: number; maxScore: number }) => {
   const r = 18;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - pct);
-  const color =
-    pct >= 0.7 ? "hsl(142, 71%, 45%)" : pct >= 0.4 ? "hsl(25, 95%, 53%)" : "hsl(0, 84%, 60%)";
+  const color = pct >= 0.7 ? "hsl(142, 71%, 45%)" : pct >= 0.4 ? "hsl(25, 95%, 53%)" : "hsl(0, 84%, 60%)";
 
   return (
     <div className="seo-score-ring">
@@ -100,6 +96,16 @@ const EditorSidebarLeft = ({
 }: EditorSidebarLeftProps) => {
   const [imageError, setImageError] = useState(false);
   const [lastCover, setLastCover] = useState(formData.cover_image);
+  const [cachedBase64, setCachedBase64] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (formData.cover_image && typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`cover_preview_${formData.cover_image}`);
+      setCachedBase64(cached);
+    } else {
+      setCachedBase64(null);
+    }
+  }, [formData.cover_image]);
 
   if (formData.cover_image !== lastCover) {
     setImageError(false);
@@ -175,8 +181,16 @@ const EditorSidebarLeft = ({
             className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Characters: {formData.meta_description?.length || 0}</span>
-            <span className={formData.meta_description?.length >= 120 && formData.meta_description?.length <= 160 ? "text-green-500" : "text-yellow-500"}>Aim: 120-160</span>
+            <span>{SYNC_LABEL.CHARACTERS}{formData.meta_description?.length || 0}</span>
+            <span
+              className={
+                formData.meta_description?.length >= 120 && formData.meta_description?.length <= 160
+                  ? "text-green-500"
+                  : "text-yellow-500"
+              }
+            >
+              {SYNC_LABEL.AIM_SEO}
+            </span>
           </div>
         </div>
       </Section>
@@ -196,15 +210,19 @@ const EditorSidebarLeft = ({
           {formData.cover_image && (
             <div className="relative w-full h-28 rounded-md overflow-hidden border border-border bg-muted flex items-center justify-center">
               {imageError ? (
-                <div className="p-3 text-center flex flex-col items-center justify-center gap-1">
-                  <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
-                  <p className="text-[10px] font-semibold text-foreground leading-tight">
-                    Preview Unavailable (Private Bucket)
-                  </p>
-                  <p className="text-[9px] text-muted-foreground leading-normal max-w-[180px]">
-                    Make sure 'allUsers' has 'Storage Object Viewer' role on your bucket.
-                  </p>
-                </div>
+                cachedBase64 ? (
+                  <img src={cachedBase64} alt="Cover preview (cached)" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="p-3 text-center flex flex-col items-center justify-center gap-1">
+                    <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
+                    <p className="text-[10px] font-semibold text-foreground leading-tight">
+                      {SYNC_LABEL.PREVIEW_UNAVAILABLE}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground leading-normal max-w-[180px]">
+                      {SYNC_LABEL.STORAGE_VIEWER_ROLE_HINT}
+                    </p>
+                  </div>
+                )
               ) : (
                 <img
                   src={formData.cover_image}

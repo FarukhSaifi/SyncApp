@@ -15,6 +15,7 @@ export const PLATFORM_CONFIG = Object.freeze({
     name: "DEV.to",
     errorMessage: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
     published: true,
+    maxTags: 4,
   },
   wordpress: {
     name: "WordPress",

@@ -1,39 +1,19 @@
-import "dotenv/config";
+import { loadAppEnv } from "./loadEnv";
+
+loadAppEnv();
+
+import { AI_CONFIG } from "../constants/ai";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 
-interface RateLimitConfig {
-  windowMs: number;
-  max: number;
-}
-
-interface EncryptionConfig {
-  key: string;
-  iv: string;
-}
-
-interface AppConfig {
-  nodeEnv: string;
-  port: number;
-  mongoUri: string;
-  jwtSecret: string;
-  jwtExpiresIn: string;
-  corsOrigin: string;
-  rateLimit: RateLimitConfig;
-  encryption: EncryptionConfig;
-  googleCloudProject: string;
-  googleCloudLocation: string;
-  googleApplicationCredentials: string;
-  gcpBucketName: string;
-  aiUseGoogleSearchRetrieval: boolean;
-  canonicalBaseUrl: string;
-  cronSecret: string;
-}
+import { AppConfig } from "../types";
 
 export function requireEnv(name: string, fallback?: string, options: { optional?: boolean } = {}): string {
   if (name === "__proto__" || name === "constructor" || name === "prototype") {
     throw new Error("Invalid env var name");
   }
-  const value = Object.prototype.hasOwnProperty.call(process.env, name) ? process.env[name] : fallback;
+  const value = Object.prototype.hasOwnProperty.call(process.env, name)
+    ? Object.getOwnPropertyDescriptor(process.env, name)?.value || fallback
+    : fallback;
   if (!options.optional && (value === undefined || value === null || value === "")) {
     throw new Error(`Missing required env var: ${name}`);
   }
@@ -59,6 +39,7 @@ export const config: AppConfig = {
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
+  googleAiModel: process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL,
   gcpBucketName:
     process.env.GCS_BUCKET_NAME ||
     process.env.GOOGLE_CLOUD_BUCKET ||

@@ -1,13 +1,7 @@
-"use client";
 import React from "react";
 
-interface EditorStatusBarProps {
-  wordCount: number;
-  characterCount: number;
-  readingTimeMinutes: number;
-  lastSavedAt: Date | null;
-  isDirty: boolean;
-}
+import type { EditorStatusBarProps } from "@types";
+
 
 const EditorStatusBar = ({
   wordCount,

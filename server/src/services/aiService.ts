@@ -4,7 +4,7 @@
  * Uses GOOGLE_APPLICATION_CREDENTIALS or default credentials (e.g. gcloud auth application-default login).
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { config } from "../config";
 import { AI_CONFIG, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
@@ -15,12 +15,37 @@ import { sanitizeJsonString } from "../utils/sanitizeJson";
 
 let cachedGoogleGenAI: GoogleGenAI | null = null;
 
+function getModelName(): string {
+  return config.googleAiModel;
+}
+
+function getConfiguredLocation(): string {
+  return (
+    config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION
+  );
+}
+
+function getAiRuntimeConfig() {
+  const model = getModelName();
+  const configuredLocation = getConfiguredLocation();
+  const location = resolveVertexLocation(configuredLocation, model);
+  const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT || "";
+  return { model, configuredLocation, location, project };
+}
+
+function resolveVertexLocation(configuredLocation: string, modelName: string): string {
+  const multiRegion = new Set(["global", "us", "eu"]);
+  if (multiRegion.has(configuredLocation)) return configuredLocation;
+
+  const needsGlobal = AI_CONFIG.VERTEX_GLOBAL_MODEL_PREFIXES.some((prefix) => modelName.startsWith(prefix));
+  return needsGlobal ? AI_CONFIG.VERTEX_GLOBAL_FALLBACK_LOCATION : configuredLocation;
+}
+
 function getGoogleGenAI(): GoogleGenAI {
   if (cachedGoogleGenAI) return cachedGoogleGenAI;
 
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
-  const location =
-    config.googleCloudLocation || process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION;
+  const { configuredLocation, location } = getAiRuntimeConfig();
 
   let credentialsObj: any = null;
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -54,7 +79,7 @@ function getGoogleGenAI(): GoogleGenAI {
   return cachedGoogleGenAI;
 }
 
-function getText(result: any): string {
+function getText(result: GenerateContentResponse): string {
   const text = result.text;
   if (!text) {
     throw new Error(ERROR_MESSAGES.AI_EMPTY_RESPONSE);
@@ -63,10 +88,9 @@ function getText(result: any): string {
 }
 
 /** Normalize Vertex AI 403 (API not enabled or billing disabled) into a clear message for the client. */
-function normalizeVertexError(err: unknown, fallbackMessage: string): never {
+function normalizeVertexError(err: Error & { status?: number; details?: unknown }, fallbackMessage: string): never {
   if (err instanceof AppError) throw err;
-  const error = err as Error & { status?: number; details?: unknown };
-  const msg = error.message || "";
+  const msg = err.message || "";
   const is403 = msg.includes("403") || msg.includes("PERMISSION_DENIED") || msg.includes("Forbidden");
   const is404 = msg.includes("404") || msg.includes("NOT_FOUND");
   const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
@@ -93,15 +117,10 @@ function normalizeVertexError(err: unknown, fallbackMessage: string): never {
     throw new AppError(ERROR_MESSAGES.VERTEX_AI_MODEL_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
   }
 
-  throw new AppError(error.message || fallbackMessage, error.status || HTTP_STATUS.BAD_GATEWAY, error.details);
+  throw new AppError(err.message || fallbackMessage, err.status ?? HTTP_STATUS.BAD_GATEWAY, err.details);
 }
 
-export interface GeneratePostResult {
-  title: string;
-  meta_description: string;
-  tags: string[];
-  content: string;
-}
+import { GeneratePostResult } from "../types";
 
 function parseJSONContent(rawText: string): GeneratePostResult {
   // Helper to map a parsed object to the result shape
@@ -156,7 +175,7 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
   }
 
   const ai = getGoogleGenAI();
-  const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
+  const modelName = getModelName();
   const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
 
   // Google Search grounding path
@@ -202,7 +221,7 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
     } as any);
     return parseJSONContent(getText(result));
   } catch (err) {
-    return normalizeVertexError(err, ERROR_MESSAGES.AI_DRAFT_FAILED);
+    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_DRAFT_FAILED);
   }
 }
 
@@ -221,7 +240,7 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
   }
   try {
     const ai = getGoogleGenAI();
-    const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
+    const modelName = getModelName();
     const result = await ai.models.generateContent({
       model: modelName,
       contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
@@ -235,18 +254,22 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
     } as any);
     return getText(result);
   } catch (err) {
-    return normalizeVertexError(err, ERROR_MESSAGES.AI_IMAGE_FAILED);
+    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_IMAGE_FAILED);
   }
 }
 
 /**
  * Generate a featured image from a blog topic: Gemini builds prompt, then Imagen (or placeholder)
  */
-export async function generateImageFromTopic(topic: string, additionalPrompt?: string): Promise<{ imageDataUrl: string }> {
+export async function generateImageFromTopic(
+  topic: string,
+  additionalPrompt?: string,
+): Promise<{ imageDataUrl: string }> {
   try {
-    const imagePrompt = additionalPrompt && additionalPrompt.trim()
-      ? additionalPrompt.trim()
-      : await generateImagePromptFromTopic(topic, additionalPrompt);
+    const imagePrompt =
+      additionalPrompt && additionalPrompt.trim()
+        ? additionalPrompt.trim()
+        : await generateImagePromptFromTopic(topic, additionalPrompt);
     const ai = getGoogleGenAI();
     const modelId = process.env.IMAGEN_MODEL || AI_CONFIG.IMAGEN_MODEL;
 
@@ -281,7 +304,7 @@ export async function generateEdit(action: string, contextText: string): Promise
   }
   try {
     const ai = getGoogleGenAI();
-    const modelName = process.env.GOOGLE_AI_MODEL || process.env.GEMINI_MODEL || AI_CONFIG.DEFAULT_MODEL;
+    const modelName = getModelName();
     const result = await ai.models.generateContent({
       model: modelName,
       contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
@@ -295,6 +318,6 @@ export async function generateEdit(action: string, contextText: string): Promise
     } as any);
     return getText(result);
   } catch (err) {
-    return normalizeVertexError(err, "Failed to perform AI edit");
+    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_EDIT_FAILED);
   }
 }

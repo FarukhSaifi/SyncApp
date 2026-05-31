@@ -1,42 +1,27 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiCheckCircle, FiEdit3, FiGlobe, FiPlus, FiRefreshCw, FiShare2 } from "react-icons/fi";
+
+import PostCard from "@components/dashboard/PostCard";
+import PostRow from "@components/dashboard/PostRow";
+import StatsCard from "@components/dashboard/StatsCard";
+import { BUTTON_VARIANTS, COLOR_CLASSES, FILTER_STATUS_ALL, POST_STATUS, ROUTES, SYNC_LABEL } from "@constants";
+import { useToast } from "@hooks/useToast";
+import type { DashboardDeleteConfirmState, DashboardProps } from "@types";
+import { apiClient } from "@utils/apiClient";
+import { devError, devLog } from "@utils/logger";
 import Link from "next/link";
+import { FiCheckCircle, FiEdit3, FiGlobe, FiPlus, FiRefreshCw, FiShare2 } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import ConfirmationModal from "@components/common/ConfirmationModal";
+import Skeleton from "@components/common/Skeleton";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@components/common/Table";
-import PostCard from "@components/dashboard/PostCard";
-import PostRow from "@components/dashboard/PostRow";
-import StatsCard from "@components/dashboard/StatsCard";
-
-import { useToast } from "@hooks/useToast";
-
-import { apiClient } from "@utils/apiClient";
-import { devError, devLog } from "@utils/logger";
-
-import { BUTTON_VARIANTS, COLOR_CLASSES, FILTER_STATUS_ALL, POST_STATUS, ROUTES, SYNC_LABEL } from "@constants";
-import type { Post } from "@types";
-
-interface DashboardProps {
-  posts: Post[];
-  loading: boolean;
-  error: string | null;
-  onPostUpdate: (post: Post) => void;
-  onPostDelete: (id: string) => void;
-  onRefresh: () => void;
-}
-
-interface DeleteConfirmState {
-  isOpen: boolean;
-  postId: string | null;
-}
 
 const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }: DashboardProps) => {
   const toast = useToast();
   const [filterStatus, setFilterStatus] = useState<string>(FILTER_STATUS_ALL);
-  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({ isOpen: false, postId: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<DashboardDeleteConfirmState>({ isOpen: false, postId: null });
   const [deleting, setDeleting] = useState<boolean>(false);
 
   // Show error if posts failed to load
@@ -83,11 +68,91 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{SYNC_LABEL.LOADING_POSTS}</p>
+      <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+          <div>
+            <Skeleton className="h-8 w-48 sm:h-9" />
+            <Skeleton className="h-4 w-72 sm:w-96 mt-2" />
+          </div>
+          <div className="flex gap-2 sm:space-x-3">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </div>
         </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="border rounded-xl p-3 sm:p-5 bg-card space-y-2 sm:space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-16 sm:h-4 sm:w-20" />
+                <Skeleton className="h-6 w-6 rounded-full" />
+              </div>
+              <Skeleton className="h-7 w-12 sm:h-8 sm:w-16" />
+            </div>
+          ))}
+        </div>
+
+        {/* Table / Cards Skeleton */}
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Mobile Cards Skeleton */}
+            <div className="md:hidden space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3.5 w-16" />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-8 flex-1 rounded-md" />
+                    <Skeleton className="h-8 w-16 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table Skeleton */}
+            <div className="hidden md:block">
+              <div className="border rounded-md">
+                <div className="bg-muted/40 p-3 border-b flex justify-between gap-4">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="p-4 border-b last:border-b-0 flex justify-between items-center gap-4">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-8 w-16 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -210,13 +275,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
               {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
                 {filteredPosts.map((post) => (
-                  <PostCard
-                    key={post._id}
-                    post={post}
-                    onDelete={handleDeleteClick}
-                    onUpdate={onPostUpdate}
-                    toast={toast}
-                  />
+                  <PostCard key={post._id} post={post} onDelete={handleDeleteClick} />
                 ))}
               </div>
 
@@ -236,13 +295,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                   </TableHeader>
                   <TableBody>
                     {filteredPosts.map((post) => (
-                      <PostRow
-                        key={post._id}
-                        post={post}
-                        onDelete={handleDeleteClick}
-                        onUpdate={onPostUpdate}
-                        toast={toast}
-                      />
+                      <PostRow key={post._id} post={post} onDelete={handleDeleteClick} />
                     ))}
                   </TableBody>
                 </Table>

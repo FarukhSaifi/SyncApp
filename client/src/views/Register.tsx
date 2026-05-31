@@ -1,25 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
+
+import { APP_CONFIG, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
+import { useAuth } from "@contexts/AuthContext";
+import type { RegisterFormState } from "@types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
-import { useAuth } from "@contexts/AuthContext";
-
-import { APP_CONFIG, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
-
-interface RegisterFormState {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-}
 
 const Register = () => {
   const [formData, setFormData] = useState<RegisterFormState>({

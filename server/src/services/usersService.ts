@@ -1,13 +1,8 @@
 import User from '../models/User';
 import { VALID_USER_ROLES, USER_ROLES } from '../constants/userRoles';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, FIELDS, DEFAULT_PASSWORDS } from '../constants';
+import type { GetUsersParams, CreateUserData } from '../types/index';
 
-interface GetUsersParams {
-  page?: number | string;
-  limit?: number | string;
-  search?: string;
-  role?: string;
-}
 
 /**
  * Get all users with pagination and filtering
@@ -89,17 +84,7 @@ export async function updateUser(userId: string, updateData: Record<string, unkn
   return user;
 }
 
-interface CreateUserData {
-  username: string;
-  email: string;
-  password?: string;
-  firstName?: string;
-  lastName?: string;
-  bio?: string;
-  avatar?: string;
-  role?: string;
-  isVerified?: boolean;
-}
+
 
 /**
  * Create user (admin only)

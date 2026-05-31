@@ -1,28 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-import { useToast } from "@hooks/useToast";
-
 import { STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "@constants";
-import type { User } from "@types";
+import { useToast } from "@hooks/useToast";
+import type { User, AuthResult, AuthContextValue } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { logError } from "@utils/logger";
-
-interface AuthResult {
-  success: boolean;
-  error?: string;
-}
-
-interface AuthContextValue {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<AuthResult>;
-  register: (userData: Record<string, unknown>) => Promise<AuthResult>;
-  logout: () => void;
-  updateProfile: (profileData: Record<string, unknown>) => Promise<AuthResult>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
-}
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;

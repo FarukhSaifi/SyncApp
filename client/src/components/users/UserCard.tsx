@@ -1,24 +1,14 @@
 import { memo } from "react";
+
+import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
+import type { UserCardProps } from "@types";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
 
-import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
-import type { User } from "@types";
 
-/** API responses may include both `_id` and `id`, plus `lastLogin` */
-type UserData = User & {
-  id?: string;
-  lastLogin?: string;
-};
 
-interface UserCardProps {
-  user: UserData;
-  onEdit: (user: UserData) => void;
-  onDelete: (id: string, username: string) => void;
-  formatDate: (dateString?: string) => string;
-}
 
 /**
  * Mobile-friendly user card component
@@ -50,7 +40,7 @@ const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete, formatDate }) =>
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <span
               className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                (ROLE_CONFIG[user.role] || ROLE_CONFIG.user).className
+                (ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.user).className
               }`}
             >
               {user.role === USER_ROLES.ADMIN ? (

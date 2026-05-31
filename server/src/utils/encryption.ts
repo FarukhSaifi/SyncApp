@@ -1,12 +1,23 @@
-import crypto from 'crypto';
-import { config } from '../config';
-import { ERROR_MESSAGES } from '../constants/messages';
-import { logger } from './logger';
+import crypto from "crypto";
 
-// Ensure the key is exactly 32 bytes (256 bits) for AES-256
-const key = Buffer.from((config.encryption.key || '').padEnd(32, '!').slice(0, 32), 'utf8');
-// Ensure the IV is exactly 16 bytes (128 bits) for AES-256
-const iv = Buffer.from((config.encryption.iv || '').padEnd(16, '!').slice(0, 16), 'utf8');
+import { config } from "../config";
+import { ERROR_MESSAGES } from "../constants/messages";
+import { logger } from "./logger";
+
+const PLACEHOLDER_KEY_PATTERN = /your_.*_(hex|string)_here/i;
+
+function deriveKeyMaterial(raw: string, byteLength: number): Buffer {
+  return Buffer.from(raw.padEnd(byteLength, "!").slice(0, byteLength), "utf8");
+}
+
+const key = deriveKeyMaterial(config.encryption.key || "", 32);
+const iv = deriveKeyMaterial(config.encryption.iv || "", 16);
+
+if (PLACEHOLDER_KEY_PATTERN.test(config.encryption.key) || PLACEHOLDER_KEY_PATTERN.test(config.encryption.iv)) {
+  logger.warn(
+    "ENCRYPTION_KEY / ENCRYPTION_IV look like placeholders. Publishing and stored credentials will fail until they match production.",
+  );
+}
 
 /**
  * Encrypt a string using AES-256-CBC
@@ -15,10 +26,10 @@ const iv = Buffer.from((config.encryption.iv || '').padEnd(16, '!').slice(0, 16)
  */
 export function encrypt(text: string): string {
   try {
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
 
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
 
     return encrypted;
   } catch (error) {
@@ -34,10 +45,10 @@ export function encrypt(text: string): string {
  */
 export function decrypt(encryptedText: string): string {
   try {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
 
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    let decrypted = decipher.update(encryptedText, "hex", "utf8");
+    decrypted += decipher.final("utf8");
 
     return decrypted;
   } catch (error) {
@@ -51,7 +62,7 @@ export function decrypt(encryptedText: string): string {
  * @returns A random 32-character string
  */
 export function generateKey(): string {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 }
 
 /**
@@ -59,5 +70,5 @@ export function generateKey(): string {
  * @returns A random 16-character string
  */
 export function generateIV(): string {
-  return crypto.randomBytes(16).toString('hex');
+  return crypto.randomBytes(16).toString("hex");
 }

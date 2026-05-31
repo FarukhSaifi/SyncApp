@@ -1,5 +1,23 @@
 import React from "react";
+
+import { APP_CONFIG } from "@constants";
 import { Toaster as HotToaster, toast } from "react-hot-toast";
+
+
+const TOAST_DURATION = APP_CONFIG.TOAST_AUTO_CLOSE_DELAY;
+
+const defaultToastOptions: React.ComponentProps<typeof HotToaster>["toastOptions"] = {
+  duration: TOAST_DURATION,
+  style: {
+    minWidth: APP_CONFIG.TOAST_MIN_WIDTH,
+    maxWidth: APP_CONFIG.TOAST_MAX_WIDTH,
+  },
+  success: { duration: TOAST_DURATION },
+  error: { duration: TOAST_DURATION },
+  blank: { duration: TOAST_DURATION },
+  custom: { duration: TOAST_DURATION },
+  loading: { duration: Infinity },
+};
 
 // Custom wrapper to default Toast position to top-right
 export const Toaster = ({
@@ -13,7 +31,7 @@ export const Toaster = ({
   return (
     <HotToaster
       position={position}
-      toastOptions={toastOptions}
+      toastOptions={{ ...defaultToastOptions, ...toastOptions }}
       reverseOrder={reverseOrder}
       gutter={gutter}
       containerStyle={containerStyle}
@@ -31,16 +49,15 @@ export const ToasterProvider = ({ children }: { children: React.ReactNode }) => 
 export const useToaster = () => {
   return React.useMemo(
     () => ({
-      success: (title: string, message?: string) => 
-        toast.success(message ? `${title}: ${message}` : title),
-      error: (title: string, message?: string) => 
-        toast.error(message ? `${title}: ${message}` : title),
-      warning: (title: string, message?: string) => 
-        toast.error(message ? `⚠️ ${title}: ${message}` : `⚠️ ${title}`), // react-hot-toast fallback
-      info: (title: string, message?: string) => 
-        toast(message ? `${title}: ${message}` : title, { icon: "ℹ️" }),
-      loading: (title: string, message?: string) => 
-        toast.loading(message ? `${title}: ${message}` : title),
+      success: (title: string, message?: string) =>
+        toast.success(message ? `${title}: ${message}` : title, { duration: TOAST_DURATION }),
+      error: (title: string, message?: string) =>
+        toast.error(message ? `${title}: ${message}` : title, { duration: TOAST_DURATION }),
+      warning: (title: string, message?: string) =>
+        toast.error(message ? `⚠️ ${title}: ${message}` : `⚠️ ${title}`, { duration: TOAST_DURATION }),
+      info: (title: string, message?: string) =>
+        toast(message ? `${title}: ${message}` : title, { icon: "ℹ️", duration: TOAST_DURATION }),
+      loading: (title: string, message?: string) => toast.loading(message ? `${title}: ${message}` : title),
       removeToast: (id: string) => toast.dismiss(id),
       dismiss: (id: string) => toast.dismiss(id),
       promise: <T,>(
@@ -52,7 +69,7 @@ export const useToaster = () => {
           successMessage?: string;
           error?: string;
           errorMessage?: string;
-        }
+        },
       ): Promise<T> => {
         return toast.promise(promise, {
           loading: messages.loadingMessage || messages.loading || "Loading...",
@@ -61,6 +78,6 @@ export const useToaster = () => {
         });
       },
     }),
-    []
+    [],
   );
 };

@@ -5,7 +5,6 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-
 import { apiClient } from "@utils/apiClient";
 
 export interface GeneratedPostData {
@@ -156,6 +155,10 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     try {
       const response = await apiClient.uploadPostCover(postId, generatedImageDataUrl);
       if (response?.success && response.data?.url) {
+        // Cache the base64 URL with the public GCS URL as the key to allow direct preview bypass
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(`cover_preview_${response.data.url}`, generatedImageDataUrl);
+        }
         onCoverImageSet(response.data.url);
         setGeneratedImageDataUrl(null);
         toast.success("Image uploaded", "Cover image attached to this post.");

@@ -1,18 +1,15 @@
 "use client";
 import React from "react";
+
+import type { EditorPreviewProps } from "@types";
+import { isLikelyHtml } from "@utils/contentUtils";
 import ReactMarkdown from "react-markdown";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-async-light";
 import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark";
 
-import { isLikelyHtml } from "@utils/contentUtils";
 import { SYNC_LABEL } from "@constants/messages";
 
-interface EditorPreviewProps {
-  title: string;
-  coverImage?: string;
-  previewContent: string;
-  tagList: string[];
-}
+
 
 const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPreviewProps) => {
   return (

@@ -29,10 +29,11 @@
 3. **Configure environment variables:**
 
    ```bash
-   cp env.example .env
+   cp .env.dev.example .env.dev
+   cp .env.prod.example .env.prod
    ```
 
-   Edit `.env` with your values:
+   Edit `.env.dev` (and `.env.prod` for production) with your values:
 
    ```bash
    NODE_ENV=development
@@ -104,10 +105,10 @@
 | `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID (optional if using GOOGLE_CREDENTIALS_JSON) | _(not set)_ |
-| `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
+| `GOOGLE_CLOUD_LOCATION` | Vertex AI region (free tier is usage-based; e.g. `us-central1`, `europe-west1`, `global`) | `us-central1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (for local development) | _(not set)_ |
 | `GOOGLE_CREDENTIALS_JSON` | Raw JSON string of service account (for Vercel deployment) | _(not set)_ |
-| `GOOGLE_AI_MODEL` or `GEMINI_MODEL` | Gemini model override | `gemini-2.5-flash` |
+| `GOOGLE_AI_MODEL` | Gemini model (Vertex AI free tier default: ~1,000 req/day) | `gemini-3.1-flash-lite` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
 
 ## 🏗️ Tech Stack
@@ -149,7 +150,7 @@ server/
 │   ├── services/            # Business logic
 │   ├── models/              # Mongoose models
 │   ├── routes/              # Express routes
-│   ├── middleware/          # Custom middleware (errorHandler, validator)
+│   ├── middleware/          # Custom middleware (errorHandler, auth)
 │   ├── utils/               # Utility functions
 │   │   ├── auth.js          # JWT utilities
 │   │   ├── encryption.js    # Credential encryption
@@ -159,7 +160,8 @@ server/
 │   │   ├── connection.js    # MongoDB connection
 │   │   └── setup.js         # Initial database setup
 │   └── index.js             # Server entry point
-├── env.example              # Environment template
+├── .env.dev.example         # Dev environment template
+├── .env.prod.example        # Prod environment template
 ├── vercel.json              # Vercel serverless config
 └── package.json
 ```
@@ -218,6 +220,8 @@ server/
 
 Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account file locally, or `GOOGLE_CREDENTIALS_JSON` containing the raw JSON for Vercel). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
 
+**Vertex AI free tier (usage-based):** The default model `gemini-3.1-flash-lite` includes a rate-limited free tier (~1,000 requests/day). This is not tied to a specific region — it applies wherever the model is supported (`us-central1`, `europe-west1`, `asia-northeast1`, `global`, etc.). Usage beyond the daily limit is billed at standard pay-as-you-go rates.
+
 ### System
 
 - `GET /health` - Health check
@@ -254,24 +258,27 @@ Vercel supports serverless functions for Express apps. The server is configured 
 
 4. **Set Environment Variables** (Required):
 
-   In Vercel Dashboard → Project Settings → Environment Variables, add all required variables:
+   Use the same variable names as `server/.env.prod.example`. **Checklist and copy-paste template:** [docs/VERCEL_ENV.md](../docs/VERCEL_ENV.md)
+
+   Minimum for Production:
 
    ```
-   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/syncapp
-   JWT_SECRET=your_secure_random_string_here_min_32_chars
-   ENCRYPTION_KEY=your_32_byte_hex_string_here
-   ENCRYPTION_IV=your_16_byte_hex_string_here
-   NODE_ENV=production
-   CORS_ORIGIN=https://your-frontend-url.vercel.app,https://sync-app-client.vercel.app
-   GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"..."}
-   PORT=9000
+   MONGODB_URI=...
+   JWT_SECRET=...
+   ENCRYPTION_KEY=...
+   ENCRYPTION_IV=...
+   CORS_ORIGIN=https://your-frontend.vercel.app
+   GOOGLE_CLOUD_PROJECT=...
+   GOOGLE_CLOUD_LOCATION=us-central1
+   GOOGLE_CREDENTIALS_JSON={"type":"service_account",...}
    ```
 
    **Important Notes:**
-   - Set `NODE_ENV=production` for production
+   - On Vercel use `GOOGLE_CREDENTIALS_JSON`, not `GOOGLE_APPLICATION_CREDENTIALS`
+   - Do not set `PORT` or `NODE_ENV` manually — Vercel handles them
    - Set `CORS_ORIGIN` to your frontend URL(s), comma-separated
-   - Can set different values for Production, Preview, and Development environments
-   - Vercel automatically sets `VERCEL=1` environment variable
+   - Can enable the same values for Production and Preview in the dashboard
+   - After configuring Vercel, run `npm run env:pull` from the repo root to update local `server/.env.prod`
 
 5. **Deploy**
    - Click "Deploy"
@@ -334,7 +341,7 @@ Returns system status, database connection, and uptime.
 
 **CORS errors:**
 
-- Update `CORS_ORIGIN` in `.env` to match frontend URL
+- Update `CORS_ORIGIN` in `server/.env.dev` or `server/.env.prod`
 - Ensure client and server ports match configuration
 
 **Database connection fails:**

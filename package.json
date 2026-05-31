@@ -9,7 +9,10 @@
     "install:all": "npm run install:client && npm run install:server",
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev"
+    "dev:server": "cd server && npm run dev",
+    "env:pull": "npm run env:pull:server && npm run env:pull:client",
+    "env:pull:server": "cd server && vercel env pull .env.prod --environment=production",
+    "env:pull:client": "cd client && vercel env pull .env.production --environment=production"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

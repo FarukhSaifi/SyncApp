@@ -1,50 +1,19 @@
 "use client";
-import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  FiChevronDown,
-  FiClock,
-  FiDownload,
-  FiGlobe,
-  FiImage,
-  FiSend,
-  FiUpload,
-  FiZap,
-} from "react-icons/fi";
+
+import { APP_CONFIG } from "@constants";
+import type { EditorSidebarRightProps } from "@types";
+import dayjs from "dayjs";
+import { FiChevronDown, FiClock, FiDownload, FiGlobe, FiImage, FiSend, FiUpload, FiZap } from "react-icons/fi";
+
+import { PUBLISH_SECTIONS } from "@constants/editor";
+import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
+import Modal from "@components/common/Modal";
 
-import { APP_CONFIG } from "@constants";
-import { PUBLISH_SECTIONS } from "@constants/editor";
-import { SYNC_LABEL } from "@constants/messages";
 
-interface EditorSidebarRightProps {
-  isOpen: boolean;
-  postId?: string;
-  status: string;
-  publishing: boolean;
-  loading: boolean;
-  onSaveDraft: () => void;
-  onPublishToPlatform: (platform: string) => void;
-  onPublishToAll: () => void;
-  onDownloadMdx: () => void;
-  // Scheduling
-  scheduledFor: string;
-  onScheduleChange: (value: string) => void;
-  // AI
-  aiKeyword: string;
-  setAiKeyword: (v: string) => void;
-  aiImagePrompt: string;
-  setAiImagePrompt: (v: string) => void;
-  aiLoading: string;
-  generatedImageDataUrl: string | null;
-  uploadingCover: boolean;
-  onGeneratePost: () => void;
-  onGenerateImage: () => void;
-  onUseAsFeaturedImage: () => void;
-  onUploadAndAttach: () => void;
-}
 
 /** Collapsible section (same pattern as left sidebar) */
 const Section = ({
@@ -61,17 +30,12 @@ const Section = ({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="sidebar-section">
-      <button
-        type="button"
-        className="sidebar-section-header"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
+      <button type="button" className="sidebar-section-header" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="flex items-center gap-2">
           {icon}
           {title}
         </span>
-        <FiChevronDown className="h-4 w-4" />
+        <FiChevronDown className="sidebar-section-chevron h-4 w-4" />
       </button>
       {open && <div className="sidebar-section-body">{children}</div>}
     </div>
@@ -90,6 +54,7 @@ const EditorSidebarRight = ({
   onDownloadMdx,
   scheduledFor,
   onScheduleChange,
+  coverImage,
   // AI props
   aiKeyword,
   setAiKeyword,
@@ -104,7 +69,26 @@ const EditorSidebarRight = ({
   onUploadAndAttach,
 }: EditorSidebarRightProps) => {
   const [publishDropdownOpen, setPublishDropdownOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [cachedBase64, setCachedBase64] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Retrieve cached base64 image on cover image changes
+  useEffect(() => {
+    if (coverImage && typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`cover_preview_${coverImage}`);
+      setCachedBase64(cached);
+    } else {
+      setCachedBase64(null);
+    }
+  }, [coverImage]);
+
+  // Auto-open image modal when generation starts or when image is available
+  useEffect(() => {
+    if (aiLoading === "image" || generatedImageDataUrl) {
+      setIsImageModalOpen(true);
+    }
+  }, [aiLoading, generatedImageDataUrl]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -121,14 +105,11 @@ const EditorSidebarRight = ({
   return (
     <aside className={`editor-sidebar-right ${isOpen ? "open" : ""}`}>
       {/* Publish Panel */}
-      <Section
-        title={PUBLISH_SECTIONS.PUBLISH}
-        icon={<FiSend className="h-3.5 w-3.5" />}
-      >
+      <Section title={PUBLISH_SECTIONS.PUBLISH} icon={<FiSend className="h-3.5 w-3.5" />}>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Status
+              {EDITOR_UI.STATUS_LABEL}
             </span>
             <span className={`status-badge status-badge--${status}`}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -139,7 +120,7 @@ const EditorSidebarRight = ({
           <div className="space-y-1.5 pt-1 border-t border-border/40">
             <label className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               <FiClock className="h-3 w-3" />
-              Schedule Publication
+              {EDITOR_UI.SCHEDULE_PUBLICATION_LABEL}
             </label>
             <input
               type="datetime-local"
@@ -150,7 +131,7 @@ const EditorSidebarRight = ({
             />
             {scheduledFor && dayjs(scheduledFor).isAfter(dayjs()) && (
               <p className="text-[10px] text-primary/80 italic">
-                Post will automatically publish on {dayjs(scheduledFor).format(APP_CONFIG.DATE_FORMAT_WITH_TIME)}
+                {EDITOR_UI.SCHEDULE_AUTO_PUBLISH(dayjs(scheduledFor).format(APP_CONFIG.DATE_FORMAT_WITH_TIME))}
               </p>
             )}
           </div>
@@ -236,11 +217,7 @@ const EditorSidebarRight = ({
       </Section>
 
       {/* Export */}
-      <Section
-        title={PUBLISH_SECTIONS.EXPORT}
-        icon={<FiDownload className="h-3.5 w-3.5" />}
-        defaultOpen={false}
-      >
+      <Section title={PUBLISH_SECTIONS.EXPORT} icon={<FiDownload className="h-3.5 w-3.5" />} defaultOpen={false}>
         <Button
           variant="outline"
           size="sm"
@@ -254,10 +231,7 @@ const EditorSidebarRight = ({
       </Section>
 
       {/* AI Assistant */}
-      <Section
-        title={PUBLISH_SECTIONS.AI_ASSISTANT}
-        icon={<FiZap className="h-3.5 w-3.5 text-primary" />}
-      >
+      <Section title={PUBLISH_SECTIONS.AI_ASSISTANT} icon={<FiZap className="h-3.5 w-3.5 text-primary" />}>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">{SYNC_LABEL.AI_ASSISTANT_HINT}</p>
 
@@ -279,76 +253,171 @@ const EditorSidebarRight = ({
               className="w-full justify-center"
             >
               <FiZap className="h-3.5 w-3.5 mr-1.5" />
-              {aiLoading === "post" ? "Generating Post..." : "Generate Full Post"}
+              {aiLoading === "post" ? EDITOR_UI.GENERATING_POST : EDITOR_UI.GENERATE_FULL_POST}
             </Button>
-            
-            {/* Additional Image Instructions */}
+
+            {/* Custom Modal trigger for AI Image Generation */}
             <div className="pt-2 border-t border-border mt-2">
-              <label className="block text-xs font-medium text-foreground mb-1">
-                Additional image instructions (optional)
-              </label>
-              <textarea
-                value={aiImagePrompt}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiImagePrompt(e.target.value)}
-                rows={2}
-                className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y mb-2"
-                placeholder="e.g. minimalist, blue tones, abstract..."
-              />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onGenerateImage}
-                disabled={!!aiLoading}
+                onClick={() => setIsImageModalOpen(true)}
                 className="w-full justify-center"
               >
-              <FiImage className="h-3.5 w-3.5 mr-1.5" />
-              {aiLoading === "image"
-                ? SYNC_LABEL.AI_IMAGE_LOADING
-                : SYNC_LABEL.AI_GENERATE_IMAGE}
-            </Button>
+                <FiImage className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                {EDITOR_UI.GENERATE_AI_COVER_IMAGE}
+              </Button>
             </div>
           </div>
+        </div>
+      </Section>
 
-          {/* Generated Image Preview */}
-              {generatedImageDataUrl && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">
-                    {SYNC_LABEL.FEATURED_IMAGE_PREVIEW}
+      {/* AI Image Generation Modal */}
+      <Modal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        title={EDITOR_UI.AI_IMAGE_MODAL_TITLE}
+        description={EDITOR_UI.AI_IMAGE_MODAL_DESC}
+        size="2xl"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 py-2">
+          {/* Settings Section (5 cols on md) */}
+          <div className="md:col-span-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                {EDITOR_UI.AI_IMAGE_TOPIC_LABEL}
+              </label>
+              <Input
+                value={aiKeyword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiKeyword(e.target.value)}
+                placeholder={EDITOR_UI.AI_IMAGE_TOPIC_PLACEHOLDER}
+                className="text-xs"
+                size="sm"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {EDITOR_UI.AI_IMAGE_TOPIC_HINT}
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                {EDITOR_UI.AI_IMAGE_STYLE_LABEL}
+              </label>
+              <textarea
+                value={aiImagePrompt}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiImagePrompt(e.target.value)}
+                rows={4}
+                className="w-full text-xs rounded-md border border-border bg-background px-3 py-2 resize-none focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                placeholder={EDITOR_UI.AI_IMAGE_STYLE_PLACEHOLDER}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {EDITOR_UI.AI_IMAGE_STYLE_HINT}
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={onGenerateImage}
+              disabled={!!aiLoading}
+              className="w-full justify-center font-medium mt-2"
+            >
+              <FiZap className="h-3.5 w-3.5 mr-1.5 text-yellow-300" />
+              {aiLoading === "image" ? EDITOR_UI.CREATING_MASTERPIECE : EDITOR_UI.GENERATE_AI_IMAGE}
+            </Button>
+          </div>
+
+          {/* Preview & Actions Section (7 cols on md) */}
+          <div className="md:col-span-7 flex flex-col justify-between border border-border/60 rounded-xl p-4 bg-muted/20 dark:bg-muted/10 min-h-[300px]">
+            <div className="flex-1 flex flex-col justify-center items-center">
+              {aiLoading === "image" ? (
+                /* Pulsing creative skeleton loader */
+                <div className="w-full aspect-video rounded-lg border border-dashed border-primary/40 bg-primary/5 dark:bg-primary/10 flex flex-col items-center justify-center p-6 animate-pulse text-center">
+                  <FiZap className="h-10 w-10 text-primary animate-bounce mb-3" />
+                  <h4 className="text-sm font-semibold text-foreground">{EDITOR_UI.GENERATING_IMAGE}</h4>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                    {EDITOR_UI.GENERATING_IMAGE_HINT}
                   </p>
-                  <img
-                    src={generatedImageDataUrl}
-                    alt="Generated featured"
-                    className="ai-image-preview"
-                  />
-                  <div className="flex flex-col gap-1.5">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={onUseAsFeaturedImage}
-                      className="w-full justify-center text-xs"
-                    >
-                      {SYNC_LABEL.USE_AS_FEATURED_IMAGE}
-                    </Button>
-                    {postId && (
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={onUploadAndAttach}
-                        disabled={uploadingCover}
-                        className="w-full justify-center text-xs"
-                      >
-                        <FiUpload className="h-3.5 w-3.5 mr-1.5" />
-                        {uploadingCover ? "Uploading…" : SYNC_LABEL.UPLOAD_AND_ATTACH}
-                      </Button>
-                    )}
+                </div>
+              ) : generatedImageDataUrl || cachedBase64 || coverImage ? (
+                /* High-fidelity generated image presentation */
+                <div className="space-y-3 w-full">
+                  <div className="relative group rounded-lg overflow-hidden border border-border bg-background shadow-md transition-all duration-300 hover:shadow-lg">
+                    <img
+                      src={generatedImageDataUrl || cachedBase64 || coverImage}
+                      alt="Cover masterpiece"
+                      className="w-full aspect-video object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-white px-2.5 py-1 rounded bg-black/50 backdrop-blur-sm">
+                        {generatedImageDataUrl ? EDITOR_UI.AI_MASTERPIECE_BADGE : EDITOR_UI.ACTIVE_COVER_BADGE}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-center text-muted-foreground italic">
+                    {generatedImageDataUrl
+                      ? EDITOR_UI.IMAGE_GENERATED_CAPTION
+                      : EDITOR_UI.IMAGE_CURRENT_CAPTION}
+                  </p>
+                </div>
+              ) : (
+                /* Cozy Empty State */
+                <div className="text-center p-6 space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+                    <FiImage className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">{EDITOR_UI.NO_IMAGE_TITLE}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto">
+                      {EDITOR_UI.NO_IMAGE_HINT}
+                    </p>
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* CTA action block */}
+            {generatedImageDataUrl && !aiLoading && (
+              <div className="mt-4 pt-3 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onUseAsFeaturedImage();
+                    setIsImageModalOpen(false);
+                  }}
+                  className="w-full justify-center text-xs py-2"
+                >
+                  {EDITOR_UI.APPLY_LOCALLY}
+                </Button>
+                {postId ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={async () => {
+                      await onUploadAndAttach();
+                      setIsImageModalOpen(false);
+                    }}
+                    disabled={uploadingCover}
+                    className="w-full justify-center text-xs py-2"
+                  >
+                    <FiUpload className="h-3.5 w-3.5 mr-1.5" />
+                    {uploadingCover ? EDITOR_UI.UPLOADING : EDITOR_UI.UPLOAD_AND_SAVE}
+                  </Button>
+                ) : (
+                  <div className="col-span-1 sm:col-span-2 text-center text-[10px] text-amber-500 bg-amber-500/10 px-2 py-1.5 rounded-md border border-amber-500/20">
+                    {EDITOR_UI.SAVE_DRAFT_FIRST_HINT}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </Section>
+      </Modal>
     </aside>
   );
 };

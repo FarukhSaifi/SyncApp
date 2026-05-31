@@ -58,14 +58,16 @@ SyncApp/
 ├── client/                      # React frontend application (STANDALONE)
 │   ├── src/                    # Frontend source code
 │   ├── README.md               # Frontend setup guide
-│   ├── .env.example            # Frontend environment template
+│   ├── .env.development.example  # Frontend dev environment template
+│   ├── .env.production.example   # Frontend prod environment template
 │   ├── package.json            # Frontend dependencies
 │   └── vite.config.js          # Vite configuration
 │
 ├── server/                      # Express backend API (STANDALONE)
 │   ├── src/                    # Backend source code
 │   ├── README.md               # Backend setup guide
-│   ├── env.example             # Backend environment template
+│   ├── .env.dev.example        # Backend dev environment template
+│   ├── .env.prod.example       # Backend prod environment template
 │   └── package.json            # Backend dependencies
 │
 ├── scripts/                     # Shared utility scripts
@@ -156,13 +158,15 @@ See **[server/README.md](./server/README.md)** for detailed backend setup:
 ```bash
 cd server
 
-# Copy environment template
-cp env.example .env
+# Copy environment files (dev + prod)
+cp .env.dev.example .env.dev
+cp .env.prod.example .env.prod
 
 # Generate encryption keys (from root)
 node ../scripts/generate-keys.js
 
-# Edit .env with your MongoDB URI, JWT secret, and encryption keys
+# Edit .env.dev with your MongoDB URI, JWT secret, and encryption keys
+# Edit .env.prod before production deploy
 # Then setup database
 npm run db:setup
 
@@ -179,11 +183,11 @@ See **[client/README.md](./client/README.md)** for detailed frontend setup:
 ```bash
 cd client
 
-# Copy environment template
-cp .env.example .env.local
+# Copy environment files
+cp .env.development.example .env.development
+cp .env.production.example .env.production
 
-# Edit .env.local with backend API URL (optional in dev, uses proxy)
-# VITE_API_BACKEND_URL=http://localhost:9000/api
+# Edit .env.development (local API URL; production values in .env.production for build)
 
 # Start frontend
 npm run dev
@@ -404,7 +408,18 @@ See [OPTIMIZATION.md](./OPTIMIZATION.md) for detailed information.
 
 ### Server Environment Variables
 
-Required variables in `server/.env`:
+Environment files are split by environment:
+
+| File                      | Used when                                        |
+| ------------------------- | ------------------------------------------------ |
+| `server/.env.dev`         | `npm run dev` (`APP_ENV=dev`)                    |
+| `server/.env.prod`        | `npm start` (`APP_ENV=prod`)                     |
+| `client/.env.development` | `npm run dev` (Next.js built-in)                 |
+| `client/.env.production`  | `npm run build` / `npm start` (Next.js built-in) |
+
+Copy from `*.example` templates, then fill in secrets. On Vercel, set the same keys in the project dashboard (not from files). **Full checklist:** [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md). After adding vars in Vercel once, run `npm run env:pull` to sync them into local `.env.prod`.
+
+Required variables (same keys in dev/prod; values differ):
 
 ```bash
 # Server
@@ -433,21 +448,24 @@ RATE_LIMIT_MAX_REQUESTS=100
 GOOGLE_APPLICATION_CREDENTIALS=./server/google-credentials.json
 # Vercel deployment: paste exact JSON string contents to avoid uploading physical keys
 GOOGLE_CREDENTIALS_JSON='{"type": "service_account", "project_id": "..."}'
-# The default model is gemini-3-flash-preview. To override:
-GOOGLE_AI_MODEL=gemini-3-flash-preview
+# Vertex AI usage-based free tier: gemini-3.1-flash-lite (~1,000 requests/day)
+GOOGLE_AI_MODEL=gemini-3.1-flash-lite
+GOOGLE_CLOUD_LOCATION=us-central1
 ```
 
 ### Frontend Environment Variables
 
-See `client/.env.example` or **[client/README.md](./client/README.md)**:
+See `client/.env.development.example` / `client/.env.production.example`:
 
 ```bash
-# API URL (optional - uses proxy in development)
-VITE_API_BACKEND_URL=http://localhost:9000/api
+# Development (.env.development — loaded by `next dev`)
+NEXT_PUBLIC_API_BACKEND_URL=http://localhost:9000
 
-# App Configuration (optional)
-VITE_APP_NAME=SyncApp
-VITE_APP_VERSION=2.0.0
+# Production (.env.production — loaded by `next build`)
+NEXT_PUBLIC_API_BACKEND_URL=https://sync-app-server.vercel.app
+
+# Optional – canonical URL base for posts
+NEXT_PUBLIC_CANONICAL_BASE_URL=https://yourblog.com/blog
 ```
 
 ## 🧪 Testing
@@ -568,7 +586,7 @@ Contributions are welcome! Please follow these steps:
 
 **CORS errors:**
 
-- Update `CORS_ORIGIN` in server/.env
+- Update `CORS_ORIGIN` in `server/.env.dev` or `server/.env.prod`
 - Ensure client and server ports match configuration
 
 **API calls fail:**

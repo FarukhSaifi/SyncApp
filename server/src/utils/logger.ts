@@ -4,8 +4,8 @@
  * Production: no sensitive data (redacted keys, no stacks, safe request meta).
  */
 
-import type { NextFunction, Request, Response } from "express";
 import dayjs from "dayjs";
+import type { NextFunction, Request, Response } from "express";
 import { config } from "../config";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "../constants/logging";
@@ -27,39 +27,83 @@ const COLORS: Record<LogLevel | "RESET", string> = {
   RESET: "\x1b[0m",
 };
 
-function redactSensitive(obj: unknown): unknown {
-  if (obj === null || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return obj.map(redactSensitive);
+function safeStringify(obj: unknown): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(
+    obj,
+    (_key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) return "[Circular]";
+        seen.add(value);
+      }
+      return value;
+    },
+    2,
+  );
+}
 
-  const out: Record<string, unknown> = {};
+function serializeErrorForLog(error: Error, includeStack: boolean): Record<string, unknown> {
+  const serialized: Record<string, unknown> = {
+    name: error.name,
+    message: error.message,
+  };
+
+  if (includeStack && error.stack) {
+    serialized.stack = error.stack;
+  }
+
+  const axiosError = error as Error & {
+    isAxiosError?: boolean;
+    code?: string;
+    response?: { status?: number; statusText?: string; data?: unknown };
+  };
+
+  if (axiosError.isAxiosError) {
+    serialized.isAxiosError = true;
+    if (axiosError.code) serialized.code = axiosError.code;
+    if (axiosError.response) {
+      serialized.responseStatus = axiosError.response.status;
+      serialized.responseStatusText = axiosError.response.statusText;
+      serialized.responseData = axiosError.response.data;
+    }
+  }
+
+  return serialized;
+}
+
+function redactSensitive(obj: unknown, seen = new WeakSet<object>()): unknown {
+  if (obj === null || typeof obj !== "object") return obj;
+  if (seen.has(obj as object)) return "[Circular]";
+  seen.add(obj as object);
+  if (Array.isArray(obj)) return obj.map((item) => redactSensitive(item, seen));
+
+  const out = Object.create(null) as Record<string, unknown>;
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      continue;
+    }
     const keyLower = key.toLowerCase();
     const isSensitive = (SENSITIVE_KEYS as unknown as string[]).some((k: string) => keyLower.includes(k.toLowerCase()));
     if (isSensitive) {
-      out[key] = REDACT_PLACEHOLDER;
+      Object.defineProperty(out, key, {
+        value: REDACT_PLACEHOLDER,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     } else {
-      out[key] = typeof value === "object" && value !== null ? redactSensitive(value) : value;
+      Object.defineProperty(out, key, {
+        value: typeof value === "object" && value !== null ? redactSensitive(value, seen) : value,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
   }
   return out;
 }
 
-interface ILogger {
-  error(message: string, error?: Error | null, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
-  info(message: string, meta?: Record<string, unknown>): void;
-  debug(message: string, meta?: Record<string, unknown>): void;
-  request(req: Request, res: Response, duration: number): void;
-  query(operation: string, model: string, duration: number, meta?: Record<string, unknown>): void;
-  externalApi(
-    service: string,
-    endpoint: string,
-    duration: number,
-    status: number | string,
-    meta?: Record<string, unknown>,
-  ): void;
-  cache(operation: string, key: string, hit?: boolean | null): void;
-}
+import { ILogger } from "../types";
 
 class Logger implements ILogger {
   private context: string;
@@ -77,13 +121,17 @@ class Logger implements ILogger {
 
   formatMessage(level: LogLevel, message: string, meta: Record<string, unknown> = {}): string {
     const timestamp = dayjs().toISOString();
-    const color = COLORS[level] ?? COLORS.RESET;
+    let color = COLORS.RESET;
+    if (level === "ERROR") color = COLORS.ERROR;
+    else if (level === "WARN") color = COLORS.WARN;
+    else if (level === "INFO") color = COLORS.INFO;
+    else if (level === "DEBUG") color = COLORS.DEBUG;
     const reset = COLORS.RESET;
 
     const base = `${color}[${timestamp}] [${level}] [${this.context}]${reset} ${message}`;
 
     if (Object.keys(meta).length > 0) {
-      return `${base}\n${JSON.stringify(meta, null, 2)}`;
+      return `${base}\n${safeStringify(meta)}`;
     }
 
     return base;
@@ -94,9 +142,7 @@ class Logger implements ILogger {
     const logMeta = this.safeMeta(meta);
 
     if (error) {
-      logMeta["error"] = this.isDevelopment
-        ? { message: error.message, stack: error.stack, ...(error as unknown as Record<string, unknown>) }
-        : { message: error.message };
+      logMeta.error = serializeErrorForLog(error, this.isDevelopment);
     }
 
     console.error(this.formatMessage(LOG_LEVELS.ERROR, message, logMeta));

@@ -60,3 +60,6 @@ export const COLOR_CLASSES = Object.freeze({
     UNVERIFIED: "bg-warning/15 text-warning",
   },
 } as const);
+
+export const ANALYTICS_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+
