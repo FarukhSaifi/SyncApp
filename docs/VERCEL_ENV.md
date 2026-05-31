@@ -116,6 +116,11 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
 
 ## Troubleshooting
 
+- **MongoDB disconnected on `/health` (Vercel)** — Check:
+  1. **Server project env vars** — `MONGODB_URI` must be set under **Production** (not only Preview).
+  2. **Atlas Network Access** — Allow `0.0.0.0/0` (or Vercel egress IPs). Serverless functions use dynamic IPs.
+  3. **Redeploy** after adding env vars — Vercel does not inject new vars into running deployments until redeploy.
+  4. **Health response `database.error`** — After redeploy, `GET /health` includes the connection error message when DB fails (e.g. auth, timeout, IP block).
 - **CORS errors** — `CORS_ORIGIN` on the **server** project must include your client URL exactly (scheme + host, no trailing slash).
 - **AI 503** — `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CREDENTIALS_JSON` on **server** project; enable Vertex AI API in GCP.
 - **Client hits wrong API** — rebuild client after changing `NEXT_PUBLIC_API_BACKEND_URL`.

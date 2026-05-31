@@ -21,6 +21,7 @@ export const ERROR_MESSAGES = {
   // Posts
   ACCESS_DENIED_POST: "Access denied",
   POST_NOT_FOUND: "Post not found",
+  DATABASE_UNAVAILABLE: "Database unavailable. Check MONGODB_URI and Atlas network access.",
   // General
   OPERATION_FAILED: "Operation failed",
   REQUEST_FAILED: "Request failed",
