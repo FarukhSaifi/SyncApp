@@ -2,6 +2,7 @@ import React, { memo } from "react";
 
 import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, POST_STATUS, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
 import type { Post, PostRowProps } from "@types";
+import { formatDateTime } from "@utils/dateUtils";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { FiEdit3, FiTrash2 } from "react-icons/fi";
@@ -15,6 +16,7 @@ import SeoScoreBadge from "./SeoScoreBadge";
 type PostData = Post & {
   id?: string;
   created_at?: string;
+  updated_at?: string;
   published_at?: string;
 };
 
@@ -85,11 +87,9 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
     return <div className="flex flex-wrap gap-2">{platforms}</div>;
   };
 
-  const formatDate = (dateString: string) => {
-    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
-  };
-
   const postId = post.id || post._id;
+  const createdAt = post.created_at || post.createdAt;
+  const updatedAt = post.updated_at || post.updatedAt;
 
   return (
     <TableRow>
@@ -99,7 +99,7 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
           {post.cover_image && <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>}
           {post.scheduled_for && dayjs(post.scheduled_for).isAfter(dayjs()) && (
             <div className="text-[10px] text-primary mt-0.5 font-medium">
-              Schedules for {formatDate(post.scheduled_for)}
+              Schedules for {formatDateTime(post.scheduled_for)}
             </div>
           )}
         </div>
@@ -131,7 +131,8 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
         </div>
       </TableCell>
       <TableCell>{getPlatformStatus(post)}</TableCell>
-      <TableCell>{formatDate(post.created_at || post.createdAt || "")}</TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(createdAt)}</TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(updatedAt)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end space-x-2">
           <Link href={`${ROUTES.EDITOR}/${postId}`}>

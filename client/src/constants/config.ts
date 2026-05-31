@@ -44,7 +44,7 @@ export const APP_CONFIG = Object.freeze({
 
   // Date Format
   DATE_FORMAT: "DD-MM-YYYY",
-  DATE_FORMAT_WITH_TIME: "DD-MM-YYYY HH:mm",
+  DATE_FORMAT_WITH_TIME: "DD-MM-YYYY hh:mm A",
 } as const);
 
 export const EXTERNAL_LINKS = Object.freeze({

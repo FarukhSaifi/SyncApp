@@ -7,9 +7,6 @@ import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
 
-
-
-
 /**
  * Mobile-friendly user card component
  */
@@ -82,6 +79,10 @@ const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete, formatDate }) =>
               <div className="text-foreground truncate">{formatDate(user.createdAt)}</div>
             </div>
             <div>
+              <div className="text-xs text-muted-foreground">{SYNC_LABEL.TABLE_UPDATED}</div>
+              <div className="text-foreground truncate">{formatDate(user.updatedAt)}</div>
+            </div>
+            <div className="col-span-2">
               <div className="text-xs text-muted-foreground">{SYNC_LABEL.TABLE_LAST_LOGIN}</div>
               <div className="text-foreground truncate">{formatDate(user.lastLogin)}</div>
             </div>
