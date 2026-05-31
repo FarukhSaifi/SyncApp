@@ -1,19 +1,22 @@
-import 'dotenv/config';
-import mongoose from 'mongoose';
-import { config } from '../config';
-import connectDB from './connection';
-import Credential from '../models/Credential';
-import { DATABASE, PLATFORMS } from '../constants';
-import { DB_LOG } from '../constants/logging';
-import { createLogger } from '../utils/logger';
+import { loadAppEnv } from "../config/loadEnv";
 
-const logger = createLogger('DB-SETUP');
+loadAppEnv();
+import mongoose from "mongoose";
+
+import { config } from "../config";
+import connectDB from "./connection";
+import Credential from "../models/Credential";
+import { DATABASE, PLATFORMS } from "../constants";
+import { DB_LOG } from "../constants/logging";
+import { createLogger } from "../utils/logger";
+
+const logger = createLogger("DB-SETUP");
 
 async function setupDatabase(): Promise<void> {
   try {
     logger.info(DB_LOG.SETUP_START);
     logger.info(DB_LOG.CONNECTING, {
-      mongoUri: (config.mongoUri as string).replace(/\/\/[^:]+:[^@]+@/, '//***:***@'),
+      mongoUri: (config.mongoUri as string).replace(/\/\/[^:]+:[^@]+@/, "//***:***@"),
     });
 
     await connectDB();
@@ -48,7 +51,7 @@ async function setupDatabase(): Promise<void> {
   } catch (error) {
     logger.error(DB_LOG.SETUP_FAILED, error as Error);
 
-    if ((error as Error).message && (error as Error).message.includes('ECONNREFUSED')) {
+    if ((error as Error).message && (error as Error).message.includes("ECONNREFUSED")) {
       logger.info(DB_LOG.MONGODB_NOT_RUNNING, {
         atlas: DATABASE.SETUP_URLS.MONGODB_ATLAS,
       });

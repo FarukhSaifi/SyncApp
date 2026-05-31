@@ -1,24 +1,16 @@
 import React from "react";
 
 import { ROUTES, SYNC_LABEL } from "@constants";
+import type { ErrorBoundaryProps, ErrorBoundaryState } from "@types";
 import { logError } from "@utils/logger";
 
-interface Props {
-  children: React.ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 

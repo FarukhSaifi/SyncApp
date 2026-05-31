@@ -1,24 +1,8 @@
 "use client";
-import dayjs from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
-import Button from "@components/common/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
-import ConfirmationModal from "@components/common/ConfirmationModal";
-import Input from "@components/common/Input";
-import Modal from "@components/common/Modal";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/common/Table";
-import Textarea from "@components/common/Textarea";
 import UserCard from "@components/users/UserCard";
 import UserTableRow from "@components/users/UserTableRow";
-
-import { useDebounce } from "@hooks/useDebounce";
-import { useToast } from "@hooks/useToast";
-
-import { apiClient } from "@utils/apiClient";
-import { logError } from "@utils/logger";
-
 import {
   APP_CONFIG,
   BUTTON_VARIANTS,
@@ -33,37 +17,23 @@ import {
   USER_VERIFIED_FILTER,
   type UserRoleOption,
 } from "@constants";
-import type { User } from "@types";
+import { useDebounce } from "@hooks/useDebounce";
+import { useToast } from "@hooks/useToast";
+import type { User, AddUserForm, EditForm, PaginationState, UserDeleteConfirmState } from "@types";
+import { apiClient } from "@utils/apiClient";
+import { logError } from "@utils/logger";
+import dayjs from "dayjs";
+import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
-interface AddUserForm extends Record<string, unknown> {
-  username: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  bio: string;
-  avatar: string;
-  role: string;
-  isVerified: boolean;
-}
+import Button from "@components/common/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
+import ConfirmationModal from "@components/common/ConfirmationModal";
+import Input from "@components/common/Input";
+import Modal from "@components/common/Modal";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/common/Table";
+import Textarea from "@components/common/Textarea";
 
-interface EditForm extends Record<string, unknown> {
-  role: string;
-  isVerified: boolean;
-}
 
-interface PaginationState {
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-}
-
-interface DeleteConfirmState {
-  isOpen: boolean;
-  userId: string | null;
-  username: string;
-}
 
 const initialAddForm: AddUserForm = {
   username: "",
@@ -127,7 +97,7 @@ const Users = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [addForm, setAddForm] = useState<AddUserForm>(initialAddForm);
   const [creating, setCreating] = useState<boolean>(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({ isOpen: false, userId: null, username: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState<UserDeleteConfirmState>({ isOpen: false, userId: null, username: "" });
   const [deleting, setDeleting] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {

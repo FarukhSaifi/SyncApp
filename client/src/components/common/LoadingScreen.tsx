@@ -1,10 +1,8 @@
 import { INFO_MESSAGES } from "@constants";
+import type { LoadingScreenProps } from "@types";
+
 import { LOADING_UI } from "@constants/designTokens";
 
-interface LoadingScreenProps {
-  message?: string;
-  inline?: boolean;
-}
 
 const DEFAULT_MESSAGE = INFO_MESSAGES.LOADING;
 

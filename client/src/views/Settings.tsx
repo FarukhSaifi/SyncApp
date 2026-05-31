@@ -1,28 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
+
+import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "@constants";
+import { useToast } from "@hooks/useToast";
+import type { ApiResponse, SavedState, ApiCredential } from "@types";
+import { apiClient } from "@utils/apiClient";
+import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
-import { useToast } from "@hooks/useToast";
 
-import { apiClient } from "@utils/apiClient";
-import { devError, devLog, devWarn } from "@utils/logger";
-
-import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "@constants";
-import type { ApiResponse, Credential } from "@types";
-
-interface SavedState {
-  medium: boolean;
-  devto: boolean;
-  wordpress: boolean;
-}
-
-interface ApiCredential extends Credential {
-  platform_name: string;
-}
 
 const Settings = () => {
   const toast = useToast();

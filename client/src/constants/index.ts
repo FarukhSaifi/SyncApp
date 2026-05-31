@@ -1,128 +1,32 @@
-// Re-export user roles, messages, and storage keys
+/**
+ * Central exports for all client constants.
+ * Import from `@constants` — avoid deep paths unless breaking circular deps.
+ */
+export * from "./analytics";
+export * from "./api";
 export * from "./colorClasses";
 export * from "./config";
 export * from "./designTokens";
 export * from "./editor";
 export * from "./messages";
+export * from "./pagination";
+export * from "./platforms";
+export * from "./postStatus";
+export * from "./routes";
 export * from "./seo";
+export * from "./theme";
 export * from "./userRoles";
 
-// Re-export message types for easier access (explicit exports for better IDE support)
-// Note: All exports are also available via "export * from './messages'" above
 export {
+  SYNC_LABEL,
+  UI_BUTTONS,
+  UI_DESCRIPTIONS,
   UI_LABELS,
   UI_MESSAGES,
   UI_PLACEHOLDERS,
   UI_TITLES,
-  UI_DESCRIPTIONS,
-  UI_BUTTONS,
-  SYNC_LABEL,
 } from "./messages";
-
-// Shared UI constants
-export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_PAGE_SIZE = 100;
-
-export const PLATFORMS = Object.freeze({
-  MEDIUM: "medium",
-  DEVTO: "devto",
-  WORDPRESS: "wordpress",
-} as const);
-
-export const ROUTES = Object.freeze({
-  DASHBOARD: "/",
-  EDITOR: "/editor",
-  SETTINGS: "/settings",
-  PROFILE: "/profile",
-  USERS: "/users",
-  LOGIN: "/login",
-  REGISTER: "/register",
-  ANALYTICS: "/analytics",
-} as const);
 
 export const UI_TEXT = Object.freeze({
   appName: "SyncApp",
-} as const);
-
-export const THEME_VALUES = Object.freeze({
-  LIGHT: "light",
-  DARK: "dark",
-} as const);
-
-// Pagination defaults
-export const DEFAULT_PAGINATION = Object.freeze({
-  page: 1,
-  limit: DEFAULT_PAGE_SIZE,
-} as const);
-
-// Post status values (for comparisons and API)
-export const POST_STATUS = Object.freeze({
-  DRAFT: "draft",
-  PUBLISHED: "published",
-  ARCHIVED: "archived",
-} as const);
-
-/** Dashboard filter value for "all" (no status filter) */
-export const FILTER_STATUS_ALL = "all";
-
-// Post status display config (Get UI–inspired semantic colors)
-export const STATUS_CONFIG = Object.freeze({
-  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
-  published: { label: "Published", className: "bg-positive/15 text-positive" },
-  archived: { label: "Archived", className: "bg-warning/15 text-warning" },
-} as const);
-
-// API base and paths
-// Next.js rewrites proxy /api in dev; in production set NEXT_PUBLIC_API_BACKEND_URL (e.g. https://api.example.com/api)
-const getApiBase = (): string => {
-  if (typeof window === "undefined") {
-    // Server-side (SSR/SSG): Must use absolute URL to reach the backend
-    const isProd = process.env.NODE_ENV === "production";
-    const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
-    const base = envUrl || (isProd ? "https://sync-app-server.vercel.app" : "http://localhost:9000");
-    return base.endsWith("/api") ? base : `${base}/api`;
-  }
-  
-  // Client-side: Always use relative path to route through Next.js proxy (via next.config.ts)
-  // This completely eliminates CORS issues because the browser sees it as a same-origin request.
-  return "/api";
-};
-
-export const API_BASE = getApiBase();
-export const API_PATHS = Object.freeze({
-  AUTH: `${API_BASE}/auth`,
-  POSTS: `${API_BASE}/posts`,
-  CREDENTIALS: `${API_BASE}/credentials`,
-  PUBLISH: `${API_BASE}/publish`,
-  MDX: `${API_BASE}/mdx`,
-  USERS: `${API_BASE}/users`,
-  AI: `${API_BASE}/ai`,
-  UPLOAD: `${API_BASE}/upload`,
-  ANALYTICS: `${API_BASE}/analytics`,
-} as const);
-
-/**
- * Public-facing base URL of the blog where posts are readable.
- * Set NEXT_PUBLIC_CANONICAL_BASE_URL in .env to enable full canonical URLs.
- * If not set, the post slug is used as the canonical value.
- * Example: https://yourblog.com/blog → canonical = https://yourblog.com/blog/my-post-slug
- */
-export const CANONICAL_BASE_URL: string =
-  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_CANONICAL_BASE_URL?.trim()) || "";
-
-// HTTP methods
-export const HTTP_METHODS = Object.freeze({
-  GET: "GET",
-  POST: "POST",
-  PUT: "PUT",
-  DELETE: "DELETE",
-} as const);
-
-/**
- * Local storage keys – single source of truth for client persistence.
- * Use these constants instead of string literals to avoid typos and simplify refactors.
- */
-export const STORAGE_KEYS = Object.freeze({
-  AUTH_TOKEN: "token",
-  THEME: "theme",
 } as const);

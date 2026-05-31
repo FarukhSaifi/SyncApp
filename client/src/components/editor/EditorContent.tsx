@@ -1,4 +1,7 @@
 "use client";
+import React, { useCallback, useEffect } from "react";
+
+import { useToast } from "@hooks/useToast";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -7,8 +10,11 @@ import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent as TipTapEditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import type { EditorContentProps } from "@types";
+import { apiClient } from "@utils/apiClient";
+import { isLikelyMarkdown, markdownToHtml } from "@utils/contentUtils";
 import { common, createLowlight } from "lowlight";
-import React, { useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   FiAlignCenter,
   FiAlignLeft,
@@ -23,13 +29,10 @@ import {
   FiType,
   FiUnderline,
 } from "react-icons/fi";
-import dynamic from "next/dynamic";
-import { useToast } from "@hooks/useToast";
 
-import { apiClient } from "@utils/apiClient";
-import { isLikelyMarkdown, markdownToHtml } from "@utils/contentUtils";
 import { ERROR_MESSAGES, INFO_MESSAGES, SUCCESS_MESSAGES } from "@constants/messages";
-import type { EditorFormData } from "@hooks/useEditorState";
+
+
 import { AIToolkitDropdown } from "./AIToolkitDropdown";
 
 const lowlight = createLowlight(common);
@@ -39,13 +42,6 @@ const EditorPreview = dynamic(() => import("./EditorPreview"), {
   loading: () => <div className="p-8 text-center text-muted-foreground text-sm">Loading preview...</div>,
 });
 
-interface EditorContentProps {
-  formData: EditorFormData;
-  activeTab: "edit" | "preview";
-  onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onContentChange: (html: string) => void;
-  tagList: string[];
-}
 
 /** TipTap toolbar button */
 const ToolbarButton = ({

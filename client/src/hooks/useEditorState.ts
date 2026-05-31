@@ -2,18 +2,18 @@
  * useEditorState — Centralized editor form state, save/publish handlers, autosave, dirty tracking.
  * Extracted from the monolithic Editor.tsx.
  */
-import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-
+import type { Post } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
+import { useParams, useRouter } from "next/navigation";
 
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
 import { CANONICAL_BASE_URL } from "@constants/index";
 import { SYNC_LABEL } from "@constants/messages";
-import type { Post } from "@types";
+import { POST_STATUS } from "@constants/postStatus";
 
 /**
  * Build a canonical URL from the post slug.
@@ -161,111 +161,134 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     setTagList((prev) => prev.filter((t) => t !== tagToRemove));
   }, []);
 
-  const handleTagKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddTag();
-    }
-  }, [handleAddTag]);
-
-  const handleSave = useCallback(async (status = "draft") => {
-    if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const postData = { ...formData, tags: tagList, status };
-      devLog("Saving post:", id ? "update" : "create");
-      let response;
-      if (id) {
-        response = await apiClient.updatePost(id, postData);
-      } else {
-        response = await apiClient.createPost(postData);
+  const handleTagKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAddTag();
       }
-      devLog("💾 Save response:", response);
+    },
+    [handleAddTag],
+  );
 
-      if (response?.success) {
-        const savedPost = response.data;
-        if (savedPost) {
-          setFormData((prev) => ({
-            ...prev,
-            // Prefer server's canonical_url, then build from slug, then keep whatever user had.
-            canonical_url:
-              savedPost.canonical_url ||
-              buildClientCanonicalUrl(savedPost.slug) ||
-              prev.canonical_url,
-            cover_image: savedPost.cover_image ?? prev.cover_image,
-            content_markdown: savedPost.content_markdown ?? prev.content_markdown,
-          }));
-        }
+  const handleSave = useCallback(
+    async (forceStatus?: string) => {
+      if (!formData.title.trim() || !formData.content_markdown.trim()) {
+        toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+        return;
+      }
+
+      const status = forceStatus ?? formData.status ?? POST_STATUS.DRAFT;
+
+      setLoading(true);
+      try {
+        const postData = { ...formData, tags: tagList, status };
+        devLog("Saving post:", id ? "update" : "create");
+        let response;
         if (id) {
-          if (savedPost) onPostUpdate(savedPost);
-          toast.saveSuccess(true);
+          response = await apiClient.updatePost(id, postData);
         } else {
-          if (savedPost) onPostCreate(savedPost);
-          toast.saveSuccess(false);
+          response = await apiClient.createPost(postData);
         }
-        setIsDirty(false);
-        setLastSavedAt(new Date());
-        if (status === "draft") router.push("/");
-      } else {
-        toast.apiError(response?.error || "Failed to save post");
-      }
-    } catch (error) {
-      devError("Error saving post:", error);
-      toast.apiError(`Failed to save post: ${(error as Error).message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, tagList, id, onPostUpdate, onPostCreate, router, toast]);
+        devLog("💾 Save response:", response);
 
-  /** Ensures post exists (creates if new), returns the post ID */
+        if (response?.success) {
+          const savedPost = response.data;
+          if (savedPost) {
+            setFormData((prev) => ({
+              ...prev,
+              status: savedPost.status ?? status,
+              // Prefer server's canonical_url, then build from slug, then keep whatever user had.
+              canonical_url: savedPost.canonical_url || buildClientCanonicalUrl(savedPost.slug) || prev.canonical_url,
+              cover_image: savedPost.cover_image ?? prev.cover_image,
+              content_markdown: savedPost.content_markdown ?? prev.content_markdown,
+            }));
+          }
+          if (id) {
+            if (savedPost) onPostUpdate(savedPost);
+            toast.saveSuccess(true);
+          } else {
+            if (savedPost) onPostCreate(savedPost);
+            toast.saveSuccess(false);
+          }
+          setIsDirty(false);
+          setLastSavedAt(new Date());
+          const isNewPost = !id;
+          if (forceStatus === POST_STATUS.DRAFT || (isNewPost && status === POST_STATUS.DRAFT)) {
+            router.push("/");
+          }
+        } else {
+          toast.apiError(response?.error || "Failed to save post");
+        }
+      } catch (error) {
+        devError("Error saving post:", error);
+        toast.apiError(`Failed to save post: ${(error as Error).message}`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, tagList, id, onPostUpdate, onPostCreate, router, toast],
+  );
+
+  /** Ensures post exists and latest edits are saved before publishing */
   const ensurePostSaved = useCallback(async (): Promise<string | null> => {
-    let currentPostId = id;
-    if (!currentPostId) {
+    if (!formData.title.trim() || !formData.content_markdown.trim()) {
+      return null;
+    }
+
+    const status = formData.status ?? POST_STATUS.DRAFT;
+    const postData = { ...formData, tags: tagList, status };
+
+    if (!id) {
       devLog("Saving new post before publishing");
-      const saveResponse = await apiClient.createPost({
-        ...formData,
-        tags: tagList,
-        status: "draft",
-      });
+      const saveResponse = await apiClient.createPost(postData);
       if (!saveResponse?.success || !saveResponse.data) {
         throw new Error(saveResponse?.error || "Failed to save post");
       }
-      currentPostId = saveResponse.data._id;
       onPostCreate(saveResponse.data);
+      return saveResponse.data._id;
     }
-    return currentPostId;
-  }, [id, formData, tagList, onPostCreate]);
 
-  const handlePublishToPlatform = useCallback(async (platform: string) => {
-    if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
-      return;
+    devLog("Saving post edits before publishing");
+    const saveResponse = await apiClient.updatePost(id, postData);
+    if (!saveResponse?.success) {
+      throw new Error(saveResponse?.error || "Failed to save post");
     }
-    setPublishing(true);
-    try {
-      const currentPostId = await ensurePostSaved();
-      if (!currentPostId) return;
+    if (saveResponse.data) {
+      onPostUpdate(saveResponse.data);
+    }
+    return id;
+  }, [id, formData, tagList, onPostCreate, onPostUpdate]);
 
-      devLog(`Publishing to ${platform}`);
-      const publishResponse = await apiClient.publish(platform, currentPostId);
-      if (publishResponse?.success) {
-        if (publishResponse.data) onPostUpdate(publishResponse.data);
-        toast.publishSuccess(platform);
-        router.push("/");
-      } else {
-        throw new Error(publishResponse?.error || `Failed to publish to ${platform}`);
+  const handlePublishToPlatform = useCallback(
+    async (platform: string) => {
+      if (!formData.title.trim() || !formData.content_markdown.trim()) {
+        toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+        return;
       }
-    } catch (error) {
-      devError(`Error publishing to ${platform}:`, error);
-      toast.publishError(platform, (error as Error).message);
-    } finally {
-      setPublishing(false);
-    }
-  }, [formData.title, formData.content_markdown, ensurePostSaved, onPostUpdate, router, toast]);
+      setPublishing(true);
+      try {
+        const currentPostId = await ensurePostSaved();
+        if (!currentPostId) return;
+
+        devLog(`Publishing to ${platform}`);
+        const publishResponse = await apiClient.publish(platform, currentPostId);
+        if (publishResponse?.success) {
+          if (publishResponse.data) onPostUpdate(publishResponse.data);
+          toast.publishSuccess(platform, publishResponse.message);
+          router.push("/");
+        } else {
+          throw new Error(publishResponse?.error || `Failed to publish to ${platform}`);
+        }
+      } catch (error) {
+        devError(`Error publishing to ${platform}:`, error);
+        toast.publishError(platform, (error as Error).message);
+      } finally {
+        setPublishing(false);
+      }
+    },
+    [formData.title, formData.content_markdown, ensurePostSaved, onPostUpdate, router, toast],
+  );
 
   const handlePublishToAll = useCallback(async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
@@ -281,7 +304,10 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       const publishResponse = await apiClient.publishAll(currentPostId);
       if (publishResponse?.success) {
         if (publishResponse.data) onPostUpdate(publishResponse.data);
-        toast.success("Published Everywhere!", "Post published to all platforms successfully!");
+        toast.success(
+          "Published Everywhere!",
+          publishResponse.message || "Post published to all platforms successfully!",
+        );
         router.push("/");
       } else {
         throw new Error(publishResponse?.error || "Failed to publish to all platforms");

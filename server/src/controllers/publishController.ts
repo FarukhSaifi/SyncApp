@@ -6,16 +6,15 @@ import Credential from "../models/Credential";
 import type { IPostDocument } from "../models/Post";
 import Post from "../models/Post";
 import { unpublishFromPlatform } from "../services/platformService";
-import { performPublishToAll, publishToDevto, publishToMedium, publishToWordpress } from "../services/publishService";
+import {
+  performPublishToAll,
+  platformSuccessMessage,
+  publishToDevto,
+  publishToMedium,
+  publishToWordpress,
+} from "../services/publishService";
 
-type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<Record<string, unknown>>;
-
-interface PlatformConfigWithFn {
-  name: string;
-  errorMessage?: string;
-  publishFn: PublishFn;
-  [key: string]: unknown;
-}
+import { PlatformConfigWithFn } from "../types";
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, PlatformConfigWithFn> = {
   [PLATFORMS.MEDIUM]: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
@@ -39,6 +38,28 @@ async function ensurePost(postId: string | undefined): Promise<IPostDocument> {
   return post;
 }
 
+function getPlatformConfig(platformName: string) {
+  if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG.medium;
+  if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG.devto;
+  if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG.wordpress;
+  return undefined;
+}
+
+function getPlatformConfigWithFn(platformName: string) {
+  if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG_WITH_FUNCTIONS.medium;
+  if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG_WITH_FUNCTIONS.devto;
+  if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG_WITH_FUNCTIONS.wordpress;
+  return undefined;
+}
+
+function getPlatformStatusField(platformStatus: any, platformName: string) {
+  if (!platformStatus) return undefined;
+  if (platformName === PLATFORMS.MEDIUM) return platformStatus.medium;
+  if (platformName === PLATFORMS.DEVTO) return platformStatus.devto;
+  if (platformName === PLATFORMS.WORDPRESS) return platformStatus.wordpress;
+  return undefined;
+}
+
 /**
  * Get and validate credential for platform
  */
@@ -46,9 +67,7 @@ async function ensureCredential(platformName: string): Promise<ICredentialDocume
   const credential = await Credential.findOne({ platform_name: platformName });
 
   if (!credential) {
-    const platformCfg = PLATFORM_CONFIG[platformName as keyof typeof PLATFORM_CONFIG] as
-      | { errorMessage?: string }
-      | undefined;
+    const platformCfg = getPlatformConfig(platformName);
     throw new ValidationError(platformCfg?.errorMessage || `${platformName} credentials not found`);
   }
 
@@ -60,7 +79,7 @@ async function ensureCredential(platformName: string): Promise<ICredentialDocume
  */
 function publishToPlatform(platformName: string) {
   return asyncHandler(async (req: Request, res: Response) => {
-    const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
+    const platformCfg = getPlatformConfigWithFn(platformName);
     if (!platformCfg) {
       throw new ValidationError(ERROR_MESSAGES.PLATFORM_NOT_SUPPORTED);
     }
@@ -68,7 +87,7 @@ function publishToPlatform(platformName: string) {
     const post = await ensurePost(req.body.postId as string | undefined);
     const credential = await ensureCredential(platformName);
 
-    const updates = await platformCfg.publishFn(post, credential);
+    const { updates, action } = await platformCfg.publishFn(post, credential);
 
     const updatedPost = await Post.findByIdAndUpdate(
       post._id,
@@ -78,13 +97,15 @@ function publishToPlatform(platformName: string) {
 
     if (!updatedPost) throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
 
+    const platformStatus = getPlatformStatusField(updatedPost.platform_status, platformName);
+
     res.json({
       success: true,
-      message: SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(platformCfg.name),
+      message: platformSuccessMessage(platformName, action),
       data: {
         postId: updatedPost._id,
         status: POST_STATUS.PUBLISHED,
-        platformStatus: updatedPost.platform_status?.[platformName as keyof typeof updatedPost.platform_status],
+        platformStatus,
       },
     });
   });
@@ -147,7 +168,8 @@ export const unpublishPlatform = asyncHandler(async (req: Request, res: Response
   const postId = req.params.postId as string;
   const platform = req.params.platform as string;
 
-  if (!PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]) {
+  const platformCfg = getPlatformConfig(platform);
+  if (!platformCfg) {
     throw new ValidationError(ERROR_MESSAGES.INVALID_PLATFORM_PARAM(platform));
   }
 
@@ -157,9 +179,7 @@ export const unpublishPlatform = asyncHandler(async (req: Request, res: Response
 
   res.json({
     success: true,
-    message: SUCCESS_MESSAGES.UNPUBLISHED_FROM_PLATFORM(
-      (PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG] as { name: string }).name,
-    ),
+    message: SUCCESS_MESSAGES.UNPUBLISHED_FROM_PLATFORM(platformCfg.name),
     data: {
       postId: updatedPost._id,
       platformStatus: updatedPost.platform_status,

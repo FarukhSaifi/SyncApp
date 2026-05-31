@@ -2,32 +2,11 @@
  * SEO Scorecard - computes a 0-100 score and checklist from post data.
  * Uses title, tags, cover_image, canonical_url; optional content_markdown for meta description and internal links.
  */
+import type { Post, SeoCheck, SeoScorecard } from "@types";
+
 import { INTERNAL_LINK_ORIGINS, SEO_CHECK_LABELS, SEO_THRESHOLDS, SEO_WEIGHTS } from "@constants/seo";
-import type { Post } from "@types";
 
 const { TITLE_MIN, TITLE_MAX, META_DESC_MIN, META_DESC_CAP, SCORE_MAX, SCORE_WITHOUT_CONTENT_DIVISOR } = SEO_THRESHOLDS;
-
-export interface SeoCheck {
-  label: string;
-  ok: boolean | null;
-  warning?: boolean;
-}
-
-export interface SeoScorecard {
-  score: number;
-  maxScore: number;
-  checks: SeoCheck[];
-  summary?: string;
-}
-
-/** Strip HTML tags to get plain text */
-function stripHtml(html: string): string {
-  if (!html || typeof html !== "string") return "";
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 /** Count internal links (relative or same-origin) in HTML or markdown */
 function countInternalLinks(content: string): number {

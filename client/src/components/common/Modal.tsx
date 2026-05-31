@@ -1,22 +1,10 @@
 import React, { useEffect } from "react";
+
+import { MODAL_SIZE_CLASSES } from "@constants";
+import type { ModalProps } from "@types";
 import { FiX } from "react-icons/fi";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./Card";
-
-type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
-
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  size?: ModalSize;
-  closeOnOverlayClick?: boolean;
-  closeOnEscape?: boolean;
-  showCloseButton?: boolean;
-  className?: string;
-}
 
 /**
  * Reusable Modal Component
@@ -74,28 +62,21 @@ const Modal = ({
 
   if (!isOpen) return null;
 
-  const sizeClasses: Record<ModalSize, string> = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-    "3xl": "max-w-3xl",
-    "4xl": "max-w-4xl",
-  };
-
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
       onClose();
     }
   };
 
+  const activeSize = Object.prototype.hasOwnProperty.call(MODAL_SIZE_CLASSES, size) ? size : "md";
+  const sizeClass = MODAL_SIZE_CLASSES[activeSize];
+
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
       onClick={handleOverlayClick}
     >
-      <Card className={`w-full ${sizeClasses[size]} mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto ${className}`}>
+      <Card className={`w-full ${sizeClass} mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto ${className}`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -121,3 +102,4 @@ const Modal = ({
 };
 
 export default Modal;
+

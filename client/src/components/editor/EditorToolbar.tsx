@@ -1,22 +1,13 @@
 "use client";
+import type { EditorToolbarProps } from "@types";
 import { FiArrowLeft, FiEdit2, FiEye, FiSave, FiSend, FiSettings } from "react-icons/fi";
-
-import Button from "@components/common/Button";
 
 import { BUTTON_LABELS, SYNC_LABEL } from "@constants/messages";
 
-interface EditorToolbarProps {
-  isEditing: boolean;
-  activeTab: "edit" | "preview";
-  onTogglePreview: () => void;
-  onSave: () => void;
-  onBack: () => void;
-  loading: boolean;
-  isDirty: boolean;
-  wordCount: number;
-  onToggleLeftSidebar: () => void;
-  onToggleRightSidebar: () => void;
-}
+import Button from "@components/common/Button";
+
+
+
 
 const EditorToolbar = ({
   isEditing,

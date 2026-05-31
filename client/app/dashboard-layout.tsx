@@ -1,16 +1,19 @@
 "use client";
 
-import LoadingScreen from "@components/common/LoadingScreen";
-import { Toaster } from "@components/common/Toaster";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
 import ErrorBoundary from "@components/ErrorBoundary";
 import Layout from "@components/Layout";
 import { ROUTES, USER_ROLES } from "@constants";
-import { INFO_MESSAGES } from "@constants/messages";
 import { useAuth } from "@contexts/AuthContext";
 import { usePosts } from "@hooks/usePosts";
 import type { Post } from "@types";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+import { INFO_MESSAGES } from "@constants/messages";
+
+import LoadingScreen from "@components/common/LoadingScreen";
+
 
 function ClientOnly({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -77,10 +80,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     <PostsContext.Provider value={postsValue}>
       <Layout>
         <ErrorBoundary>
-          <ClientOnly>
-            {children}
-            <Toaster />
-          </ClientOnly>
+          <ClientOnly>{children}</ClientOnly>
         </ErrorBoundary>
       </Layout>
     </PostsContext.Provider>

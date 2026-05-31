@@ -1,16 +1,12 @@
 /**
  * useKeyboardShortcuts — Registers global keyboard shortcuts for the editor.
- * Ctrl/Cmd+S  → save draft
+ * Ctrl/Cmd+S  → save (preserves published status)
  * Ctrl/Cmd+Shift+P → toggle preview
  * Escape → onEscape callback (close sidebar on mobile)
  */
 import { useEffect } from "react";
 
-interface ShortcutHandlers {
-  onSave?: () => void;
-  onTogglePreview?: () => void;
-  onEscape?: () => void;
-}
+import type { ShortcutHandlers } from "@types";
 
 export function useKeyboardShortcuts({ onSave, onTogglePreview, onEscape }: ShortcutHandlers) {
   useEffect(() => {

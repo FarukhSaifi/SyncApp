@@ -1,12 +1,9 @@
-import { getSeoScorecard } from "@utils/seoScorecard";
 import { memo, useMemo } from "react";
 
 import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
-import type { Post } from "@types";
+import type { SeoScoreBadgeProps } from "@types";
+import { getSeoScorecard } from "@utils/seoScorecard";
 
-interface SeoScoreBadgeProps {
-  post: Post;
-}
 
 /**
  * Small badge showing SEO score (e.g. "SEO: 92/100") with tooltip listing checks.
