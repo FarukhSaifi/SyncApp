@@ -1,638 +1,285 @@
 # SyncApp - Multi-Platform Blog Syndication Platform
 
-> Write once, publish everywhere. A modern full-stack application for syndicating blog posts across Medium, DEV.to, and WordPress.
+> Write once, publish everywhere. A modern full-stack application for creating blog posts and syndicating them across Medium, DEV.to, and WordPress.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/) [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)](https://www.mongodb.com/cloud/atlas)
 
-## 🌟 Features
+**Production**
 
-- **Multi-Platform Publishing**: Publish to Medium, DEV.to, and WordPress from a single interface
-- **Rich Text Editor**: Built-in TipTap editor with Markdown support and live preview
-- **User Authentication**: Secure JWT-based authentication with role management
-- **Platform Credentials Management**: Encrypted storage of API keys
-- **Tag Management**: SEO-friendly tagging system for better discoverability
-- **Cover Images & Canonical URLs**: Professional post metadata support
-- **MDX Export**: Export posts as MDX files for static site generators
-- **Dark Mode**: Built-in theme support with persistent preferences
-- **Real-time Updates**: Live post status across all platforms
-- **Performance Optimized**: Caching, memoization, and code splitting
-- **Responsive Design**: Mobile-first UI with Tailwind CSS
+- Frontend: [sync-app-client.vercel.app](https://sync-app-client.vercel.app) (or your Vercel URL)
+- Backend API: [sync-app-server.vercel.app](https://sync-app-server.vercel.app)
+- Health: [sync-app-server.vercel.app/health](https://sync-app-server.vercel.app/health)
 
-## 🏗️ Architecture
+---
 
-### Tech Stack
+## Architecture
 
-**Frontend:**
+### Tech stack
 
-- React 18 with Vite
-- TypeScript support (strict mode, gradual migration; see `client/src/types/` and `docs/ARCHITECTURE.md`)
-- React Router v6 for routing
-- Axios for API calls
-- Tailwind CSS for styling
-- TipTap for rich text editing
-- React Markdown for preview
-- React Icons (Feather Icons)
+**Frontend (`client/`)**
 
-**Backend:**
+- Next.js 16 (App Router), React 19, TypeScript
+- Tailwind CSS v4, design tokens in `client/src/constants/`
+- TipTap rich-text editor, React Markdown preview
+- Recharts (analytics), react-hot-toast, react-icons
 
-- Node.js with Express
-- TypeScript support (type-check only; see `server/src/types/` and `docs/ARCHITECTURE.md`). Full migration plan: `docs/TS_MIGRATION_AND_CLEANUP_ROADMAP.md`
-- MongoDB with Mongoose ODM
-- JWT for authentication
-- Joi for validation
-- Bcrypt for password hashing
-- Axios for external API calls
+**Backend (`server/`)**
 
-**Infrastructure:**
+- Node.js 22+, Express 5, TypeScript
+- MongoDB Atlas + Mongoose
+- JWT auth, bcrypt password hashing
+- Google Vertex AI (`gemini-3.1-flash-lite`) for AI features
+- Google Cloud Storage for image uploads
+- Axios for external platform APIs
 
-- MongoDB Atlas (database)
-- Vercel/Railway (deployment options)
-- GitHub (version control)
+**Infrastructure**
 
-### Project Structure
+- MongoDB Atlas
+- Vercel (frontend + backend serverless)
+- Vercel Cron (scheduled publishing)
 
-This project consists of **two separate applications** that can be developed, deployed, and run independently:
+### Project structure
 
 ```text
 SyncApp/
-├── client/                      # React frontend application (STANDALONE)
-│   ├── src/                    # Frontend source code
-│   ├── README.md               # Frontend setup guide
-│   ├── .env.development.example  # Frontend dev environment template
-│   ├── .env.production.example   # Frontend prod environment template
-│   ├── package.json            # Frontend dependencies
-│   └── vite.config.js          # Vite configuration
+├── client/                         # Next.js frontend (standalone)
+│   ├── app/                        # App Router pages & layouts
+│   ├── src/
+│   │   ├── components/             # UI, dashboard, editor
+│   │   ├── views/                  # Route-level screens
+│   │   ├── hooks/                  # useEditorState, usePosts, etc.
+│   │   ├── constants/              # Routes, messages, design tokens
+│   │   └── utils/                  # apiClient, seoScorecard, logger
+│   ├── .env.development.example
+│   └── .env.production.example
 │
-├── server/                      # Express backend API (STANDALONE)
-│   ├── src/                    # Backend source code
-│   ├── README.md               # Backend setup guide
-│   ├── .env.dev.example        # Backend dev environment template
-│   ├── .env.prod.example       # Backend prod environment template
-│   └── package.json            # Backend dependencies
+├── server/                         # Express API (standalone)
+│   ├── src/
+│   │   ├── routes/                 # auth, posts, publish, ai, analytics…
+│   │   ├── services/               # publishService, aiService, postsService
+│   │   ├── database/               # connection (serverless-safe)
+│   │   └── middleware/             # ensureDb, errorHandler
+│   ├── api/index.ts                # Vercel serverless entry
+│   ├── .env.dev.example
+│   └── .env.prod.example
 │
-├── scripts/                     # Shared utility scripts
-│   └── generate-keys.js       # Generate encryption keys
-│
-├── DEPLOYMENT.md                # Deployment guide
-├── OPTIMIZATION.md              # Performance optimization docs
-├── AUTHENTICATION.md            # Authentication documentation
-├── WORDPRESS_INTEGRATION.md     # WordPress setup guide
-├── API.md                       # API documentation
-├── CHANGELOG.md                 # Version history
-├── LICENSE                      # MIT License
-├── package.json                 # Root package (helper scripts only)
-└── README.md                    # This file
+├── docs/                           # Architecture, Vercel env, migration notes
+├── SyncApp_Postman_Collection.json # Import into Postman (also synced to cloud)
+├── SyncApp_Postman_Environment.*.json
+├── scripts/generate-keys.js
+└── package.json                    # Root helper scripts (install:all, dev)
 ```
 
-**Note**: The frontend and backend are **independent applications**. Each has its own:
+---
 
-- `package.json` with its own dependencies
-- `README.md` with setup instructions
-- Environment configuration files
-- Can be deployed separately
-- Can be developed independently
-
-## 🚀 Quick Start
-
-SyncApp consists of **two separate applications** that communicate via REST API:
-
-1. **Frontend (Client)** - React application
-2. **Backend (Server)** - Express API server
+## Quick start
 
 ### Prerequisites
 
-- **Node.js**: v22.0.0 or higher
-- **MongoDB**: MongoDB Atlas account (or local MongoDB)
-- **Git**: For version control
-- **API Keys** (optional for publishing):
-  - Medium Integration Token
-  - DEV.to API Key
-  - WordPress Application Password
+- Node.js v22+
+- MongoDB Atlas (or local MongoDB)
+- Optional: Medium, DEV.to, WordPress API credentials for publishing
+- Optional: Google Cloud / Vertex AI credentials for AI features
 
-### Installation
-
-#### Option 1: Install Both (Recommended for Development)
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/FarukhSaifi/SyncApp.git
-   cd SyncApp
-   ```
-
-2. **Install all dependencies:**
-
-   ```bash
-   npm run install:all
-   ```
-
-   Or install separately:
-
-   ```bash
-   cd client && npm install
-   cd ../server && npm install
-   ```
-
-#### Option 2: Install Separately
-
-**Frontend only:**
+### Install
 
 ```bash
-cd client
-npm install
+git clone https://github.com/FarukhSaifi/SyncApp.git
+cd SyncApp
+npm run install:all
 ```
 
-**Backend only:**
+### Backend
 
 ```bash
 cd server
-npm install
-```
-
-### Setup
-
-#### 1. Backend Setup
-
-See **[server/README.md](./server/README.md)** for detailed backend setup:
-
-```bash
-cd server
-
-# Copy environment files (dev + prod)
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
-
-# Generate encryption keys (from root)
-node ../scripts/generate-keys.js
-
-# Edit .env.dev with your MongoDB URI, JWT secret, and encryption keys
-# Edit .env.prod before production deploy
-# Then setup database
+node ../scripts/generate-keys.js   # copy ENCRYPTION_KEY + IV into .env.dev
+# Edit .env.dev — MONGODB_URI, JWT_SECRET, etc.
 npm run db:setup
-
-# Start backend
 npm run dev
 ```
 
-Backend runs on: <http://localhost:9000>
+Runs at **<http://localhost:9000>** · Health: **<http://localhost:9000/health>**
 
-#### 2. Frontend Setup
-
-See **[client/README.md](./client/README.md)** for detailed frontend setup:
+### Frontend
 
 ```bash
 cd client
-
-# Copy environment files
 cp .env.development.example .env.development
 cp .env.production.example .env.production
-
-# Edit .env.development (local API URL; production values in .env.production for build)
-
-# Start frontend
+# .env.development → NEXT_PUBLIC_API_BACKEND_URL=http://localhost:9000
 npm run dev
 ```
 
-Frontend runs on: <http://localhost:3000>
+Runs at **<http://localhost:3000>**
 
-### Quick Start (Both Apps)
-
-After installing both:
+### Both at once (from root)
 
 ```bash
-# Terminal 1: Start backend
-cd server && npm run dev
-
-# Terminal 2: Start frontend
-cd client && npm run dev
+npm run dev
 ```
 
-- **Frontend**: <http://localhost:3000>
-- **Backend API**: <http://localhost:9000>
-- **Health Check**: <http://localhost:9000/health>
+---
 
-## 📦 Available Scripts
+## Core workflows
 
-### Root Scripts
+### 1. Create & edit posts
 
-Helper scripts for convenience:
+- Write in the TipTap editor with Markdown preview
+- Set tags, meta description, canonical URL, cover image, schedule
+- **Save** preserves published status; **Save Draft** explicitly reverts to draft
+- Autosave runs every 60s for existing posts
 
-- `npm run install:all` - Install dependencies for both client and server
-- `npm run install:client` - Install client dependencies only
-- `npm run install:server` - Install server dependencies only
+### 2. Publish to platforms
 
-### Backend Scripts (from `server/` directory)
+| Platform      | First publish   | Re-publish                            |
+| ------------- | --------------- | ------------------------------------- |
+| **Medium**    | Creates article | Skips (no update API)                 |
+| **DEV.to**    | Creates article | Updates existing (`PUT` by `post_id`) |
+| **WordPress** | Creates post    | Updates existing post                 |
 
-- `npm start` - Start server in production mode
-- `npm run dev` - Start server with nodemon (auto-reload)
-- `npm run db:setup` - Initialize database schema
-- `npm run typecheck` - Run TypeScript type-check (no emit)
+DEV.to publishing validates canonical URLs (full `http(s)://` only) and normalizes tags (max 4, lowercase).
 
-See **[server/README.md](./server/README.md)** for more details.
+### 3. AI toolkit
 
-### Frontend Scripts (from `client/` directory)
+- **Generate Post** — full draft from a keyword (title, meta, tags, markdown body)
+- **Generate Image** — featured image from topic (Imagen or placeholder fallback)
+- **Edit Content** — proofread, shorten, expand selected text
 
-- `npm run dev` - Start Vite dev server (port 3000)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript type-check (no emit)
+Default model: `gemini-3.1-flash-lite` via Vertex AI.
 
-See **[client/README.md](./client/README.md)** for more details.
+### 4. Analytics
 
-## 🔐 Authentication & User Management
+Dashboard → Analytics: total posts, publish rate, per-platform counts, 30-day activity line chart, platform pie chart.
 
-SyncApp includes a complete authentication system:
+---
 
-- **User Registration**: Create account with username, email, password
-- **User Login**: JWT-based authentication
-- **Protected Routes**: Routes require authentication
-- **Profile Management**: Update user info, change password
-- **Session Management**: Token stored in localStorage
-- **Role-Based Access**: User/Admin roles (extensible)
+## API overview
 
-See [AUTHENTICATION.md](./AUTHENTICATION.md) for detailed documentation.
+| Group | Endpoints |
+| --- | --- |
+| **Auth** | `POST /api/auth/register`, `login`, `GET/PUT /api/auth/me`, `PUT change-password` |
+| **Posts** | CRUD + `GET /slug/:slug`, `PUT /:id/cover` |
+| **Publish** | `POST /publish/{medium,devto,wordpress,all}`, `GET /medium/status/:postId`, `DELETE /:platform/:postId` |
+| **Credentials** | `GET/PUT/DELETE /api/credentials/:platform` |
+| **AI** | `POST /api/ai/generate`, `generate-image`, `edit` |
+| **Analytics** | `GET /api/analytics/stats` |
+| **Upload** | `POST /api/upload` (multipart image → GCS) |
+| **MDX** | `GET /api/mdx/:id` |
+| **Cron** | `GET /api/cron/publish-scheduled` (Bearer `CRON_SECRET`) |
+| **Health** | `GET /health` — returns 200 when DB connected, **503** when disconnected |
 
-## 📝 Core Functionality
+Full request/response examples: import **`SyncApp_Postman_Collection.json`** into Postman.
 
-### 1. Create Posts
+---
 
-- Write posts in rich text or Markdown
-- Add tags for better discoverability
-- Upload cover images
-- Set canonical URLs for SEO
+## Postman
 
-### 2. Manage Posts
+1. Import **`SyncApp_Postman_Collection.json`**
+2. Import **`SyncApp_Postman_Environment.production.json`** or **`.local.json`**
+3. Select the environment in Postman
+4. Run **Auth → Login** — the test script saves `data.token` to `{{token}}` and `data.user.id` to `{{userId}}`
+5. All other requests use collection Bearer auth via `{{token}}`
 
-- View all posts with filtering (all, published, drafts)
-- Edit existing posts
-- Delete posts
-- Track publishing status across platforms
+Collection is also synced to the **Node Backend** workspace in Postman cloud.
 
-### 3. Publish to Platforms
+---
 
-**Medium:**
+## Scripts
 
-- One-click publish to Medium
-- Automatic author ID detection
-- Track published URL and status
+| Location  | Command               | Description                             |
+| --------- | --------------------- | --------------------------------------- |
+| Root      | `npm run install:all` | Install client + server deps            |
+| Root      | `npm run dev`         | Run both apps concurrently              |
+| Root      | `npm run env:pull`    | Pull Vercel production env vars locally |
+| `server/` | `npm run dev`         | API with nodemon (port 9000)            |
+| `server/` | `npm run db:setup`    | Seed database                           |
+| `client/` | `npm run dev`         | Next.js dev server (port 3000)          |
+| `client/` | `npm run build`       | Production build                        |
 
-**DEV.to:**
+---
 
-- Publish with tags and cover images
-- Support for canonical URLs
-- Community engagement tracking
+## Configuration
 
-**WordPress:**
+Environment files are split by app and environment. Copy from `*.example` templates.
 
-- Direct publication to WordPress sites
-- Category assignment
-- Custom post metadata
+| File                      | Used when                       |
+| ------------------------- | ------------------------------- |
+| `server/.env.dev`         | `npm run dev` (`APP_ENV=dev`)   |
+| `server/.env.prod`        | `npm start` / Vercel production |
+| `client/.env.development` | `next dev`                      |
+| `client/.env.production`  | `next build`                    |
 
-**Multi-Platform:**
+**Vercel checklist:** [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)
 
-- Publish to all platforms simultaneously
-- Individual platform status tracking
-- Error handling per platform
-
-### 4. Platform Configuration
-
-- Securely store API credentials (encrypted)
-- Manage credentials for each platform
-- Toggle platform activation
-- Test connections
-
-### 5. Export & Portability
-
-- Export posts as MDX files
-- Frontmatter with metadata
-- Compatible with static site generators
-
-## 🔌 API Endpoints
-
-### Authentication
-
-- `POST /api/auth/register` - Create new account
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
-- `PUT /api/auth/me` - Update profile
-- `PUT /api/auth/change-password` - Change password
-
-### Posts
-
-- `GET /api/posts` - List posts (paginated)
-- `GET /api/posts/:id` - Get specific post
-- `GET /api/posts/slug/:slug` - Get post by slug
-- `POST /api/posts` - Create post (auth required)
-- `PUT /api/posts/:id` - Update post (auth required)
-- `DELETE /api/posts/:id` - Delete post (auth required)
-
-### Credentials
-
-- `GET /api/credentials` - List all credentials
-- `GET /api/credentials/:platform` - Get platform credentials
-- `PUT /api/credentials/:platform` - Save/update credentials
-- `DELETE /api/credentials/:platform` - Delete credentials
-
-### Publishing
-
-- `POST /api/publish/medium` - Publish to Medium
-- `POST /api/publish/devto` - Publish to DEV.to
-- `POST /api/publish/wordpress` - Publish to WordPress
-- `POST /api/publish/all` - Publish to all platforms
-- `GET /api/publish/medium/status/:postId` - Get status
-
-### Export
-
-- `GET /api/mdx/:id` - Export post as MDX
-
-### System
-
-- `GET /health` - Health check with system info
-
-See [API.md](./API.md) for complete API documentation with examples.
-
-## ⚡ Performance Optimizations
-
-SyncApp is optimized for performance with:
-
-- **Backend Caching**: In-memory cache with TTL for frequently accessed data
-- **Database Optimization**: Lean queries, proper indexing, field projection
-- **Frontend Memoization**: React.memo for expensive components
-- **Code Splitting**: Lazy loading for all routes
-- **Debouncing**: Search and filter optimization
-- **Error Handling**: Comprehensive error handling with custom error types
-- **Request Validation**: Joi schemas for all inputs
-- **Logging**: Structured logging with performance tracking
-
-**Performance Metrics:**
-
-- API Response Time: ~90ms (40% improvement)
-- Dashboard Render: ~45ms (44% improvement)
-- Bundle Size: ~280KB (38% reduction)
-- Memory Usage: ~85MB (29% reduction)
-
-See [OPTIMIZATION.md](./OPTIMIZATION.md) for detailed information.
-
-## 🛡️ Security Features
-
-- **Password Hashing**: bcrypt with salt rounds
-- **JWT Tokens**: Secure authentication with expiration
-- **API Key Encryption**: AES-256-CBC encryption for stored credentials
-- **CORS Protection**: Configurable origin restrictions
-- **Rate Limiting**: Prevent abuse (100 requests per 15 minutes)
-- **Helmet.js**: Security headers
-- **Input Validation**: Joi schemas prevent injection attacks
-- **Environment Variables**: Sensitive data in .env files
-
-## 🎨 User Interface
-
-- **Modern Design**: Clean, professional interface with shadcn/ui components
-- **Dark Mode**: Persistent theme switching
-- **Responsive**: Mobile-first design works on all devices
-- **Toast Notifications**: Real-time feedback for all actions
-- **Loading States**: Clear feedback during operations
-- **Error Handling**: User-friendly error messages
-- **Accessibility**: ARIA labels and keyboard navigation
-
-## 📚 Documentation
-
-- **[API.md](./API.md)** - Complete API reference
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Deployment guides for Vercel, Railway, etc.
-- **[AUTHENTICATION.md](./AUTHENTICATION.md)** - Authentication system documentation
-- **[OPTIMIZATION.md](./OPTIMIZATION.md)** - Performance optimization details
-- **[WORDPRESS_INTEGRATION.md](./WORDPRESS_INTEGRATION.md)** - WordPress setup guide
-- **[CHANGELOG.md](./CHANGELOG.md)** - Version history
-
-## 🔧 Configuration
-
-### Server Environment Variables
-
-Environment files are split by environment:
-
-| File                      | Used when                                        |
-| ------------------------- | ------------------------------------------------ |
-| `server/.env.dev`         | `npm run dev` (`APP_ENV=dev`)                    |
-| `server/.env.prod`        | `npm start` (`APP_ENV=prod`)                     |
-| `client/.env.development` | `npm run dev` (Next.js built-in)                 |
-| `client/.env.production`  | `npm run build` / `npm start` (Next.js built-in) |
-
-Copy from `*.example` templates, then fill in secrets. On Vercel, set the same keys in the project dashboard (not from files). **Full checklist:** [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md). After adding vars in Vercel once, run `npm run env:pull` to sync them into local `.env.prod`.
-
-Required variables (same keys in dev/prod; values differ):
+Key server variables:
 
 ```bash
-# Server
-NODE_ENV=development
-PORT=9000
-
-# Database (Required)
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/syncapp
-
-# Authentication (Required)
-JWT_SECRET=your_random_secure_string_min_32_chars
-
-# Encryption (Required - generate with scripts/generate-keys.js)
-ENCRYPTION_KEY=your_32_byte_hex_string
-ENCRYPTION_IV=your_16_byte_hex_string
-
-# CORS (Optional - defaults to localhost:3000)
-CORS_ORIGIN=http://localhost:3000
-
-# Rate Limiting (Optional)
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Google Vertex AI (Optional for AI workflows)
-# Local development: specify a file path
-GOOGLE_APPLICATION_CREDENTIALS=./server/google-credentials.json
-# Vercel deployment: paste exact JSON string contents to avoid uploading physical keys
-GOOGLE_CREDENTIALS_JSON='{"type": "service_account", "project_id": "..."}'
-# Vertex AI usage-based free tier: gemini-3.1-flash-lite (~1,000 requests/day)
+MONGODB_URI=...
+JWT_SECRET=...
+ENCRYPTION_KEY=...          # scripts/generate-keys.js
+ENCRYPTION_IV=...
+CORS_ORIGIN=https://your-frontend.vercel.app
+CANONICAL_BASE_URL=https://yourblog.com/blog   # DEV.to canonical fallback
 GOOGLE_AI_MODEL=gemini-3.1-flash-lite
-GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_CREDENTIALS_JSON=...  # Vercel: paste service account JSON
+CRON_SECRET=...              # Vercel Cron auth
 ```
 
-### Frontend Environment Variables
-
-See `client/.env.development.example` / `client/.env.production.example`:
+Key client variables:
 
 ```bash
-# Development (.env.development — loaded by `next dev`)
-NEXT_PUBLIC_API_BACKEND_URL=http://localhost:9000
-
-# Production (.env.production — loaded by `next build`)
 NEXT_PUBLIC_API_BACKEND_URL=https://sync-app-server.vercel.app
-
-# Optional – canonical URL base for posts
 NEXT_PUBLIC_CANONICAL_BASE_URL=https://yourblog.com/blog
 ```
 
-## 🧪 Testing
+---
 
-### Manual Testing Checklist
+## Deployment
 
-1. **Server Health:**
+Both apps deploy independently to Vercel:
 
-   ```bash
-   curl http://localhost:9000/health
-   ```
+| App        | Root directory | Framework       | Build                  |
+| ---------- | -------------- | --------------- | ---------------------- |
+| **Client** | `client/`      | Next.js         | `npm run build`        |
+| **Server** | `server/`      | Other (Express) | `npm run vercel-build` |
 
-2. **Register User:**
+- Set all env vars in each Vercel project dashboard
+- Point client `NEXT_PUBLIC_API_BACKEND_URL` at the server URL
+- Add server `CORS_ORIGIN` for the client URL
+- Configure Vercel Cron → `GET /api/cron/publish-scheduled` with `CRON_SECRET`
 
-   ```bash
-   curl -X POST http://localhost:9000/api/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"username":"testuser","email":"test@example.com","password":"test123","firstName":"Test","lastName":"User"}'
-   ```
+See [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md) and [server/README.md](./server/README.md).
 
-3. **Create Post:**
-   - Login to app at <http://localhost:3000>
-   - Navigate to "New Post"
-   - Fill in title and content
-   - Save draft or publish
+---
 
-## 🚀 Deployment
+## Security
 
-The frontend and backend are **separate applications** and should be deployed independently:
+- bcrypt password hashing
+- JWT with expiration
+- AES-256-CBC encrypted platform API keys
+- Helmet security headers + CORS allowlist
+- Rate limiting on `/api` (configurable)
+- Serverless-safe MongoDB connection with pre-route `ensureDb` middleware
 
-### Frontend Deployment
+---
 
-**Option 1: Vercel (Recommended)**
-
-- See **[client/README.md](./client/README.md)** for details
-- Framework: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
-
-**Option 2: Netlify, Cloudflare Pages, or any static hosting**
-
-- Build with `npm run build` in the `client/` directory
-- Deploy the `dist/` folder
-
-### Backend Deployment
-
-**Option 1: Railway/Render**
-
-- See **[server/README.md](./server/README.md)** for details
-- Root Directory: `server`
-- Build Command: `npm ci`
-- Start Command: `npm start`
-
-**Option 2: Heroku, AWS, or any Node.js hosting**
-
-- Deploy from the `server/` directory
-- Set all environment variables
-
-### Important Notes
-
-- **Frontend** requires `VITE_API_BACKEND_URL` pointing to your deployed backend
-- **Backend** requires proper CORS configuration for your frontend URL
-- Both can be deployed to different platforms/services
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
-
-## 🔗 Platform Integration
-
-### Medium
-
-1. Go to <https://medium.com/me/settings>
-2. Scroll to "Integration tokens"
-3. Generate token
-4. Add to SyncApp Settings
-
-### DEV.to
-
-1. Go to <https://dev.to/settings/account>
-2. Scroll to "API Keys"
-3. Generate API key
-4. Add to SyncApp Settings with your username
-
-### WordPress
-
-1. Install JWT Authentication plugin
-2. Generate Application Password
-3. Add site URL and password to SyncApp Settings
-
-See [WORDPRESS_INTEGRATION.md](./WORDPRESS_INTEGRATION.md) for WordPress setup.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Add JSDoc comments for functions
-- Write meaningful commit messages
-- Test thoroughly before submitting
-- Update documentation if needed
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Server won't start:**
-
-- Check MongoDB connection string
-- Ensure all environment variables are set
-- Verify port 9000 is available
-
-**CORS errors:**
-
-- Update `CORS_ORIGIN` in `server/.env.dev` or `server/.env.prod`
-- Ensure client and server ports match configuration
-
-**API calls fail:**
-
-- Verify Vite proxy is configured (development)
-- Check server is running on port 9000
-- Check browser console for detailed errors
-
-**Authentication issues:**
-
-- Clear localStorage and try again
-- Check JWT_SECRET is set
-- Verify token hasn't expired
-
-### Debug Mode
-
-Enable detailed logging:
-
-**Backend:**
+## Health check
 
 ```bash
-NODE_ENV=development npm run dev:server
+curl https://sync-app-server.vercel.app/health
 ```
-
-**Frontend:** Open browser DevTools → Console for detailed API logs
-
-## 📊 Monitoring & Health
-
-### Health Check Endpoint
-
-```bash
-GET http://localhost:9000/health
-```
-
-Returns:
 
 ```json
 {
   "status": "OK",
-  "timestamp": "2025-01-01T00:00:00.000Z",
-  "uptime": 3600.5,
-  "environment": "development",
   "database": {
     "status": "connected",
-    "host": "cluster0.mongodb.net",
-    "name": "syncapp"
+    "host": "cluster.mongodb.net",
+    "name": "syncapp",
+    "mongoUriConfigured": true
   },
   "services": {
     "mongodb": "healthy",
@@ -641,57 +288,87 @@ Returns:
 }
 ```
 
-## 📈 Roadmap
+Returns **503** when MongoDB is unreachable (includes `database.error`).
 
-### v1.1 (Planned)
+---
 
-- [ ] Image upload and management
-- [ ] Post scheduling
-- [ ] Draft autosave
-- [ ] Collaborative editing
-- [ ] Analytics dashboard
+## Documentation
 
-### v1.2 (Planned)
+| Doc                                                    | Description                       |
+| ------------------------------------------------------ | --------------------------------- |
+| [client/README.md](./client/README.md)                 | Frontend setup                    |
+| [server/README.md](./server/README.md)                 | Backend setup                     |
+| [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)             | Vercel env vars & troubleshooting |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)         | System architecture               |
+| [docs/PROJECT_SYNOPSIS.md](./docs/PROJECT_SYNOPSIS.md) | Project overview                  |
+| [CHANGELOG.md](./CHANGELOG.md)                         | Version history                   |
 
-- [ ] Hashnode integration
-- [ ] Ghost CMS support
-- [ ] Social media sharing
+---
+
+## Roadmap
+
+- [ ] Hashnode / Ghost integration
+- [ ] Unpublish UI (API already exists)
+- [ ] Team collaboration & content calendar
 - [ ] Email newsletter integration
-- [ ] Advanced SEO tools
-
-### v2.0 (Future)
-
-- [ ] Team collaboration
-- [ ] Content calendar
-- [x] AI-powered writing assistance
+- [ ] Social media auto-share
+- [ ] Advanced SEO tooling
 - [ ] Multi-language support
-- [x] Mobile app
 
-## 📄 License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Feature implementation status
 
-## 🙏 Acknowledgments
+| Feature | Status | Notes |
+| --- | :-: | --- |
+| **Multi-platform publishing** (Medium, DEV.to, WordPress) | ✅ | One-click per platform or publish-all |
+| **Smart re-publish** (update, not duplicate) | ✅ | DEV.to & WordPress update existing remote posts; Medium skips if already published |
+| **Rich text / Markdown editor** (TipTap) | ✅ | Live preview, toolbar, keyboard shortcuts |
+| **JWT authentication & protected routes** | ✅ | Register, login, profile, change password |
+| **Role-based access** (user / admin) | ✅ | Admin user management screen |
+| **Encrypted platform credentials** | ✅ | AES-256-CBC; Medium, DEV.to, WordPress |
+| **Cover image upload** | ✅ | Base64 or file upload → Google Cloud Storage |
+| **Canonical URLs & SEO metadata** | ✅ | Meta description, slug, canonical URL; DEV.to validates URL + max 4 tags |
+| **SEO scorecard** (editor sidebar) | ✅ | Real-time scoring from title, meta, tags, content |
+| **AI writing assistant** | ✅ | Full post generation, inline edit, featured image (Vertex AI) |
+| **Analytics dashboard** | ✅ | Summary stats, platform breakdown, 30-day activity charts |
+| **Post scheduling** | ✅ | Schedule publish time; Vercel Cron triggers `/api/cron/publish-scheduled` |
+| **Draft autosave** | ✅ | Existing posts auto-save every 60s when dirty |
+| **Preserve published status on save** | ✅ | Regular save keeps status; only **Save Draft** reverts to draft |
+| **MDX export** | ✅ | Download post as MDX with frontmatter |
+| **Dark mode** | ✅ | Persistent theme preference |
+| **Dashboard platform chips** | ✅ | Read-only links to published articles (no unpublish in UI) |
+| **Vercel serverless deployment** | ✅ | Client (Next.js) + Server (Express) on Vercel |
+| **MongoDB serverless connection** | ✅ | Cached connect, cold-start health check, 503 when DB down |
+| **Postman collection & environments** | ✅ | Auto-saves JWT after Login to `{{token}}` for all requests |
+| **Unpublish API** | 🚧 | `DELETE /api/publish/:platform/:postId` exists; not exposed in dashboard UI |
+| **Hashnode / Ghost integration** | ❌ | Planned |
+| **Collaborative editing** | ❌ | Planned |
+| **Team workspaces / content calendar** | ❌ | Planned |
+| **Email newsletter / social auto-share** | ❌ | Planned |
+| **Native mobile app** | ❌ | Planned |
 
-- [React](https://reactjs.org/) - Frontend framework
-- [Express](https://expressjs.com/) - Backend framework
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [shadcn/ui](https://ui.shadcn.com/) - UI component inspiration
-- [Vite](https://vitejs.dev/) - Build tool
+**Legend:** ✅ Implemented · 🚧 Partial / API-only · ❌ Not started
 
-## 💬 Support
+---
 
-- **Issues**: [GitHub Issues](https://github.com/FarukhSaifi/SyncApp/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/FarukhSaifi/SyncApp/discussions)
-- **Email**: <support@syncapp.com> (if applicable)
+## Contributing
 
-## 👨‍💻 Author
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit with clear messages
+4. Open a Pull Request
 
-Farukh Saifi
+---
 
-- GitHub: [@FarukhSaifi](https://github.com/FarukhSaifi)
+## License
 
-Made with ❤️ for the developer community
+MIT — see [LICENSE](./LICENSE).
 
-**SyncApp** - Write once, publish everywhere 🚀
+---
+
+## Author
+
+**Farukh Saifi** · [GitHub @FarukhSaifi](https://github.com/FarukhSaifi)
+
+**SyncApp** — Write once, publish everywhere.
