@@ -15,6 +15,11 @@ export function loadAppEnv(): "dev" | "prod" {
         ? "prod"
         : "dev";
 
+  // On Vercel, env vars come from the dashboard — never load local .env files (override could wipe them).
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    return appEnv;
+  }
+
   const envPath = path.resolve(process.cwd(), `.env.${appEnv}`);
   if (existsSync(envPath)) {
     dotenv.config({ path: envPath, override: true });

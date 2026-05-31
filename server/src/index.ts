@@ -4,25 +4,18 @@ import type { Application, Request, Response } from "express";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-import mongoose from "mongoose";
 import path from "path";
 
 import { config } from "./config";
-import { DATABASE, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
-import connectDB from "./database/connection";
+import { DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
+import connectDB, { getDbConnectionMeta, isDbConnected } from "./database/connection";
+import { ensureDb } from "./middleware/ensureDb";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import apiRoutes from "./routes";
 import { logger, requestLogger } from "./utils/logger";
 
 const app: Application = express();
 const PORT = config.port;
-
-// Connect to DB on startup.
-// On Vercel (serverless), Mongoose reuses the connection across warm invocations
-// via its built-in readyState check inside connectDB().
-connectDB().catch((err) => {
-  logger.error(HEALTH.LOG.DB_CONNECT_FAILED, err as Error);
-});
 
 // Security middleware
 app.use(helmet());
@@ -72,9 +65,18 @@ app.use(
 // Request logging middleware
 app.use(requestLogger);
 
-// Health check endpoint
-app.get("/health", (req: Request, res: Response) => {
-  const dbConnected = mongoose.connection.readyState === DATABASE.MONGOOSE_STATE.CONNECTED;
+// Health check endpoint — awaits DB connect (important on Vercel cold starts)
+app.get("/health", async (req: Request, res: Response) => {
+  let connectionError: string | undefined;
+  try {
+    await connectDB();
+  } catch (error) {
+    connectionError = (error as Error).message;
+    logger.error(HEALTH.LOG.DB_CONNECT_FAILED, error as Error);
+  }
+
+  const dbConnected = isDbConnected();
+  const { host, name } = getDbConnectionMeta();
   const healthInfo = {
     status: HEALTH.STATUS.OK,
     timestamp: dayjs().toISOString(),
@@ -82,8 +84,10 @@ app.get("/health", (req: Request, res: Response) => {
     environment: config.nodeEnv,
     database: {
       status: dbConnected ? HEALTH.DB.CONNECTED : HEALTH.DB.DISCONNECTED,
-      host: mongoose.connection.host || HEALTH.STATUS.UNKNOWN,
-      name: mongoose.connection.name || HEALTH.STATUS.UNKNOWN,
+      host: host || HEALTH.STATUS.UNKNOWN,
+      name: name || HEALTH.STATUS.UNKNOWN,
+      mongoUriConfigured: Boolean(config.mongoUri?.trim()),
+      ...(connectionError && !dbConnected ? { error: connectionError } : {}),
     },
     services: {
       mongodb: dbConnected ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
@@ -98,14 +102,14 @@ app.get("/health", (req: Request, res: Response) => {
     dbStatus: healthInfo.database.status,
   });
 
-  res.json(healthInfo);
+  res.status(dbConnected ? 200 : 503).json(healthInfo);
 });
 
 // Static file uploads fallback route
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// API routes (all under /api - route paths defined in constants/routes.ts)
-app.use("/api", apiRoutes);
+// API routes — ensure MongoDB is connected before handling requests
+app.use("/api", ensureDb, apiRoutes);
 
 // 404 handler (must be after routes)
 app.use(notFoundHandler);
