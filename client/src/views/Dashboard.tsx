@@ -290,6 +290,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefres
                       <TableHead>{SYNC_LABEL.TABLE_TAGS}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_PUBLISHED_ON}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_CREATED}</TableHead>
+                      <TableHead>{SYNC_LABEL.TABLE_UPDATED}</TableHead>
                       <TableHead className="text-right">{SYNC_LABEL.TABLE_ACTIONS}</TableHead>
                     </TableRow>
                   </TableHeader>

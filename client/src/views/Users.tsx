@@ -19,10 +19,10 @@ import {
 } from "@constants";
 import { useDebounce } from "@hooks/useDebounce";
 import { useToast } from "@hooks/useToast";
-import type { User, AddUserForm, EditForm, PaginationState, UserDeleteConfirmState } from "@types";
+import type { AddUserForm, EditForm, PaginationState, User, UserDeleteConfirmState } from "@types";
 import { apiClient } from "@utils/apiClient";
+import { formatDateTime } from "@utils/dateUtils";
 import { logError } from "@utils/logger";
-import dayjs from "dayjs";
 import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
 
 import Button from "@components/common/Button";
@@ -32,8 +32,6 @@ import Input from "@components/common/Input";
 import Modal from "@components/common/Modal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/common/Table";
 import Textarea from "@components/common/Textarea";
-
-
 
 const initialAddForm: AddUserForm = {
   username: "",
@@ -57,6 +55,7 @@ function UsersTableSkeleton({ rows = 5 }: { rows?: number }) {
           <TableHead>{SYNC_LABEL.TABLE_ROLE}</TableHead>
           <TableHead>{SYNC_LABEL.TABLE_STATUS}</TableHead>
           <TableHead>{SYNC_LABEL.TABLE_JOINED}</TableHead>
+          <TableHead>{SYNC_LABEL.TABLE_UPDATED}</TableHead>
           <TableHead>{SYNC_LABEL.TABLE_LAST_LOGIN}</TableHead>
           <TableHead className="text-right">{SYNC_LABEL.TABLE_ACTIONS}</TableHead>
         </TableRow>
@@ -64,7 +63,7 @@ function UsersTableSkeleton({ rows = 5 }: { rows?: number }) {
       <TableBody>
         {Array.from({ length: rows }).map((_, i) => (
           <TableRow key={i}>
-            {Array.from({ length: 7 }).map((_, j) => (
+            {Array.from({ length: 8 }).map((_, j) => (
               <TableCell key={j}>
                 <div className="h-5 bg-muted/60 rounded animate-pulse" />
               </TableCell>
@@ -97,7 +96,11 @@ const Users = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [addForm, setAddForm] = useState<AddUserForm>(initialAddForm);
   const [creating, setCreating] = useState<boolean>(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<UserDeleteConfirmState>({ isOpen: false, userId: null, username: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState<UserDeleteConfirmState>({
+    isOpen: false,
+    userId: null,
+    username: "",
+  });
   const [deleting, setDeleting] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {
@@ -229,10 +232,7 @@ const Users = () => {
     }
   }, [addForm, toast, fetchUsers]);
 
-  const formatDate = useCallback((dateString: string | undefined): string => {
-    if (!dateString) return PLACEHOLDERS.N_A;
-    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
-  }, []);
+  const formatDate = useCallback((dateString: string | undefined): string => formatDateTime(dateString), []);
 
   if (loading && users.length === 0) {
     return (
@@ -354,7 +354,8 @@ const Users = () => {
                 )}
                 {verifiedFilter !== USER_VERIFIED_FILTER.ALL && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                    Status: {verifiedFilter === USER_VERIFIED_FILTER.VERIFIED ? SYNC_LABEL.VERIFIED : SYNC_LABEL.UNVERIFIED}
+                    Status:{" "}
+                    {verifiedFilter === USER_VERIFIED_FILTER.VERIFIED ? SYNC_LABEL.VERIFIED : SYNC_LABEL.UNVERIFIED}
                   </span>
                 )}
               </div>
@@ -420,6 +421,7 @@ const Users = () => {
                       <TableHead>{SYNC_LABEL.TABLE_ROLE}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_STATUS}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_JOINED}</TableHead>
+                      <TableHead>{SYNC_LABEL.TABLE_UPDATED}</TableHead>
                       <TableHead>{SYNC_LABEL.TABLE_LAST_LOGIN}</TableHead>
                       <TableHead className="text-right">{SYNC_LABEL.TABLE_ACTIONS}</TableHead>
                     </TableRow>

@@ -2,7 +2,7 @@ import React, { memo } from "react";
 
 import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, POST_STATUS, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
 import type { Post, PostCardProps } from "@types";
-import dayjs from "dayjs";
+import { formatDateTime } from "@utils/dateUtils";
 import Link from "next/link";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 
@@ -15,6 +15,7 @@ import SeoScoreBadge from "./SeoScoreBadge";
 type PostData = Post & {
   id?: string;
   created_at?: string;
+  updated_at?: string;
   published_at?: string;
 };
 
@@ -82,11 +83,9 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
     return <div className="flex flex-wrap gap-2">{platforms}</div>;
   };
 
-  const formatDate = (dateString: string) => {
-    return dayjs(dateString).format(APP_CONFIG.DATE_FORMAT);
-  };
-
   const postId = post.id || post._id;
+  const createdAt = post.created_at || post.createdAt;
+  const updatedAt = post.updated_at || post.updatedAt;
 
   return (
     <Card className="border">
@@ -136,17 +135,17 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
             <div>
-              <div className="text-xs text-muted-foreground">
-                {SYNC_LABEL.CREATED}{" "}
-                <div className="text-foreground truncate">{formatDate(post.created_at || post.createdAt || "")}</div>
-              </div>
+              <div className="text-xs text-muted-foreground">{SYNC_LABEL.CREATED}</div>
+              <div className="text-foreground truncate">{formatDateTime(createdAt)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">{SYNC_LABEL.UPDATED}</div>
+              <div className="text-foreground truncate">{formatDateTime(updatedAt)}</div>
             </div>
             {post.published_at && (
-              <div>
-                <div className="text-xs text-muted-foreground">
-                  {SYNC_LABEL.PUBLISHED_DATE}{" "}
-                  <div className="text-foreground truncate">{formatDate(post.published_at)}</div>
-                </div>
+              <div className="col-span-2">
+                <div className="text-xs text-muted-foreground">{SYNC_LABEL.PUBLISHED_DATE}</div>
+                <div className="text-foreground truncate">{formatDateTime(post.published_at)}</div>
               </div>
             )}
           </div>

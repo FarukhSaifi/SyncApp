@@ -7,9 +7,6 @@ import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi
 import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
 
-
-
-
 const UserTableRow = memo<UserTableRowProps>(({ user, formatDate, onEdit, onDelete }) => {
   const userId = user._id || user.id || "";
   const displayName =
@@ -61,6 +58,7 @@ const UserTableRow = memo<UserTableRowProps>(({ user, formatDate, onEdit, onDele
         </span>
       </TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.createdAt)}</TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.updatedAt)}</TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDate(user.lastLogin)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
