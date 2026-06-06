@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="128" y1="128" x2="896" y2="896" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D28D9"/>
+      <stop offset="0.5" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <!-- Sync badge: solid circle + up/down arrows (reference middle icon) -->
+  <circle cx="512" cy="512" r="228" fill="#FFFFFF"/>
+  <g stroke="#6D28D9" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M432 608 V472"/>
+    <path d="M432 472 L384 520"/>
+    <path d="M432 472 L480 520"/>
+    <path d="M592 416 V552"/>
+    <path d="M592 552 L544 504"/>
+    <path d="M592 552 L640 504"/>
+  </g>
+</svg>

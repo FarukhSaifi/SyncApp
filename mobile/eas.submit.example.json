@@ -1,0 +1,11 @@
+{
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "you@example.com",
+        "ascAppId": "0000000000",
+        "appleTeamId": "XXXXXXXXXX"
+      }
+    }
+  }
+}
