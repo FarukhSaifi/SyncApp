@@ -33,6 +33,7 @@ export default function RootLayout({
         <meta name="color-scheme" content="light dark" />
         {/* Inline theme script: key must match STORAGE_KEYS.THEME; value 'dark' matches THEME_VALUES.DARK */}
         <script
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- theme flash prevention (rendering-hydration-no-flicker)
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
