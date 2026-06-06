@@ -2,13 +2,23 @@ import type { Metadata } from "next";
 
 import { Toaster } from "@components/common/Toaster";
 
+import { getSiteOrigin } from "../config/security";
+
 import "./globals.css";
 import { Providers } from "./providers";
 
-export const dynamic = "force-dynamic";
+const isProd = process.env.NODE_ENV === "production";
+
 export const metadata: Metadata = {
-  title: "SyncApp - Blog Syndication Platform",
+  metadataBase: new URL(getSiteOrigin()),
+  title: {
+    default: "SyncApp - Blog Syndication Platform",
+    template: "%s | SyncApp",
+  },
   description: "Blog syndication made simple",
+  ...(isProd && {
+    robots: { index: false, follow: false },
+  }),
 };
 
 export default function RootLayout({

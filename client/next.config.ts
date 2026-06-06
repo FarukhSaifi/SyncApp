@@ -1,23 +1,35 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+import { buildSecurityHeaders, getApiOrigin } from "./config/security";
+
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
+  poweredByHeader: false,
+  reactStrictMode: true,
+  compress: true,
+  compiler: {
+    removeConsole: isProd ? { exclude: ["error", "warn"] } : false,
+  },
   typescript: {
     ignoreBuildErrors: true, // route type resolution issue with (auth)/(dashboard) groups
   },
-  // Proxy /api to backend
+  experimental: {
+    optimizePackageImports: ["react-icons", "recharts", "@tiptap/react", "@tiptap/starter-kit"],
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: buildSecurityHeaders(isProd),
+      },
+    ];
+  },
   async rewrites() {
-    const isProd = process.env.NODE_ENV === 'production';
-    const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL || (isProd ? 'https://sync-app-server.vercel.app' : 'http://localhost:9000');
-    
-    try {
-      const base = new URL(apiUrl);
-      const origin = base.origin;
-      return [{ source: "/api/:path*", destination: `${origin}/api/:path*` }];
-    } catch {
-      return [{ source: "/api/:path*", destination: "http://localhost:9000/api/:path*" }];
-    }
+    const origin = getApiOrigin();
+    return [{ source: "/api/:path*", destination: `${origin}/api/:path*` }];
   },
 };
 
