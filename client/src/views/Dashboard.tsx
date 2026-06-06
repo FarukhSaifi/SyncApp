@@ -18,7 +18,7 @@ import ConfirmationModal from "@components/common/ConfirmationModal";
 import Skeleton from "@components/common/Skeleton";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@components/common/Table";
 
-const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate, onRefresh }: DashboardProps) => {
+const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostUpdate, onRefresh }: DashboardProps) => {
   const toast = useToast();
   const [filterStatus, setFilterStatus] = useState<string>(FILTER_STATUS_ALL);
   const [deleteConfirm, setDeleteConfirm] = useState<DashboardDeleteConfirmState>({ isOpen: false, postId: null });

@@ -2,8 +2,10 @@
 // These avoid the barrel export which tries to load lowlight v2
 
 declare module "react-syntax-highlighter/dist/esm/prism-async-light" {
-  import { ComponentType } from "react";
-  const SyntaxHighlighter: ComponentType<any>;
+  import type { ComponentType } from "react";
+
+  import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
+  const SyntaxHighlighter: ComponentType<SyntaxHighlighterProps>;
   export default SyntaxHighlighter;
 }
 

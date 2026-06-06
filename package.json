@@ -21,9 +21,14 @@
     "dev:server": "cd server && npm run dev",
     "env:pull": "npm run env:pull:server && npm run env:pull:client",
     "env:pull:server": "cd server && vercel env pull .env.prod --environment=production",
-    "env:pull:client": "cd client && vercel env pull .env.production --environment=production"
+    "env:pull:client": "cd client && vercel env pull .env.production --environment=production",
+    "prepare": "husky",
+    "check": "npm run check:client && npm run check:server",
+    "check:client": "cd client && npm run lint && npm run typecheck",
+    "check:server": "cd server && npm run typecheck && npm run build"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7"
   }
 }

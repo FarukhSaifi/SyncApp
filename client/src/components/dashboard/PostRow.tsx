@@ -111,9 +111,9 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       <TableCell>
         <div className="flex flex-wrap gap-1 max-w-32">
           {post.tags && post.tags.length > 0 ? (
-            post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW).map((tag: string, index: number) => (
+            post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW).map((tag: string) => (
               <span
-                key={index}
+                key={tag}
                 className="px-2 py-1 bg-primary/15 text-primary text-xs rounded-full truncate"
                 title={tag}
               >

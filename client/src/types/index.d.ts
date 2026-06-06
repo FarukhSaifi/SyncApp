@@ -252,7 +252,7 @@ export interface EditorSidebarLeftProps {
   tagList: string[];
   tagInput: string;
   setTagInput: (v: string) => void;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
   onTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;

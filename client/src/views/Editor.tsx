@@ -12,12 +12,13 @@ import EditorSidebarLeft from "@components/editor/EditorSidebarLeft";
 import EditorSidebarRight from "@components/editor/EditorSidebarRight";
 import EditorStatusBar from "@components/editor/EditorStatusBar";
 import EditorToolbar from "@components/editor/EditorToolbar";
-import { POST_STATUS } from "@constants/postStatus";
 import { useEditorAI } from "@hooks/useEditorAI";
 import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
+
+import { POST_STATUS } from "@constants/postStatus";
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   // State hooks

@@ -3,30 +3,25 @@ import React from "react";
 
 import type { EditorPreviewProps } from "@types";
 import { isLikelyHtml } from "@utils/contentUtils";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type ExtraProps } from "react-markdown";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-async-light";
 import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark";
 
 import { SYNC_LABEL } from "@constants/messages";
 
-
-
 const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPreviewProps) => {
   return (
     <div className="editor-preview prose prose-base max-w-none">
       <h1 className="text-3xl font-bold mb-4">{title || SYNC_LABEL.UNTITLED_POST}</h1>
-      
+
       {coverImage && (
-        <img
-          src={coverImage}
-          alt="Cover"
-          className="w-full h-auto max-h-64 object-cover rounded-lg mb-4"
-        />
+        <img src={coverImage} alt="Cover" className="w-full h-auto max-h-64 object-cover rounded-lg mb-4" />
       )}
-      
+
       {isLikelyHtml(previewContent) ? (
         <div
           className="prose prose-base max-w-none"
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
           dangerouslySetInnerHTML={{
             __html: previewContent || SYNC_LABEL.NO_CONTENT_YET,
           }}
@@ -34,7 +29,7 @@ const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPre
       ) : (
         <ReactMarkdown
           components={{
-            code({ className, children, ...props }: any) {
+            code({ className, children, ...props }: React.ComponentPropsWithoutRef<"code"> & ExtraProps) {
               const match = /language-(\w+)/.exec(className || "");
               const inline = !match;
               if (!inline && match) {
@@ -50,7 +45,6 @@ const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPre
                         padding: "1rem",
                         margin: 0,
                       }}
-                      {...props}
                     >
                       {String(children).replace(/\n$/, "")}
                     </SyntaxHighlighter>
@@ -63,7 +57,7 @@ const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPre
                 </code>
               );
             },
-            img({ src, alt }: any) {
+            img({ src, alt }: React.ComponentPropsWithoutRef<"img"> & ExtraProps) {
               return <img src={src || ""} alt={alt || ""} className="w-full h-auto rounded-md" />;
             },
           }}

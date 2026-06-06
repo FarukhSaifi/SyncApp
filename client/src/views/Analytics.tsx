@@ -35,7 +35,7 @@ const Analytics = () => {
       setLoading(true);
       const res = await apiClient.getAnalyticsStats();
       if (res?.success) {
-        setData(res.data);
+        setData(res.data ?? null);
       } else {
         toast.apiError(res?.error || ANALYTICS_LABELS.LOAD_FAILED);
       }
@@ -84,12 +84,12 @@ const Analytics = () => {
               <Skeleton className="h-3.5 w-64 mt-1" />
             </CardHeader>
             <CardContent className="h-[300px] flex items-end justify-between px-6 pb-6 gap-2">
-              {[...Array(12)].map((_, idx) => (
+              {Array.from({ length: 12 }, (_, i) => i).map((n) => (
                 <Skeleton
-                  key={idx}
+                  key={`activity-skeleton-${n}`}
                   className="w-full bg-muted/40 rounded-t"
                   style={{
-                    height: `${10 + Math.sin(idx) * 40 + Math.cos(idx) * 30}%`,
+                    height: `${10 + Math.sin(n) * 40 + Math.cos(n) * 30}%`,
                   }}
                 />
               ))}
@@ -235,7 +235,7 @@ const Analytics = () => {
                   dataKey="value"
                 >
                   {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                    <Cell key={entry.name} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
