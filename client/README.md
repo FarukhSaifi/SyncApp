@@ -115,14 +115,12 @@ The frontend connects to the backend API. Make sure:
 1. **Push to GitHub**
 
 2. **Import in Vercel:**
-
    - Go to [Vercel Dashboard](https://vercel.com/dashboard)
    - Click "Add New" → "Project"
    - Import your repository
    - Framework: **Vite** (auto-detected)
 
 3. **Configure Build Settings:**
-
    - **Build Command:** `npm run build` (or `npm run build:vercel`)
    - **Output Directory:** `dist`
    - **Install Command:** `npm install`
@@ -136,7 +134,6 @@ The frontend connects to the backend API. Make sure:
    ```
 
    **Important:**
-
    - Use your **production backend URL** (e.g., `https://sync-app-server.railway.app/api`)
    - Must include the `/api` suffix
    - Can add for specific environments (Production, Preview, Development)

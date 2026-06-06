@@ -1,12 +1,18 @@
+import dayjs from "dayjs";
 import { POST_STATUS } from "../constants";
 import Post from "../models/Post";
-import dayjs from "dayjs";
+import { toObjectId } from "../utils/objectId";
+
+function authorMatchStage(userId: string) {
+  return { $match: { author: toObjectId(userId) } };
+}
 
 /**
- * Get distribution of posts by status
+ * Get distribution of posts by status for a user
  */
-export async function getStatusDistribution() {
+export async function getStatusDistribution(userId: string) {
   const distribution = await Post.aggregate([
+    authorMatchStage(userId),
     {
       $group: {
         _id: "$status",
@@ -22,10 +28,11 @@ export async function getStatusDistribution() {
 }
 
 /**
- * Get distribution of published posts across platforms
+ * Get distribution of published posts across platforms for a user
  */
-export async function getPlatformDistribution() {
+export async function getPlatformDistribution(userId: string) {
   const results = await Post.aggregate([
+    authorMatchStage(userId),
     {
       $facet: {
         medium: [{ $match: { "platform_status.medium.published": true } }, { $count: "count" }],
@@ -44,14 +51,15 @@ export async function getPlatformDistribution() {
 }
 
 /**
- * Get post creation activity over the last 30 days
+ * Get post creation activity over the last 30 days for a user
  */
-export async function getDailyActivity() {
-  const thirtyDaysAgo = dayjs().subtract(30, 'day').toDate();
+export async function getDailyActivity(userId: string) {
+  const thirtyDaysAgo = dayjs().subtract(30, "day").toDate();
 
   const activity = await Post.aggregate([
     {
       $match: {
+        author: toObjectId(userId),
         createdAt: { $gte: thirtyDaysAgo },
       },
     },
@@ -75,13 +83,13 @@ export async function getDailyActivity() {
 }
 
 /**
- * Get overall summary stats
+ * Get overall summary stats for the authenticated user
  */
-export async function getAnalyticsSummary() {
+export async function getAnalyticsSummary(userId: string) {
   const [status, platforms, history] = await Promise.all([
-    getStatusDistribution(),
-    getPlatformDistribution(),
-    getDailyActivity(),
+    getStatusDistribution(userId),
+    getPlatformDistribution(userId),
+    getDailyActivity(userId),
   ]);
 
   const totalPosts = Object.values(status).reduce((a, b) => a + b, 0);

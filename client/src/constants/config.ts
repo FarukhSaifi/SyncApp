@@ -26,7 +26,7 @@ export const APP_CONFIG = Object.freeze({
   // Toaster
   TOAST_MIN_WIDTH: "320px",
   TOAST_MAX_WIDTH: "480px",
-  TOAST_AUTO_CLOSE_DELAY: 4000, // ms — default toast visibility
+  TOAST_AUTO_CLOSE_DELAY: 3000, // ms — default toast visibility
 
   // Post list display
   TAGS_DISPLAY_LIMIT_CARD: 5,

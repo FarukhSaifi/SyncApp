@@ -14,7 +14,6 @@ import { INFO_MESSAGES } from "@constants/messages";
 
 import LoadingScreen from "@components/common/LoadingScreen";
 
-
 function ClientOnly({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -44,7 +43,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const postsState = usePosts({ enabled: isAuthenticated });
+  const postsState = usePosts({ enabled: isAuthenticated, userId: user?._id ?? null });
 
   useEffect(() => {
     if (authLoading) return;

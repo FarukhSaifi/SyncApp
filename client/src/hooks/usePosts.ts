@@ -15,6 +15,10 @@ import { devError, devLog, devWarn } from "@utils/logger";
 
 const postsCache = new Map<string, PostsCacheEntry>();
 
+export function clearPostsCache(): void {
+  postsCache.clear();
+}
+
 export function usePosts(
   initialPaginationOrOptions: Pagination | UsePostsOptions = DEFAULT_PAGINATION,
 ): UsePostsReturn {
@@ -24,69 +28,74 @@ export function usePosts(
     "enabled" in initialPaginationOrOptions
       ? (initialPaginationOrOptions as UsePostsOptions)
       : { enabled: true, pagination: initialPaginationOrOptions as Pagination };
-  const { enabled = true, pagination: paginationOpt = DEFAULT_PAGINATION } = options;
+  const { enabled = true, pagination: paginationOpt = DEFAULT_PAGINATION, userId = null } = options;
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(enabled);
   const [pagination, setPagination] = useState<Pagination>(paginationOpt);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPosts = useCallback(async (opts: Partial<Pagination> = {}) => {
-    setLoading(true);
-    setError(null);
+  const fetchPosts = useCallback(
+    async (opts: Partial<Pagination> = {}) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const params = opts.page !== undefined || opts.limit !== undefined ? opts : DEFAULT_PAGINATION;
-      const cacheKey = JSON.stringify(params);
+      try {
+        const params = opts.page !== undefined || opts.limit !== undefined ? opts : DEFAULT_PAGINATION;
+        const cacheKey = JSON.stringify({ ...params, userId });
 
-      // Check cache first
-      const cached = postsCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        devLog("Using cached posts for params:", params);
-        setPosts(cached.data);
-        setPagination(cached.pagination);
-        setLoading(false);
-        return;
-      }
-
-      devLog("Fetching posts with params:", params);
-      const response = (await apiClient.getPosts(params)) as unknown as PostsApiResponse;
-
-      if (response && response.success) {
-        devLog("Posts fetched:", response.data?.length ?? 0);
-        const fetchedData = response.data || [];
-        setPosts(fetchedData);
-        if (response.pagination) {
-          setPagination(response.pagination);
-          // Set cache
-          postsCache.set(cacheKey, {
-            data: fetchedData,
-            pagination: response.pagination,
-            timestamp: Date.now(),
-          });
+        // Check cache first
+        const cached = postsCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+          devLog("Using cached posts for params:", params);
+          setPosts(cached.data);
+          setPagination(cached.pagination);
+          setLoading(false);
+          return;
         }
-      } else {
-        devWarn("API returned unsuccessful response:", response);
-        setError(response?.error || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
+
+        devLog("Fetching posts with params:", params);
+        const response = (await apiClient.getPosts(params)) as unknown as PostsApiResponse;
+
+        if (response && response.success) {
+          devLog("Posts fetched:", response.data?.length ?? 0);
+          const fetchedData = response.data || [];
+          setPosts(fetchedData);
+          if (response.pagination) {
+            setPagination(response.pagination);
+            // Set cache
+            postsCache.set(cacheKey, {
+              data: fetchedData,
+              pagination: response.pagination,
+              timestamp: Date.now(),
+            });
+          }
+        } else {
+          devWarn("API returned unsuccessful response:", response);
+          setError(response?.error || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
+          setPosts([]);
+        }
+      } catch (err) {
+        devError("Error fetching posts:", err);
+        setError((err as Error)?.message || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
         setPosts([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      devError("Error fetching posts:", err);
-      setError((err as Error)?.message || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [userId],
+  );
 
   useEffect(() => {
-    if (enabled) {
+    if (enabled && userId) {
       fetchPosts();
     } else {
       setLoading(false);
       setError(null);
+      setPosts([]);
+      postsCache.clear();
     }
-  }, [enabled, fetchPosts]); // Fetch when enabled (e.g. user becomes authenticated)
+  }, [enabled, userId, fetchPosts]);
 
   const addPost = useCallback((newPost: Post) => {
     setPosts((prev) => [newPost, ...prev]);

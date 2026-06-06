@@ -1,13 +1,17 @@
-import User from '../models/User';
-import { VALID_USER_ROLES, USER_ROLES } from '../constants/userRoles';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES, FIELDS, DEFAULT_PASSWORDS } from '../constants';
-import type { GetUsersParams, CreateUserData } from '../types/index';
-
+import mongoose from "mongoose";
+import { DEFAULT_PASSWORDS, ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES } from "../constants";
+import { USER_ROLES, VALID_USER_ROLES } from "../constants/userRoles";
+import Credential from "../models/Credential";
+import Post from "../models/Post";
+import User from "../models/User";
+import type { CreateUserData, GetUsersParams } from "../types/index";
+import { cache, cacheKeys } from "../utils/cache";
+import { toObjectId } from "../utils/objectId";
 
 /**
  * Get all users with pagination and filtering
  */
-export async function getUsers({ page = 1, limit = 20, search = '', role = '' }: GetUsersParams = {}) {
+export async function getUsers({ page = 1, limit = 20, search = "", role = "" }: GetUsersParams = {}) {
   const pageNum = Number(page);
   const limitNum = Number(limit);
   const skip = (pageNum - 1) * limitNum;
@@ -15,10 +19,10 @@ export async function getUsers({ page = 1, limit = 20, search = '', role = '' }:
   const query: Record<string, unknown> = {};
   if (search) {
     query.$or = [
-      { username: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-      { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
+      { username: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { firstName: { $regex: search, $options: "i" } },
+      { lastName: { $regex: search, $options: "i" } },
     ];
   }
   if (role) {
@@ -69,7 +73,7 @@ export async function updateUser(userId: string, updateData: Record<string, unkn
     }
   });
 
-  if (updateFields.role && !(VALID_USER_ROLES as string[]).includes(updateFields.role as string)) {
+  if (updateFields.role && !(VALID_USER_ROLES as readonly string[]).includes(updateFields.role as string)) {
     throw new Error(ERROR_MESSAGES.INVALID_ROLE);
   }
 
@@ -83,8 +87,6 @@ export async function updateUser(userId: string, updateData: Record<string, unkn
 
   return user;
 }
-
-
 
 /**
  * Create user (admin only)
@@ -100,7 +102,7 @@ export async function createUser(userData: CreateUserData) {
     throw new Error(ERROR_MESSAGES.USER_ALREADY_EXISTS);
   }
 
-  if (role && !(VALID_USER_ROLES as string[]).includes(role)) {
+  if (role && !(VALID_USER_ROLES as readonly string[]).includes(role)) {
     throw new Error(ERROR_MESSAGES.INVALID_ROLE);
   }
 
@@ -124,12 +126,42 @@ export async function createUser(userData: CreateUserData) {
 }
 
 /**
- * Delete user (admin only)
+ * Delete user and owned data (admin only)
  */
 export async function deleteUser(userId: string) {
-  const user = await User.findByIdAndDelete(userId);
-  if (!user) {
-    throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+  const authorId = toObjectId(userId);
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const [credentialResult, postResult] = await Promise.all([
+      Credential.deleteMany({ author: authorId }, { session }),
+      Post.deleteMany({ author: authorId }, { session }),
+    ]);
+
+    await User.findByIdAndDelete(userId, { session });
+    await session.commitTransaction();
+
+    cache.delete(cacheKeys.credentials.list(userId));
+    cache.invalidatePattern(cacheKeys.credentials.all());
+    cache.invalidatePattern(cacheKeys.posts.all());
+    cache.delete(cacheKeys.user.profile(userId));
+
+    return {
+      message: SUCCESS_MESSAGES.USER_DELETED,
+      deletedCredentials: credentialResult.deletedCount,
+      deletedPosts: postResult.deletedCount,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-  return { message: SUCCESS_MESSAGES.USER_DELETED };
 }

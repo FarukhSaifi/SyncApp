@@ -12,7 +12,6 @@ import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
-
 const Login = () => {
   const [formData, setFormData] = useState<LoginFormState>({
     email: "",
@@ -122,7 +121,10 @@ const Login = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 {SYNC_LABEL.DONT_HAVE_ACCOUNT}{" "}
-                <Link href={ROUTES.REGISTER} className="font-medium text-primary hover:text-primary/90 transition-colors">
+                <Link
+                  href={ROUTES.REGISTER}
+                  className="font-medium text-primary hover:text-primary/90 transition-colors"
+                >
                   {SYNC_LABEL.SIGN_UP_HERE}
                 </Link>
               </p>

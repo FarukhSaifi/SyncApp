@@ -3,6 +3,7 @@ import createSlug from "slugify";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "../constants";
+import { POST_INDEXES } from "../constants/indexes";
 import type { IPlatformStatus, IPost } from "../types/index";
 
 export interface IPostDocument extends Document, Omit<IPost, "_id" | "author"> {
@@ -21,7 +22,6 @@ const postSchema = new Schema<IPostDocument>(
       type: String,
       required: false,
       unique: true,
-      index: true,
       trim: true,
     },
     author: {
@@ -74,7 +74,6 @@ const postSchema = new Schema<IPostDocument>(
     canonical_url: String,
     scheduled_for: {
       type: Date,
-      index: true,
     },
   },
   {
@@ -84,12 +83,9 @@ const postSchema = new Schema<IPostDocument>(
   },
 );
 
-postSchema.index({ author: 1, status: 1 });
-postSchema.index({ author: 1, createdAt: -1 });
-postSchema.index({ status: 1 });
-postSchema.index({ createdAt: -1 });
-postSchema.index({ title: "text", content_markdown: "text" });
-postSchema.index({ tags: 1 });
+postSchema.index(POST_INDEXES.AUTHOR_RECENT);
+postSchema.index(POST_INDEXES.PUBLIC_FEED);
+postSchema.index(POST_INDEXES.SCHEDULED_PUBLISH);
 
 async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
   const base =

@@ -1,13 +1,14 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import { VALID_USER_ROLES, USER_ROLES } from '../constants/userRoles';
-import { STRING_LIMITS, NUMERIC_LIMITS, REGEX_PATTERNS, VALIDATION_ERRORS } from '../constants/validation';
-import type { IUser } from '../types/index';
+import bcrypt from "bcryptjs";
+import mongoose, { Document, Model, Schema } from "mongoose";
+import { USER_INDEXES } from "../constants/indexes";
+import { USER_ROLES, VALID_USER_ROLES } from "../constants/userRoles";
+import { NUMERIC_LIMITS, REGEX_PATTERNS, STRING_LIMITS, VALIDATION_ERRORS } from "../constants/validation";
+import type { IUser } from "../types/index";
 
-export interface IUserDocument extends Document, Omit<IUser, '_id'> {
+export interface IUserDocument extends Document, Omit<IUser, "_id"> {
   lastLogin?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
-  toJSON(): Omit<IUserDocument, 'password'>;
+  toJSON(): Omit<IUserDocument, "password">;
 }
 
 const userSchema = new Schema<IUserDocument>(
@@ -49,7 +50,7 @@ const userSchema = new Schema<IUserDocument>(
     },
     avatar: {
       type: String,
-      default: '',
+      default: "",
     },
     isVerified: {
       type: Boolean,
@@ -66,11 +67,13 @@ const userSchema = new Schema<IUserDocument>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-userSchema.pre('save', async function (this: IUserDocument) {
-  if (!this.isModified('password')) return;
+userSchema.index(USER_INDEXES.ROLE_RECENT);
+
+userSchema.pre("save", async function (this: IUserDocument) {
+  if (!this.isModified("password")) return;
 
   const salt = await bcrypt.genSalt(NUMERIC_LIMITS.BCRYPT_SALT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);
@@ -82,10 +85,10 @@ userSchema.methods.comparePassword = async function (this: IUserDocument, candid
 
 userSchema.methods.toJSON = function (this: IUserDocument): Record<string, unknown> {
   const user = this.toObject() as Record<string, unknown>;
-  delete user['password'];
+  delete user["password"];
   return user;
 };
 
-const User: Model<IUserDocument> = mongoose.model<IUserDocument>('User', userSchema);
+const User: Model<IUserDocument> = mongoose.model<IUserDocument>("User", userSchema);
 
 export default User;

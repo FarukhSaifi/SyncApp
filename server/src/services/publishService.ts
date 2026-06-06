@@ -258,7 +258,7 @@ export async function performPublishToAll(post: IPostDocument) {
     throw new Error(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
-  const credentials = await Credential.find({ is_active: true });
+  const credentials = await Credential.find({ author: freshPost.author, is_active: true });
 
   if (credentials.length === 0) {
     throw new Error(ERROR_MESSAGES.NO_ACTIVE_CREDENTIALS);

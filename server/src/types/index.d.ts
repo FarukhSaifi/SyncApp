@@ -47,11 +47,16 @@ export interface IUser {
 
 export interface ICredential {
   _id: string;
-  user: string;
-  platform: string;
+  author: string;
+  platform_name: string;
   api_key?: string;
   site_url?: string;
-  platform_config?: Record<string, unknown>;
+  is_active?: boolean;
+  platform_config?: {
+    devto_username?: string;
+    medium_user_id?: string;
+    wordpress_url?: string;
+  };
 }
 
 export interface ApiError {

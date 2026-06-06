@@ -1,13 +1,23 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { STORAGE_KEYS, SYNC_LABEL, TOAST_TITLES } from "@constants";
+import { clearPostsCache } from "@hooks/usePosts";
 import { useToast } from "@hooks/useToast";
-import type { User, AuthResult, AuthContextValue } from "@types";
+import type { AuthContextValue, AuthResult, User } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { logError } from "@utils/logger";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;
+
+function resolveAuthErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return fallback;
+}
+
+function isNetworkFailureMessage(message: string): boolean {
+  return /network error|unable to connect|timeout/i.test(message);
+}
 
 export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
@@ -35,38 +45,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
+    clearPostsCache();
     if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
     toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
   }, [toast]);
 
-  const fetchUserProfile = useCallback(async (tokenToUse?: string) => {
-    const authToken = tokenToUse ?? token;
-    if (!authToken) {
-      setLoading(false);
-      return;
-    }
-    if (typeof window !== "undefined" && tokenToUse) {
-      localStorage.setItem(TOKEN_KEY, tokenToUse);
-    }
-    
-    try {
-      const data = await apiClient.getMe();
-
-      if (data.success) {
-        setUser(data.data as User);
-      } else {
-        // Token is invalid, remove it
-        toast.authError(SYNC_LABEL.SESSION_EXPIRED);
-        logout();
+  const fetchUserProfile = useCallback(
+    async (tokenToUse?: string) => {
+      const authToken = tokenToUse ?? token;
+      if (!authToken) {
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      logError("Error fetching user profile", error);
-      toast.networkError();
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  }, [token, toast, logout]);
+      if (typeof window !== "undefined" && tokenToUse) {
+        localStorage.setItem(TOKEN_KEY, tokenToUse);
+      }
+
+      try {
+        const data = await apiClient.getMe();
+
+        if (data.success) {
+          setUser(data.data as User);
+        } else {
+          // Token is invalid, remove it
+          toast.authError(SYNC_LABEL.SESSION_EXPIRED);
+          logout();
+        }
+      } catch (error) {
+        logError("Error fetching user profile", error);
+        toast.networkError();
+        logout();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token, toast, logout],
+  );
 
   useEffect(() => {
     const stored = getStoredToken();
@@ -95,8 +109,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       logError("Login error", error);
-      toast.networkError();
-      return { success: false, error: SYNC_LABEL.LOGIN_FAILED };
+      const message = resolveAuthErrorMessage(error, SYNC_LABEL.LOGIN_FAILED);
+      if (isNetworkFailureMessage(message)) {
+        toast.networkError();
+      } else {
+        toast.authError(message);
+      }
+      return { success: false, error: message };
     }
   };
 
@@ -120,12 +139,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       logError("Registration error", error);
-      toast.networkError();
-      return { success: false, error: SYNC_LABEL.REGISTRATION_FAILED_RETRY };
+      const message = resolveAuthErrorMessage(error, SYNC_LABEL.REGISTRATION_FAILED_RETRY);
+      if (isNetworkFailureMessage(message)) {
+        toast.networkError();
+      } else {
+        toast.error(TOAST_TITLES.REGISTRATION_FAILED, message);
+      }
+      return { success: false, error: message };
     }
   };
-
-
 
   const updateProfile = async (profileData: Record<string, unknown>): Promise<AuthResult> => {
     try {

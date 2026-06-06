@@ -1,12 +1,13 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import { VALID_PLATFORMS, PLATFORMS, NUMERIC_LIMITS } from '../constants';
-import type { ICredential } from '../types/index';
+import mongoose, { Document, Model, Schema } from "mongoose";
+import { PLATFORMS, VALID_PLATFORMS } from "../constants";
+import { CREDENTIAL_INDEXES } from "../constants/indexes";
+import type { ICredential } from "../types/index";
 
-export interface ICredentialDocument extends Document, Omit<ICredential, '_id'> {
+export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author"> {
+  author: mongoose.Types.ObjectId;
   platform_name: string;
   api_key: string;
   site_url?: string;
-  user_id?: number;
   is_active: boolean;
   platform_config?: {
     devto_username?: string;
@@ -21,17 +22,21 @@ export interface ICredentialDocument extends Document, Omit<ICredential, '_id'> 
 
 const credentialSchema = new Schema<ICredentialDocument>(
   {
+    author: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Author is required"],
+    },
     platform_name: {
       type: String,
-      required: [true, 'Platform name is required'],
-      unique: true,
+      required: [true, "Platform name is required"],
       trim: true,
       lowercase: true,
       enum: VALID_PLATFORMS,
     },
     api_key: {
       type: String,
-      required: [true, 'API key is required'],
+      required: [true, "API key is required"],
     },
     site_url: {
       type: String,
@@ -39,10 +44,6 @@ const credentialSchema = new Schema<ICredentialDocument>(
       required: function (this: ICredentialDocument): boolean {
         return this.platform_name === PLATFORMS.WORDPRESS;
       },
-    },
-    user_id: {
-      type: Number,
-      default: NUMERIC_LIMITS.DEFAULT_USER_ID,
     },
     is_active: {
       type: Boolean,
@@ -58,20 +59,20 @@ const credentialSchema = new Schema<ICredentialDocument>(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
-credentialSchema.index({ user_id: 1 });
-credentialSchema.index({ is_active: 1 });
+credentialSchema.index(CREDENTIAL_INDEXES.AUTHOR_PLATFORM_UNIQUE, { unique: true });
+credentialSchema.index(CREDENTIAL_INDEXES.AUTHOR_ACTIVE);
 
-credentialSchema.virtual('created_at').get(function (this: ICredentialDocument) {
+credentialSchema.virtual("created_at").get(function (this: ICredentialDocument) {
   return this.createdAt;
 });
 
-credentialSchema.virtual('updated_at').get(function (this: ICredentialDocument) {
+credentialSchema.virtual("updated_at").get(function (this: ICredentialDocument) {
   return this.updatedAt;
 });
 
-const Credential: Model<ICredentialDocument> = mongoose.model<ICredentialDocument>('Credential', credentialSchema);
+const Credential: Model<ICredentialDocument> = mongoose.model<ICredentialDocument>("Credential", credentialSchema);
 
 export default Credential;
