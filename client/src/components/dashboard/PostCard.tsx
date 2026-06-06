@@ -108,9 +108,9 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD).map((tag: string, index: number) => (
+              {post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_CARD).map((tag: string) => (
                 <span
-                  key={index}
+                  key={tag}
                   className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/15 text-primary text-xs rounded-full truncate max-w-[120px] sm:max-w-none"
                   title={tag}
                 >

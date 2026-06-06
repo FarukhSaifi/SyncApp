@@ -60,10 +60,10 @@ function UsersTableSkeleton({ rows = 5 }: { rows?: number }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {Array.from({ length: rows }).map((_, i) => (
-          <TableRow key={i}>
-            {Array.from({ length: 8 }).map((_, j) => (
-              <TableCell key={j}>
+        {Array.from({ length: rows }, (_, i) => i).map((row) => (
+          <TableRow key={`users-skeleton-row-${row}`}>
+            {Array.from({ length: 8 }, (_, j) => j).map((col) => (
+              <TableCell key={`users-skeleton-${row}-${col}`}>
                 <div className="h-5 bg-muted/60 rounded animate-pulse" />
               </TableCell>
             ))}

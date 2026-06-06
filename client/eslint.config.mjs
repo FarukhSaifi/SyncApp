@@ -2,7 +2,6 @@ import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import-x";
-import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 
@@ -23,16 +22,12 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
-      react,
       "react-hooks": reactHooks,
       "import-x": importPlugin,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
-      ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      "react/react-in-jsx-scope": "off",
-      "react/prop-types": "off",
       "react-hooks/set-state-in-effect": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
@@ -77,6 +72,5 @@ export default [
         },
       ],
     },
-    settings: { react: { version: "detect" } },
   },
 ];

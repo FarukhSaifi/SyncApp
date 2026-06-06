@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 
 import { Toaster } from "@components/common/Toaster";
 
+import { Providers } from "./providers";
+
 import { getSiteOrigin } from "../config/security";
 
 import "./globals.css";
-import { Providers } from "./providers";
 
 const isProd = process.env.NODE_ENV === "production";
 

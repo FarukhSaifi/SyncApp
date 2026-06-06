@@ -5,11 +5,10 @@
  */
 
 import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
-import type { ApiResponse, ListResponse, PaginatedResponse, Post, User, RequestOptions } from "@types";
+import type { AnalyticsStats, ApiResponse, ListResponse, PaginatedResponse, Post, RequestOptions, User } from "@types";
 import { devLog, logError } from "@utils/logger";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
-
 
 class ApiClient {
   private client: AxiosInstance;
@@ -177,7 +176,7 @@ class ApiClient {
   }
 
   /** Analytics */
-  async getAnalyticsStats(): Promise<ApiResponse<any>> {
+  async getAnalyticsStats(): Promise<ApiResponse<AnalyticsStats>> {
     return this.request("/analytics/stats");
   }
 

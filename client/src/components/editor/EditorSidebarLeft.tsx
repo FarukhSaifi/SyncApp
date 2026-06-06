@@ -21,10 +21,6 @@ import { SYNC_LABEL } from "@constants/messages";
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 
-
-
-
-
 /** Collapsible sidebar section */
 const Section = ({
   title,
@@ -175,13 +171,16 @@ const EditorSidebarLeft = ({
           <textarea
             name="meta_description"
             value={formData.meta_description || ""}
-            onChange={onInputChange as any}
+            onChange={onInputChange}
             placeholder="A brief summary for SEO (120-160 chars)"
             rows={3}
             className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{SYNC_LABEL.CHARACTERS}{formData.meta_description?.length || 0}</span>
+            <span>
+              {SYNC_LABEL.CHARACTERS}
+              {formData.meta_description?.length || 0}
+            </span>
             <span
               className={
                 formData.meta_description?.length >= 120 && formData.meta_description?.length <= 160
@@ -262,8 +261,8 @@ const EditorSidebarLeft = ({
             </div>
           </div>
           <ul className="space-y-1">
-            {seo.checks.map((check, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-xs">
+            {seo.checks.map((check) => (
+              <li key={check.label} className="flex items-start gap-2 text-xs">
                 <span className="mt-0.5 shrink-0">
                   {check.ok === true ? (
                     <FiCheckCircle className="h-3 w-3 text-green-500" />
