@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import * as controller from '../controllers/publishController';
+import { authenticateToken } from '../utils/auth';
 
 const router: Router = Router();
+
+router.use(authenticateToken);
 
 router.post('/medium', controller.publishMedium);
 router.post('/devto', controller.publishDevto);

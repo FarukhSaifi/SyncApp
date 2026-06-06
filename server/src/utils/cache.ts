@@ -6,7 +6,6 @@
 import { DEFAULT_VALUES } from "../constants";
 import type { CacheEntry } from "../types";
 
-
 export class Cache<T = unknown> {
   private cache: Map<string, CacheEntry<T>>;
   private timers: Map<string, ReturnType<typeof setTimeout>>;
@@ -92,7 +91,11 @@ export class Cache<T = unknown> {
    * @param fetchFn - Function to fetch data if not cached
    * @param ttl - Time to live in milliseconds
    */
-  async getOrSet(key: string, fetchFn: () => Promise<T>, ttl: number = DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS): Promise<T> {
+  async getOrSet(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttl: number = DEFAULT_VALUES.CACHE_TTL_DEFAULT_MS,
+  ): Promise<T> {
     if (this.has(key)) {
       return this.get(key)!;
     }
@@ -127,8 +130,8 @@ export const cacheKeys = {
     all: (): RegExp => /^posts:/,
   },
   credentials: {
-    list: (): string => "credentials:list",
-    single: (platform: string): string => `credentials:${platform}`,
+    list: (userId: string): string => `credentials:list:${userId}`,
+    single: (userId: string, platform: string): string => `credentials:${userId}:${platform}`,
     all: (): RegExp => /^credentials:/,
   },
   user: {

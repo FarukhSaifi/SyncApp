@@ -498,6 +498,7 @@ export interface UsePostsReturn {
 export interface UsePostsOptions {
   enabled?: boolean;
   pagination?: Pagination;
+  userId?: string | null;
 }
 
 export interface AuthResult {
