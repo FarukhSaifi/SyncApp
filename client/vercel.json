@@ -1,9 +1,3 @@
 {
-  "framework": "nextjs",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
-    }
-  ]
+  "framework": "nextjs"
 }
