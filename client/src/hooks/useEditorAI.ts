@@ -5,14 +5,8 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
+import type { GeneratedPostData } from "@types";
 import { apiClient } from "@utils/apiClient";
-
-export interface GeneratedPostData {
-  title: string;
-  meta_description: string;
-  tags: string[];
-  content: string;
-}
 
 /**
  * Strips markdown code fences and parses JSON from a string.

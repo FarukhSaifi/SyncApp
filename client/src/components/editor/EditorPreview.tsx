@@ -34,6 +34,7 @@ const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPre
         <LazyImage
           src={coverImage}
           alt="Cover"
+          viewportLazy={false}
           className="w-full h-auto max-h-64 object-cover rounded-lg"
           containerClassName="w-full mb-4 rounded-lg"
           skeletonClassName="absolute inset-0 min-h-[12rem] rounded-lg"

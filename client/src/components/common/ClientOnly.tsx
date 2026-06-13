@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 
-import LoadingScreen from "@components/common/LoadingScreen";
+import type { ClientOnlyProps } from "@types";
+
 import { INFO_MESSAGES } from "@constants/messages";
 
-interface ClientOnlyProps {
-  children: ReactNode;
-  message?: string;
-}
+import LoadingScreen from "@components/common/LoadingScreen";
 
 /** Renders children only after mount — prevents hydration mismatches for client-only trees. */
 export default function ClientOnly({ children, message = INFO_MESSAGES.LOADING }: ClientOnlyProps) {

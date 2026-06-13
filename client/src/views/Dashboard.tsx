@@ -4,13 +4,22 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import PostCard from "@components/dashboard/PostCard";
 import PostRow from "@components/dashboard/PostRow";
 import StatsCard from "@components/dashboard/StatsCard";
-import { BUTTON_VARIANTS, COLOR_CLASSES, FILTER_STATUS_ALL, POST_STATUS, ROUTES, SYNC_LABEL } from "@constants";
+import {
+  BUTTON_VARIANTS,
+  COLOR_CLASSES,
+  FILTER_STATUS_ALL,
+  FILTER_STATUS_SCHEDULED,
+  POST_STATUS,
+  ROUTES,
+  SYNC_LABEL,
+} from "@constants";
 import { useToast } from "@hooks/useToast";
 import type { DashboardDeleteConfirmState, DashboardProps } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
+import { isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
-import { FiCheckCircle, FiEdit3, FiGlobe, FiPlus, FiRefreshCw, FiShare2 } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiEdit3, FiGlobe, FiPlus, FiRefreshCw } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
@@ -63,8 +72,11 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
 
   const filteredPosts = useMemo(() => {
     if (filterStatus === FILTER_STATUS_ALL) return posts;
+    if (filterStatus === FILTER_STATUS_SCHEDULED) return posts.filter((p) => isPostScheduled(p));
     return posts.filter((p) => p.status === filterStatus);
   }, [posts, filterStatus]);
+
+  const scheduledCount = useMemo(() => posts.filter((p) => isPostScheduled(p)).length, [posts]);
 
   if (loading) {
     return (
@@ -232,17 +244,11 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
           onClick={() => setFilterStatus(POST_STATUS.DRAFT)}
         />
         <StatsCard
-          title={SYNC_LABEL.PLATFORMS}
-          value={
-            posts.filter(
-              (post) =>
-                post.platform_status &&
-                (post.platform_status.medium?.published || post.platform_status.devto?.published),
-            ).length
-          }
-          icon={() => <FiShare2 className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />}
-          isActive={false}
-          onClick={() => {}}
+          title={SYNC_LABEL.SCHEDULED}
+          value={scheduledCount}
+          icon={() => <FiClock className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />}
+          isActive={filterStatus === FILTER_STATUS_SCHEDULED}
+          onClick={() => setFilterStatus(FILTER_STATUS_SCHEDULED)}
         />
       </div>
 

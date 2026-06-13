@@ -19,7 +19,7 @@ cd server && vercel env pull .env.prod --environment=production
 cd client && vercel env pull .env.production --environment=production
 ```
 
-3. For **local development only**, use `.env.dev` (never required on Vercel).
+1. For **local development only**, use `.env.dev` (never required on Vercel).
 
 | File               | Purpose                                                        |
 | ------------------ | -------------------------------------------------------------- |

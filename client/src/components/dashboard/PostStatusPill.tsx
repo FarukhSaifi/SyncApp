@@ -1,14 +1,9 @@
 import { useMemo } from "react";
 
-import StatusPill from "@components/common/StatusPill";
-import { PILL_SIZES } from "@constants/designTokens";
+import type { PostStatusPillProps } from "@types";
 import { resolvePostStatusDisplay } from "@utils/postStatusDisplay";
 
-export interface PostStatusPillProps {
-  status: string;
-  scheduledFor?: string;
-  size?: keyof typeof PILL_SIZES;
-}
+import StatusPill from "@components/common/StatusPill";
 
 /** Post status pill — draft, published, archived, or scheduled when a future date is set. */
 export default function PostStatusPill({ status, scheduledFor, size = "MD" }: PostStatusPillProps) {

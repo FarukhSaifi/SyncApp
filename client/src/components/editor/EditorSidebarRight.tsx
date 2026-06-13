@@ -57,7 +57,7 @@ const EditorSidebarRight = ({
   onPublishToAll,
   onDownloadMdx,
   scheduledFor,
-  onScheduleChange,
+  onScheduleSave,
   coverImage,
   // AI props
   aiKeyword,
@@ -303,8 +303,9 @@ const EditorSidebarRight = ({
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         scheduledFor={scheduledFor}
-        onScheduleChange={onScheduleChange}
+        onScheduleSave={onScheduleSave}
         isPublished={status === "published"}
+        isSaving={loading}
       />
 
       {/* AI Image Generation Modal */}
@@ -382,6 +383,7 @@ const EditorSidebarRight = ({
                     <LazyImage
                       src={generatedImageDataUrl || cachedBase64 || coverImage || ""}
                       alt="Cover masterpiece"
+                      viewportLazy={false}
                       className="w-full aspect-video object-cover"
                       containerClassName="w-full aspect-video"
                       skeletonClassName="absolute inset-0"

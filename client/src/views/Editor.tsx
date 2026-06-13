@@ -4,7 +4,7 @@
  * Composes EditorToolbar, EditorContent, EditorSidebarLeft, EditorSidebarRight, EditorStatusBar.
  * All business logic lives in useEditorState and useEditorAI hooks.
  */
-import dynamic from "next/dynamic";
+
 import { useCallback, useState } from "react";
 
 import "../components/editor/editor.css";
@@ -19,6 +19,7 @@ import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
+import dynamic from "next/dynamic";
 
 import { POST_STATUS } from "@constants/postStatus";
 import { SEO_THRESHOLDS } from "@constants/seo";
@@ -135,7 +136,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onPublishToAll={state.handlePublishToAll}
         onDownloadMdx={state.handleDownloadMdx}
         scheduledFor={state.formData.scheduled_for}
-        onScheduleChange={(val) => state.updateFormField("scheduled_for", val)}
+        onScheduleSave={state.handleScheduleSave}
         coverImage={state.formData.cover_image}
         aiKeyword={ai.aiKeyword}
         setAiKeyword={ai.setAiKeyword}

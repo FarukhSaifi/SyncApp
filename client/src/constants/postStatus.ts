@@ -14,6 +14,9 @@ export type PostStatusValue = (typeof POST_STATUS)[keyof typeof POST_STATUS];
 /** Dashboard filter value for "all" (no status filter) */
 export const FILTER_STATUS_ALL = "all";
 
+/** Dashboard filter value for scheduled drafts (future scheduled_for) */
+export const FILTER_STATUS_SCHEDULED = "scheduled";
+
 export const SCHEDULED_STATUS_CLASS = "bg-primary/15 text-primary";
 
 export const STATUS_CONFIG = Object.freeze({

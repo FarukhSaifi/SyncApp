@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import type { PostCoverThumbnailProps, PostCoverThumbSize } from "@types";
 import { FiImage } from "react-icons/fi";
 
 import { SYNC_LABEL } from "@constants/messages";
@@ -13,9 +14,7 @@ const THUMB_SIZES = {
   md: { width: 72, height: 48, container: "h-12 w-[4.5rem] shrink-0" },
 } as const;
 
-type ThumbSize = keyof typeof THUMB_SIZES;
-
-function CoverPlaceholder({ size }: { size: ThumbSize }) {
+function CoverPlaceholder({ size }: { size: PostCoverThumbSize }) {
   const { container } = THUMB_SIZES[size];
   return (
     <div
@@ -25,12 +24,6 @@ function CoverPlaceholder({ size }: { size: ThumbSize }) {
       <FiImage className="h-4 w-4 text-muted-foreground/50" />
     </div>
   );
-}
-
-export interface PostCoverThumbnailProps {
-  src?: string | null;
-  title: string;
-  size?: ThumbSize;
 }
 
 /** Small lazy-loaded cover preview for dashboard list rows and cards. */
@@ -53,6 +46,8 @@ export default function PostCoverThumbnail({ src, title, size = "sm" }: PostCove
       alt={SYNC_LABEL.POST_COVER_ALT(title)}
       width={width}
       height={height}
+      viewportLazy
+      rootMargin="0px"
       className="h-full w-full object-cover"
       containerClassName={`${container} rounded-md border border-border`}
       skeletonClassName="absolute inset-0 rounded-md"

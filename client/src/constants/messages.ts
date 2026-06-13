@@ -461,6 +461,8 @@ export const INFO_MESSAGES = Object.freeze({
   TOTAL_POSTS: "Total Posts",
   PUBLISHED: "Published",
   DRAFTS: "Drafts",
+  SCHEDULED: "Scheduled",
+  SCHEDULE_MISSED: "Scheduled publish missed — will retry at next daily run",
   PLATFORMS: "Platforms",
   ALL_POSTS: "All Posts",
   NO_POSTS_YET: "No posts yet. Create your first post to get started!",
@@ -728,18 +730,24 @@ export const EDITOR_UI = Object.freeze({
   // Publish sidebar
   STATUS_LABEL: "Status",
   SCHEDULE_PUBLICATION_LABEL: "Schedule Publication",
-  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) => `Post will automatically publish on ${formattedDate}`,
+  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) =>
+    `Will publish to all connected platforms after ${formattedDate} (daily run at midnight)`,
   SCHEDULE_MODAL_TITLE: "Schedule publication",
-  SCHEDULE_MODAL_DESC: "Pick a date and time to automatically publish this draft.",
+  SCHEDULE_MODAL_DESC:
+    "Pick the earliest date and time to publish. Due posts are syndicated to all connected platforms on the next daily midnight run.",
   SCHEDULE_MODAL_DATETIME_LABEL: "Publish date & time",
   SCHEDULE_MODAL_BUTTON: "Schedule publication",
   SCHEDULE_MODAL_EDIT: "Edit schedule",
   SCHEDULE_MODAL_CONFIRM: "Set schedule",
+  SCHEDULE_MODAL_SAVING: "Saving...",
   SCHEDULE_MODAL_CANCEL: "Cancel",
   SCHEDULE_MODAL_CLEAR: "Clear schedule",
   SCHEDULE_MODAL_PAST_DATE: "Choose a date and time in the future.",
   SCHEDULE_MODAL_NO_DATE: "Select a date and time to continue.",
   SCHEDULE_MODAL_PUBLISHED_DISABLED: "Published posts cannot be rescheduled.",
+  SCHEDULE_SET_SUCCESS: "Publication schedule saved.",
+  SCHEDULE_CLEARED_SUCCESS: "Publication schedule cleared.",
+  SCHEDULE_SAVE_FAILED: "Failed to save publication schedule.",
 
   // AI section (sidebar)
   GENERATE_AI_COVER_IMAGE: "Generate AI Cover Image",

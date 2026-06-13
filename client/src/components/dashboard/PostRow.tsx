@@ -3,7 +3,7 @@ import React, { memo } from "react";
 import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
 import type { Post, PostRowProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
-import dayjs from "dayjs";
+import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
 import { FiEdit3, FiTrash2 } from "react-icons/fi";
 
@@ -92,10 +92,13 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
           <PostCoverThumbnail src={post.cover_image} title={post.title} />
           <div className="min-w-0 flex-1">
             <div className="truncate">{post.title}</div>
-            {post.scheduled_for && dayjs(post.scheduled_for).isAfter(dayjs()) && (
+            {isPostScheduled(post) && (
               <div className="text-[10px] text-primary mt-0.5 font-medium">
-                Schedules for {formatDateTime(post.scheduled_for)}
+                Schedules for {formatDateTime(post.scheduled_for!)}
               </div>
+            )}
+            {isPostScheduleOverdue(post) && (
+              <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">{SYNC_LABEL.SCHEDULE_MISSED}</div>
             )}
           </div>
         </div>

@@ -3,30 +3,26 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@constants";
-import { EDITOR_UI } from "@constants/messages";
+import type { SchedulePostModalProps } from "@types";
 import dayjs from "dayjs";
 import { FiClock } from "react-icons/fi";
 
+import { EDITOR_UI } from "@constants/messages";
+
 import Button from "@components/common/Button";
 import Modal from "@components/common/Modal";
-
-export interface SchedulePostModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  scheduledFor: string;
-  onScheduleChange: (value: string) => void;
-  isPublished?: boolean;
-}
 
 export default function SchedulePostModal({
   isOpen,
   onClose,
   scheduledFor,
-  onScheduleChange,
+  onScheduleSave,
   isPublished = false,
+  isSaving = false,
 }: SchedulePostModalProps) {
   const [draftDateTime, setDraftDateTime] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,9 +30,11 @@ export default function SchedulePostModal({
     setError(null);
   }, [isOpen, scheduledFor]);
 
-  const minDateTime = useMemo(() => dayjs().format("YYYY-MM-DDTHH:mm"), [isOpen]);
+  const minDateTime = useMemo(() => dayjs().format("YYYY-MM-DDTHH:mm"), []);
 
-  const handleConfirm = () => {
+  const busy = isSaving || submitting;
+
+  const handleConfirm = async () => {
     if (isPublished) {
       setError(EDITOR_UI.SCHEDULE_MODAL_PUBLISHED_DISABLED);
       return;
@@ -50,13 +48,24 @@ export default function SchedulePostModal({
       setError(EDITOR_UI.SCHEDULE_MODAL_PAST_DATE);
       return;
     }
-    onScheduleChange(selected.toISOString());
-    onClose();
+
+    setSubmitting(true);
+    try {
+      const ok = await onScheduleSave(selected.toISOString());
+      if (ok) onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleClear = () => {
-    onScheduleChange("");
-    onClose();
+  const handleClear = async () => {
+    setSubmitting(true);
+    try {
+      const ok = await onScheduleSave("");
+      if (ok) onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const previewDate =
@@ -74,19 +83,19 @@ export default function SchedulePostModal({
       footer={
         <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-between sm:items-center">
           {scheduledFor ? (
-            <Button type="button" variant="ghost" size="sm" onClick={handleClear} disabled={isPublished}>
+            <Button type="button" variant="ghost" size="sm" onClick={handleClear} disabled={isPublished || busy}>
               {EDITOR_UI.SCHEDULE_MODAL_CLEAR}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={busy}>
               {EDITOR_UI.SCHEDULE_MODAL_CANCEL}
             </Button>
-            <Button type="button" variant="primary" size="sm" onClick={handleConfirm} disabled={isPublished}>
+            <Button type="button" variant="primary" size="sm" onClick={handleConfirm} disabled={isPublished || busy}>
               <FiClock className="h-3.5 w-3.5 mr-1.5" />
-              {EDITOR_UI.SCHEDULE_MODAL_CONFIRM}
+              {busy ? EDITOR_UI.SCHEDULE_MODAL_SAVING : EDITOR_UI.SCHEDULE_MODAL_CONFIRM}
             </Button>
           </div>
         </div>
@@ -109,11 +118,12 @@ export default function SchedulePostModal({
                 type="datetime-local"
                 value={draftDateTime}
                 min={minDateTime}
+                disabled={busy}
                 onChange={(e) => {
                   setDraftDateTime(e.target.value);
                   setError(null);
                 }}
-                className="w-full text-sm rounded-md border border-border bg-background px-3 py-2 hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none"
+                className="w-full text-sm rounded-md border border-border bg-background px-3 py-2 hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none disabled:opacity-60"
               />
             </div>
 

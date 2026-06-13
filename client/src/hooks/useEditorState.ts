@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { Post } from "@types";
+import type { EditorFormData, Post } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
 import { getDevtoPublishWarnings } from "@utils/seoScorecard";
@@ -13,8 +13,9 @@ import { useParams, useRouter } from "next/navigation";
 
 import { CANONICAL_BASE_URL } from "@constants/api";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
-import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
+import { EDITOR_UI, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 import { POST_STATUS } from "@constants/postStatus";
+import { ROUTES } from "@constants/routes";
 import { SEO_THRESHOLDS } from "@constants/seo";
 
 /**
@@ -25,17 +26,6 @@ import { SEO_THRESHOLDS } from "@constants/seo";
 function buildClientCanonicalUrl(slug?: string): string {
   if (!slug) return "";
   return CANONICAL_BASE_URL ? `${CANONICAL_BASE_URL}/${slug}` : slug;
-}
-
-export interface EditorFormData {
-  title: string;
-  content_markdown: string;
-  meta_description: string;
-  cover_image: string;
-  canonical_url: string;
-  scheduled_for: string;
-  status: string;
-  [key: string]: string | string[];
 }
 
 interface UseEditorStateOptions {
@@ -367,6 +357,67 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     }
   }, [id, toast]);
 
+  const handleScheduleSave = useCallback(
+    async (scheduledFor: string): Promise<boolean> => {
+      if (!formData.title.trim() || !formData.content_markdown.trim()) {
+        toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+        return false;
+      }
+
+      setLoading(true);
+      try {
+        const postData = {
+          ...formData,
+          tags: tagList,
+          status: formData.status ?? POST_STATUS.DRAFT,
+          scheduled_for: scheduledFor || null,
+        };
+
+        let response;
+        if (id) {
+          response = await apiClient.updatePost(id, postData);
+        } else {
+          response = await apiClient.createPost(postData);
+        }
+
+        if (response?.success && response.data) {
+          const savedPost = response.data;
+          setFormData((prev) => ({
+            ...prev,
+            scheduled_for: savedPost.scheduled_for || scheduledFor || "",
+            status: savedPost.status ?? prev.status,
+            canonical_url: savedPost.canonical_url || buildClientCanonicalUrl(savedPost.slug) || prev.canonical_url,
+          }));
+
+          if (id) {
+            onPostUpdate(savedPost);
+          } else {
+            onPostCreate(savedPost);
+            router.replace(`${ROUTES.EDITOR}/${savedPost._id}`);
+          }
+
+          toast.success(
+            TOAST_TITLES.SUCCESS,
+            scheduledFor ? EDITOR_UI.SCHEDULE_SET_SUCCESS : EDITOR_UI.SCHEDULE_CLEARED_SUCCESS,
+          );
+          setIsDirty(false);
+          setLastSavedAt(new Date());
+          return true;
+        }
+
+        toast.apiError(response?.error || EDITOR_UI.SCHEDULE_SAVE_FAILED);
+        return false;
+      } catch (error) {
+        devError("Error saving schedule:", error);
+        toast.apiError(`${EDITOR_UI.SCHEDULE_SAVE_FAILED}: ${(error as Error).message}`);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, tagList, id, onPostCreate, onPostUpdate, router, toast],
+  );
+
   const togglePreview = useCallback(() => {
     setActiveTab((prev) => (prev === "edit" ? "preview" : "edit"));
   }, []);
@@ -400,6 +451,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     handlePublishToPlatform,
     handlePublishToAll,
     handleDownloadMdx,
+    handleScheduleSave,
     togglePreview,
   };
 }

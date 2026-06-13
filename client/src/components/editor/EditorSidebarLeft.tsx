@@ -232,6 +232,7 @@ const EditorSidebarLeft = ({
                   <LazyImage
                     src={cachedBase64}
                     alt="Cover preview (cached)"
+                    viewportLazy={false}
                     className="w-full h-full object-cover"
                     containerClassName="w-full h-full"
                   />
@@ -250,6 +251,7 @@ const EditorSidebarLeft = ({
                 <LazyImage
                   src={formData.cover_image}
                   alt="Cover preview"
+                  viewportLazy={false}
                   className="w-full h-full object-cover"
                   containerClassName="w-full h-full"
                   onImageError={() => setImageError(true)}

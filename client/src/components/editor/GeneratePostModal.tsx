@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import type { GeneratePostModalProps } from "@types";
 import { FiHash, FiTrendingUp, FiZap } from "react-icons/fi";
 
 import { EDITOR_UI } from "@constants/messages";
@@ -10,15 +11,6 @@ import { DEVTO_HIGH_REACH_TAGS, DEVTO_TRENDING_TOPICS } from "@constants/seo";
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 import Modal from "@components/common/Modal";
-
-export interface GeneratePostModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  keyword: string;
-  onKeywordChange: (value: string) => void;
-  onGenerate: () => void;
-  isGenerating: boolean;
-}
 
 function topicCardClass(isSelected: boolean): string {
   const base =
