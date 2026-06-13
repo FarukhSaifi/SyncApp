@@ -3,12 +3,11 @@ import type { CreatePostInput, GetPostsParams } from "../types";
 
 import { cache, cacheKeys } from "../utils/cache";
 import { logger } from "../utils/logger";
+import { normalizeScheduledFor } from "../utils/scheduleUtils";
 
-import dayjs from "dayjs";
 import { config } from "../config";
 import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
 import Post from "../models/Post";
-import { performPublishToAll } from "./publishService";
 import { uploadToGCS } from "./storage";
 
 /**
@@ -100,7 +99,17 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
  * canonical_url is set from slug in Post model pre-save hook.
  */
 export async function createPost(input: CreatePostInput) {
-  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, canonical_url, author } = input;
+  const {
+    title,
+    content_markdown,
+    status = POST_STATUS.DRAFT,
+    tags,
+    cover_image,
+    canonical_url,
+    meta_description,
+    scheduled_for,
+    author,
+  } = input;
 
   if (!title || !content_markdown) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
@@ -109,15 +118,24 @@ export async function createPost(input: CreatePostInput) {
   const processedCoverImage = await processBase64CoverImage(cover_image);
   const processedContentMarkdown = await processBase64MarkdownImages(content_markdown);
 
-  const created = await Post.create({
+  const postPayload: Record<string, unknown> = {
     title,
     content_markdown: processedContentMarkdown,
     status: status as PostStatus,
     tags: tags || [],
     cover_image: processedCoverImage as any,
     canonical_url,
+    meta_description: meta_description?.trim() || null,
     author,
-  });
+  };
+
+  if (scheduled_for !== undefined) {
+    postPayload.scheduled_for = normalizeScheduledFor(scheduled_for, {
+      currentStatus: status as string,
+    });
+  }
+
+  const created = await Post.create(postPayload);
 
   const post = await Post.findById(created._id).populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC);
 
@@ -321,7 +339,15 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   if (updates.status !== undefined) updateData.status = updates.status;
   if (updates.tags !== undefined) updateData.tags = updates.tags;
   if (updates.cover_image !== undefined) updateData.cover_image = updates.cover_image;
-  if (updates.scheduled_for !== undefined) updateData.scheduled_for = updates.scheduled_for;
+  if (updates.meta_description !== undefined) {
+    updateData.meta_description =
+      typeof updates.meta_description === "string" ? updates.meta_description.trim() : updates.meta_description;
+  }
+  if (updates.scheduled_for !== undefined) {
+    updateData.scheduled_for = normalizeScheduledFor(updates.scheduled_for, {
+      currentStatus: (updates.status as string) || post.status,
+    });
+  }
 
   // Explicitly check for slug update to keep canonical URL aligned
   if (updates.slug !== undefined) {
@@ -380,47 +406,4 @@ export async function deletePost(id: string, userId: string) {
   cache.delete(cacheKeys.posts.single(id));
   cache.delete(cacheKeys.posts.slug(post.slug || ""));
   cache.invalidatePattern(cacheKeys.posts.all());
-}
-
-/**
- * Find posts scheduled for now or earlier and publish them.
- * This is triggered by the automated Cron job.
- */
-export async function publishScheduledPosts() {
-  const now = dayjs().toDate();
-  const scheduledPosts = await Post.find({
-    status: POST_STATUS.DRAFT,
-    scheduled_for: { $lte: now },
-  });
-
-  if (scheduledPosts.length === 0) {
-    return { count: 0, results: [] };
-  }
-
-  const results = await Promise.all(
-    scheduledPosts.map(async (post) => {
-      try {
-        const result = await performPublishToAll(post);
-        return {
-          postId: post._id,
-          success: result.success,
-          successes: result.successes,
-          errors: result.errors,
-        };
-      } catch (error) {
-        logger.error(`Scheduled publish failed for post ${post._id}`, error as Error);
-        return {
-          postId: post._id,
-          success: false,
-          error: (error as Error).message,
-        };
-      }
-    }),
-  );
-
-  cache.invalidatePattern(cacheKeys.posts.all());
-  return {
-    count: scheduledPosts.length,
-    results,
-  };
 }

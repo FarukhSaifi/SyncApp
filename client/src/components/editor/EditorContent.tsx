@@ -13,7 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 import type { EditorContentProps } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { isLikelyMarkdown, markdownToHtml } from "@utils/contentUtils";
-import { common, createLowlight } from "lowlight";
+import editorLowlight from "@utils/editorLowlight";
 import dynamic from "next/dynamic";
 import {
   FiAlignCenter,
@@ -32,16 +32,16 @@ import {
 
 import { ERROR_MESSAGES, INFO_MESSAGES, SUCCESS_MESSAGES } from "@constants/messages";
 
+import { EditorPreviewSkeleton } from "./EditorSkeletons";
 
-import { AIToolkitDropdown } from "./AIToolkitDropdown";
-
-const lowlight = createLowlight(common);
+const LazyAIToolkitDropdown = dynamic(() => import("./AIToolkitDropdown").then((m) => m.AIToolkitDropdown), {
+  ssr: false,
+});
 
 const EditorPreview = dynamic(() => import("./EditorPreview"), {
   ssr: false,
-  loading: () => <div className="p-8 text-center text-muted-foreground text-sm">Loading preview...</div>,
+  loading: () => <EditorPreviewSkeleton />,
 });
-
 
 /** TipTap toolbar button */
 const ToolbarButton = ({
@@ -95,7 +95,7 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
   return (
     <div className="tiptap-toolbar">
       <div className="tiptap-toolbar-group mr-2">
-        <AIToolkitDropdown editor={editor} />
+        <LazyAIToolkitDropdown editor={editor} />
       </div>
 
       <div className="tiptap-toolbar-sep" />
@@ -244,10 +244,7 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
       <div className="tiptap-toolbar-sep" />
 
       <div className="tiptap-toolbar-group">
-        <ToolbarButton
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          title="Horizontal rule"
-        >
+        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal rule">
           <span className="text-xs">—</span>
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo (Ctrl+Z)">
@@ -266,6 +263,8 @@ EditorToolbarBar.displayName = "EditorToolbarBar";
 const extensions = [
   StarterKit.configure({
     codeBlock: false, // replaced by CodeBlockLowlight
+    link: false, // registered below with custom openOnClick/HTMLAttributes
+    underline: false, // registered below as standalone extension
   }),
   Underline,
   Link.configure({
@@ -282,7 +281,7 @@ const extensions = [
     types: ["heading", "paragraph"],
   }),
   CodeBlockLowlight.configure({
-    lowlight,
+    lowlight: editorLowlight,
   }),
 ];
 
@@ -299,16 +298,17 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items;
         if (!items) return false;
-        
+
         for (const item of Array.from(items)) {
           if (item.type.startsWith("image")) {
             event.preventDefault();
             const file = item.getAsFile();
             if (!file) return false;
-            
+
             const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_IMAGE);
-            apiClient.uploadImage(file)
-              .then(res => {
+            apiClient
+              .uploadImage(file)
+              .then((res) => {
                 if (res.success && res.data?.url) {
                   const { schema } = view.state;
                   const node = schema.nodes.image.create({ src: res.data.url });
@@ -318,7 +318,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
                   toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
                 }
               })
-              .catch(err => {
+              .catch((err) => {
                 toast.removeToast(toastId);
                 toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_IMAGE);
               });
@@ -332,16 +332,17 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
           const file = event.dataTransfer.files[0];
           if (file.type.startsWith("image")) {
             event.preventDefault();
-            
+
             const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
             const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_DROPPED_IMAGE);
-            
-            apiClient.uploadImage(file)
-              .then(res => {
+
+            apiClient
+              .uploadImage(file)
+              .then((res) => {
                 if (res.success && res.data?.url) {
                   const { schema } = view.state;
                   const node = schema.nodes.image.create({ src: res.data.url });
-                  
+
                   // if dropped at a specific point
                   if (coordinates) {
                     const tr = view.state.tr.insert(coordinates.pos, node);
@@ -354,7 +355,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
                   toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
                 }
               })
-              .catch(err => {
+              .catch((err) => {
                 toast.removeToast(toastId);
                 toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_DROPPED_IMAGE);
               });
@@ -362,7 +363,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
           }
         }
         return false;
-      }
+      },
     },
     onUpdate: ({ editor: e }) => {
       onContentChange(e.getHTML());

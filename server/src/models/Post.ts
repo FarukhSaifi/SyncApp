@@ -13,7 +13,7 @@ export interface IPostDocument extends Document, Omit<IPost, "_id" | "author"> {
   created_at: Date;
   updated_at: Date;
   is_published_anywhere: boolean;
-  meta_description?: string;
+  meta_description?: string | null;
 }
 
 const postSchema = new Schema<IPostDocument>(

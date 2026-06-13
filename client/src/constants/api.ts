@@ -2,17 +2,11 @@
  * API base URL and path segments — single source for client HTTP calls.
  */
 
-const getApiBase = (): string => {
-  if (typeof window === "undefined") {
-    const isProd = process.env.NODE_ENV === "production";
-    const envUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
-    const base = envUrl || (isProd ? "https://sync-app-server.vercel.app" : "http://localhost:9000");
-    return base.endsWith("/api") ? base : `${base}/api`;
-  }
-  return "/api";
-};
+import { resolveApiBase } from "./env";
 
-export const API_BASE = getApiBase();
+export { API_ORIGINS, resolveApiOrigin, resolveSiteOrigin } from "./env";
+
+export const API_BASE = resolveApiBase();
 
 export const API_PATHS = Object.freeze({
   AUTH: `${API_BASE}/auth`,

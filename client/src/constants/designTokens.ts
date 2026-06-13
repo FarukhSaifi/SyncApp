@@ -44,6 +44,12 @@ export const INPUT_SIZES = Object.freeze({
   LG: "lg",
 } as const);
 
+/** Pill badge base classes — use with semantic color classes from STATUS_CONFIG, ROLE_CONFIG, etc. */
+export const PILL_SIZES = Object.freeze({
+  SM: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+  MD: "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium",
+} as const);
+
 /** Loading / spinner UI (single source for sizing) */
 export const LOADING_UI = Object.freeze({
   SPINNER_SIZE_CLASS: "h-12 w-12",

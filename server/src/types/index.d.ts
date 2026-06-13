@@ -136,6 +136,7 @@ export interface CreatePostInput {
   cover_image?: string | null;
   canonical_url?: string;
   scheduled_for?: Date | string;
+  meta_description?: string;
   author?: string;
 }
 
@@ -220,7 +221,79 @@ export interface AppConfig {
   gcpBucketName: string;
   aiUseGoogleSearchRetrieval: boolean;
   canonicalBaseUrl: string;
+  siteUrl: string;
   cronSecret: string;
+  slackWebhookUrl: string;
+  resendApiKey: string;
+  notificationFromEmail: string;
+}
+
+// ----------------------------------------------------
+// Schedule, publish, and notification types
+// ----------------------------------------------------
+
+import type { NotificationChannelStatus, ScheduledPublishOutcome } from "../constants/notifications";
+
+export interface NormalizeScheduledForOptions {
+  currentStatus?: string;
+  requireFuture?: boolean;
+}
+
+export interface PlatformPublishError {
+  platform: string;
+  error: string;
+}
+
+export interface PublishToActivePlatformsResult {
+  platformUpdates: Record<string, unknown>;
+  successes: string[];
+  errors: PlatformPublishError[];
+}
+
+export type ScheduledPublishReason = "NO_CREDENTIALS" | "ALL_PLATFORMS_FAILED";
+
+export interface NotificationResult {
+  slack: NotificationChannelStatus;
+  email: NotificationChannelStatus;
+}
+
+export interface ScheduledPublishNotificationPayload {
+  postId: string;
+  title: string;
+  authorEmail?: string;
+  authorName?: string;
+  outcome: ScheduledPublishOutcome;
+  successes?: string[];
+  errors?: PlatformPublishError[];
+  scheduledFor?: Date;
+}
+
+export interface ScheduledPublishPostResult {
+  postId: string;
+  title: string;
+  outcome: ScheduledPublishOutcome;
+  reason?: ScheduledPublishReason;
+  successes: string[];
+  errors: PlatformPublishError[];
+  notification: NotificationResult;
+}
+
+export interface PublishScheduledPostsResult {
+  processed: number;
+  truncated: boolean;
+  results: ScheduledPublishPostResult[];
+}
+
+export interface CronPublishScheduledResponse {
+  success: boolean;
+  operationId: "publishScheduledPosts";
+  message: string;
+  data: {
+    processed: number;
+    truncated: boolean;
+    cronSchedule: string;
+    results: ScheduledPublishPostResult[];
+  };
 }
 
 declare global {

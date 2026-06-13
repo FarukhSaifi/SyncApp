@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
+  ANALYTICS_LABELS,
   APP_CONFIG,
   BUTTON_LABELS,
   INFO_MESSAGES,
@@ -8,7 +9,6 @@ import {
   PLACEHOLDERS,
   ROUTES,
   THEME_VALUES,
-  UI_TEXT,
   USER_ROLES,
 } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
@@ -17,10 +17,10 @@ import type { LayoutProps } from "@types";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  FiBarChart2,
   FiChevronDown,
   FiFileText,
   FiHome,
-  FiBarChart2,
   FiLogOut,
   FiMenu,
   FiMoon,
@@ -44,7 +44,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navigation = [
     { name: PAGE_TITLES.DASHBOARD, href: ROUTES.DASHBOARD, icon: FiHome },
-    { name: "Analytics", href: ROUTES.ANALYTICS, icon: FiBarChart2 },
+    { name: ANALYTICS_LABELS.PAGE_TITLE, href: ROUTES.ANALYTICS, icon: FiBarChart2 },
     { name: BUTTON_LABELS.NEW_POST, href: ROUTES.EDITOR, icon: FiPlus },
     { name: PAGE_TITLES.SETTINGS, href: ROUTES.SETTINGS, icon: FiSettings },
     ...(user?.role === USER_ROLES.ADMIN ? [{ name: PAGE_TITLES.USERS, href: ROUTES.USERS, icon: FiUsers }] : []),
@@ -96,7 +96,7 @@ const Layout = ({ children }: LayoutProps) => {
             {/* Logo */}
             <Link href={ROUTES.DASHBOARD} className="flex items-center space-x-2">
               <FiFileText className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{UI_TEXT.appName}</span>
+              <span className="text-2xl font-bold text-foreground">{APP_CONFIG.APP_NAME}</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -186,11 +186,7 @@ const Layout = ({ children }: LayoutProps) => {
                   aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
                   aria-expanded={showMobileMenu}
                 >
-                  {showMobileMenu ? (
-                    <FiX className="h-6 w-6" />
-                  ) : (
-                    <FiMenu className="h-6 w-6" />
-                  )}
+                  {showMobileMenu ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
                 </button>
 
                 {showMobileMenu && (

@@ -3,16 +3,15 @@ import React, { useEffect, useState } from "react";
 
 import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "@constants";
 import { useToast } from "@hooks/useToast";
-import type { ApiResponse, SavedState, ApiCredential } from "@types";
+import type { ApiCredential, ApiResponse, SavedState } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
+import ConnectionStatusPill from "@components/common/ConnectionStatusPill";
 import Input from "@components/common/Input";
-
-
 
 const Settings = () => {
   const toast = useToast();
@@ -494,13 +493,7 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-              <div
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  mediumApiKey ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {mediumApiKey ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
-              </div>
+              <ConnectionStatusPill connected={Boolean(mediumApiKey)} />
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -515,13 +508,7 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-              <div
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  devtoApiKey && devtoUsername ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {devtoApiKey && devtoUsername ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
-              </div>
+              <ConnectionStatusPill connected={Boolean(devtoApiKey && devtoUsername)} />
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -536,15 +523,7 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-              <div
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  wordpressApiKey && wordpressSiteUrl
-                    ? "bg-positive/15 text-positive"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
-              </div>
+              <ConnectionStatusPill connected={Boolean(wordpressApiKey && wordpressSiteUrl)} />
             </div>
           </div>
         </CardContent>

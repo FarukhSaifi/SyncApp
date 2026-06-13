@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 
 import type { EditorPreviewProps } from "@types";
@@ -9,13 +10,35 @@ import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark";
 
 import { SYNC_LABEL } from "@constants/messages";
 
+import LazyImage from "@components/common/LazyImage";
+
+const MarkdownImage = ({ src, alt }: { src?: string | null; alt?: string | null }) => {
+  if (!src) return null;
+  return (
+    <LazyImage
+      src={src}
+      alt={alt || ""}
+      className="w-full h-auto rounded-md"
+      containerClassName="w-full my-4 rounded-md"
+      skeletonClassName="absolute inset-0 min-h-[120px]"
+    />
+  );
+};
+
 const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPreviewProps) => {
   return (
-    <div className="editor-preview prose prose-base max-w-none">
+    <div className="editor-preview prose prose-base max-w-none p-4 sm:p-6">
       <h1 className="text-3xl font-bold mb-4">{title || SYNC_LABEL.UNTITLED_POST}</h1>
 
       {coverImage && (
-        <img src={coverImage} alt="Cover" className="w-full h-auto max-h-64 object-cover rounded-lg mb-4" />
+        <LazyImage
+          src={coverImage}
+          alt="Cover"
+          viewportLazy={false}
+          className="w-full h-auto max-h-64 object-cover rounded-lg"
+          containerClassName="w-full mb-4 rounded-lg"
+          skeletonClassName="absolute inset-0 min-h-[12rem] rounded-lg"
+        />
       )}
 
       {isLikelyHtml(previewContent) ? (
@@ -58,7 +81,8 @@ const EditorPreview = ({ title, coverImage, previewContent, tagList }: EditorPre
               );
             },
             img({ src, alt }: React.ComponentPropsWithoutRef<"img"> & ExtraProps) {
-              return <img src={src || ""} alt={alt || ""} className="w-full h-auto rounded-md" />;
+              const imageSrc = typeof src === "string" ? src : undefined;
+              return <MarkdownImage src={imageSrc} alt={alt} />;
             },
           }}
         >

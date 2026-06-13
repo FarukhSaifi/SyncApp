@@ -1,15 +1,17 @@
 import React, { memo } from "react";
 
-import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, POST_STATUS, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
+import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
 import type { Post, PostRowProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
-import dayjs from "dayjs";
+import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
 import { FiEdit3, FiTrash2 } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
 
+import PostCoverThumbnail from "./PostCoverThumbnail";
+import PostStatusPill from "./PostStatusPill";
 import SeoScoreBadge from "./SeoScoreBadge";
 
 /** API responses may include both camelCase and snake_case fields */
@@ -24,14 +26,6 @@ type PostData = Post & {
  * Memoized post row component for better performance
  */
 const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
-  const getStatusBadge = (status: string, scheduledFor?: string) => {
-    if (status === POST_STATUS.DRAFT && scheduledFor && dayjs(scheduledFor).isAfter(dayjs())) {
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary">Scheduled</span>;
-    }
-    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[POST_STATUS.DRAFT];
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
-  };
-
   const getPlatformStatus = (post: PostData) => {
     const platforms: React.ReactNode[] = [];
 
@@ -94,17 +88,24 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
   return (
     <TableRow>
       <TableCell className="font-medium">
-        <div className="max-w-xs">
-          <div className="truncate">{post.title}</div>
-          {post.cover_image && <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>}
-          {post.scheduled_for && dayjs(post.scheduled_for).isAfter(dayjs()) && (
-            <div className="text-[10px] text-primary mt-0.5 font-medium">
-              Schedules for {formatDateTime(post.scheduled_for)}
-            </div>
-          )}
+        <div className="flex items-start gap-2 max-w-sm">
+          <PostCoverThumbnail src={post.cover_image} title={post.title} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate">{post.title}</div>
+            {isPostScheduled(post) && (
+              <div className="text-[10px] text-primary mt-0.5 font-medium">
+                Schedules for {formatDateTime(post.scheduled_for!)}
+              </div>
+            )}
+            {isPostScheduleOverdue(post) && (
+              <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">{SYNC_LABEL.SCHEDULE_MISSED}</div>
+            )}
+          </div>
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(post.status, post.scheduled_for)}</TableCell>
+      <TableCell>
+        <PostStatusPill status={post.status} scheduledFor={post.scheduled_for} />
+      </TableCell>
       <TableCell>
         <SeoScoreBadge post={post} />
       </TableCell>
@@ -135,7 +136,7 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(updatedAt)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end space-x-2">
-          <Link href={`${ROUTES.EDITOR}/${postId}`}>
+          <Link href={`${ROUTES.EDITOR}/${postId}`} prefetch={false}>
             <Button variant="outline" size="sm" className="flex items-center space-x-1">
               <FiEdit3 className="h-4 w-4" />
               <span>{SYNC_LABEL.EDIT}</span>

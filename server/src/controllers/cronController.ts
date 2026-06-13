@@ -1,14 +1,15 @@
 import type { Request, Response } from "express";
 import { config } from "../config";
+import { CRON_SCHEDULE } from "../constants/notifications";
 import { asyncHandler, UnauthorizedError } from "../middleware/errorHandler";
-import * as postsService from "../services/postsService";
+import { publishScheduledPosts } from "../services/publishService";
 
 /**
- * Endpoint for Vercel Cron to trigger publishing of scheduled posts.
- * Protects against unauthorized access using CRON_SECRET.
+ * @operationId publishScheduledPosts
+ * Vercel Cron endpoint — publishes due scheduled drafts (daily midnight UTC).
+ * Auth: Bearer CRON_SECRET
  */
 export const handleScheduledPublish = asyncHandler(async (req: Request, res: Response) => {
-  // 1. Validate Cron Secret
   const authHeader = req.headers.authorization;
   const cronSecret = process.env.CRON_SECRET || config.cronSecret;
 
@@ -16,13 +17,17 @@ export const handleScheduledPublish = asyncHandler(async (req: Request, res: Res
     throw new UnauthorizedError("Invalid or missing CRON_SECRET");
   }
 
-  // 2. Trigger Publishing
-  const result = await postsService.publishScheduledPosts();
+  const result = await publishScheduledPosts();
 
-  // 3. Respond with summary
   res.json({
     success: true,
-    message: `Processed ${result.count} scheduled posts`,
-    data: result.results,
+    operationId: "publishScheduledPosts",
+    message: `Processed ${result.processed} scheduled posts`,
+    data: {
+      processed: result.processed,
+      truncated: result.truncated,
+      cronSchedule: CRON_SCHEDULE,
+      results: result.results,
+    },
   });
 });
