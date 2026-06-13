@@ -17,6 +17,37 @@ dayjs.extend(utc);
 
 const SLACK_ERROR_MAX_LEN = 280;
 
+/** Escape text inserted into HTML email bodies. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Prevent SMTP header injection in email subjects. */
+function sanitizeEmailSubjectPart(value: string): string {
+  return value.replace(/[\r\n]/g, " ").trim();
+}
+
+/** Allow only http(s) or same-app relative paths in email href attributes. */
+function safeEmailHref(url: string): string {
+  if (url.startsWith("/")) {
+    return escapeHtml(url);
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return escapeHtml(parsed.href);
+    }
+  } catch {
+    // reject javascript:, data:, and malformed URLs
+  }
+  return "#";
+}
+
 type SlackBlock = Record<string, unknown>;
 
 function getClientAppBaseUrl(): string {
@@ -39,17 +70,18 @@ function buildDashboardLink(): string {
 }
 
 function outcomeSubject(outcome: ScheduledPublishOutcome, title: string): string {
+  const safeTitle = sanitizeEmailSubjectPart(title);
   switch (outcome) {
     case "success":
-      return NOTIFICATION_COPY.EMAIL_SUBJECT_SUCCESS(title);
+      return NOTIFICATION_COPY.EMAIL_SUBJECT_SUCCESS(safeTitle);
     case "partial":
-      return NOTIFICATION_COPY.EMAIL_SUBJECT_PARTIAL(title);
+      return NOTIFICATION_COPY.EMAIL_SUBJECT_PARTIAL(safeTitle);
     case "failed":
-      return NOTIFICATION_COPY.EMAIL_SUBJECT_FAILED(title);
+      return NOTIFICATION_COPY.EMAIL_SUBJECT_FAILED(safeTitle);
     case "skipped_no_credentials":
-      return NOTIFICATION_COPY.EMAIL_SUBJECT_SKIPPED(title);
+      return NOTIFICATION_COPY.EMAIL_SUBJECT_SKIPPED(safeTitle);
     default:
-      return NOTIFICATION_COPY.EMAIL_SUBJECT_FAILED(title);
+      return NOTIFICATION_COPY.EMAIL_SUBJECT_FAILED(safeTitle);
   }
 }
 
@@ -162,32 +194,33 @@ function buildSlackBlocks(payload: ScheduledPublishNotificationPayload): SlackBl
 }
 
 function buildEmailHtml(payload: ScheduledPublishNotificationPayload): string {
-  const editorLink = buildEditorLink(payload.postId);
-  const dashboardLink = buildDashboardLink();
+  const editorLink = safeEmailHref(buildEditorLink(payload.postId));
+  const dashboardLink = safeEmailHref(buildDashboardLink());
   const accent = NOTIFICATION_COPY.OUTCOME_COLOR[payload.outcome];
-  const label = NOTIFICATION_COPY.OUTCOME_LABEL[payload.outcome];
+  const label = escapeHtml(NOTIFICATION_COPY.OUTCOME_LABEL[payload.outcome]);
+  const title = escapeHtml(payload.title);
 
   const metaRows: string[] = [];
   if (payload.authorName) {
     metaRows.push(
-      `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;width:120px;">${NOTIFICATION_COPY.SLACK_LABEL_AUTHOR}</td><td style="padding:8px 0;font-size:14px;">${payload.authorName}</td></tr>`,
+      `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;width:120px;">${NOTIFICATION_COPY.SLACK_LABEL_AUTHOR}</td><td style="padding:8px 0;font-size:14px;">${escapeHtml(payload.authorName)}</td></tr>`,
     );
   }
   if (payload.scheduledFor) {
     metaRows.push(
-      `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">${NOTIFICATION_COPY.SLACK_LABEL_SCHEDULED}</td><td style="padding:8px 0;font-size:14px;">${formatScheduledFor(payload.scheduledFor)}</td></tr>`,
+      `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">${NOTIFICATION_COPY.SLACK_LABEL_SCHEDULED}</td><td style="padding:8px 0;font-size:14px;">${escapeHtml(formatScheduledFor(payload.scheduledFor))}</td></tr>`,
     );
   }
   metaRows.push(
-    `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">${NOTIFICATION_COPY.SLACK_LABEL_PLATFORMS}</td><td style="padding:8px 0;font-size:14px;">${platformSummary(payload)}</td></tr>`,
+    `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">${NOTIFICATION_COPY.SLACK_LABEL_PLATFORMS}</td><td style="padding:8px 0;font-size:14px;">${escapeHtml(platformSummary(payload))}</td></tr>`,
   );
 
   const successesHtml = payload.successes?.length
-    ? `<div style="margin-top:16px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#16a34a;">${NOTIFICATION_COPY.SLACK_LABEL_SUCCEEDED}</p><ul style="margin:0;padding-left:20px;color:#334155;font-size:14px;">${payload.successes.map((s) => `<li style="margin-bottom:4px;">${s}</li>`).join("")}</ul></div>`
+    ? `<div style="margin-top:16px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#16a34a;">${NOTIFICATION_COPY.SLACK_LABEL_SUCCEEDED}</p><ul style="margin:0;padding-left:20px;color:#334155;font-size:14px;">${payload.successes.map((s) => `<li style="margin-bottom:4px;">${escapeHtml(s)}</li>`).join("")}</ul></div>`
     : "";
 
   const errorsHtml = payload.errors?.length
-    ? `<div style="margin-top:16px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626;">${NOTIFICATION_COPY.SLACK_LABEL_FAILED}</p><ul style="margin:0;padding-left:20px;color:#334155;font-size:14px;">${payload.errors.map((e) => `<li style="margin-bottom:4px;"><strong>${e.platform}:</strong> ${truncateForSlack(e.error, 500)}</li>`).join("")}</ul></div>`
+    ? `<div style="margin-top:16px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626;">${NOTIFICATION_COPY.SLACK_LABEL_FAILED}</p><ul style="margin:0;padding-left:20px;color:#334155;font-size:14px;">${payload.errors.map((e) => `<li style="margin-bottom:4px;"><strong>${escapeHtml(e.platform)}:</strong> ${escapeHtml(truncateForSlack(e.error, 500))}</li>`).join("")}</ul></div>`
     : "";
 
   return `
@@ -200,7 +233,7 @@ function buildEmailHtml(payload: ScheduledPublishNotificationPayload): string {
         <div style="height:4px;background:${accent};"></div>
         <div style="padding:24px;">
           <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${accent};">${label}</p>
-          <h1 style="margin:0 0 20px;font-size:20px;line-height:1.35;color:#0f172a;">${payload.title}</h1>
+          <h1 style="margin:0 0 20px;font-size:20px;line-height:1.35;color:#0f172a;">${title}</h1>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${metaRows.join("")}</table>
           ${successesHtml}
           ${errorsHtml}

@@ -63,6 +63,7 @@ export const NOTIFICATION_COPY = Object.freeze({
   },
 } as const);
 
-export const CRON_SCHEDULE = "0 0 * * *";
+/** Every 12 hours — 00:00 and 12:00 UTC (05:30 and 17:30 IST). */
+export const CRON_SCHEDULE = "0 */12 * * *";
 
 export const SCHEDULED_PUBLISH_MAX_PER_RUN = 10;

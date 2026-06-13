@@ -7,7 +7,7 @@ import { logger } from "../utils/logger";
 
 /**
  * @operationId publishScheduledPosts
- * Vercel Cron endpoint — publishes due scheduled drafts (daily midnight UTC).
+ * Vercel Cron endpoint — publishes due scheduled drafts (every 12h: 00:00 & 12:00 UTC).
  * Auth: Bearer CRON_SECRET
  */
 export const handleScheduledPublish = asyncHandler(async (req: Request, res: Response) => {
