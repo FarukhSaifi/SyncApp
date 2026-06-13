@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import PostStatusPill from "@components/dashboard/PostStatusPill";
 import GeneratePostModal from "@components/editor/GeneratePostModal";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
-import { APP_CONFIG } from "@constants";
+import { APP_CONFIG, PLATFORMS } from "@constants";
 import type { EditorSidebarRightProps } from "@types";
 import dayjs from "dayjs";
 import { FiChevronDown, FiClock, FiDownload, FiGlobe, FiImage, FiSend, FiUpload, FiZap } from "react-icons/fi";
@@ -55,6 +55,7 @@ const EditorSidebarRight = ({
   onSaveDraft,
   onPublishToPlatform,
   onPublishToAll,
+  connectedPlatforms,
   onDownloadMdx,
   scheduledFor,
   onScheduleSave,
@@ -129,6 +130,14 @@ const EditorSidebarRight = ({
 
   const isScheduled = Boolean(scheduledFor && dayjs(scheduledFor).isAfter(dayjs()));
   const scheduleDisabled = status === "published" || publishing;
+  const hasConnectedPlatforms = connectedPlatforms.length > 0;
+  const publishDisabled = publishing || !hasConnectedPlatforms;
+
+  const publishPlatformOptions = [
+    { platform: PLATFORMS.MEDIUM, label: SYNC_LABEL.PUBLISH_TO_MEDIUM, icon: FiSend },
+    { platform: PLATFORMS.DEVTO, label: SYNC_LABEL.PUBLISH_TO_DEVTO, icon: FiGlobe },
+    { platform: PLATFORMS.WORDPRESS, label: SYNC_LABEL.PUBLISH_TO_WORDPRESS, icon: FiGlobe },
+  ].filter((option) => connectedPlatforms.includes(option.platform));
 
   return (
     <aside className={`editor-sidebar-right ${isOpen ? "open" : ""}`}>
@@ -172,9 +181,14 @@ const EditorSidebarRight = ({
 
           {/* Action buttons */}
           <div className="space-y-2">
+            {!hasConnectedPlatforms && (
+              <p className="text-xs text-muted-foreground">{SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH}</p>
+            )}
+
             <Button
               variant="outline"
               size="sm"
+              type="button"
               onClick={onSaveDraft}
               disabled={loading}
               className="w-full justify-center"
@@ -185,54 +199,42 @@ const EditorSidebarRight = ({
             {/* Publish dropdown */}
             <div className="publish-dropdown" ref={dropdownRef}>
               <Button
+                type="button"
                 variant="primary"
                 size="sm"
                 onClick={() => setPublishDropdownOpen(!publishDropdownOpen)}
-                disabled={publishing}
+                disabled={publishDisabled}
                 className="w-full justify-center"
+                aria-expanded={publishDropdownOpen}
+                aria-haspopup="menu"
               >
                 <FiSend className="h-3.5 w-3.5 mr-1.5" />
                 {publishing ? SYNC_LABEL.PUBLISHING : PUBLISH_SECTIONS.PUBLISH}
                 <FiChevronDown className="h-3.5 w-3.5 ml-1.5" />
               </Button>
 
-              {publishDropdownOpen && (
-                <div className="publish-dropdown-menu">
+              {publishDropdownOpen && hasConnectedPlatforms && (
+                <div className="publish-dropdown-menu" role="menu">
+                  {publishPlatformOptions.map(({ platform, label, icon: Icon }) => (
+                    <button
+                      key={platform}
+                      type="button"
+                      role="menuitem"
+                      className="publish-dropdown-item"
+                      onClick={() => {
+                        setPublishDropdownOpen(false);
+                        onPublishToPlatform(platform);
+                      }}
+                      disabled={publishing}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                  {publishPlatformOptions.length > 0 && <div className="my-1 border-t border-border" />}
                   <button
-                    className="publish-dropdown-item"
-                    onClick={() => {
-                      setPublishDropdownOpen(false);
-                      onPublishToPlatform("medium");
-                    }}
-                    disabled={publishing}
-                  >
-                    <FiSend className="h-3.5 w-3.5" />
-                    {SYNC_LABEL.PUBLISH_TO_MEDIUM}
-                  </button>
-                  <button
-                    className="publish-dropdown-item"
-                    onClick={() => {
-                      setPublishDropdownOpen(false);
-                      onPublishToPlatform("devto");
-                    }}
-                    disabled={publishing}
-                  >
-                    <FiGlobe className="h-3.5 w-3.5" />
-                    {SYNC_LABEL.PUBLISH_TO_DEVTO}
-                  </button>
-                  <button
-                    className="publish-dropdown-item"
-                    onClick={() => {
-                      setPublishDropdownOpen(false);
-                      onPublishToPlatform("wordpress");
-                    }}
-                    disabled={publishing}
-                  >
-                    <FiGlobe className="h-3.5 w-3.5" />
-                    {SYNC_LABEL.PUBLISH_TO_WORDPRESS}
-                  </button>
-                  <div className="my-1 border-t border-border" />
-                  <button
+                    type="button"
+                    role="menuitem"
                     className="publish-dropdown-item font-medium"
                     onClick={() => {
                       setPublishDropdownOpen(false);

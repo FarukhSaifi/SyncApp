@@ -151,6 +151,12 @@ class ApiClient {
     });
   }
 
+  deleteCredential(platform: string): Promise<ApiResponse<unknown>> {
+    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, {
+      method: HTTP_METHODS.DELETE,
+    });
+  }
+
   // Publish
   publish(platform: string, postId: string): Promise<ApiResponse<Post>> {
     return this.request(`${API_PATHS.PUBLISH}/${platform}`, {

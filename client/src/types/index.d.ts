@@ -251,6 +251,7 @@ export interface EditorSidebarRightProps {
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;
   onUploadAndAttach: () => void;
+  connectedPlatforms: string[];
 }
 
 export interface LayoutProps {

@@ -11,7 +11,7 @@ import { devError, devLog } from "@utils/logger";
 import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
-import { CANONICAL_BASE_URL } from "@constants/api";
+import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 import { POST_STATUS } from "@constants/postStatus";
@@ -48,6 +48,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
 
   const isDirtyRef = useRef(isDirty);
   const formDataRef = useRef(formData);
@@ -109,6 +110,23 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       fetchPost();
     }
   }, [id, fetchPost]);
+
+  // Load connected platforms for publish dropdown
+  useEffect(() => {
+    const loadConnectedPlatforms = async () => {
+      try {
+        const result = await apiClient.request<{ success: boolean; data?: Array<{ platform_name: string }> }>(
+          API_PATHS.CREDENTIALS,
+        );
+        if (result?.success && Array.isArray(result.data)) {
+          setConnectedPlatforms(result.data.map((c) => c.platform_name));
+        }
+      } catch (error) {
+        devError("Failed to load connected platforms:", error);
+      }
+    };
+    loadConnectedPlatforms();
+  }, []);
 
   // Track dirty state
   useEffect(() => {
@@ -234,8 +252,17 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       return null;
     }
 
+    const clearScheduledForInForm = () => {
+      setFormData((prev) => ({ ...prev, scheduled_for: "" }));
+    };
+
     const status = formData.status ?? POST_STATUS.DRAFT;
-    const postData = { ...formData, tags: tagList, status };
+    const postData = {
+      ...formData,
+      tags: tagList,
+      status,
+      scheduled_for: null,
+    };
 
     if (!id) {
       devLog("Saving new post before publishing");
@@ -244,6 +271,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         throw new Error(saveResponse?.error || "Failed to save post");
       }
       onPostCreate(saveResponse.data);
+      clearScheduledForInForm();
       return saveResponse.data._id;
     }
 
@@ -255,6 +283,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     if (saveResponse.data) {
       onPostUpdate(saveResponse.data);
     }
+    clearScheduledForInForm();
     return id;
   }, [id, formData, tagList, onPostCreate, onPostUpdate]);
 
@@ -262,6 +291,10 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     async (platform: string) => {
       if (!formData.title.trim() || !formData.content_markdown.trim()) {
         toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+        return;
+      }
+      if (!connectedPlatforms.includes(platform)) {
+        toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
         return;
       }
       setPublishing(true);
@@ -299,12 +332,16 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         setPublishing(false);
       }
     },
-    [formData, tagList, ensurePostSaved, onPostUpdate, router, toast],
+    [formData, tagList, connectedPlatforms, ensurePostSaved, onPostUpdate, router, toast],
   );
 
   const handlePublishToAll = useCallback(async () => {
     if (!formData.title.trim() || !formData.content_markdown.trim()) {
       toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+      return;
+    }
+    if (connectedPlatforms.length === 0) {
+      toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
       return;
     }
     setPublishing(true);
@@ -342,7 +379,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     } finally {
       setPublishing(false);
     }
-  }, [formData, tagList, ensurePostSaved, onPostUpdate, router, toast]);
+  }, [formData, tagList, connectedPlatforms, ensurePostSaved, onPostUpdate, router, toast]);
 
   const handleDownloadMdx = useCallback(async () => {
     try {
@@ -441,6 +478,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     setActiveTab,
     isDirty,
     lastSavedAt,
+    connectedPlatforms,
     // Handlers
     handleInputChange,
     updateFormField,

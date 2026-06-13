@@ -134,6 +134,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onSaveDraft={() => state.handleSave(POST_STATUS.DRAFT)}
         onPublishToPlatform={state.handlePublishToPlatform}
         onPublishToAll={state.handlePublishToAll}
+        connectedPlatforms={state.connectedPlatforms}
         onDownloadMdx={state.handleDownloadMdx}
         scheduledFor={state.formData.scheduled_for}
         onScheduleSave={state.handleScheduleSave}

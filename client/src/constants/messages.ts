@@ -32,6 +32,7 @@ export const TOAST_TITLES = Object.freeze({
   PUBLISHED_EVERYWHERE: "Published Everywhere!",
   // Credentials
   CREDENTIALS_SAVED: "Credentials Saved",
+  CREDENTIALS_REMOVED: "Disconnected",
   CREDENTIALS_ERROR: "Credentials Error",
   // Export
   EXPORTED: "Exported!",
@@ -80,6 +81,7 @@ const createSuccessMessages = () => {
     REMOVED_FROM_PLATFORM: (platform: string) => `Post removed from ${platform}`,
     // Credentials
     CREDENTIALS_SAVED: (platform: string) => `${platform} API credentials saved successfully`,
+    CREDENTIALS_REMOVED: (platform: string) => `${platform} disconnected successfully`,
     // Export
     EXPORT_SUCCESS: (format: string) => `Post exported as ${format} successfully`,
     // Aliases (will be added below)
@@ -137,7 +139,9 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_UNPUBLISH: (platform: string, error: string) => `Failed to unpublish from ${platform}: ${error}`,
   // Credentials
   CREDENTIALS_SAVE_FAILED: (platform: string, error: string) => `Failed to save ${platform} credentials: ${error}`,
+  CREDENTIALS_REMOVE_FAILED: (platform: string, error: string) => `Failed to disconnect ${platform}: ${error}`,
   FAILED_TO_SAVE_CREDENTIALS: "Failed to save credentials",
+  FAILED_TO_REMOVE_CREDENTIALS: "Failed to disconnect platform",
   // Export
   EXPORT_FAILED: (format: string, error: string) => `Failed to export as ${format}: ${error}`,
   // Unpublish
@@ -364,6 +368,9 @@ export const BUTTON_LABELS = Object.freeze({
   REMOVE_FROM_WORDPRESS: "Remove from WordPress",
   // Settings
   SAVE_CREDENTIALS: "Save Credentials",
+  DISCONNECT_PLATFORM: "Disconnect",
+  CLEAR_FIELDS_TO_DISCONNECT: "Clear all fields and save to disconnect",
+  CONNECT_PLATFORM_TO_PUBLISH: "Connect a platform in Settings to publish",
   // Auth
   SIGN_IN: "Sign In",
   SIGN_UP: "Sign Up",
