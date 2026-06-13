@@ -100,7 +100,16 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
  * canonical_url is set from slug in Post model pre-save hook.
  */
 export async function createPost(input: CreatePostInput) {
-  const { title, content_markdown, status = POST_STATUS.DRAFT, tags, cover_image, canonical_url, author } = input;
+  const {
+    title,
+    content_markdown,
+    status = POST_STATUS.DRAFT,
+    tags,
+    cover_image,
+    canonical_url,
+    meta_description,
+    author,
+  } = input;
 
   if (!title || !content_markdown) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
@@ -116,6 +125,7 @@ export async function createPost(input: CreatePostInput) {
     tags: tags || [],
     cover_image: processedCoverImage as any,
     canonical_url,
+    meta_description: meta_description?.trim() || null,
     author,
   });
 
@@ -321,6 +331,10 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   if (updates.status !== undefined) updateData.status = updates.status;
   if (updates.tags !== undefined) updateData.tags = updates.tags;
   if (updates.cover_image !== undefined) updateData.cover_image = updates.cover_image;
+  if (updates.meta_description !== undefined) {
+    updateData.meta_description =
+      typeof updates.meta_description === "string" ? updates.meta_description.trim() : updates.meta_description;
+  }
   if (updates.scheduled_for !== undefined) updateData.scheduled_for = updates.scheduled_for;
 
   // Explicitly check for slug update to keep canonical URL aligned

@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { ROUTES } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 
-function ClientOnly({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-  return <>{children}</>;
-}
+import { INFO_MESSAGES } from "@constants/messages";
+
+import ClientOnly from "@components/common/ClientOnly";
+import LoadingScreen from "@components/common/LoadingScreen";
 
 function AuthLayoutInner({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -32,11 +24,7 @@ function AuthLayoutInner({ children }: { children: ReactNode }) {
   }, [isAuthenticated, loading, pathname, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen message={INFO_MESSAGES.LOADING} />;
   }
 
   return <>{children}</>;

@@ -2,9 +2,12 @@
   "name": "syncapp-client",
   "private": true,
   "version": "2.0.0",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
+    "dev": "next dev --turbopack --port 3000",
+    "build": "npm run typecheck && next build",
     "start": "next start --port 3000",
     "lint": "eslint src app --report-unused-disable-directives --max-warnings 10",
     "typecheck": "tsc --noEmit"

@@ -107,9 +107,12 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
             <div className="md:hidden space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-5 w-12 rounded-full" />
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="h-12 w-18 shrink-0 rounded-md" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-5 w-12 rounded-full" />
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <Skeleton className="h-3.5 w-24" />
@@ -137,7 +140,10 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
                 </div>
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="p-4 border-b last:border-b-0 flex justify-between items-center gap-4">
-                    <Skeleton className="h-4 w-1/4" />
+                    <div className="flex items-center gap-3 min-w-0 flex-[1.5]">
+                      <Skeleton className="h-10 w-14 shrink-0 rounded-md" />
+                      <Skeleton className="h-4 w-full max-w-[180px]" />
+                    </div>
                     <Skeleton className="h-5 w-12 rounded-full" />
                     <Skeleton className="h-5 w-16 rounded-md" />
                     <Skeleton className="h-4 w-20" />
@@ -175,7 +181,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
             <FiRefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
             {SYNC_LABEL.REFRESH}
           </Button>
-          <Link href={ROUTES.EDITOR} className="w-full sm:w-auto">
+          <Link href={ROUTES.EDITOR} prefetch={false} className="w-full sm:w-auto">
             <Button className="flex items-center justify-center space-x-2 w-full sm:w-auto">
               <FiPlus className="h-4 w-4 mr-1" />
               {SYNC_LABEL.NEW_POST}
@@ -266,7 +272,7 @@ const Dashboard = ({ posts, loading, error, onPostDelete, onPostUpdate: _onPostU
               <FiGlobe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">{SYNC_LABEL.NO_POSTS_TITLE}</h3>
               <p className="text-muted-foreground mb-4">{SYNC_LABEL.NO_POSTS_DESCRIPTION}</p>
-              <Link href={ROUTES.EDITOR}>
+              <Link href={ROUTES.EDITOR} prefetch={false}>
                 <Button>{SYNC_LABEL.CREATE_FIRST_POST}</Button>
               </Link>
             </div>

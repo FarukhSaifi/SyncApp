@@ -1,29 +1,13 @@
 /** Build-time security header helpers for next.config.ts */
 
-const DEFAULT_PROD_API_ORIGIN = "https://sync-app-server.vercel.app";
+import { resolveApiOrigin, resolveSiteOrigin } from "../src/constants/env";
 
 export function getApiOrigin(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL || DEFAULT_PROD_API_ORIGIN;
-  try {
-    return new URL(apiUrl).origin;
-  } catch {
-    return DEFAULT_PROD_API_ORIGIN;
-  }
+  return resolveApiOrigin();
 }
 
 export function getSiteOrigin(): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) {
-    try {
-      return new URL(configured).origin;
-    } catch {
-      return configured;
-    }
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
+  return resolveSiteOrigin();
 }
 
 type Header = { key: string; value: string };
@@ -37,7 +21,7 @@ export function buildSecurityHeaders(isProd: boolean): Header[] {
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     {
       key: "Permissions-Policy",
-      value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      value: "camera=(), microphone=(), geolocation=()",
     },
     { key: "X-Download-Options", value: "noopen" },
     { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
@@ -60,6 +44,7 @@ export function buildSecurityHeaders(isProd: boolean): Header[] {
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
+      "upgrade-insecure-requests",
     ].join("; ");
 
     headers.push({ key: "Content-Security-Policy", value: csp });

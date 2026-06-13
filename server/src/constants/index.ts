@@ -3,7 +3,14 @@
  */
 import { DEFAULT_VALUES } from "./defaultValues";
 
-export { AI_CONFIG, AI_PROMPTS, AI_SAFETY_SETTINGS, AI_SYSTEM_INSTRUCTIONS, AI_RESPONSE_SCHEMA } from "./ai";
+export {
+  AI_CONFIG,
+  AI_POST_LIMITS,
+  AI_PROMPTS,
+  AI_RESPONSE_SCHEMA,
+  AI_SAFETY_SETTINGS,
+  AI_SYSTEM_INSTRUCTIONS,
+} from "./ai";
 export { API_URLS } from "./api";
 export { DATABASE } from "./database";
 export { DEFAULT_PASSWORDS } from "./defaultPasswords";

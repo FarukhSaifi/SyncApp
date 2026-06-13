@@ -70,15 +70,28 @@ function prepareDevtoTags(tags: string[] | undefined): string[] {
     .slice(0, maxTags);
 }
 
+/** Resolve a public HTTP(S) cover URL for Dev.to, or empty when not publishable. */
+function resolveDevtoCoverImage(post: IPostDocument): string {
+  const cover = (post.cover_image || "").trim();
+  if (!cover) return "";
+  if (cover.startsWith("data:")) return "";
+  if (isValidHttpUrl(cover)) return cover;
+  return "";
+}
+
 function buildDevtoArticlePayload(post: IPostDocument): Record<string, unknown> {
   const canonicalUrl = resolveDevtoCanonicalUrl(post);
+  const metaDescription = (post.meta_description || "").trim();
   const article: Record<string, unknown> = {
     title: post.title,
     body_markdown: post.content_markdown,
     published: true,
     tags: prepareDevtoTags(post.tags),
-    main_image: post.cover_image || "",
+    main_image: resolveDevtoCoverImage(post),
   };
+  if (metaDescription) {
+    article.description = metaDescription.slice(0, 160);
+  }
   if (canonicalUrl) {
     article.canonical_url = canonicalUrl;
   }

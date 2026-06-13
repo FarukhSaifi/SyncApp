@@ -17,9 +17,12 @@ import {
 
 import { SIDEBAR_SECTIONS } from "@constants/editor";
 import { SYNC_LABEL } from "@constants/messages";
+import { SEO_THRESHOLDS } from "@constants/seo";
 
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
+import LazyImage from "@components/common/LazyImage";
+import Skeleton from "@components/common/Skeleton";
 
 /** Collapsible sidebar section */
 const Section = ({
@@ -89,6 +92,7 @@ const EditorSidebarLeft = ({
   onAddTag,
   onRemoveTag,
   onTagKeyDown,
+  contentLoading = false,
 }: EditorSidebarLeftProps) => {
   const [imageError, setImageError] = useState(false);
   const [lastCover, setLastCover] = useState(formData.cover_image);
@@ -115,10 +119,20 @@ const EditorSidebarLeft = ({
         tags: tagList,
         cover_image: formData.cover_image,
         canonical_url: formData.canonical_url,
+        meta_description: formData.meta_description,
         content_markdown: formData.content_markdown,
       }),
-    [formData.title, tagList, formData.cover_image, formData.canonical_url, formData.content_markdown],
+    [
+      formData.title,
+      tagList,
+      formData.cover_image,
+      formData.canonical_url,
+      formData.meta_description,
+      formData.content_markdown,
+    ],
   );
+
+  const tagsAtLimit = tagList.length >= SEO_THRESHOLDS.TAG_COUNT_MAX;
 
   return (
     <aside className={`editor-sidebar-left ${isOpen ? "open" : ""}`}>
@@ -129,6 +143,7 @@ const EditorSidebarLeft = ({
       {/* Tags */}
       <Section title={SIDEBAR_SECTIONS.TAGS} icon={<FiTag className="h-3.5 w-3.5" />}>
         <div className="space-y-2">
+          <p className="text-[10px] text-muted-foreground">{SYNC_LABEL.TAGS_HELP}</p>
           <div className="flex gap-2">
             <Input
               value={tagInput}
@@ -137,11 +152,15 @@ const EditorSidebarLeft = ({
               placeholder={SYNC_LABEL.ADD_TAG}
               className="flex-1 text-xs"
               size="sm"
+              disabled={tagsAtLimit}
             />
-            <Button type="button" variant="default" size="sm" onClick={onAddTag}>
+            <Button type="button" variant="default" size="sm" onClick={onAddTag} disabled={tagsAtLimit}>
               {SYNC_LABEL.ADD}
             </Button>
           </div>
+          {tagsAtLimit && (
+            <p className="text-[10px] text-yellow-600 dark:text-yellow-500">{SYNC_LABEL.TAGS_LIMIT_REACHED}</p>
+          )}
           {tagList.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {tagList.map((tag) => (
@@ -166,13 +185,13 @@ const EditorSidebarLeft = ({
       </Section>
 
       {/* Meta Description */}
-      <Section title="Meta Description" icon={<FiCheckCircle className="h-3.5 w-3.5" />}>
+      <Section title={SYNC_LABEL.META_DESCRIPTION_LABEL} icon={<FiCheckCircle className="h-3.5 w-3.5" />}>
         <div className="space-y-2">
           <textarea
             name="meta_description"
             value={formData.meta_description || ""}
             onChange={onInputChange}
-            placeholder="A brief summary for SEO (120-160 chars)"
+            placeholder={SYNC_LABEL.META_DESCRIPTION_PLACEHOLDER}
             rows={3}
             className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 resize-y focus:outline-none focus:ring-1 focus:ring-primary"
           />
@@ -183,7 +202,7 @@ const EditorSidebarLeft = ({
             </span>
             <span
               className={
-                formData.meta_description?.length >= 120 && formData.meta_description?.length <= 160
+                formData.meta_description?.length >= 120 && formData.meta_description?.length <= 150
                   ? "text-green-500"
                   : "text-yellow-500"
               }
@@ -207,12 +226,17 @@ const EditorSidebarLeft = ({
             size="sm"
           />
           {formData.cover_image && (
-            <div className="relative w-full h-28 rounded-md overflow-hidden border border-border bg-muted flex items-center justify-center">
+            <div className="relative w-full h-28 rounded-md overflow-hidden border border-border bg-muted">
               {imageError ? (
                 cachedBase64 ? (
-                  <img src={cachedBase64} alt="Cover preview (cached)" className="w-full h-full object-cover" />
+                  <LazyImage
+                    src={cachedBase64}
+                    alt="Cover preview (cached)"
+                    className="w-full h-full object-cover"
+                    containerClassName="w-full h-full"
+                  />
                 ) : (
-                  <div className="p-3 text-center flex flex-col items-center justify-center gap-1">
+                  <div className="p-3 text-center flex flex-col items-center justify-center gap-1 h-full">
                     <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
                     <p className="text-[10px] font-semibold text-foreground leading-tight">
                       {SYNC_LABEL.PREVIEW_UNAVAILABLE}
@@ -223,11 +247,12 @@ const EditorSidebarLeft = ({
                   </div>
                 )
               ) : (
-                <img
+                <LazyImage
                   src={formData.cover_image}
                   alt="Cover preview"
                   className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
+                  containerClassName="w-full h-full"
+                  onImageError={() => setImageError(true)}
                 />
               )}
             </div>
@@ -250,37 +275,57 @@ const EditorSidebarLeft = ({
 
       {/* SEO Score */}
       <Section title={SIDEBAR_SECTIONS.SEO_SCORE} icon={<FiBarChart2 className="h-3.5 w-3.5" />} defaultOpen={true}>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <SeoRing score={seo.score} maxScore={seo.maxScore} />
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {seo.score}/{seo.maxScore}
-              </p>
-              <p className="text-xs text-muted-foreground">{SIDEBAR_SECTIONS.SEO_SCORE}</p>
+        {contentLoading ? (
+          <div className="space-y-3" aria-busy="true">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-12 w-12 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-3 w-24" />
+              </div>
             </div>
+            <ul className="space-y-2">
+              {Array.from({ length: 5 }, (_, i) => (
+                <li key={`seo-skeleton-${i}`} className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-3 rounded-full shrink-0" />
+                  <Skeleton className="h-3 flex-1" />
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-1">
-            {seo.checks.map((check) => (
-              <li key={check.label} className="flex items-start gap-2 text-xs">
-                <span className="mt-0.5 shrink-0">
-                  {check.ok === true ? (
-                    <FiCheckCircle className="h-3 w-3 text-green-500" />
-                  ) : check.ok === false ? (
-                    check.warning ? (
-                      <FiAlertTriangle className="h-3 w-3 text-yellow-500" />
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <SeoRing score={seo.score} maxScore={seo.maxScore} />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {seo.score}/{seo.maxScore}
+                </p>
+                <p className="text-xs text-muted-foreground">{SIDEBAR_SECTIONS.SEO_SCORE}</p>
+              </div>
+            </div>
+            <ul className="space-y-1">
+              {seo.checks.map((check) => (
+                <li key={check.label} className="flex items-start gap-2 text-xs">
+                  <span className="mt-0.5 shrink-0">
+                    {check.ok === true ? (
+                      <FiCheckCircle className="h-3 w-3 text-green-500" />
+                    ) : check.ok === false ? (
+                      check.warning ? (
+                        <FiAlertTriangle className="h-3 w-3 text-yellow-500" />
+                      ) : (
+                        <FiAlertCircle className="h-3 w-3 text-red-500" />
+                      )
                     ) : (
-                      <FiAlertCircle className="h-3 w-3 text-red-500" />
-                    )
-                  ) : (
-                    <span className="w-3 h-px bg-muted" />
-                  )}
-                </span>
-                <span className="text-muted-foreground">{check.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                      <span className="w-3 h-px bg-muted" />
+                    )}
+                  </span>
+                  <span className="text-muted-foreground">{check.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Section>
     </aside>
   );

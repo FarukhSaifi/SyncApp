@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 
-import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, POST_STATUS, ROUTES, STATUS_CONFIG, SYNC_LABEL } from "@constants";
+import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
 import type { Post, PostCardProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import Link from "next/link";
@@ -9,6 +9,8 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
 
+import PostCoverThumbnail from "./PostCoverThumbnail";
+import PostStatusPill from "./PostStatusPill";
 import SeoScoreBadge from "./SeoScoreBadge";
 
 /** API responses may include both camelCase and snake_case fields */
@@ -23,11 +25,6 @@ type PostData = Post & {
  * Mobile-friendly post card component
  */
 const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
-  const getStatusBadge = (status: string) => {
-    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[POST_STATUS.DRAFT];
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>;
-  };
-
   const getPlatformStatus = (post: PostData) => {
     const platforms: React.ReactNode[] = [];
 
@@ -92,16 +89,14 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
       <CardContent className="p-3 sm:p-4">
         <div className="space-y-2 sm:space-y-3">
           {/* Header */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{post.title}</h3>
-              {post.cover_image && (
-                <div className="text-xs text-muted-foreground mt-0.5 sm:mt-1">{SYNC_LABEL.HAS_COVER_IMAGE}</div>
-              )}
-            </div>
-            <div className="ml-1 sm:ml-2 shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
-              <SeoScoreBadge post={post} />
-              {getStatusBadge(post.status)}
+          <div className="flex items-start gap-3">
+            <PostCoverThumbnail src={post.cover_image} title={post.title} size="md" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <h3 className="text-sm sm:text-base font-semibold text-foreground line-clamp-2">{post.title}</h3>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SeoScoreBadge post={post} />
+                <PostStatusPill status={post.status} scheduledFor={post.scheduled_for} size="SM" />
+              </div>
             </div>
           </div>
 
@@ -152,7 +147,7 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 pt-2 border-t">
-            <Link href={`${ROUTES.EDITOR}/${postId}`} className="flex-1 min-w-0">
+            <Link href={`${ROUTES.EDITOR}/${postId}`} prefetch={false} className="flex-1 min-w-0">
               <Button variant="outline" size="sm" className="w-full">
                 <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
                 <span className="truncate">{SYNC_LABEL.EDIT}</span>

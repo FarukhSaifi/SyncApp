@@ -38,23 +38,11 @@
       "@views/*": [
         "./src/views/*"
       ],
-      "@services/*": [
-        "./src/services/*"
-      ],
       "@types": [
         "./src/types"
       ],
       "@utils/*": [
         "./src/utils/*"
-      ],
-      "@assets/*": [
-        "./src/assets/*"
-      ],
-      "@styles/*": [
-        "./src/styles/*"
-      ],
-      "@config/*": [
-        "./src/config/*"
       ],
       "@contexts/*": [
         "./src/contexts/*"

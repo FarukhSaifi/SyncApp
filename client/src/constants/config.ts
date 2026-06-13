@@ -1,3 +1,5 @@
+import { LABELS } from "./messages";
+
 /**
  * Application Configuration Constants
  */
@@ -73,6 +75,17 @@ export const VERIFIED_CONFIG = Object.freeze({
   unverified: {
     label: "Unverified",
     className: "bg-warning/15 text-warning",
+  },
+} as const);
+
+export const CONNECTION_STATUS_CONFIG = Object.freeze({
+  active: {
+    label: LABELS.ACTIVE,
+    className: "bg-positive/15 text-positive",
+  },
+  inactive: {
+    label: LABELS.INACTIVE,
+    className: "bg-muted text-muted-foreground",
   },
 } as const);
 

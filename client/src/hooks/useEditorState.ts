@@ -8,12 +8,14 @@ import { useToast } from "@hooks/useToast";
 import type { Post } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
+import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
+import { CANONICAL_BASE_URL } from "@constants/api";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
-import { CANONICAL_BASE_URL } from "@constants/index";
-import { SYNC_LABEL } from "@constants/messages";
+import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 import { POST_STATUS } from "@constants/postStatus";
+import { SEO_THRESHOLDS } from "@constants/seo";
 
 /**
  * Build a canonical URL from the post slug.
@@ -51,6 +53,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const [tagList, setTagList] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(Boolean(id));
   const [publishing, setPublishing] = useState(false);
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
@@ -68,9 +71,11 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   }, [isDirty, formData, tagList]);
 
   const fetchPost = useCallback(async () => {
+    if (!id) return;
+    setInitialLoading(true);
     try {
       devLog("Fetching post:", id);
-      const response = await apiClient.getPost(id!);
+      const response = await apiClient.getPost(id);
       if (response?.success && response.data) {
         const post = response.data;
         setFormData({
@@ -90,6 +95,8 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     } catch (error) {
       devError("Error fetching post:", error);
       toast.apiError(`Failed to fetch post: ${(error as Error).message}`);
+    } finally {
+      setInitialLoading(false);
     }
   }, [id, toast]);
 
@@ -150,8 +157,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   }, []);
 
   const handleAddTag = useCallback(() => {
-    const tag = tagInput.trim();
-    if (tag && !tagList.includes(tag)) {
+    const tag = tagInput.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, "");
+    if (!tag || tagList.length >= SEO_THRESHOLDS.TAG_COUNT_MAX) return;
+    if (!tagList.includes(tag)) {
       setTagList((prev) => [...prev, tag]);
       setTagInput("");
     }
@@ -271,6 +279,20 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         const currentPostId = await ensurePostSaved();
         if (!currentPostId) return;
 
+        if (platform === "devto") {
+          const warnings = getDevtoPublishWarnings({
+            title: formData.title,
+            tags: tagList,
+            cover_image: formData.cover_image,
+            canonical_url: formData.canonical_url,
+            meta_description: formData.meta_description,
+            content_markdown: formData.content_markdown,
+          });
+          if (warnings.length > 0) {
+            toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+          }
+        }
+
         devLog(`Publishing to ${platform}`);
         const publishResponse = await apiClient.publish(platform, currentPostId);
         if (publishResponse?.success) {
@@ -287,7 +309,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         setPublishing(false);
       }
     },
-    [formData.title, formData.content_markdown, ensurePostSaved, onPostUpdate, router, toast],
+    [formData, tagList, ensurePostSaved, onPostUpdate, router, toast],
   );
 
   const handlePublishToAll = useCallback(async () => {
@@ -299,6 +321,18 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     try {
       const currentPostId = await ensurePostSaved();
       if (!currentPostId) return;
+
+      const warnings = getDevtoPublishWarnings({
+        title: formData.title,
+        tags: tagList,
+        cover_image: formData.cover_image,
+        canonical_url: formData.canonical_url,
+        meta_description: formData.meta_description,
+        content_markdown: formData.content_markdown,
+      });
+      if (warnings.length > 0) {
+        toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+      }
 
       devLog("Publishing to all platforms");
       const publishResponse = await apiClient.publishAll(currentPostId);
@@ -318,7 +352,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     } finally {
       setPublishing(false);
     }
-  }, [formData.title, formData.content_markdown, ensurePostSaved, onPostUpdate, router, toast]);
+  }, [formData, tagList, ensurePostSaved, onPostUpdate, router, toast]);
 
   const handleDownloadMdx = useCallback(async () => {
     try {
@@ -350,6 +384,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     setTagInput,
     // UI state
     loading,
+    initialLoading,
     publishing,
     activeTab,
     setActiveTab,

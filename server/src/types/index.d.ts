@@ -136,6 +136,7 @@ export interface CreatePostInput {
   cover_image?: string | null;
   canonical_url?: string;
   scheduled_for?: Date | string;
+  meta_description?: string;
   author?: string;
 }
 

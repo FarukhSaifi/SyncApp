@@ -121,8 +121,18 @@ export interface Credential {
 // UI, View, Component and State Types Consolidated
 // ----------------------------------------------------
 
-export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SkeletonProps extends React.HTMLAttributes<HTMLSpanElement> {
   className?: string;
+}
+
+export interface LazyImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt"> {
+  src: string;
+  alt: string;
+  className?: string;
+  containerClassName?: string;
+  skeletonClassName?: string;
+  onImageError?: () => void;
+  showSkeleton?: boolean;
 }
 
 export interface ShortcutHandlers {
@@ -256,6 +266,7 @@ export interface EditorSidebarLeftProps {
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
   onTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  contentLoading?: boolean;
 }
 
 export interface EditorStatusBarProps {
