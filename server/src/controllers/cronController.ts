@@ -3,6 +3,7 @@ import { config } from "../config";
 import { CRON_SCHEDULE } from "../constants/notifications";
 import { asyncHandler, UnauthorizedError } from "../middleware/errorHandler";
 import { publishScheduledPosts } from "../services/publishService";
+import { logger } from "../utils/logger";
 
 /**
  * @operationId publishScheduledPosts
@@ -18,6 +19,18 @@ export const handleScheduledPublish = asyncHandler(async (req: Request, res: Res
   }
 
   const result = await publishScheduledPosts();
+
+  const outcomeSummary = result.results.map((r) => ({
+    postId: r.postId,
+    outcome: r.outcome,
+    platformErrors: r.errors?.map((e) => `${e.platform}: ${e.error}`) ?? [],
+  }));
+
+  logger.info("Scheduled publish cron completed", {
+    processed: result.processed,
+    truncated: result.truncated,
+    outcomes: outcomeSummary,
+  });
 
   res.json({
     success: true,

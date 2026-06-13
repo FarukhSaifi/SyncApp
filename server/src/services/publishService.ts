@@ -118,6 +118,33 @@ function devtoAuthHeaders(apiKey: string) {
   };
 }
 
+/** Editor stores Quill HTML in content_markdown; Medium requires matching contentFormat. */
+function isHtmlContent(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed) return false;
+  return trimmed.startsWith("<") && /<[a-z][\s\S]*>/i.test(trimmed);
+}
+
+function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "html" | "markdown"; content: string } {
+  const content = post.content_markdown || "";
+  return {
+    contentFormat: isHtmlContent(content) ? "html" : "markdown",
+    content,
+  };
+}
+
+function mediumErrorMessage(error: unknown): string {
+  const axiosError = error as Error & {
+    isAxiosError?: boolean;
+    response?: { status?: number; data?: { errors?: Array<{ message?: string }> } };
+  };
+  if (axiosError.isAxiosError && axiosError.response?.data?.errors?.length) {
+    const messages = axiosError.response.data.errors.map((e) => e.message).filter(Boolean);
+    if (messages.length > 0) return messages.join("; ");
+  }
+  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+}
+
 function wordpressAuthHeaders(apiKey: string) {
   return {
     [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${apiKey}`,
@@ -144,12 +171,14 @@ export async function publishToMedium(
   });
 
   const userId = userResponse.data.data.id;
+  const { contentFormat, content } = resolveMediumContentPayload(post);
+
   const publishResponse = await axios.post(
     API_URLS.MEDIUM.POSTS_ENDPOINT(userId),
     {
       title: post.title,
-      contentFormat: "markdown",
-      content: post.content_markdown,
+      contentFormat,
+      content,
       publishStatus: "public",
     },
     {
@@ -345,9 +374,13 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
         Object.assign(platformUpdates, updates);
         successes.push(platformSuccessMessage(platformName, action));
       } catch (error) {
+        const errorMessage =
+          platformName === PLATFORMS.MEDIUM
+            ? mediumErrorMessage(error)
+            : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
         errors.push({
           platform: platformCfg.name,
-          error: (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED,
+          error: errorMessage,
         });
       }
     }),
