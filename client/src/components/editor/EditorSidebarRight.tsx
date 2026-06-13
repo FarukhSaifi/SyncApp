@@ -97,13 +97,19 @@ const EditorSidebarRight = ({
     }
   }, [aiLoading, generatedImageDataUrl]);
 
-  // Close generate modal after post draft completes
+  // Close generate modal after post draft completes; reset tracking when modal is closed
   useEffect(() => {
+    if (!isGenerateModalOpen) {
+      wasGeneratingPostRef.current = false;
+      return;
+    }
+
     if (aiLoading === "post") {
       wasGeneratingPostRef.current = true;
       return;
     }
-    if (wasGeneratingPostRef.current && !aiLoading && isGenerateModalOpen) {
+
+    if (wasGeneratingPostRef.current && !aiLoading) {
       setIsGenerateModalOpen(false);
       wasGeneratingPostRef.current = false;
     }
