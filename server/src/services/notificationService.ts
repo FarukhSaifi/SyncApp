@@ -1,6 +1,7 @@
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { Resend } from "resend";
 
 import { config } from "../config";
 import {
@@ -269,6 +270,10 @@ async function sendSlackWebhook(payload: ScheduledPublishNotificationPayload): P
   }
 }
 
+function scheduledPublishIdempotencyKey(payload: ScheduledPublishNotificationPayload): string {
+  return `scheduled-publish/${payload.postId}/${payload.outcome}`;
+}
+
 async function sendAuthorEmail(payload: ScheduledPublishNotificationPayload): Promise<NotificationChannelStatus> {
   const apiKey = config.resendApiKey;
   const from = config.notificationFromEmail;
@@ -280,24 +285,32 @@ async function sendAuthorEmail(payload: ScheduledPublishNotificationPayload): Pr
 
   const subject = outcomeSubject(payload.outcome, payload.title);
   const html = buildEmailHtml(payload);
+  const resend = new Resend(apiKey);
 
-  try {
-    await axios.post(
-      "https://api.resend.com/emails",
-      { from, to, subject, html },
-      {
-        timeout: 10_000,
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    return NOTIFICATION_CHANNEL_STATUS.SENT;
-  } catch (error) {
-    logger.error("Email scheduled publish notification failed", error as Error, { postId: payload.postId });
+  const { data, error } = await resend.emails.send(
+    {
+      from,
+      to,
+      subject,
+      html,
+      tags: [
+        { name: "event", value: "scheduled-publish" },
+        { name: "outcome", value: payload.outcome },
+      ],
+    },
+    { idempotencyKey: scheduledPublishIdempotencyKey(payload) },
+  );
+
+  if (error) {
+    logger.error("Email scheduled publish notification failed", new Error(error.message), {
+      postId: payload.postId,
+      resendError: error.name,
+    });
     return NOTIFICATION_CHANNEL_STATUS.FAILED;
   }
+
+  logger.info("Scheduled publish notification email sent", { postId: payload.postId, emailId: data?.id });
+  return NOTIFICATION_CHANNEL_STATUS.SENT;
 }
 
 /** Sends Slack + email notifications for a scheduled publish outcome. */

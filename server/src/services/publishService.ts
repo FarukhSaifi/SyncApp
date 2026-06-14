@@ -74,12 +74,23 @@ function existingPlatformUpdates(post: IPostDocument, platform: string): Record<
   };
 }
 
-/** Dev.to allows max 4 tags; normalize to lowercase single-token names. */
+/** Dev.to allows max 4 tags; normalize to lowercase single-token names (no hyphens). */
 function prepareDevtoTags(tags: string[] | undefined): string[] {
   const maxTags = PLATFORM_CONFIG.devto.maxTags;
+  const seen = new Set<string>();
+
   return (tags || [])
-    .map((tag) => tag.trim().toLowerCase().replace(/\s+/g, ""))
-    .filter(Boolean)
+    .map((tag) =>
+      tag
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, ""),
+    )
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) return false;
+      seen.add(tag);
+      return true;
+    })
     .slice(0, maxTags);
 }
 
@@ -141,6 +152,34 @@ function mediumErrorMessage(error: unknown): string {
   if (axiosError.isAxiosError && axiosError.response?.data?.errors?.length) {
     const messages = axiosError.response.data.errors.map((e) => e.message).filter(Boolean);
     if (messages.length > 0) return messages.join("; ");
+  }
+  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+}
+
+function devtoErrorMessage(error: unknown): string {
+  const axiosError = error as Error & {
+    isAxiosError?: boolean;
+    response?: { status?: number; data?: Record<string, unknown> };
+  };
+  const data = axiosError.response?.data;
+  if (axiosError.isAxiosError && data) {
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    if (Array.isArray(data.errors)) {
+      const messages = data.errors
+        .map((entry) => {
+          if (typeof entry === "string") return entry;
+          if (entry && typeof entry === "object" && "message" in entry) {
+            return String((entry as { message?: unknown }).message ?? "");
+          }
+          return "";
+        })
+        .filter(Boolean);
+      if (messages.length > 0) return messages.join("; ");
+    }
+    if (typeof data === "object") {
+      return JSON.stringify(data);
+    }
   }
   return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
@@ -377,7 +416,9 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
         const errorMessage =
           platformName === PLATFORMS.MEDIUM
             ? mediumErrorMessage(error)
-            : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+            : platformName === PLATFORMS.DEVTO
+              ? devtoErrorMessage(error)
+              : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
         errors.push({
           platform: platformCfg.name,
           error: errorMessage,
