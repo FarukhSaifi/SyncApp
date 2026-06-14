@@ -118,3 +118,6 @@ postman
 .cursor
 scripts
 .vercel
+yarn.lock
+pnpm-lock.yaml
+*.lock
