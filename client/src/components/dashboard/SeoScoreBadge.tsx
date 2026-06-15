@@ -1,9 +1,10 @@
 import { memo, useMemo } from "react";
 
 import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
-import { PILL_SIZES } from "@constants/designTokens";
 import type { SeoScoreBadgeProps } from "@types";
 import { getSeoScorecard } from "@utils/seoScorecard";
+
+import { PILL_SIZES } from "@constants/designTokens";
 
 /**
  * Small badge showing SEO score (e.g. "SEO: 92/100") with tooltip listing checks.

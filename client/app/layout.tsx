@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
-import { Toaster } from "@components/common/Toaster";
 import { APP_CONFIG } from "@constants/config";
 import { STORAGE_KEYS, THEME_VALUES } from "@constants/theme";
+
+import { Toaster } from "@components/common/Toaster";
 
 import { Providers } from "./providers";
 
