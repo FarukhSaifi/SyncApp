@@ -274,12 +274,18 @@ function scheduledPublishIdempotencyKey(payload: ScheduledPublishNotificationPay
   return `scheduled-publish/${payload.postId}/${payload.outcome}`;
 }
 
+function buildNotificationRecipients(authorEmail?: string): string[] {
+  const author = authorEmail?.trim();
+  const cc = config.notificationCcEmail.trim();
+  return [...new Set([author, cc].filter((email): email is string => Boolean(email)))];
+}
+
 async function sendAuthorEmail(payload: ScheduledPublishNotificationPayload): Promise<NotificationChannelStatus> {
   const apiKey = config.resendApiKey;
   const from = config.notificationFromEmail;
-  const to = payload.authorEmail?.trim();
+  const to = buildNotificationRecipients(payload.authorEmail);
 
-  if (!apiKey || !from || !to) {
+  if (!apiKey || !from || to.length === 0) {
     return NOTIFICATION_CHANNEL_STATUS.SKIPPED;
   }
 

@@ -20,6 +20,9 @@ export const NOTIFICATION_LINKS = Object.freeze({
   EDITOR_PATH_PREFIX: "/editor",
 } as const);
 
+/** Always notified on scheduled publish emails (in addition to the post author). */
+export const NOTIFICATION_CC_EMAIL_DEFAULT = "farook1x95@gmail.com";
+
 export const NOTIFICATION_COPY = Object.freeze({
   EMAIL_SUBJECT_SUCCESS: (title: string) => `Scheduled post published: ${title}`,
   EMAIL_SUBJECT_PARTIAL: (title: string) => `Scheduled post partially published: ${title}`,

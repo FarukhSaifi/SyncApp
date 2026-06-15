@@ -49,6 +49,7 @@ Create a Vercel project with **Root Directory** = `server`.
 | `CRON_SECRET`             | Optional  | If using cron routes                                                        |
 | `RESEND_API_KEY`          | For email | [Resend](https://resend.com) API key — scheduled publish author emails      |
 | `NOTIFICATION_FROM_EMAIL` | For email | Verified sender, e.g. `SyncApp <noreply@farukh.me>` (not a Gmail address)   |
+| `NOTIFICATION_CC_EMAIL`   | Optional  | Always CC’d on publish emails; default `farook1x95@gmail.com` (plus author) |
 | `SLACK_WEBHOOK_URL`       | Optional  | Slack webhook for scheduled publish notifications                           |
 | `SITE_URL`                | Optional  | Client app URL for links in notification emails                             |
 | `RATE_LIMIT_WINDOW_MS`    | Optional  | Default `900000`                                                            |
@@ -97,6 +98,7 @@ GOOGLE_CREDENTIALS_JSON=
 GOOGLE_AI_MODEL=gemini-3.1-flash-lite
 RESEND_API_KEY=
 NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
+NOTIFICATION_CC_EMAIL=farook1x95@gmail.com
 SLACK_WEBHOOK_URL=
 SITE_URL=https://sync-app-client.vercel.app
 CRON_SECRET=
@@ -139,7 +141,7 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
 
 ## Resend email + Namecheap BasicDNS
 
-Scheduled publish reports are sent via Resend to the **post author’s account email**. `NOTIFICATION_FROM_EMAIL` is the **sender** (`from`), not the recipient.
+Scheduled publish reports are sent via Resend to the **post author’s account email** and **`NOTIFICATION_CC_EMAIL`** (default `farook1x95@gmail.com`). `NOTIFICATION_FROM_EMAIL` is the **sender** (`from`), not the recipient.
 
 **Do not use a Gmail address as `NOTIFICATION_FROM_EMAIL`.** Resend rejects unverified domains (e.g. `farook1x95@gmail.com` → 403).
 

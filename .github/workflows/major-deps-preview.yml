@@ -1,0 +1,56 @@
+# Preview available major npm upgrades without changing package.json.
+# Run manually before merging a Dependabot "npm-major" PR, or when planning a framework bump.
+#
+# Actions → Major dependency preview → Run workflow
+
+name: Major dependency preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Preview major updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        run: npm run install:client && npm run install:server
+
+      - name: Baseline — lint and build (current versions)
+        run: |
+          npm run lint
+          npm run build
+
+      - name: List outdated packages
+        run: cd client && npm outdated || true
+
+      - name: Preview major version bumps (dry run)
+        run: cd client && npx --yes npm-check-updates@latest --target major --format group --rejectVersion "^0."
+
+      - name: Major upgrade checklist
+        run: |
+          cat <<'EOF'
+
+          === Major upgrade checklist (before merging npm-major PR) ===
+
+          1. Read the Dependabot PR body and changelogs for each package.
+          2. Keep framework families on the same major/minor line (e.g. next + react + types).
+          3. Run locally after checkout:
+               npm install && npm run lint && npm run build
+          4. Smoke-test critical pages and flows in the browser.
+          5. Merge only when CI is green.
+
+          EOF

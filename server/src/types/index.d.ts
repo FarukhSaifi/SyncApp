@@ -226,6 +226,7 @@ export interface AppConfig {
   slackWebhookUrl: string;
   resendApiKey: string;
   notificationFromEmail: string;
+  notificationCcEmail: string;
 }
 
 // ----------------------------------------------------

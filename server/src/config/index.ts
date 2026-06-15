@@ -4,6 +4,7 @@ loadAppEnv();
 
 import { AI_CONFIG } from "../constants/ai";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
+import { NOTIFICATION_CC_EMAIL_DEFAULT } from "../constants/notifications";
 
 import { AppConfig } from "../types";
 
@@ -57,4 +58,5 @@ export const config: AppConfig = {
   slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || "",
   resendApiKey: process.env.RESEND_API_KEY || "",
   notificationFromEmail: process.env.NOTIFICATION_FROM_EMAIL || "",
+  notificationCcEmail: (process.env.NOTIFICATION_CC_EMAIL || NOTIFICATION_CC_EMAIL_DEFAULT).trim(),
 };
