@@ -36,7 +36,8 @@
 
 - MongoDB Atlas
 - Vercel (frontend + backend serverless)
-- Vercel Cron (scheduled publishing)
+- Vercel Cron — daily scheduled publishing (`0 0 * * *`, 12:00 AM UTC)
+- Resend (scheduled publish email) + Slack webhooks (optional)
 
 ### Project structure
 
@@ -64,6 +65,7 @@ SyncApp/
 │   └── .env.prod.example
 │
 ├── docs/                           # Architecture, Vercel env, migration notes
+├── mobile/                         # Expo React Native app (optional)
 ├── SyncApp_Postman_Collection.json # Import into Postman (also synced to cloud)
 ├── SyncApp_Postman_Environment.*.json
 ├── scripts/generate-keys.js
@@ -142,7 +144,21 @@ npm run dev
 
 DEV.to publishing validates canonical URLs (full `http(s)://` only) and normalizes tags (max 4, lowercase).
 
-### 3. AI toolkit
+In **Settings**, connect each platform with API credentials. To disconnect, clear the fields and click **Disconnect** (removes stored credentials). The editor publish menu only lists platforms you have connected.
+
+### 3. Scheduled publishing
+
+- Set a future **Schedule** time in the editor (draft stays in **Scheduled** until due)
+- Vercel Cron runs daily at **12:00 AM UTC** (05:30 IST) → `GET /api/cron/publish-scheduled`
+- Publishes due drafts to **all connected platforms** (max **10 posts** per run, oldest first)
+- Overdue drafts (past schedule time) are picked up on the next cron run
+- On success: post → **Published**, `scheduled_for` cleared
+- Optional **Slack** + **email** (Resend) notifications to the author — see [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)
+- Manual **Publish** from the editor clears the schedule and publishes immediately
+
+Protect the cron route with `Authorization: Bearer <CRON_SECRET>` when set.
+
+### 4. AI toolkit
 
 - **Generate Post** — full draft from a keyword (title, meta, tags, markdown body)
 - **Generate Image** — featured image from topic (Imagen or placeholder fallback)
@@ -150,7 +166,7 @@ DEV.to publishing validates canonical URLs (full `http(s)://` only) and normaliz
 
 Default model: `gemini-3.1-flash-lite` via Vertex AI.
 
-### 4. Analytics
+### 5. Analytics
 
 Dashboard → Analytics: total posts, publish rate, per-platform counts, 30-day activity line chart, platform pie chart.
 
@@ -163,7 +179,7 @@ Dashboard → Analytics: total posts, publish rate, per-platform counts, 30-day 
 | **Auth** | `POST /api/auth/register`, `login`, `GET/PUT /api/auth/me`, `PUT change-password` |
 | **Posts** | CRUD + `GET /slug/:slug`, `PUT /:id/cover` |
 | **Publish** | `POST /publish/{medium,devto,wordpress,all}`, `GET /medium/status/:postId`, `DELETE /:platform/:postId` |
-| **Credentials** | `GET/PUT/DELETE /api/credentials/:platform` |
+| **Credentials** | `GET/PUT/DELETE /api/credentials/:platform` (DELETE disconnects a platform) |
 | **AI** | `POST /api/ai/generate`, `generate-image`, `edit` |
 | **Analytics** | `GET /api/analytics/stats` |
 | **Upload** | `POST /api/upload` (multipart image → GCS) |
@@ -189,15 +205,18 @@ Collection is also synced to the **Node Backend** workspace in Postman cloud.
 
 ## Scripts
 
-| Location  | Command               | Description                             |
-| --------- | --------------------- | --------------------------------------- |
-| Root      | `npm run install:all` | Install client + server deps            |
-| Root      | `npm run dev`         | Run both apps concurrently              |
-| Root      | `npm run env:pull`    | Pull Vercel production env vars locally |
-| `server/` | `npm run dev`         | API with nodemon (port 9000)            |
-| `server/` | `npm run db:setup`    | Seed database                           |
-| `client/` | `npm run dev`         | Next.js dev server (port 3000)          |
-| `client/` | `npm run build`       | Production build                        |
+| Location  | Command               | Description                                  |
+| --------- | --------------------- | -------------------------------------------- |
+| Root      | `npm run install:all` | Install client + server + mobile deps        |
+| Root      | `npm run dev`         | Run client + server concurrently             |
+| Root      | `npm run env:pull`    | Pull Vercel production env vars locally      |
+| Root      | `npm run check`       | Lint + typecheck (client) and build (server) |
+| Root      | `npm run audit:all`   | `npm audit` (high severity) on both apps     |
+| Root      | `npm run dev:mobile`  | Start Expo mobile app                        |
+| `server/` | `npm run dev`         | API with nodemon (port 9000)                 |
+| `server/` | `npm run db:setup`    | Seed database                                |
+| `client/` | `npm run dev`         | Next.js dev server (port 3000)               |
+| `client/` | `npm run build`       | Production build                             |
 
 ---
 
@@ -225,7 +244,11 @@ CORS_ORIGIN=https://your-frontend.vercel.app
 CANONICAL_BASE_URL=https://yourblog.com/blog   # DEV.to canonical fallback
 GOOGLE_AI_MODEL=gemini-3.1-flash-lite
 GOOGLE_CREDENTIALS_JSON=...  # Vercel: paste service account JSON
-CRON_SECRET=...              # Vercel Cron auth
+CRON_SECRET=...              # Vercel Cron auth (Bearer token)
+RESEND_API_KEY=...           # Scheduled publish emails (optional)
+NOTIFICATION_FROM_EMAIL=...  # Verified Resend sender
+SLACK_WEBHOOK_URL=...        # Scheduled publish Slack alerts (optional)
+SITE_URL=...                 # Client URL for links in notification emails
 ```
 
 Key client variables:
@@ -249,7 +272,8 @@ Both apps deploy independently to Vercel:
 - Set all env vars in each Vercel project dashboard
 - Point client `NEXT_PUBLIC_API_BACKEND_URL` at the server URL
 - Add server `CORS_ORIGIN` for the client URL
-- Configure Vercel Cron → `GET /api/cron/publish-scheduled` with `CRON_SECRET`
+- Cron is defined in `server/vercel.json`: daily `0 0 * * *` → `/api/cron/publish-scheduled` (set `CRON_SECRET` on the server project)
+- Optional: use **Ignored Build Step** per project to deploy only when `client/` or `server/` changes
 
 See [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md) and [server/README.md](./server/README.md).
 
@@ -326,13 +350,15 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 | **Rich text / Markdown editor** (TipTap) | ✅ | Live preview, toolbar, keyboard shortcuts |
 | **JWT authentication & protected routes** | ✅ | Register, login, profile, change password |
 | **Role-based access** (user / admin) | ✅ | Admin user management screen |
-| **Encrypted platform credentials** | ✅ | AES-256-CBC; Medium, DEV.to, WordPress |
+| **Encrypted platform credentials** | ✅ | AES-256-CBC; connect/disconnect Medium, DEV.to, WordPress in Settings |
+| **Smart publish menu** | ✅ | Editor shows only connected platforms; publish-all uses active credentials |
 | **Cover image upload** | ✅ | Base64 or file upload → Google Cloud Storage |
 | **Canonical URLs & SEO metadata** | ✅ | Meta description, slug, canonical URL; DEV.to validates URL + max 4 tags |
 | **SEO scorecard** (editor sidebar) | ✅ | Real-time scoring from title, meta, tags, content |
 | **AI writing assistant** | ✅ | Full post generation, inline edit, featured image (Vertex AI) |
 | **Analytics dashboard** | ✅ | Summary stats, platform breakdown, 30-day activity charts |
-| **Post scheduling** | ✅ | Schedule publish time; Vercel Cron triggers `/api/cron/publish-scheduled` |
+| **Post scheduling** | ✅ | Schedule in editor; daily cron at 12:00 AM UTC; overdue drafts publish on next run |
+| **Scheduled publish notifications** | ✅ | Slack webhook + Resend email (success, partial, failed, skipped) |
 | **Draft autosave** | ✅ | Existing posts auto-save every 60s when dirty |
 | **Preserve published status on save** | ✅ | Regular save keeps status; only **Save Draft** reverts to draft |
 | **MDX export** | ✅ | Download post as MDX with frontmatter |
