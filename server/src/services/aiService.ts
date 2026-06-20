@@ -6,7 +6,7 @@
 
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { config } from "../config";
-import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
+import { AI_CONFIG, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
@@ -122,19 +122,12 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
 
 import { GeneratePostResult } from "../types";
 
-function normalizeTags(tags: string[] | undefined): string[] {
-  return (tags || [])
-    .map((tag) => tag.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, ""))
-    .filter(Boolean)
-    .slice(0, AI_POST_LIMITS.TAG_COUNT);
-}
-
 function parseJSONContent(rawText: string): GeneratePostResult {
   // Helper to map a parsed object to the result shape
   const toResult = (parsed: Record<string, unknown>): GeneratePostResult => ({
     title: (parsed.title as string) || "",
     meta_description: (parsed.meta_description as string) || "",
-    tags: normalizeTags(Array.isArray(parsed.tags) ? (parsed.tags as string[]) : []),
+    tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : [],
     content: (parsed.content_markdown as string) || "",
   });
 

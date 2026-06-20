@@ -7,7 +7,6 @@ import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi
 
 import Button from "@components/common/Button";
 import { Card, CardContent } from "@components/common/Card";
-import StatusPill from "@components/common/StatusPill";
 
 /**
  * Mobile-friendly user card component
@@ -37,28 +36,41 @@ const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete }) => {
 
           {/* Role and Status */}
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            <StatusPill
-              label={
-                user.role === USER_ROLES.ADMIN
-                  ? (USER_ROLE_OPTIONS.find((opt) => opt.value === USER_ROLES.ADMIN)?.label ?? ROLE_CONFIG.admin.label)
-                  : (USER_ROLE_OPTIONS.find((opt) => opt.value === USER_ROLES.USER)?.label ?? ROLE_CONFIG.user.label)
-              }
-              className={(ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.user).className}
-              size="SM"
+            <span
+              className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                (ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.user).className
+              }`}
             >
               {user.role === USER_ROLES.ADMIN ? (
-                <FiShield className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
+                <>
+                  <FiShield className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
+                  <span className="truncate">
+                    {USER_ROLE_OPTIONS.find((opt) => opt.value === USER_ROLES.ADMIN)?.label}
+                  </span>
+                </>
               ) : (
-                <FiUser className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
+                <>
+                  <FiUser className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
+                  <span className="truncate">
+                    {USER_ROLE_OPTIONS.find((opt) => opt.value === USER_ROLES.USER)?.label}
+                  </span>
+                </>
               )}
-            </StatusPill>
-            <StatusPill
-              label={user.isVerified ? SYNC_LABEL.VERIFIED : SYNC_LABEL.UNVERIFIED}
-              className={(user.isVerified ? VERIFIED_CONFIG.verified : VERIFIED_CONFIG.unverified).className}
-              size="SM"
+            </span>
+            <span
+              className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                (user.isVerified ? VERIFIED_CONFIG.verified : VERIFIED_CONFIG.unverified).className
+              }`}
             >
-              {user.isVerified ? <FiUserCheck className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" /> : null}
-            </StatusPill>
+              {user.isVerified ? (
+                <>
+                  <FiUserCheck className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
+                  <span className="truncate">{SYNC_LABEL.VERIFIED}</span>
+                </>
+              ) : (
+                <span className="truncate">{SYNC_LABEL.UNVERIFIED}</span>
+              )}
+            </span>
           </div>
 
           {/* Dates */}

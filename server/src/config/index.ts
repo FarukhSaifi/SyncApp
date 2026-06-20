@@ -4,7 +4,6 @@ loadAppEnv();
 
 import { AI_CONFIG } from "../constants/ai";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
-import { NOTIFICATION_CC_EMAIL_DEFAULT } from "../constants/notifications";
 
 import { AppConfig } from "../types";
 
@@ -16,12 +15,7 @@ export function requireEnv(name: string, fallback?: string, options: { optional?
     ? Object.getOwnPropertyDescriptor(process.env, name)?.value || fallback
     : fallback;
   if (!options.optional && (value === undefined || value === null || value === "")) {
-    const vercelEnv = process.env.VERCEL_ENV;
-    const vercelHint =
-      process.env.VERCEL || vercelEnv
-        ? ` Set it on the server Vercel project (Root Directory: server) under Settings → Environment Variables, and enable the "${vercelEnv || "production"}" environment. Redeploy after saving.`
-        : "";
-    throw new Error(`Missing required env var: ${name}.${vercelHint}`);
+    throw new Error(`Missing required env var: ${name}`);
   }
   return value as string;
 }
@@ -53,10 +47,5 @@ export const config: AppConfig = {
   aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL === "true",
   // Base URL for auto-generated canonical URLs (from post slug). e.g. https://yourblog.com/blog
   canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || process.env.SITE_URL || "").trim().replace(/\/$/, ""),
-  siteUrl: (process.env.SITE_URL || "").trim().replace(/\/$/, ""),
   cronSecret: process.env.CRON_SECRET || "",
-  slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || "",
-  resendApiKey: process.env.RESEND_API_KEY || "",
-  notificationFromEmail: process.env.NOTIFICATION_FROM_EMAIL || "",
-  notificationCcEmail: (process.env.NOTIFICATION_CC_EMAIL || NOTIFICATION_CC_EMAIL_DEFAULT).trim(),
 };

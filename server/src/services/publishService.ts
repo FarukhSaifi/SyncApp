@@ -11,25 +11,12 @@ import {
   POST_STATUS,
   SUCCESS_MESSAGES,
 } from "../constants";
-import { SCHEDULED_PUBLISH_MAX_PER_RUN } from "../constants/notifications";
 import type { ICredentialDocument } from "../models/Credential";
 import Credential from "../models/Credential";
 import type { IPostDocument } from "../models/Post";
 import Post from "../models/Post";
-import User from "../models/User";
-import type {
-  IPlatformStatus,
-  PlatformPublishAction,
-  PlatformPublishResult,
-  PublishScheduledPostsResult,
-  PublishToActivePlatformsResult,
-  ScheduledPublishPostResult,
-} from "../types";
-import { cache, cacheKeys } from "../utils/cache";
+import type { IPlatformStatus, PlatformPublishAction, PlatformPublishResult } from "../types";
 import { decrypt } from "../utils/encryption";
-import { logger } from "../utils/logger";
-import { scheduledPublishDueFilter } from "../utils/scheduleUtils";
-import { notifyScheduledPublishResult } from "./notificationService";
 
 function isValidHttpUrl(value: string): boolean {
   try {
@@ -74,48 +61,24 @@ function existingPlatformUpdates(post: IPostDocument, platform: string): Record<
   };
 }
 
-/** Dev.to allows max 4 tags; normalize to lowercase single-token names (no hyphens). */
+/** Dev.to allows max 4 tags; normalize to lowercase single-token names. */
 function prepareDevtoTags(tags: string[] | undefined): string[] {
   const maxTags = PLATFORM_CONFIG.devto.maxTags;
-  const seen = new Set<string>();
-
   return (tags || [])
-    .map((tag) =>
-      tag
-        .trim()
-        .toLowerCase()
-        .replace(/[\s-]+/g, ""),
-    )
-    .filter((tag) => {
-      if (!tag || seen.has(tag)) return false;
-      seen.add(tag);
-      return true;
-    })
+    .map((tag) => tag.trim().toLowerCase().replace(/\s+/g, ""))
+    .filter(Boolean)
     .slice(0, maxTags);
-}
-
-/** Resolve a public HTTP(S) cover URL for Dev.to, or empty when not publishable. */
-function resolveDevtoCoverImage(post: IPostDocument): string {
-  const cover = (post.cover_image || "").trim();
-  if (!cover) return "";
-  if (cover.startsWith("data:")) return "";
-  if (isValidHttpUrl(cover)) return cover;
-  return "";
 }
 
 function buildDevtoArticlePayload(post: IPostDocument): Record<string, unknown> {
   const canonicalUrl = resolveDevtoCanonicalUrl(post);
-  const metaDescription = (post.meta_description || "").trim();
   const article: Record<string, unknown> = {
     title: post.title,
     body_markdown: post.content_markdown,
     published: true,
     tags: prepareDevtoTags(post.tags),
-    main_image: resolveDevtoCoverImage(post),
+    main_image: post.cover_image || "",
   };
-  if (metaDescription) {
-    article.description = metaDescription.slice(0, 160);
-  }
   if (canonicalUrl) {
     article.canonical_url = canonicalUrl;
   }
@@ -127,61 +90,6 @@ function devtoAuthHeaders(apiKey: string) {
     [HTTP.HEADERS.API_KEY]: apiKey,
     [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
   };
-}
-
-/** Editor stores Quill HTML in content_markdown; Medium requires matching contentFormat. */
-function isHtmlContent(content: string): boolean {
-  const trimmed = content.trim();
-  if (!trimmed) return false;
-  return trimmed.startsWith("<") && /<[a-z][\s\S]*>/i.test(trimmed);
-}
-
-function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "html" | "markdown"; content: string } {
-  const content = post.content_markdown || "";
-  return {
-    contentFormat: isHtmlContent(content) ? "html" : "markdown",
-    content,
-  };
-}
-
-function mediumErrorMessage(error: unknown): string {
-  const axiosError = error as Error & {
-    isAxiosError?: boolean;
-    response?: { status?: number; data?: { errors?: Array<{ message?: string }> } };
-  };
-  if (axiosError.isAxiosError && axiosError.response?.data?.errors?.length) {
-    const messages = axiosError.response.data.errors.map((e) => e.message).filter(Boolean);
-    if (messages.length > 0) return messages.join("; ");
-  }
-  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
-}
-
-function devtoErrorMessage(error: unknown): string {
-  const axiosError = error as Error & {
-    isAxiosError?: boolean;
-    response?: { status?: number; data?: Record<string, unknown> };
-  };
-  const data = axiosError.response?.data;
-  if (axiosError.isAxiosError && data) {
-    if (typeof data.error === "string" && data.error.trim()) return data.error;
-    if (typeof data.message === "string" && data.message.trim()) return data.message;
-    if (Array.isArray(data.errors)) {
-      const messages = data.errors
-        .map((entry) => {
-          if (typeof entry === "string") return entry;
-          if (entry && typeof entry === "object" && "message" in entry) {
-            return String((entry as { message?: unknown }).message ?? "");
-          }
-          return "";
-        })
-        .filter(Boolean);
-      if (messages.length > 0) return messages.join("; ");
-    }
-    if (typeof data === "object") {
-      return JSON.stringify(data);
-    }
-  }
-  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
 function wordpressAuthHeaders(apiKey: string) {
@@ -210,14 +118,12 @@ export async function publishToMedium(
   });
 
   const userId = userResponse.data.data.id;
-  const { contentFormat, content } = resolveMediumContentPayload(post);
-
   const publishResponse = await axios.post(
     API_URLS.MEDIUM.POSTS_ENDPOINT(userId),
     {
       title: post.title,
-      contentFormat,
-      content,
+      contentFormat: "markdown",
+      content: post.content_markdown,
       publishStatus: "public",
     },
     {
@@ -344,7 +250,7 @@ function platformSuccessMessage(platformName: string, action: PlatformPublishAct
 
 /**
  * Orchestrates publishing a post to all active platforms for its author.
- * Used by the manual Publish All button.
+ * Used by both the manual Publish All button and the automated Scheduling Cron.
  */
 export async function performPublishToAll(post: IPostDocument) {
   const freshPost = await Post.findById(post._id);
@@ -352,49 +258,13 @@ export async function performPublishToAll(post: IPostDocument) {
     throw new Error(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
-  const { platformUpdates, successes, errors } = await publishToActivePlatforms(freshPost);
-
-  if (successes.length === 0) {
-    return {
-      post: freshPost,
-      success: false,
-      message: SUCCESS_MESSAGES.FAILED_TO_PUBLISH_ALL,
-      successes,
-      errors: errors.length ? errors : undefined,
-    };
-  }
-
-  const updatedPost = await Post.findByIdAndUpdate(
-    freshPost._id,
-    { status: POST_STATUS.PUBLISHED, ...platformUpdates },
-    { new: true, runValidators: true },
-  );
-
-  let message: string;
-  if (errors.length > 0) {
-    message = SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORMS(successes);
-  } else {
-    message = SUCCESS_MESSAGES.PUBLISHED_TO_ALL(successes);
-  }
-
-  return {
-    post: updatedPost,
-    success: true,
-    message,
-    successes,
-    errors: errors.length ? errors : undefined,
-  };
-}
-
-/** Syndicate to all active author credentials. Does not mutate post document. */
-export async function publishToActivePlatforms(post: IPostDocument): Promise<PublishToActivePlatformsResult> {
-  const credentials = await Credential.find({ author: post.author, is_active: true });
+  const credentials = await Credential.find({ author: freshPost.author, is_active: true });
 
   if (credentials.length === 0) {
     throw new Error(ERROR_MESSAGES.NO_ACTIVE_CREDENTIALS);
   }
 
-  const platformUpdates: Record<string, unknown> = {};
+  const results: Record<string, unknown> = {};
   const errors: Array<{ platform: string; error: string }> = [];
   const successes: string[] = [];
 
@@ -409,166 +279,41 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
       }
 
       try {
-        const { updates, action } = await platformCfg.publishFn(post, credential);
-        Object.assign(platformUpdates, updates);
+        const { updates, action } = await platformCfg.publishFn(freshPost, credential);
+        Object.assign(results, updates);
         successes.push(platformSuccessMessage(platformName, action));
       } catch (error) {
-        const errorMessage =
-          platformName === PLATFORMS.MEDIUM
-            ? mediumErrorMessage(error)
-            : platformName === PLATFORMS.DEVTO
-              ? devtoErrorMessage(error)
-              : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
         errors.push({
           platform: platformCfg.name,
-          error: errorMessage,
+          error: (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED,
         });
       }
     }),
   );
 
-  return { platformUpdates, successes, errors };
-}
-
-async function loadAuthorForNotification(authorId: unknown) {
-  const author = await User.findById(authorId).select("email firstName lastName").lean();
-  if (!author) return { authorEmail: undefined, authorName: undefined };
-  const name = [author.firstName, author.lastName].filter(Boolean).join(" ").trim();
-  return { authorEmail: author.email, authorName: name || undefined };
-}
-
-/** Publish a single scheduled draft with cron-safe rules and notifications. */
-export async function publishScheduledPost(post: IPostDocument): Promise<ScheduledPublishPostResult> {
-  const freshPost = await Post.findById(post._id);
-  if (!freshPost) {
-    throw new Error(ERROR_MESSAGES.POST_NOT_FOUND);
-  }
-
-  const postId = freshPost._id.toString();
-  const title = freshPost.title;
-  const { authorEmail, authorName } = await loadAuthorForNotification(freshPost.author);
-
-  const credentials = await Credential.find({ author: freshPost.author, is_active: true });
-  if (credentials.length === 0) {
-    const notification = await notifyScheduledPublishResult({
-      postId,
-      title,
-      authorEmail,
-      authorName,
-      outcome: "skipped_no_credentials",
-      scheduledFor: freshPost.scheduled_for ?? undefined,
-    });
-
-    return {
-      postId,
-      title,
-      outcome: "skipped_no_credentials",
-      reason: "NO_CREDENTIALS",
-      successes: [],
-      errors: [],
-      notification,
-    };
-  }
-
-  const { platformUpdates, successes, errors } = await publishToActivePlatforms(freshPost);
-
-  if (successes.length === 0) {
-    const notification = await notifyScheduledPublishResult({
-      postId,
-      title,
-      authorEmail,
-      authorName,
-      outcome: "failed",
-      successes,
-      errors,
-      scheduledFor: freshPost.scheduled_for ?? undefined,
-    });
-
-    return {
-      postId,
-      title,
-      outcome: "failed",
-      reason: "ALL_PLATFORMS_FAILED",
-      successes,
-      errors,
-      notification,
-    };
-  }
-
-  const outcome = errors.length > 0 ? "partial" : "success";
-
-  await Post.findByIdAndUpdate(
+  const updatedPost = await Post.findByIdAndUpdate(
     freshPost._id,
-    { status: POST_STATUS.PUBLISHED, scheduled_for: null, ...platformUpdates },
+    { status: POST_STATUS.PUBLISHED, ...results },
     { new: true, runValidators: true },
   );
 
-  const notification = await notifyScheduledPublishResult({
-    postId,
-    title,
-    authorEmail,
-    authorName,
-    outcome,
-    successes,
-    errors,
-    scheduledFor: freshPost.scheduled_for ?? undefined,
-  });
+  const hasSuccesses = successes.length > 0;
+  let message: string;
 
-  return {
-    postId,
-    title,
-    outcome,
-    successes,
-    errors,
-    notification,
-  };
-}
-
-/** Daily cron batch: find due drafts and publish sequentially. */
-export async function publishScheduledPosts(): Promise<PublishScheduledPostsResult> {
-  const duePosts = await Post.find(scheduledPublishDueFilter()).sort({ scheduled_for: 1 });
-  const batch = duePosts.slice(0, SCHEDULED_PUBLISH_MAX_PER_RUN);
-  const truncated = duePosts.length > batch.length;
-
-  const results: ScheduledPublishPostResult[] = [];
-
-  for (const post of batch) {
-    try {
-      const result = await publishScheduledPost(post);
-      results.push(result);
-    } catch (error) {
-      logger.error(`Scheduled publish failed for post ${post._id}`, error as Error);
-      const { authorEmail, authorName } = await loadAuthorForNotification(post.author);
-      const notification = await notifyScheduledPublishResult({
-        postId: post._id.toString(),
-        title: post.title,
-        authorEmail,
-        authorName,
-        outcome: "failed",
-        errors: [{ platform: "system", error: (error as Error).message }],
-        scheduledFor: post.scheduled_for ?? undefined,
-      }).catch(() => ({ slack: "failed" as const, email: "failed" as const }));
-
-      results.push({
-        postId: post._id.toString(),
-        title: post.title,
-        outcome: "failed",
-        reason: "ALL_PLATFORMS_FAILED",
-        successes: [],
-        errors: [{ platform: "system", error: (error as Error).message }],
-        notification,
-      });
-    }
-  }
-
-  if (results.length > 0) {
-    cache.invalidatePattern(cacheKeys.posts.all());
+  if (!hasSuccesses) {
+    message = SUCCESS_MESSAGES.FAILED_TO_PUBLISH_ALL;
+  } else if (errors.length > 0) {
+    message = SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORMS(successes);
+  } else {
+    message = SUCCESS_MESSAGES.PUBLISHED_TO_ALL(successes);
   }
 
   return {
-    processed: results.length,
-    truncated,
-    results,
+    post: updatedPost,
+    success: hasSuccesses,
+    message,
+    successes,
+    errors: errors.length ? errors : undefined,
   };
 }
 

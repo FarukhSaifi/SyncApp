@@ -1,4 +1,5 @@
 import { INFO_MESSAGES, SYNC_LABEL } from "./messages";
+import { POST_STATUS } from "./postStatus";
 
 /** Chart segment labels for analytics views */
 export const ANALYTICS_LABELS = Object.freeze({
@@ -20,4 +21,10 @@ export const ANALYTICS_LABELS = Object.freeze({
   PLATFORM_WORDPRESS: SYNC_LABEL.PLATFORM_WORDPRESS,
   LOAD_FAILED: "Failed to load analytics",
   LOAD_ERROR: "Error loading analytics",
+} as const);
+
+/** Status keys used in analytics pie charts */
+export const ANALYTICS_STATUS_KEYS = Object.freeze({
+  DRAFTS: POST_STATUS.DRAFT,
+  PUBLISHED: POST_STATUS.PUBLISHED,
 } as const);

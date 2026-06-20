@@ -32,7 +32,6 @@ export const TOAST_TITLES = Object.freeze({
   PUBLISHED_EVERYWHERE: "Published Everywhere!",
   // Credentials
   CREDENTIALS_SAVED: "Credentials Saved",
-  CREDENTIALS_REMOVED: "Disconnected",
   CREDENTIALS_ERROR: "Credentials Error",
   // Export
   EXPORTED: "Exported!",
@@ -81,7 +80,6 @@ const createSuccessMessages = () => {
     REMOVED_FROM_PLATFORM: (platform: string) => `Post removed from ${platform}`,
     // Credentials
     CREDENTIALS_SAVED: (platform: string) => `${platform} API credentials saved successfully`,
-    CREDENTIALS_REMOVED: (platform: string) => `${platform} disconnected successfully`,
     // Export
     EXPORT_SUCCESS: (format: string) => `Post exported as ${format} successfully`,
     // Aliases (will be added below)
@@ -139,9 +137,7 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_UNPUBLISH: (platform: string, error: string) => `Failed to unpublish from ${platform}: ${error}`,
   // Credentials
   CREDENTIALS_SAVE_FAILED: (platform: string, error: string) => `Failed to save ${platform} credentials: ${error}`,
-  CREDENTIALS_REMOVE_FAILED: (platform: string, error: string) => `Failed to disconnect ${platform}: ${error}`,
   FAILED_TO_SAVE_CREDENTIALS: "Failed to save credentials",
-  FAILED_TO_REMOVE_CREDENTIALS: "Failed to disconnect platform",
   // Export
   EXPORT_FAILED: (format: string, error: string) => `Failed to export as ${format}: ${error}`,
   // Unpublish
@@ -235,10 +231,6 @@ export const LABELS = Object.freeze({
   ACTIVE: "Active",
   INACTIVE: "Inactive",
   NOT_PUBLISHED: "Not published",
-  POST_STATUS_DRAFT: "Draft",
-  POST_STATUS_PUBLISHED: "Published",
-  POST_STATUS_ARCHIVED: "Archived",
-  POST_STATUS_SCHEDULED: "Scheduled",
   // Platform Names
   PLATFORM_MEDIUM: "Medium",
   PLATFORM_DEVTO: "DEV.to",
@@ -368,9 +360,6 @@ export const BUTTON_LABELS = Object.freeze({
   REMOVE_FROM_WORDPRESS: "Remove from WordPress",
   // Settings
   SAVE_CREDENTIALS: "Save Credentials",
-  DISCONNECT_PLATFORM: "Disconnect",
-  CLEAR_FIELDS_TO_DISCONNECT: "Clear all fields and save to disconnect",
-  CONNECT_PLATFORM_TO_PUBLISH: "Connect a platform in Settings to publish",
   // Auth
   SIGN_IN: "Sign In",
   SIGN_UP: "Sign Up",
@@ -468,8 +457,6 @@ export const INFO_MESSAGES = Object.freeze({
   TOTAL_POSTS: "Total Posts",
   PUBLISHED: "Published",
   DRAFTS: "Drafts",
-  SCHEDULED: "Scheduled",
-  SCHEDULE_MISSED: "Scheduled publish missed — will retry at next daily run",
   PLATFORMS: "Platforms",
   ALL_POSTS: "All Posts",
   NO_POSTS_YET: "No posts yet. Create your first post to get started!",
@@ -540,13 +527,10 @@ export const INFO_MESSAGES = Object.freeze({
   TITLE_SLUG_INFO: "Enter the post title here, it will create a slug for the post",
   CONTENT_MARKDOWN_HINT:
     "Supports GitHub Flavored Markdown: **bold**, *italic*, [links](url), images, code blocks, etc.",
-  TAGS_HELP: "DEV.to allows 4 tags — use 2 high-reach (webdev, programming) + 2 stack-specific",
-  TAGS_LIMIT_REACHED: "DEV.to allows a maximum of 4 tags",
-  META_DESCRIPTION_LABEL: "Meta Description",
-  META_DESCRIPTION_PLACEHOLDER: "Snippet-ready summary for Google (120-150 chars)",
+  TAGS_HELP: "Tags help with discoverability on DEV.to and other platforms",
   // AI Assistant (AI Sandwich)
   AI_ASSISTANT: "AI Assistant",
-  AI_ASSISTANT_HINT: "Concise SEO-optimized draft — stops when the problem is solved",
+  AI_ASSISTANT_HINT: "SEO outline → draft (keywords preserved)",
   AI_KEYWORD_PLACEHOLDER: "e.g. blog syndication, React hooks",
   AI_GENERATE_OUTLINE: "Generate outline",
   AI_GENERATE_DRAFT: "Generate draft",
@@ -557,7 +541,7 @@ export const INFO_MESSAGES = Object.freeze({
   AI_STEP_1: "Choose topic",
   AI_STEP_2: "Outline",
   AI_STEP_3: "Draft",
-  AI_GENERATE_FULL_POST: "Generate post",
+  AI_GENERATE_FULL_POST: "Generate full post",
   AI_FULL_POST_HINT: "Outline → draft in one go.",
   AI_LOADING_FULL: "Creating your post…",
   AI_GENERATE_IMAGE: "Generate image from outline",
@@ -572,7 +556,6 @@ export const INFO_MESSAGES = Object.freeze({
   UPDATED: "Updated:",
   PUBLISHED_DATE: "Published:",
   HAS_COVER_IMAGE: "📷 Has cover image",
-  POST_COVER_ALT: (title: string) => `Featured image for ${title}`,
   NO_TAGS: "No tags",
   // Settings Help
   GO_TO: "Go to",
@@ -737,29 +720,12 @@ export const EDITOR_UI = Object.freeze({
   // Publish sidebar
   STATUS_LABEL: "Status",
   SCHEDULE_PUBLICATION_LABEL: "Schedule Publication",
-  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) =>
-    `Will publish to all connected platforms after ${formattedDate} (daily run at midnight)`,
-  SCHEDULE_MODAL_TITLE: "Schedule publication",
-  SCHEDULE_MODAL_DESC:
-    "Pick the earliest date and time to publish. Due posts are syndicated to all connected platforms on the next daily midnight run.",
-  SCHEDULE_MODAL_DATETIME_LABEL: "Publish date & time",
-  SCHEDULE_MODAL_BUTTON: "Schedule publication",
-  SCHEDULE_MODAL_EDIT: "Edit schedule",
-  SCHEDULE_MODAL_CONFIRM: "Set schedule",
-  SCHEDULE_MODAL_SAVING: "Saving...",
-  SCHEDULE_MODAL_CANCEL: "Cancel",
-  SCHEDULE_MODAL_CLEAR: "Clear schedule",
-  SCHEDULE_MODAL_PAST_DATE: "Choose a date and time in the future.",
-  SCHEDULE_MODAL_NO_DATE: "Select a date and time to continue.",
-  SCHEDULE_MODAL_PUBLISHED_DISABLED: "Published posts cannot be rescheduled.",
-  SCHEDULE_SET_SUCCESS: "Publication schedule saved.",
-  SCHEDULE_CLEARED_SUCCESS: "Publication schedule cleared.",
-  SCHEDULE_SAVE_FAILED: "Failed to save publication schedule.",
+  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) => `Post will automatically publish on ${formattedDate}`,
 
   // AI section (sidebar)
   GENERATE_AI_COVER_IMAGE: "Generate AI Cover Image",
   GENERATING_POST: "Generating Post...",
-  GENERATE_FULL_POST: "Generate Post",
+  GENERATE_FULL_POST: "Generate Full Post",
   CREATING_MASTERPIECE: "Creating Masterpiece...",
   GENERATE_AI_IMAGE: "Generate AI Image",
 
@@ -799,22 +765,6 @@ export const EDITOR_UI = Object.freeze({
 
   // Modal – no post-id warning
   SAVE_DRAFT_FIRST_HINT: "Save this post as a draft first to enable permanent cloud attachment.",
-
-  // Trending topics (AI assistant)
-  TRENDING_TOPICS_TITLE: "Trending topics for better reach",
-  TRENDING_TOPICS_HINT: "Click a topic to use it, or type your own.",
-
-  // Generate post modal
-  GENERATE_POST_MODAL_TITLE: "Generate SEO post",
-  GENERATE_POST_MODAL_DESC:
-    "Pick a trending topic or enter your own keyword. AI will draft a DEV.to + Google-optimized post with the right tag mix.",
-  GENERATE_POST_KEYWORD_LABEL: "Topic or keyword",
-  GENERATE_POST_KEYWORD_PLACEHOLDER: "e.g. Building a Next.js app with MongoDB",
-  REACH_TAGS_TITLE: "High-reach DEV.to tags",
-  REACH_TAGS_HINT: "AI picks 2 reach tags from this list + 2 stack-specific tags (4 total).",
-  GENERATE_POST_CANCEL: "Cancel",
-  GENERATE_POST_CONFIRM: "Generate draft",
-  GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",
 } as const);
 
 // ============================================================================

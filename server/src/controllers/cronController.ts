@@ -1,16 +1,14 @@
 import type { Request, Response } from "express";
 import { config } from "../config";
-import { CRON_SCHEDULE } from "../constants/notifications";
 import { asyncHandler, UnauthorizedError } from "../middleware/errorHandler";
-import { publishScheduledPosts } from "../services/publishService";
-import { logger } from "../utils/logger";
+import * as postsService from "../services/postsService";
 
 /**
- * @operationId publishScheduledPosts
- * Vercel Cron endpoint — publishes due scheduled drafts (daily at 12:00 AM UTC).
- * Auth: Bearer CRON_SECRET
+ * Endpoint for Vercel Cron to trigger publishing of scheduled posts.
+ * Protects against unauthorized access using CRON_SECRET.
  */
 export const handleScheduledPublish = asyncHandler(async (req: Request, res: Response) => {
+  // 1. Validate Cron Secret
   const authHeader = req.headers.authorization;
   const cronSecret = process.env.CRON_SECRET || config.cronSecret;
 
@@ -18,29 +16,13 @@ export const handleScheduledPublish = asyncHandler(async (req: Request, res: Res
     throw new UnauthorizedError("Invalid or missing CRON_SECRET");
   }
 
-  const result = await publishScheduledPosts();
+  // 2. Trigger Publishing
+  const result = await postsService.publishScheduledPosts();
 
-  const outcomeSummary = result.results.map((r) => ({
-    postId: r.postId,
-    outcome: r.outcome,
-    platformErrors: r.errors?.map((e) => `${e.platform}: ${e.error}`) ?? [],
-  }));
-
-  logger.info("Scheduled publish cron completed", {
-    processed: result.processed,
-    truncated: result.truncated,
-    outcomes: outcomeSummary,
-  });
-
+  // 3. Respond with summary
   res.json({
     success: true,
-    operationId: "publishScheduledPosts",
-    message: `Processed ${result.processed} scheduled posts`,
-    data: {
-      processed: result.processed,
-      truncated: result.truncated,
-      cronSchedule: CRON_SCHEDULE,
-      results: result.results,
-    },
+    message: `Processed ${result.count} scheduled posts`,
+    data: result.results,
   });
 });
