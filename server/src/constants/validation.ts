@@ -69,7 +69,4 @@ export const VALIDATION_ERRORS = Object.freeze({
   VALIDATION_FAILED: "Validation failed",
   QUERY_VALIDATION_FAILED: "Query validation failed",
   FIELD_ALREADY_EXISTS: "already exists",
-  SCHEDULE_INVALID_DATE: "Invalid schedule date",
-  SCHEDULE_MUST_BE_FUTURE: "Schedule date must be in the future",
-  SCHEDULE_NOT_ALLOWED_PUBLISHED: "Published posts cannot be scheduled",
 } as const);

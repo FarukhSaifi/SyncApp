@@ -19,7 +19,7 @@ cd server && vercel env pull .env.prod --environment=production
 cd client && vercel env pull .env.production --environment=production
 ```
 
-1. For **local development only**, use `.env.dev` (never required on Vercel).
+3. For **local development only**, use `.env.dev` (never required on Vercel).
 
 | File               | Purpose                                                        |
 | ------------------ | -------------------------------------------------------------- |
@@ -33,27 +33,22 @@ cd client && vercel env pull .env.production --environment=production
 
 Create a Vercel project with **Root Directory** = `server`.
 
-| Variable                  | Required  | Notes                                                                       |
-| ------------------------- | --------- | --------------------------------------------------------------------------- |
-| `MONGODB_URI`             | Yes       | MongoDB Atlas connection string                                             |
-| `JWT_SECRET`              | Yes       | Min 32 characters                                                           |
-| `ENCRYPTION_KEY`          | Yes       | 32-byte hex (`node scripts/generate-keys.js`)                               |
-| `ENCRYPTION_IV`           | Yes       | 16-byte hex                                                                 |
-| `CORS_ORIGIN`             | Yes       | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
-| `GOOGLE_CLOUD_PROJECT`    | For AI    | GCP project ID                                                              |
-| `GOOGLE_CLOUD_LOCATION`   | For AI    | e.g. `us-central1`                                                          |
-| `GOOGLE_CREDENTIALS_JSON` | For AI    | **Use this on Vercel** — paste full service account JSON (one line)         |
-| `GOOGLE_AI_MODEL`         | Optional  | e.g. `gemini-3.1-flash-lite`                                                |
-| `GCS_BUCKET_NAME`         | Optional  | Overrides default bucket                                                    |
-| `CANONICAL_BASE_URL`      | Optional  | Public blog base URL for post canonicals                                    |
-| `CRON_SECRET`             | Optional  | If using cron routes                                                        |
-| `RESEND_API_KEY`          | For email | [Resend](https://resend.com) API key — scheduled publish author emails      |
-| `NOTIFICATION_FROM_EMAIL` | For email | Verified sender, e.g. `SyncApp <noreply@farukh.me>` (not a Gmail address)   |
-| `NOTIFICATION_CC_EMAIL`   | Optional  | Always CC’d on publish emails; default `farook1x95@gmail.com` (plus author) |
-| `SLACK_WEBHOOK_URL`       | Optional  | Slack webhook for scheduled publish notifications                           |
-| `SITE_URL`                | Optional  | Client app URL for links in notification emails                             |
-| `RATE_LIMIT_WINDOW_MS`    | Optional  | Default `900000`                                                            |
-| `RATE_LIMIT_MAX_REQUESTS` | Optional  | Default `100`                                                               |
+| Variable                  | Required | Notes                                                                       |
+| ------------------------- | -------- | --------------------------------------------------------------------------- |
+| `MONGODB_URI`             | Yes      | MongoDB Atlas connection string                                             |
+| `JWT_SECRET`              | Yes      | Min 32 characters                                                           |
+| `ENCRYPTION_KEY`          | Yes      | 32-byte hex (`node scripts/generate-keys.js`)                               |
+| `ENCRYPTION_IV`           | Yes      | 16-byte hex                                                                 |
+| `CORS_ORIGIN`             | Yes      | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
+| `GOOGLE_CLOUD_PROJECT`    | For AI   | GCP project ID                                                              |
+| `GOOGLE_CLOUD_LOCATION`   | For AI   | e.g. `us-central1`                                                          |
+| `GOOGLE_CREDENTIALS_JSON` | For AI   | **Use this on Vercel** — paste full service account JSON (one line)         |
+| `GOOGLE_AI_MODEL`         | Optional | e.g. `gemini-3.1-flash-lite`                                                |
+| `GCS_BUCKET_NAME`         | Optional | Overrides default bucket                                                    |
+| `CANONICAL_BASE_URL`      | Optional | Public blog base URL for post canonicals                                    |
+| `CRON_SECRET`             | Optional | If using cron routes                                                        |
+| `RATE_LIMIT_WINDOW_MS`    | Optional | Default `900000`                                                            |
+| `RATE_LIMIT_MAX_REQUESTS` | Optional | Default `100`                                                               |
 
 **Do not set on Vercel (use alternatives)**
 
@@ -96,12 +91,6 @@ GOOGLE_CLOUD_PROJECT=
 GOOGLE_CLOUD_LOCATION=us-central1
 GOOGLE_CREDENTIALS_JSON=
 GOOGLE_AI_MODEL=gemini-3.1-flash-lite
-RESEND_API_KEY=
-NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
-NOTIFICATION_CC_EMAIL=farook1x95@gmail.com
-SLACK_WEBHOOK_URL=
-SITE_URL=https://sync-app-client.vercel.app
-CRON_SECRET=
 ```
 
 ### Client → Vercel → Environment Variables → Production
@@ -135,55 +124,5 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
 - **CORS errors** — `CORS_ORIGIN` on the **server** project must include your client URL exactly (scheme + host, no trailing slash).
 - **AI 503** — `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CREDENTIALS_JSON` on **server** project; enable Vertex AI API in GCP.
 - **Client hits wrong API** — rebuild client after changing `NEXT_PUBLIC_API_BACKEND_URL`.
-- **Resend email not delivered** — See [Resend + Namecheap DNS](#resend-email--namecheap-basicdns) below.
-
----
-
-## Resend email + Namecheap BasicDNS
-
-Scheduled publish reports are sent via Resend to the **post author’s account email** and **`NOTIFICATION_CC_EMAIL`** (default `farook1x95@gmail.com`). `NOTIFICATION_FROM_EMAIL` is the **sender** (`from`), not the recipient.
-
-**Do not use a Gmail address as `NOTIFICATION_FROM_EMAIL`.** Resend rejects unverified domains (e.g. `farook1x95@gmail.com` → 403).
-
-### Quick test (no domain DNS)
-
-Until `farukh.me` is verified in Resend:
-
-```
-NOTIFICATION_FROM_EMAIL=SyncApp <onboarding@resend.dev>
-```
-
-Sandbox limit: Resend only delivers to the email address on your Resend account.
-
-### Production sender (`farukh.me`)
-
-1. [Resend → Domains](https://resend.com/domains) → **Add Domain** → `farukh.me`
-2. Copy the DNS records Resend shows (usually **TXT** + **CNAME**). **MX is not required** for sending-only.
-3. In Namecheap: **Domain List → farukh.me → Manage → Advanced DNS**
-4. Confirm nameservers are **Namecheap BasicDNS** (`dns1.registrar-servers.com`, `dns2.registrar-servers.com`).
-5. **Add New Record** for each Resend record:
-
-| Resend type | Namecheap “Type”     | Host field (Namecheap)       | Notes                                     |
-| ----------- | -------------------- | ---------------------------- | ----------------------------------------- |
-| TXT         | TXT Record           | `@` or subdomain from Resend | Paste full value from Resend              |
-| CNAME       | CNAME Record         | e.g. `resend._domainkey`     | Host is subdomain only — not `…farukh.me` |
-| MX          | _(skip for sending)_ | —                            | Only needed for inbound mail              |
-
-6. Wait 5–30 minutes, then click **Verify** in Resend.
-7. Set on **server** Vercel project (Production):
-
-```
-NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
-RESEND_API_KEY=re_...
-```
-
-8. **Redeploy** `sync-app-server`.
-
-### Namecheap tips
-
-- **Advanced DNS** is where TXT/CNAME live — not Email Forwarding or Redirect.
-- Pick **MX Record** from the Type dropdown only if Resend explicitly requires inbound mail (SyncApp does not).
-- If a CNAME Host already exists, edit it rather than duplicating.
-- Existing records (e.g. Google site verification TXT on `@`) can stay — add Resend records alongside them.
 
 See also: [server/README.md](../server/README.md#vercel-serverless), [DEPLOYMENT.md](../DEPLOYMENT.md).

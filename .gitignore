@@ -117,9 +117,3 @@ postman
 .agent
 .cursor
 scripts
-.vercel
-yarn.lock
-pnpm-lock.yaml
-*.lock
-google-credentials.json
-client/next-env.d.ts

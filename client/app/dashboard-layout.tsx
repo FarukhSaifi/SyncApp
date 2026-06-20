@@ -1,10 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import ErrorBoundary from "@components/ErrorBoundary";
 import Layout from "@components/Layout";
-import { ROUTES, USER_ROLES, routeNeedsPosts } from "@constants";
+import { ROUTES, USER_ROLES } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import { usePosts } from "@hooks/usePosts";
 import type { Post } from "@types";
@@ -12,8 +12,14 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { INFO_MESSAGES } from "@constants/messages";
 
-import ClientOnly from "@components/common/ClientOnly";
 import LoadingScreen from "@components/common/LoadingScreen";
+
+function ClientOnly({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <LoadingScreen message={INFO_MESSAGES.LOADING} />;
+  return <>{children}</>;
+}
 
 interface PostsContextValue {
   posts: Post[];
@@ -37,11 +43,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const needsPosts = routeNeedsPosts(pathname);
-  const postsState = usePosts({
-    enabled: isAuthenticated && needsPosts,
-    userId: user?._id ?? null,
-  });
+  const postsState = usePosts({ enabled: isAuthenticated, userId: user?._id ?? null });
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,6 +51,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       router.replace(ROUTES.LOGIN);
       return;
     }
+    // Admin-only route
     if (pathname === ROUTES.USERS && user?.role !== USER_ROLES.ADMIN) {
       router.replace(ROUTES.DASHBOARD);
     }

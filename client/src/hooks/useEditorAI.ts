@@ -5,10 +5,16 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { GeneratedPostData } from "@types";
 import { apiClient } from "@utils/apiClient";
 
-/**
+export interface GeneratedPostData {
+  title: string;
+  meta_description: string;
+  tags: string[];
+  content: string;
+}
+
+/** 
  * Strips markdown code fences and parses JSON from a string.
  * Returns null if the string is not valid JSON after stripping fences.
  */
@@ -50,7 +56,7 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
       return {
         title: (parsed.title as string) || raw.title || "",
         meta_description: (parsed.meta_description as string) || raw.meta_description || "",
-        tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : (raw.tags ?? []),
+        tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : raw.tags ?? [],
         content: (parsed.content_markdown as string) || (parsed.content as string) || raw.content,
       };
     }
@@ -103,7 +109,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
           return;
         }
         onDraftGenerated(data);
-        toast.success("Post generated", "Draft added to the editor.");
+        toast.success("Post generated", "Full content has been added to the editor.");
       } else {
         toast.apiError(response?.error || "Failed to generate post");
       }

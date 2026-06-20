@@ -4,14 +4,12 @@
  * Composes EditorToolbar, EditorContent, EditorSidebarLeft, EditorSidebarRight, EditorStatusBar.
  * All business logic lives in useEditorState and useEditorAI hooks.
  */
-
 import { useCallback, useState } from "react";
-
 import "../components/editor/editor.css";
 
+import EditorContent from "@components/editor/EditorContent";
 import EditorSidebarLeft from "@components/editor/EditorSidebarLeft";
 import EditorSidebarRight from "@components/editor/EditorSidebarRight";
-import { EditorContentSkeleton } from "@components/editor/EditorSkeletons";
 import EditorStatusBar from "@components/editor/EditorStatusBar";
 import EditorToolbar from "@components/editor/EditorToolbar";
 import { useEditorAI } from "@hooks/useEditorAI";
@@ -19,21 +17,16 @@ import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
-import dynamic from "next/dynamic";
 
 import { POST_STATUS } from "@constants/postStatus";
-import { SEO_THRESHOLDS } from "@constants/seo";
-
-const EditorContent = dynamic(() => import("@components/editor/EditorContent"), {
-  ssr: false,
-  loading: () => <EditorContentSkeleton />,
-});
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
+  // State hooks
   const state = useEditorState({ onPostCreate, onPostUpdate });
   const ai = useEditorAI({
     postId: state.id,
     onDraftGenerated: (data) => {
+      // Populate all fields the AI returns: title, meta_description, tags, and content
       state.setFormData((prev) => ({
         ...prev,
         content_markdown: data.content || "",
@@ -41,8 +34,10 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         meta_description: data.meta_description || prev.meta_description,
       }));
       if (data.tags && data.tags.length > 0) {
-        state.setTagList(data.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
+        state.setTagList(data.tags);
       }
+      // Auto-trigger image generation for the cover image (SEO boost)
+      // Uses a short delay so the post data settles first
       setTimeout(() => ai.handleGenerateImage(), 500);
     },
     onCoverImageSet: (url) => {
@@ -51,6 +46,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   });
   const wordStats = useWordCount(state.formData.content_markdown);
 
+  // Sidebar open state (mobile drawers)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
@@ -59,12 +55,14 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     setRightSidebarOpen(false);
   }, []);
 
+  // Keyboard shortcuts
   useKeyboardShortcuts({
     onSave: () => state.handleSave(),
     onTogglePreview: state.togglePreview,
     onEscape: closeSidebars,
   });
 
+  // Content change handler (called by EditorContent TipTap)
   const handleContentChange = useCallback(
     (html: string) => {
       state.setFormData((prev) => {
@@ -79,6 +77,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
 
   return (
     <div className="editor-layout">
+      {/* Toolbar */}
       <EditorToolbar
         isEditing={!!state.id}
         activeTab={state.activeTab}
@@ -98,8 +97,10 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         }}
       />
 
+      {/* Mobile drawer backdrop */}
       {(leftSidebarOpen || rightSidebarOpen) && <div className="editor-drawer-backdrop" onClick={closeSidebars} />}
 
+      {/* Left Sidebar — Post Settings */}
       <EditorSidebarLeft
         isOpen={leftSidebarOpen}
         formData={state.formData}
@@ -110,21 +111,18 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onAddTag={state.handleAddTag}
         onRemoveTag={state.handleRemoveTag}
         onTagKeyDown={state.handleTagKeyDown}
-        contentLoading={state.initialLoading}
       />
 
-      {state.initialLoading ? (
-        <EditorContentSkeleton />
-      ) : (
-        <EditorContent
-          formData={state.formData}
-          activeTab={state.activeTab}
-          onTitleChange={state.handleInputChange}
-          onContentChange={handleContentChange}
-          tagList={state.tagList}
-        />
-      )}
+      {/* Main Content */}
+      <EditorContent
+        formData={state.formData}
+        activeTab={state.activeTab}
+        onTitleChange={state.handleInputChange}
+        onContentChange={handleContentChange}
+        tagList={state.tagList}
+      />
 
+      {/* Right Sidebar — Publish + AI */}
       <EditorSidebarRight
         isOpen={rightSidebarOpen}
         postId={state.id}
@@ -134,11 +132,13 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onSaveDraft={() => state.handleSave(POST_STATUS.DRAFT)}
         onPublishToPlatform={state.handlePublishToPlatform}
         onPublishToAll={state.handlePublishToAll}
-        connectedPlatforms={state.connectedPlatforms}
         onDownloadMdx={state.handleDownloadMdx}
+        // Scheduling
         scheduledFor={state.formData.scheduled_for}
-        onScheduleSave={state.handleScheduleSave}
+        onScheduleChange={(val) => state.updateFormField("scheduled_for", val)}
+        // Cover Image
         coverImage={state.formData.cover_image}
+        // AI
         aiKeyword={ai.aiKeyword}
         setAiKeyword={ai.setAiKeyword}
         aiImagePrompt={ai.aiImagePrompt}
@@ -152,6 +152,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onUploadAndAttach={ai.handleUploadAndAttach}
       />
 
+      {/* Status Bar */}
       <EditorStatusBar
         wordCount={wordStats.words}
         characterCount={wordStats.characters}

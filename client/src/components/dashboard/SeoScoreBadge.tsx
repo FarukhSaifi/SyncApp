@@ -4,7 +4,6 @@ import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
 import type { SeoScoreBadgeProps } from "@types";
 import { getSeoScorecard } from "@utils/seoScorecard";
 
-import { PILL_SIZES } from "@constants/designTokens";
 
 /**
  * Small badge showing SEO score (e.g. "SEO: 92/100") with tooltip listing checks.
@@ -22,7 +21,7 @@ const SeoScoreBadge = memo<SeoScoreBadgeProps>(({ post }) => {
 
   return (
     <span
-      className={`${PILL_SIZES.SM} bg-muted/80 text-foreground border border-border ${scoreColor}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/80 text-foreground border border-border ${scoreColor}`}
       title={summary || SYNC_LABEL.SEO_SCORE_UNKNOWN}
       role="img"
       aria-label={SYNC_LABEL.SEO_SCORE_ARIA(score, maxScore, summary)}

@@ -25,9 +25,8 @@
     "jsonwebtoken": "9.0.3",
     "mongoose": "9.6.2",
     "multer": "2.2.0",
-    "resend": "^6.12.4",
     "slugify": "1.6.9",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",

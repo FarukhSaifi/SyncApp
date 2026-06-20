@@ -111,19 +111,7 @@
 
 /* ── Sidebar accordion section ───────────────────────────────────────────── */
 .sidebar-section {
-  margin: 8px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  overflow: visible;
-  background: hsl(var(--background));
-}
-
-.sidebar-section:first-of-type {
-  margin-top: 12px;
-}
-
-.sidebar-section:last-of-type {
-  margin-bottom: 12px;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .sidebar-section-header {
@@ -144,7 +132,7 @@
 }
 
 .sidebar-section-header:hover {
-  background: hsl(var(--muted) / 0.6);
+  background: hsl(var(--muted));
 }
 
 .sidebar-section-chevron {
@@ -157,7 +145,7 @@
 }
 
 .sidebar-section-body {
-  padding: 16px 14px;
+  padding: 0 16px 14px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -499,7 +487,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   padding: 4px;
-  z-index: 100;
+  z-index: 50;
   animation: slideDown 0.15s ease;
 }
 

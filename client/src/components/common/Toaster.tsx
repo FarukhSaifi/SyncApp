@@ -3,7 +3,6 @@ import React from "react";
 import { APP_CONFIG } from "@constants";
 import { Toaster as HotToaster, toast } from "react-hot-toast";
 
-import { ERROR_MESSAGES, INFO_MESSAGES, TOAST_TITLES } from "@constants/messages";
 
 const TOAST_DURATION = APP_CONFIG.TOAST_AUTO_CLOSE_DELAY;
 
@@ -41,6 +40,12 @@ export const Toaster = ({
   );
 };
 
+// Dummy ToasterProvider since react-hot-toast handles global state automatically
+export const ToasterProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};
+
+// Adapter hook mapping ToasterContextValue to react-hot-toast
 export const useToaster = () => {
   return React.useMemo(
     () => ({
@@ -67,9 +72,9 @@ export const useToaster = () => {
         },
       ): Promise<T> => {
         return toast.promise(promise, {
-          loading: messages.loadingMessage || messages.loading || INFO_MESSAGES.LOADING,
-          success: messages.successMessage || messages.success || TOAST_TITLES.SUCCESS,
-          error: messages.errorMessage || messages.error || ERROR_MESSAGES.OPERATION_FAILED,
+          loading: messages.loadingMessage || messages.loading || "Loading...",
+          success: messages.successMessage || messages.success || "Success!",
+          error: messages.errorMessage || messages.error || "Operation failed!",
         });
       },
     }),
