@@ -6,7 +6,6 @@ import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
 import Button from "@components/common/Button";
-import StatusPill from "@components/common/StatusPill";
 import { TableCell, TableRow } from "@components/common/Table";
 
 const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
@@ -34,18 +33,30 @@ const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
         {user.email}
       </TableCell>
       <TableCell>
-        <StatusPill label={roleLabel} className={roleConfig.className} size="SM">
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleConfig.className}`}
+        >
           {user.role === USER_ROLES.ADMIN ? (
             <FiShield className="h-3 w-3 mr-1 shrink-0" />
           ) : (
             <FiUser className="h-3 w-3 mr-1 shrink-0" />
           )}
-        </StatusPill>
+          {roleLabel}
+        </span>
       </TableCell>
       <TableCell>
-        <StatusPill label={verifiedConfig.label} className={verifiedConfig.className} size="SM">
-          {user.isVerified ? <FiUserCheck className="h-3 w-3 mr-1 shrink-0" /> : null}
-        </StatusPill>
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${verifiedConfig.className}`}
+        >
+          {user.isVerified ? (
+            <>
+              <FiUserCheck className="h-3 w-3 mr-1 shrink-0" />
+              {verifiedConfig.label}
+            </>
+          ) : (
+            verifiedConfig.label
+          )}
+        </span>
       </TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
         {formatDateTime(user.createdAt)}

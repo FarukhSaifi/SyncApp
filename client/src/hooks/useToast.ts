@@ -91,23 +91,9 @@ export const useToast = () => {
     [toaster],
   );
 
-  const credentialsRemoved = useCallback(
-    (platform: string) => {
-      toaster.success(TOAST_TITLES.CREDENTIALS_REMOVED, SUCCESS_MESSAGES.CREDENTIALS_REMOVED(platform));
-    },
-    [toaster],
-  );
-
   const credentialsError = useCallback(
     (platform: string, error: string) => {
       toaster.error(TOAST_TITLES.CREDENTIALS_ERROR, ERROR_MESSAGES.CREDENTIALS_SAVE_FAILED(platform, error));
-    },
-    [toaster],
-  );
-
-  const credentialsRemoveError = useCallback(
-    (platform: string, error: string) => {
-      toaster.error(TOAST_TITLES.CREDENTIALS_ERROR, ERROR_MESSAGES.CREDENTIALS_REMOVE_FAILED(platform, error));
     },
     [toaster],
   );
@@ -163,9 +149,7 @@ export const useToast = () => {
       saveSuccess,
       deleteSuccess,
       credentialsSaved,
-      credentialsRemoved,
       credentialsError,
-      credentialsRemoveError,
       exportSuccess,
       exportError,
       withToast,
@@ -183,9 +167,7 @@ export const useToast = () => {
       saveSuccess,
       deleteSuccess,
       credentialsSaved,
-      credentialsRemoved,
       credentialsError,
-      credentialsRemoveError,
       exportSuccess,
       exportError,
       withToast,

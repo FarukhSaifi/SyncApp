@@ -3,15 +3,16 @@ import React, { useEffect, useState } from "react";
 
 import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "@constants";
 import { useToast } from "@hooks/useToast";
-import type { ApiCredential, ApiResponse, SavedState } from "@types";
+import type { ApiResponse, SavedState, ApiCredential } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
-import ConnectionStatusPill from "@components/common/ConnectionStatusPill";
 import Input from "@components/common/Input";
+
+
 
 const Settings = () => {
   const toast = useToast();
@@ -22,7 +23,6 @@ const Settings = () => {
   const [wordpressApiKey, setWordpressApiKey] = useState<string>("");
   const [wordpressSiteUrl, setWordpressSiteUrl] = useState<string>("");
   const [saved, setSaved] = useState<SavedState>({ medium: false, devto: false, wordpress: false });
-  const [connected, setConnected] = useState<SavedState>({ medium: false, devto: false, wordpress: false });
   const [showMediumKey, setShowMediumKey] = useState<boolean>(false);
   const [showDevtoKey, setShowDevtoKey] = useState<boolean>(false);
   const [showWordpressKey, setShowWordpressKey] = useState<boolean>(false);
@@ -44,18 +44,18 @@ const Settings = () => {
           const wordpress = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.WORDPRESS);
 
           if (medium) {
-            setConnected((prev) => ({ ...prev, medium: true }));
+            setSaved((prev) => ({ ...prev, medium: true }));
             if (medium.api_key) setMediumApiKey(medium.api_key as string);
           }
           if (devto) {
-            setConnected((prev) => ({ ...prev, devto: true }));
+            setSaved((prev) => ({ ...prev, devto: true }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username as unknown as string);
             }
             if (devto.api_key) setDevtoApiKey(devto.api_key as string);
           }
           if (wordpress) {
-            setConnected((prev) => ({ ...prev, wordpress: true }));
+            setSaved((prev) => ({ ...prev, wordpress: true }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
             if (wordpress.api_key) setWordpressApiKey(wordpress.api_key as string);
           }
@@ -72,176 +72,102 @@ const Settings = () => {
   }, []); // Only run once on mount, toast is stable
 
   const handleSaveMediumCredentials = async () => {
-    const isDisconnect = !mediumApiKey.trim() && connected.medium;
-    if (!mediumApiKey.trim() && !connected.medium) {
+    if (!mediumApiKey.trim()) {
       toast.validationError(SYNC_LABEL.ENTER_MEDIUM_API_KEY);
       return;
     }
 
     setLoading(true);
     try {
-      devLog(isDisconnect ? "Disconnecting Medium" : "Saving Medium credentials");
-      const result = isDisconnect
-        ? await apiClient.deleteCredential(PLATFORMS.MEDIUM)
-        : await apiClient.upsertCredential(PLATFORMS.MEDIUM, {
-            api_key: mediumApiKey.trim(),
-          });
+      devLog("Saving Medium credentials");
+      const result = await apiClient.upsertCredential(PLATFORMS.MEDIUM, {
+        api_key: mediumApiKey.trim(),
+      });
 
       if (result?.success) {
-        if (isDisconnect) {
-          setConnected((prev) => ({ ...prev, medium: false }));
-          setMediumApiKey("");
-          toast.credentialsRemoved(SYNC_LABEL.PLATFORM_MEDIUM);
-        } else {
-          setConnected((prev) => ({ ...prev, medium: true }));
-          setSaved((prev) => ({ ...prev, medium: true }));
-          setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
-          toast.credentialsSaved(SYNC_LABEL.PLATFORM_MEDIUM);
-        }
-      } else if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_MEDIUM,
-          result?.error || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
+        setSaved((prev) => ({ ...prev, medium: true }));
+        setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_MEDIUM);
       } else {
         toast.credentialsError(SYNC_LABEL.PLATFORM_MEDIUM, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving Medium credentials:", error);
-      if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_MEDIUM,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
-      } else {
-        toast.credentialsError(
-          SYNC_LABEL.PLATFORM_MEDIUM,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
-        );
-      }
+      toast.credentialsError(
+        SYNC_LABEL.PLATFORM_MEDIUM,
+        (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveDevtoCredentials = async () => {
-    const fieldsEmpty = !devtoApiKey.trim() && !devtoUsername.trim();
-    const isDisconnect = fieldsEmpty && connected.devto;
-    const fieldsPartial = !fieldsEmpty && (!devtoApiKey.trim() || !devtoUsername.trim());
-
-    if (fieldsPartial || (fieldsEmpty && !connected.devto)) {
+    if (!devtoApiKey.trim() || !devtoUsername.trim()) {
       toast.validationError(SYNC_LABEL.ENTER_DEVTO_CREDENTIALS);
       return;
     }
 
     setLoading(true);
     try {
-      devLog(isDisconnect ? "Disconnecting DEV.to" : "Saving DEV.to credentials");
-      const result = isDisconnect
-        ? await apiClient.deleteCredential(PLATFORMS.DEVTO)
-        : await apiClient.upsertCredential(PLATFORMS.DEVTO, {
-            api_key: devtoApiKey.trim(),
-            platform_config: {
-              devto_username: devtoUsername.trim(),
-            },
-          });
+      devLog("Saving DEV.to credentials");
+      const result = await apiClient.upsertCredential(PLATFORMS.DEVTO, {
+        api_key: devtoApiKey.trim(),
+        platform_config: {
+          devto_username: devtoUsername.trim(),
+        },
+      });
 
       if (result?.success) {
-        if (isDisconnect) {
-          setConnected((prev) => ({ ...prev, devto: false }));
-          setDevtoApiKey("");
-          setDevtoUsername("");
-          toast.credentialsRemoved(SYNC_LABEL.PLATFORM_DEVTO);
-        } else {
-          setConnected((prev) => ({ ...prev, devto: true }));
-          setSaved((prev) => ({ ...prev, devto: true }));
-          setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
-          toast.credentialsSaved(SYNC_LABEL.PLATFORM_DEVTO);
-        }
-      } else if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_DEVTO,
-          result?.error || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
+        setSaved((prev) => ({ ...prev, devto: true }));
+        setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_DEVTO);
       } else {
         toast.credentialsError(SYNC_LABEL.PLATFORM_DEVTO, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving DEV.to credentials:", error);
-      if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_DEVTO,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
-      } else {
-        toast.credentialsError(
-          SYNC_LABEL.PLATFORM_DEVTO,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
-        );
-      }
+      toast.credentialsError(
+        SYNC_LABEL.PLATFORM_DEVTO,
+        (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveWordpressCredentials = async () => {
-    const fieldsEmpty = !wordpressApiKey.trim() && !wordpressSiteUrl.trim();
-    const isDisconnect = fieldsEmpty && connected.wordpress;
-    const fieldsPartial = !fieldsEmpty && (!wordpressApiKey.trim() || !wordpressSiteUrl.trim());
-
-    if (fieldsPartial || (fieldsEmpty && !connected.wordpress)) {
+    if (!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) {
       toast.validationError(SYNC_LABEL.ENTER_WORDPRESS_CREDENTIALS);
       return;
     }
 
-    if (!isDisconnect && !wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
+    if (!wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
       toast.validationError(SYNC_LABEL.VALID_WORDPRESS_URL);
       return;
     }
 
     setLoading(true);
     try {
-      devLog(isDisconnect ? "Disconnecting WordPress" : "Saving WordPress credentials");
-      const result = isDisconnect
-        ? await apiClient.deleteCredential(PLATFORMS.WORDPRESS)
-        : await apiClient.upsertCredential(PLATFORMS.WORDPRESS, {
-            api_key: wordpressApiKey.trim(),
-            site_url: wordpressSiteUrl.trim(),
-          });
+      devLog("Saving WordPress credentials");
+      const result = await apiClient.upsertCredential(PLATFORMS.WORDPRESS, {
+        api_key: wordpressApiKey.trim(),
+        site_url: wordpressSiteUrl.trim(),
+      });
 
       if (result?.success) {
-        if (isDisconnect) {
-          setConnected((prev) => ({ ...prev, wordpress: false }));
-          setWordpressApiKey("");
-          setWordpressSiteUrl("");
-          toast.credentialsRemoved(SYNC_LABEL.PLATFORM_WORDPRESS);
-        } else {
-          setConnected((prev) => ({ ...prev, wordpress: true }));
-          setSaved((prev) => ({ ...prev, wordpress: true }));
-          setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
-          toast.credentialsSaved(SYNC_LABEL.PLATFORM_WORDPRESS);
-        }
-      } else if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_WORDPRESS,
-          result?.error || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
+        setSaved((prev) => ({ ...prev, wordpress: true }));
+        setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
+        toast.credentialsSaved(SYNC_LABEL.PLATFORM_WORDPRESS);
       } else {
         toast.credentialsError(SYNC_LABEL.PLATFORM_WORDPRESS, result?.error || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS);
       }
     } catch (error) {
       devError("Error saving WordPress credentials:", error);
-      if (isDisconnect) {
-        toast.credentialsRemoveError(
-          SYNC_LABEL.PLATFORM_WORDPRESS,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
-        );
-      } else {
-        toast.credentialsError(
-          SYNC_LABEL.PLATFORM_WORDPRESS,
-          (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
-        );
-      }
+      toast.credentialsError(
+        SYNC_LABEL.PLATFORM_WORDPRESS,
+        (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
+      );
     } finally {
       setLoading(false);
     }
@@ -305,7 +231,7 @@ const Settings = () => {
                 type={showMediumKey ? "text" : "password"}
                 value={mediumApiKey}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMediumApiKey(e.target.value)}
-                placeholder={connected.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
+                placeholder={saved.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
                 className="w-full pr-12 sm:pr-10"
                 autoComplete="off"
               />
@@ -326,26 +252,17 @@ const Settings = () => {
                 )}
               </button>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              {connected.medium ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.TOKEN_ENCRYPTED}
-            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.TOKEN_ENCRYPTED}</p>
           </div>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveMediumCredentials}
-            disabled={loading || (!mediumApiKey.trim() && !connected.medium)}
-            variant={!mediumApiKey.trim() && connected.medium ? "outline" : "primary"}
+            disabled={loading || !mediumApiKey.trim()}
             className="flex items-center space-x-1.5 sm:space-x-2"
           >
             <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !mediumApiKey.trim() && connected.medium
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.medium
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
+            {loading ? SYNC_LABEL.SAVING : saved.medium ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -415,7 +332,7 @@ const Settings = () => {
                   type={showDevtoKey ? "text" : "password"}
                   value={devtoApiKey}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoApiKey(e.target.value)}
-                  placeholder={connected.devto ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY}
+                  placeholder={saved.devto ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY}
                   className="w-full pr-12 sm:pr-10"
                   autoComplete="off"
                 />
@@ -438,25 +355,16 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {connected.devto ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_DEVTO}
-          </p>
+          <p className="text-sm text-muted-foreground">{SYNC_LABEL.BOTH_REQUIRED_DEVTO}</p>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveDevtoCredentials}
-            disabled={loading || ((!devtoApiKey.trim() || !devtoUsername.trim()) && !connected.devto)}
-            variant={!devtoApiKey.trim() && !devtoUsername.trim() && connected.devto ? "outline" : "primary"}
+            disabled={loading || !devtoApiKey.trim() || !devtoUsername.trim()}
             className="flex items-center space-x-1.5 sm:space-x-2"
           >
             <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !devtoApiKey.trim() && !devtoUsername.trim() && connected.devto
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.devto
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
+            {loading ? SYNC_LABEL.SAVING : saved.devto ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -528,7 +436,7 @@ const Settings = () => {
                   type={showWordpressKey ? "text" : "password"}
                   value={wordpressApiKey}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressApiKey(e.target.value)}
-                  placeholder={connected.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY}
+                  placeholder={saved.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY}
                   className="w-full pr-12 sm:pr-10"
                   autoComplete="off"
                 />
@@ -552,25 +460,16 @@ const Settings = () => {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {connected.wordpress ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}
-          </p>
+          <p className="text-sm text-muted-foreground">{SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}</p>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleSaveWordpressCredentials}
-            disabled={loading || ((!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) && !connected.wordpress)}
-            variant={!wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress ? "outline" : "primary"}
+            disabled={loading || !wordpressApiKey.trim() || !wordpressSiteUrl.trim()}
             className="flex items-center space-x-1.5 sm:space-x-2"
           >
             <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.wordpress
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
+            {loading ? SYNC_LABEL.SAVING : saved.wordpress ? SYNC_LABEL.SAVED : SYNC_LABEL.SAVE_CREDENTIALS}
           </Button>
         </CardFooter>
       </Card>
@@ -591,11 +490,17 @@ const Settings = () => {
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_MEDIUM}</p>
                   <p className="text-sm text-muted-foreground">
-                    {connected.medium ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                    {mediumApiKey ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.medium} />
+              <div
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  mediumApiKey ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {mediumApiKey ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -606,11 +511,17 @@ const Settings = () => {
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_DEVTO}</p>
                   <p className="text-sm text-muted-foreground">
-                    {connected.devto ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                    {devtoApiKey && devtoUsername ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.devto} />
+              <div
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  devtoApiKey && devtoUsername ? "bg-positive/15 text-positive" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {devtoApiKey && devtoUsername ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -621,11 +532,19 @@ const Settings = () => {
                 <div>
                   <p className="font-medium">{SYNC_LABEL.PLATFORM_WORDPRESS}</p>
                   <p className="text-sm text-muted-foreground">
-                    {connected.wordpress ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                    {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
                   </p>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.wordpress} />
+              <div
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  wordpressApiKey && wordpressSiteUrl
+                    ? "bg-positive/15 text-positive"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {wordpressApiKey && wordpressSiteUrl ? SYNC_LABEL.ACTIVE : SYNC_LABEL.INACTIVE}
+              </div>
             </div>
           </div>
         </CardContent>

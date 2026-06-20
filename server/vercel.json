@@ -5,15 +5,8 @@
       "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["src/**", "node_modules/@vercel/node/**"],
-        "maxDuration": 300
+        "includeFiles": ["src/**", "node_modules/@vercel/node/**"]
       }
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/publish-scheduled",
-      "schedule": "0 0 * * *"
     }
   ],
   "routes": [

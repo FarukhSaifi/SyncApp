@@ -1,3 +1,0 @@
-# Automatically request review from the owner on every pull request.
-# Single source of truth — do not duplicate via dependabot.yml reviewers or PR workflows.
-* @FarukhSaifi

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 
-import { APP_CONFIG } from "@constants/config";
-import { STORAGE_KEYS, THEME_VALUES } from "@constants/theme";
-
 import { Toaster } from "@components/common/Toaster";
 
 import { Providers } from "./providers";
@@ -16,10 +13,10 @@ const isProd = process.env.NODE_ENV === "production";
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
   title: {
-    default: `${APP_CONFIG.APP_NAME} - Blog Syndication Platform`,
-    template: `%s | ${APP_CONFIG.APP_NAME}`,
+    default: "SyncApp - Blog Syndication Platform",
+    template: "%s | SyncApp",
   },
-  description: APP_CONFIG.APP_DESCRIPTION,
+  description: "Blog syndication made simple",
   ...(isProd && {
     robots: { index: false, follow: false },
   }),
@@ -30,24 +27,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const themeKey = STORAGE_KEYS.THEME;
-  const darkValue = THEME_VALUES.DARK;
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
+        {/* Inline theme script: key must match STORAGE_KEYS.THEME; value 'dark' matches THEME_VALUES.DARK */}
         <script
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- theme flash prevention (rendering-hydration-no-flicker)
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('${themeKey}');
-                  if (theme === '${darkValue}' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches))
-                    document.documentElement.classList.add('${darkValue}');
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches))
+                    document.documentElement.classList.add('dark');
                   else
-                    document.documentElement.classList.remove('${darkValue}');
+                    document.documentElement.classList.remove('dark');
                 } catch (e) {}
               })();
             `,
