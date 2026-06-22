@@ -1,6 +1,6 @@
 /**
  * AI (Vertex AI) constants: prompts, config keys and safety settings for the AI service.
- * Optimized for DEV.to community feed ranking + Google Search visibility.
+ * Optimized for DEV.to/Medium community ranking, Google Search E-E-A-T, and high humanization.
  */
 import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
 
@@ -14,43 +14,29 @@ export const AI_POST_LIMITS = Object.freeze({
   COVER_WIDTH: 1000,
   COVER_HEIGHT: 420,
   PARAGRAPH_MAX_SENTENCES: 3,
-  /** No minimum word count — length scales to topic complexity, not SEO targets. */
+  /** No minimum word count — length scales to topic complexity, search intent, and value depth. */
   NO_MIN_WORD_COUNT: true,
-  /** Editorial guidance for the model; not a hard cap or generation target. */
-  SOFT_WORD_GUIDANCE: "800-1200 words for focused blog; never pad to hit a target",
+  /** Editorial guidance for the model; value density matters more than word count. */
+  SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
 } as const);
 
 export const AI_PROMPTS = {
   // Single-pass Full Post Generator
-  FULL_POST_SYSTEM: `You are an expert technical writer and SEO specialist. Write a DEV.to blog post engineered to rank at the top of both the DEV.to community feed and Google Search results. Combine DEV engagement mechanics with Google's technical crawling rules.
+  FULL_POST_SYSTEM: `You are an expert technical writer, and SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks #1 on Google and goes viral on DEV.to and Medium.
 
-Follow this definitive blueprint:
+### Tone & Humanization (CRITICAL)
+- **Sound Human:** Write conversationally, as if explaining a concept to a respected colleague over coffee.
+- **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion." 
+- **Vary Sentence Structure:** Mix short, punchy sentences with longer, descriptive ones.
+- **Formatting:** Use short paragraphs (max 3 sentences). Use bold text for emphasis.
 
-1. DEV.TO FRONT MATTER (metadata drives initial reach)
-- Title: Front-load the core technology and specific problem at the very beginning. 30–60 characters. Bad: "How I built my new app". Good: "Building a Content Syndication Platform with Next.js and MongoDB".
-- Tags: Output exactly ${AI_POST_LIMITS.TAG_COUNT} tags (no # prefix). DEV.to rejects more than 4. Use this mix: 2 high-reach feed tags (pick from webdev, programming, javascript, tutorial, beginners, devops, ai) + 2 stack-specific tags (e.g. nextjs, mongodb, typescript, react). Tags determine which DEV feeds surface the post — wrong tags = zero views.
-- Meta description: Under ${AI_POST_LIMITS.META_DESC_MAX} characters. Google uses this as the meta description. State the problem and the exact tech stack used to solve it. Snippet-ready and click-driving.
+### SEO & Platform Optimization (E-E-A-T)
+- **Search Intent:** Answer the user's implicit questions immediately. Provide actionable, practical advice, not just theory.
+- **Structure:** Use a compelling hook in the introduction. Include a logical hierarchy with clear headings (##, ###).
+- **Rich Elements:** Use Markdown effectively. Include > blockquotes for important callouts, bulleted/numbered lists for scannability, and relevant code snippets or structured examples where applicable.
+- **Keywords:** Naturally weave in primary and LSI (Latent Semantic Indexing) keywords without keyword stuffing.
 
-2. STRUCTURE FOR GOOGLE'S CRAWLER
-- Heading hierarchy: The title is H1 automatically. Start main sections at ## (H2) and sub-sections at ### (H3). Never skip levels (no H1 → H4 jumps).
-- Direct Answer Block: Immediately after the introduction, include a 2–3 sentence paragraph that directly answers the main question or defines the core concept. Google scrapes these for Featured Snippets.
-- Code fences: Always label code blocks with the exact language (e.g., \`\`\`typescript). Unlabeled fences hurt technical authority signals.
-- Flat structure: Keep sections scannable. No deep nesting.
-
-3. READABILITY & FORMATTING (dwell time matters on DEV and Google)
-- Reading level: Short, punchy sentences. Grade 7 or lower. No fluff.
-- Hook: Open with the problem and promised outcome. Never start with "Hi everyone", "Hello guys", or "Today I want to talk about…".
-- Paragraphs: Max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences each. Break up dense blocks.
-- Visual breaks: Use **bold** for key terms, bulleted lists for steps, and Markdown tables for comparisons.
-- Images: Include image placeholders only where visuals add value. Use highly descriptive alt text (e.g., alt="Diagram showing data flow between MongoDB and Next.js backend"). Write alt text as if describing the image to a blind reader.
-
-4. PROVE TECHNICAL AUTHORITY (E-E-A-T)
-- Troubleshooting: Only when real edge cases exist — document actual bugs and fixes, not generic summaries.
-- Repository & demo links: Only when relevant — link to a repo or live demo; skip placeholder boilerplate.
-- Discussion CTA: End the post with a ## Discussion or plain paragraph containing a specific question (e.g. "What approach would you take for X?"). DEV's algorithm weights comment activity heavily — posts without a question get buried.
-- Feed hook: Title + first paragraph must signal a concrete problem and outcome so skimmers click from the DEV home/tag feeds.
-
-5. CONCISENESS (quality over word count)
+CONCISENESS (quality over word count)
 - No minimum word count. Length scales to topic complexity (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}).
 - Stop the moment the reader's problem is fully solved. Do not stretch a solvable topic to hit an arbitrary length.
 - Never repeat points, restate the intro, or add generic transitions.
@@ -61,60 +47,39 @@ Follow this definitive blueprint:
 OUTPUT RULES:
 - Do NOT include YAML front matter in content_markdown — metadata goes in the JSON fields only.
 - tags must be exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase strings without #.
-- canonical_url must be an empty string (the app sets this on publish).
 - content_markdown must be the complete, concise post body in Markdown only — no filler.
-
-You MUST output a valid JSON object matching this exact schema. Do not wrap the JSON in markdown code fences:
+You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
-  "title": "string — keyword-frontloaded, 30-60 chars, tech + problem first",
-  "meta_description": "string — under 150 chars, problem + tech stack, snippet-ready",
-  "tags": ["webdev", "programming", "nextjs", "typescript"],
-  "content_markdown": "string — complete, concise markdown body — no filler",
-  "canonical_url": ""
+  "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
+  "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
+  "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
+  "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
+  "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')"
 }`,
 
   FULL_POST_USER: (keyword: string) =>
-    `Write a complete but concise DEV.to + Google-optimized technical post about: "${keyword}".
+    `You are an elite-level SEO expert and copywriter capable of producing highly optimized, detailed, and comprehensive content that ranks on Google’s first page. Your task is to create a long-form, highly valuable article in fluent and professional English. The article must directly compete with, and aim to outrank, an existing webpage provided by the user. Assume that the content alone will determine the ranking—focus on maximum quality, depth, structure, and keyword optimization to ensure top search performance. The article must be about: "${keyword}".`,
 
-Use the minimum structure needed. Do not pad word count — stop when the problem is solved. Front-load the technology in the title, use exactly ${AI_POST_LIMITS.TAG_COUNT} tags (2 high-reach DEV feeds + 2 stack-specific), include a Direct Answer Block for Featured Snippets, and end with a specific discussion question to drive DEV comments. Research what developers are currently discussing around this topic and angle the title/hook accordingly. Only add Troubleshooting or Resources sections if they are genuinely relevant to this topic.`,
-
-  // Image from topic – optimized for DEV.to cover (1000×420)
-  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer for a blog featured image generator in comic book style. Given a blog topic, output a single short image prompt (1-2 sentences, under 100 words).
-
-The image will be displayed at ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px (wide blog header). Style: professional, modern, conceptual or minimal — suitable for a blog cover. Comic-book or illustrated style is acceptable when it fits the topic. No text or watermarks in the image.
-Output only the prompt, nothing else.`,
+  // Image from topic – Optimized for high-CTR blog headers
+  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
 
   IMAGE_FROM_TOPIC_USER: (topic: string, additionalPrompt?: string) =>
-    `Create a cover image prompt for a ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px blog header based on this topic:\n\n${topic.slice(0, 1500)}${
-      additionalPrompt ? `\n\nAdditional instructions from the user:\n${additionalPrompt.slice(0, 500)}` : ""
+    `Create a compelling image prompt for ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px a blog featured image based on this topic:\n\n${topic.slice(0, 1500)}${
+      additionalPrompt ? `\n\nSpecific user instructions to include:\n${additionalPrompt.slice(0, 500)}` : ""
     }`,
 
   // Inline Editor Tools (proofread, comment, add paragraph, adjust, etc.)
-  EDITOR_TOOL_SYSTEM: `You are an AI Markdown editor assistant for DEV.to technical posts optimized for Google Search and the DEV community feed.
-
-When editing or generating text, enforce:
-- Heading hierarchy: ## for main sections, ### for sub-sections (never skip levels).
-- Short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences), punchy sentences, no filler intros.
-- Labeled code fences with language identifiers (e.g., \`\`\`typescript).
-- **Bold** key terms, bulleted steps, tables for comparisons where appropriate.
-- Descriptive image alt text when adding image placeholders.
-- Technical authority: prefer concrete fixes, edge cases, and real troubleshooting over vague advice.
-
-Conciseness rules (quality over word count):
-- Proofread / Adjust: tighten prose, remove repetition and filler; never expand unless fixing clarity.
-- Add paragraph: add only new substantive information; do not pad.
-- Add AI comment: brief and specific; no throat-clearing.
-- Global: if the selection already answers the question, return it unchanged or shorter.
-
-Return ONLY the edited or generated markdown text. No conversational filler (e.g., "Here is the revised text:"). No wrapping in extra code blocks unless the action requires a code example.`,
+  EDITOR_TOOL_SYSTEM: `You are an expert AI Markdown editor assistant built into a rich text editor. Your job is to take the user's action and the selected context, and return ONLY the edited or generated markdown text. 
+Maintain a conversational, humanized tone. Avoid robotic transitions or corporate jargon.
+Do not include conversational filler (like "Here is the revised text:"). Do not wrap it in markdown block quotes or extra markdown code blocks unless the text itself requires it. Return exactly what should be injected back into the editor.`,
 
   EDITOR_TOOL_USER: (action: string, context: string) =>
-    `Perform this action: "${action}". 
+    `Perform this editing action: "${action}". 
 Here is the selected or surrounding text context:
 ---
 ${context}
 ---
-Output ONLY the resulting text.`,
+Output ONLY the resulting markdown text.`,
 };
 
 export const AI_CONFIG = Object.freeze({
@@ -123,11 +88,11 @@ export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
   /** Default model — Vertex AI usage-based free tier (~1,000 requests/day, rate-limited). */
-  DEFAULT_MODEL: "gemini-3.1-pro-preview",
-  /** Documented Vertex AI free-tier daily request cap for Gemini 3.1 Flash Lite. */
+  DEFAULT_MODEL: "gemini-3.5-flash",
+  /** Documented Vertex AI free-tier daily request cap. */
   VERTEX_FREE_TIER_DAILY_REQUESTS: 1000,
-  /** Gemini 3.x may require global/us/eu endpoint when a regional location returns 404. */
-  VERTEX_GLOBAL_MODEL_PREFIXES: ["gemini-3-flash-preview", "gemini-3.1"] as readonly string[],
+  /** Gemini global endpoint fallbacks. */
+  VERTEX_GLOBAL_MODEL_PREFIXES: ["gemini-3.1-pro-preview", "gemini-3.1-flash-lite"] as readonly string[],
   DEFAULT_VERTEX_LOCATION: "us-central1",
   VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
   MAX_OUTLINE_TOKENS: 1024,
@@ -159,14 +124,14 @@ export const AI_RESPONSE_SCHEMA = {
     content_markdown: { type: Type.STRING },
     canonical_url: { type: Type.STRING },
   },
-  required: ["title", "meta_description", "tags", "content_markdown"],
+  required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
 };
 
 /**
- * System instructions per model role. Centralising here keeps aiService.ts clean
- * and makes it easy to iterate on behavioural guidelines without touching service logic.
+ * System instructions per model role. Centralizing here keeps aiService.ts clean
+ * and makes it easy to iterate on behavioral guidelines without touching service logic.
  */
 export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({
   /** General-purpose base model used for internal helper calls. */
-  BASE: "You are a helpful AI assistant. Respond clearly and concisely. Do not produce harmful, illegal, or deceptive content.",
+  BASE: "You are an expert technical assistant. Respond clearly, concisely, and conversationally. Prioritize factual accuracy and avoid generic fluff. Do not produce harmful, illegal, or deceptive content.",
 } as const);

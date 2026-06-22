@@ -6,7 +6,7 @@
     "**/*.css"
   ],
   "scripts": {
-    "dev": "next dev --turbopack --port 3000",
+    "dev": "next dev --port 3000",
     "build": "npm run typecheck && next build",
     "start": "next start --port 3000",
     "lint": "eslint src app --report-unused-disable-directives --max-warnings 10",
