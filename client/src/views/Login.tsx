@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 import { BUTTON_LABELS, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
@@ -23,6 +23,7 @@ const Login = () => {
 
   const { login } = useAuth();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,8 +33,9 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const submitLogin = async () => {
+    if (loading) return;
+
     setError("");
     setLoading(true);
 
@@ -52,6 +54,18 @@ const Login = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await submitLogin();
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !loading) {
+      e.preventDefault();
+      formRef.current?.requestSubmit();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
@@ -66,9 +80,13 @@ const Login = () => {
             <CardDescription>{SYNC_LABEL.SIGN_IN_DESCRIPTION_2}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
               {error && (
-                <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm"
+                >
                   {error}
                 </div>
               )}
@@ -79,9 +97,11 @@ const Login = () => {
                 type="email"
                 label={SYNC_LABEL.EMAIL_LABEL}
                 required
+                autoFocus
                 leftIcon={<FiMail className="h-5 w-5" />}
                 value={formData.email}
                 onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
                 placeholder={SYNC_LABEL.PLACEHOLDER_EMAIL}
                 autoComplete="email"
               />
@@ -97,6 +117,7 @@ const Login = () => {
                 onRightIconClick={() => setShowPassword(!showPassword)}
                 value={formData.password}
                 onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
                 placeholder={SYNC_LABEL.PLACEHOLDER_PASSWORD}
                 autoComplete="current-password"
               />

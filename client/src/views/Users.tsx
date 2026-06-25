@@ -101,6 +101,7 @@ const Users = () => {
     username: "",
   });
   const [deleting, setDeleting] = useState<boolean>(false);
+  const [updating, setUpdating] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -160,16 +161,18 @@ const Users = () => {
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteConfirm.userId) return;
+    const { userId, username } = deleteConfirm;
+    if (!userId) return;
+
     setDeleting(true);
     try {
-      const response = await apiClient.deleteUser(deleteConfirm.userId);
+      const response = await apiClient.deleteUser(userId);
       if (response?.success) {
-        toast.success(TOAST_TITLES.USER_DELETED, SUCCESS_MESSAGES.USER_DELETED(deleteConfirm.username));
         setDeleteConfirm({ isOpen: false, userId: null, username: "" });
+        toast.success(TOAST_TITLES.USER_DELETED, response.message || SUCCESS_MESSAGES.USER_DELETED(username));
         fetchUsers();
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_DELETE_USER);
+        toast.apiError(response?.error || response?.message || SYNC_LABEL.FAILED_TO_DELETE_USER);
       }
     } catch (err) {
       logError("Error deleting user", err);
@@ -188,21 +191,26 @@ const Users = () => {
   }, []);
 
   const handleUpdate = useCallback(async () => {
-    if (!editingUser) return;
+    if (!editingUser || updating) return;
+
+    const username = editingUser.username;
+    setUpdating(true);
     try {
       const response = await apiClient.updateUser(editingUser._id, editForm);
       if (response?.success) {
-        toast.success(TOAST_TITLES.USER_UPDATED, SUCCESS_MESSAGES.USER_UPDATED);
         setEditingUser(null);
+        toast.success(TOAST_TITLES.USER_UPDATED, response.message || SUCCESS_MESSAGES.USER_UPDATED(username));
         fetchUsers();
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_UPDATE_USER);
+        toast.apiError(response?.error || response?.message || SYNC_LABEL.FAILED_TO_UPDATE_USER);
       }
     } catch (err) {
       logError("Error updating user", err);
       toast.apiError((err as Error)?.message || SYNC_LABEL.FAILED_TO_UPDATE_USER);
+    } finally {
+      setUpdating(false);
     }
-  }, [editingUser, editForm, toast, fetchUsers]);
+  }, [editingUser, editForm, updating, toast, fetchUsers]);
 
   const handleAddUser = useCallback(async () => {
     if (!addForm.username?.trim() || !addForm.email?.trim()) {
@@ -614,10 +622,12 @@ const Users = () => {
         size="md"
         footer={
           <div className="flex items-center justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditingUser(null)}>
+            <Button variant="outline" onClick={() => setEditingUser(null)} disabled={updating}>
               {SYNC_LABEL.CANCEL}
             </Button>
-            <Button onClick={handleUpdate}>{SYNC_LABEL.SAVE_CHANGES}</Button>
+            <Button onClick={handleUpdate} disabled={updating}>
+              {updating ? SYNC_LABEL.UPDATING : SYNC_LABEL.SAVE_CHANGES}
+            </Button>
           </div>
         }
       >

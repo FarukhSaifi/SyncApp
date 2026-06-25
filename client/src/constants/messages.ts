@@ -66,7 +66,8 @@ const createSuccessMessages = () => {
     // User Management
     USER_CREATED: (username: string) => `User "${username}" has been created successfully`,
     USER_DELETED: (username: string) => `User "${username}" has been deleted successfully`,
-    USER_UPDATED: "User has been updated successfully",
+    USER_UPDATED: (username?: string) =>
+      username ? `User "${username}" has been updated successfully` : "User has been updated successfully",
     // Profile
     PROFILE_UPDATED: "Your profile has been updated successfully",
     PASSWORD_CHANGED: "Your password has been updated successfully",
@@ -246,6 +247,7 @@ export const LABELS = Object.freeze({
   // Accessibility Labels
   HIDE_API_KEY: "Hide API key",
   SHOW_API_KEY: "Show API key",
+  TOGGLE_PASSWORD_VISIBILITY: "Toggle password visibility",
   // Table Headers
   TABLE_TITLE: "Title",
   TABLE_STATUS: "Status",

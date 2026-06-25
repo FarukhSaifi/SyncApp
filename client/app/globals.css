@@ -100,3 +100,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Toast notifications — follow app theme tokens (light/dark via .dark on html) */
+@layer components {
+  .syncapp-toast {
+    background: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.12) !important;
+  }
+
+  .dark .syncapp-toast {
+    box-shadow: 0 4px 16px hsl(0 0% 0% / 0.45) !important;
+  }
+}
