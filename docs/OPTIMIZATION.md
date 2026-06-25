@@ -15,7 +15,7 @@ This document outlines all the optimizations implemented in SyncApp for better p
 
 ### 1. Caching Layer
 
-**Location:** `server/src/utils/cache.js`
+**Location:** `server/src/utils/cache.ts`
 
 Implemented an in-memory caching system to reduce database queries for frequently accessed data.
 
@@ -38,7 +38,7 @@ cache.set("key", value, 300000);
 const data = await cache.getOrSet(
   cacheKeys.posts.list(userId, page, limit),
   async () => await fetchFromDatabase(),
-  300000
+  300000,
 );
 ```
 
@@ -51,7 +51,7 @@ const data = await cache.getOrSet(
 
 ### 2. Error Handling Middleware
 
-**Location:** `server/src/middleware/errorHandler.js`
+**Location:** `server/src/middleware/errorHandler.ts`
 
 Centralized error handling with custom error types and consistent responses.
 
@@ -78,7 +78,7 @@ const createPost = asyncHandler(async (req, res) => {
 
 ### 3. Request Validation
 
-**Location:** `server/src/middleware/validator.js`
+**Location:** `server/src/middleware/validator.ts`
 
 Schema-based request validation using Joi for data integrity and security.
 
@@ -137,7 +137,7 @@ const posts = await Post.find(query)
 
 ### 6. Comprehensive Logging
 
-**Location:** `server/src/utils/logger.js`
+**Location:** `server/src/utils/logger.ts`
 
 Structured logging system for better debugging and monitoring.
 
@@ -202,7 +202,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 
 ### 3. Optimized API Client
 
-**Location:** `client/src/utils/apiClient.js`
+**Location:** `client/src/utils/apiClient.ts`
 
 **Features:**
 

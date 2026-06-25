@@ -318,14 +318,18 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 
 ## Documentation
 
-| Doc                                                    | Description                       |
-| ------------------------------------------------------ | --------------------------------- |
-| [client/README.md](./client/README.md)                 | Frontend setup                    |
-| [server/README.md](./server/README.md)                 | Backend setup                     |
-| [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)             | Vercel env vars & troubleshooting |
-| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)         | System architecture               |
-| [docs/PROJECT_SYNOPSIS.md](./docs/PROJECT_SYNOPSIS.md) | Project overview                  |
-| [CHANGELOG.md](./CHANGELOG.md)                         | Version history                   |
+| Doc                                                    | Description                          |
+| ------------------------------------------------------ | ------------------------------------ |
+| [client/README.md](./client/README.md)                 | Frontend setup                       |
+| [server/README.md](./server/README.md)                 | Backend setup                        |
+| [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)             | Vercel env vars & troubleshooting    |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)         | System architecture                  |
+| [docs/DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md)   | MongoDB collections & ER diagram     |
+| [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md)         | Auth, publish, cron, notifications   |
+| [docs/FEATURES.md](./docs/FEATURES.md)                 | Functional requirements matrix       |
+| [docs/PROJECT_SYNOPSIS.md](./docs/PROJECT_SYNOPSIS.md) | Project overview                     |
+| [docs/college-report/](./docs/college-report/)         | BCA project report source (markdown) |
+| [CHANGELOG.md](./CHANGELOG.md)                         | Version history                      |
 
 ---
 

@@ -50,8 +50,15 @@ At its core, SyncApp reduces operational overhead in content distribution. Inste
 ### Integrations and Settings
 
 - Save and update platform-specific API credentials
+- Disconnect platforms and remove stored credentials (`DELETE /api/credentials/:platform`)
 - View active/inactive connection state by platform
 - Manage integration settings inside the same dashboard
+
+### Scheduling and Notifications
+
+- Schedule drafts for future publish via `scheduled_for`
+- Daily Vercel cron publishes due drafts (max 10 per run)
+- Author notifications via Resend email and optional Slack webhook on scheduled publish outcomes
 
 ### Admin Features
 
@@ -95,8 +102,8 @@ SyncApp is split into two major applications:
 2. User creates or edits a post in the editor
 3. User optionally uses AI tools for outline/draft/image generation
 4. User saves draft and updates metadata
-5. User publishes to one or multiple platforms
-6. User monitors publish status in dashboard
+5. User publishes to one or multiple **connected** platforms (smart publish menu)
+6. User monitors publish status in dashboard; optional schedule for automatic cron publish
 
 ### 2) Integration Setup Flow
 

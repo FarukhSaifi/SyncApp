@@ -186,4 +186,4 @@ RESEND_API_KEY=re_...
 - If a CNAME Host already exists, edit it rather than duplicating.
 - Existing records (e.g. Google site verification TXT on `@`) can stay — add Resend records alongside them.
 
-See also: [server/README.md](../server/README.md#vercel-serverless), [DEPLOYMENT.md](../DEPLOYMENT.md).
+See also: [server/README.md](../server/README.md#vercel-serverless), [ARCHITECTURE.md](./ARCHITECTURE.md).

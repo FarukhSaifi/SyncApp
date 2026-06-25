@@ -4,9 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Changed
+### Added (unreleased)
 
-- **Default AI Model**: Updated the default Gemini model to `gemini-3.1-flash-lite` system-wide (code, env examples, and docs).
+- **Scheduled publishing notifications**: Resend email and optional Slack webhook on cron publish outcomes.
+- **Documentation**: `DATABASE_SCHEMA.md`, `SYSTEM_FLOWS.md`, `FEATURES.md`, college report sources in `docs/college-report/`.
 
 ## [2.0.0] - 2026-04-11
 
@@ -27,11 +28,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-ase\*\*: Simplified MongoDB database connection lifecycle logic.
-
-- **Health Checks**: Appended real-time status emojis (✅, ❌, ⚠️) to `health` endpoint responses for highly readable logging.
-
-### Fixed
-
 - **Google Cloud Auth**: Added automatic extraction of `GOOGLE_CLOUD_PROJECT` ID directly from parsed JSON credentials, removing configuration overhead.
 - **Dependency Issues**: Downgraded `uuid` to `9.0.0` and integrated `@types/uuid` to fix types integration crashes.
+- **Settings disconnect**: Users can remove platform credentials via DELETE and Disconnect button when API key is cleared.
+- **Editor publish**: Smart publish menu shows only connected platforms; clears `scheduled_for` on manual publish to avoid validation errors.
+- **Publish dropdown**: Fixed CSS clipping in editor sidebar.
