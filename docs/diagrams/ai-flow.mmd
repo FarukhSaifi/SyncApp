@@ -1,0 +1,6 @@
+flowchart LR
+  editor[Editor] -->|keyword| api[POST_api_ai_generate]
+  api --> svc[aiService.generatePost]
+  svc --> vertex[Vertex_AI_Gemini]
+  vertex --> json[title_tags_content]
+  json --> editor

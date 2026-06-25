@@ -1,0 +1,21 @@
+erDiagram
+    USER ||--o{ POST : author
+    USER ||--o{ CREDENTIAL : author
+    USER {
+        ObjectId _id PK
+        string email UK
+        string role
+    }
+    POST {
+        ObjectId _id PK
+        ObjectId author FK
+        string slug UK
+        string status
+        date scheduled_for
+    }
+    CREDENTIAL {
+        ObjectId _id PK
+        ObjectId author FK
+        string platform_name
+        boolean is_active
+    }

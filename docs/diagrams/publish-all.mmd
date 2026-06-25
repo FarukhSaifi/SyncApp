@@ -1,0 +1,11 @@
+flowchart TD
+  client[Publish_All] --> api[POST_api_publish_all]
+  api --> svc[publishToActivePlatforms]
+  svc --> creds[Active_credentials]
+  creds --> p1[Medium]
+  creds --> p2[DEVto]
+  creds --> p3[WordPress]
+  p1 --> result[Promise_allSettled]
+  p2 --> result
+  p3 --> result
+  result --> update[Update_post_status]

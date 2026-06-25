@@ -1,0 +1,6 @@
+flowchart LR
+  editor[Editor_client] -->|multipart| upload[POST_api_upload]
+  upload --> gcs[Google_Cloud_Storage]
+  gcs --> url[public_URL]
+  url --> post[Post_cover_image]
+  post --> publish[Publish_payloads]

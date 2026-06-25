@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant C as Client
+  participant S as Express_API
+  participant D as MongoDB
+  C->>S: POST /api/auth/login
+  S->>D: User.findOne email
+  D-->>S: user document
+  S->>S: bcrypt compare + JWT
+  S-->>C: token + user
+  C->>S: GET /api/posts Bearer JWT
+  S->>S: authenticateToken
+  S->>D: Post.find
+  S-->>C: posts JSON

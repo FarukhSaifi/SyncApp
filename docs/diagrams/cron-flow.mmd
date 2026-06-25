@@ -1,0 +1,9 @@
+flowchart TD
+  cron[Cron_00_00_UTC] --> api[GET_publish_scheduled]
+  api --> batch[Max_10_due_drafts]
+  batch --> creds{Active_credentials}
+  creds -->|no| skip[skipped_no_credentials]
+  creds -->|yes| pub[Publish_platforms]
+  pub --> ok[Mark_published]
+  ok --> notify[Slack_and_Email]
+  skip --> notify

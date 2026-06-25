@@ -1,0 +1,23 @@
+flowchart TB
+  subgraph client [Next.js_Client]
+    UI[Views_Components]
+    API[apiClient]
+    UI --> API
+  end
+  subgraph server [Express_API]
+    Routes --> Controllers --> Services --> Models
+  end
+  subgraph external [External_Services]
+    MongoDB[(MongoDB_Atlas)]
+    GCS[Cloud_Storage]
+    Vertex[Vertex_AI]
+    Platforms[Medium_DEVto_WordPress]
+    Notify[Resend_Slack]
+  end
+  API -->|HTTPS_JWT| Routes
+  Models --> MongoDB
+  Services --> GCS
+  Services --> Vertex
+  Services --> Platforms
+  Services --> Notify
+  Cron[Vercel_Cron] --> Routes

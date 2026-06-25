@@ -1,0 +1,4 @@
+flowchart TD
+  cron[publishScheduledPost] --> notify[notifyScheduledPublishResult]
+  notify --> slack[Slack_webhook]
+  notify --> email[Resend_email]
