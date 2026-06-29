@@ -11,6 +11,8 @@ import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
+import type { GeneratePostResult, OptimiseForPublishInput } from "../types";
+import { normalizeDevtoTags } from "../utils/devtoTags";
 import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials";
 import { sanitizeJsonString } from "../utils/sanitizeJson";
 
@@ -46,7 +48,7 @@ function getGoogleGenAI(): GoogleGenAI {
   if (cachedGoogleGenAI) return cachedGoogleGenAI;
 
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
-  const { configuredLocation, location } = getAiRuntimeConfig();
+  const { location } = getAiRuntimeConfig();
 
   const credentialsObj = loadGoogleServiceAccountCredentials();
   if (credentialsObj?.project_id && !project) {
@@ -57,7 +59,7 @@ function getGoogleGenAI(): GoogleGenAI {
     throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
 
-  const opts: any = {
+  const opts: Record<string, unknown> = {
     vertexai: true,
     project,
     location,
@@ -97,7 +99,7 @@ function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime = "image/png"
   return `data:${mime};base64,${base64}`;
 }
 
-/** Normalize Vertex AI 403 (API not enabled or billing disabled) into a clear message for the client. */
+/** Normalize Vertex AI errors into clear client-facing messages. */
 function normalizeVertexError(err: Error & { status?: number; details?: unknown }, fallbackMessage: string): never {
   if (err instanceof AppError) throw err;
   const msg = err.message || "";
@@ -135,79 +137,106 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
   throw new AppError(err.message || fallbackMessage, err.status ?? HTTP_STATUS.BAD_GATEWAY, err.details);
 }
 
-import { GeneratePostResult } from "../types";
+function normalizeTitle(title: string): string {
+  const trimmed = title.trim();
+  if (!trimmed) return "";
+  if (trimmed.length <= AI_POST_LIMITS.TITLE_MAX) return trimmed;
+  const cut = trimmed.slice(0, AI_POST_LIMITS.TITLE_MAX);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > AI_POST_LIMITS.TITLE_MIN ? cut.slice(0, lastSpace) : cut).trim();
+}
 
-function normalizeTags(tags: string[] | undefined): string[] {
-  return (tags || [])
-    .map((tag) => tag.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, ""))
-    .filter(Boolean)
-    .slice(0, AI_POST_LIMITS.TAG_COUNT);
+function normalizeMetaDescription(metaDescription: string): string {
+  return metaDescription.trim().slice(0, AI_POST_LIMITS.META_DESC_MAX);
+}
+
+function toGeneratePostResult(parsed: Record<string, unknown>): GeneratePostResult {
+  return {
+    title: normalizeTitle((parsed.title as string) || ""),
+    meta_description: normalizeMetaDescription((parsed.meta_description as string) || ""),
+    tags: normalizeDevtoTags(Array.isArray(parsed.tags) ? (parsed.tags as string[]) : []),
+    content: (parsed.content_markdown as string) || "",
+    canonical_url: typeof parsed.canonical_url === "string" ? parsed.canonical_url.trim() : "",
+  };
 }
 
 function parseJSONContent(rawText: string): GeneratePostResult {
-  // Helper to map a parsed object to the result shape
-  const toResult = (parsed: Record<string, unknown>): GeneratePostResult => ({
-    title: (parsed.title as string) || "",
-    meta_description: (parsed.meta_description as string) || "",
-    tags: normalizeTags(Array.isArray(parsed.tags) ? (parsed.tags as string[]) : []),
-    content: (parsed.content_markdown as string) || "",
-  });
+  const toResult = (parsed: Record<string, unknown>): GeneratePostResult => toGeneratePostResult(parsed);
 
-  // Strip markdown code fences (handles trailing newlines, plain ``` or ```json)
   const stripped = rawText
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/i, "")
     .trim();
 
-  // Attempt 1: direct parse (works when model returns clean JSON)
   try {
     return toResult(JSON.parse(stripped));
   } catch {
-    // ignore – try sanitized parse below
+    // try sanitized parse
   }
 
-  // Attempt 2: sanitize literal control characters inside JSON strings, then parse
   try {
     return toResult(JSON.parse(sanitizeJsonString(stripped)));
   } catch {
-    // ignore
+    // try extracting JSON block
   }
 
-  // Attempt 3: extract the first {...} block and sanitize
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
       return toResult(JSON.parse(sanitizeJsonString(jsonMatch[0])));
     } catch {
-      // ignore
+      // fall through
     }
   }
 
-  // Last resort: return raw text as content so the user at least sees something
-  return { title: "", meta_description: "", tags: [], content: rawText };
+  return { title: "", meta_description: "", tags: [], content: rawText, canonical_url: "" };
+}
+
+async function generateStructuredPost(
+  userMessage: string,
+  systemInstruction: string,
+  maxOutputTokens: number,
+  fallbackError: string,
+): Promise<GeneratePostResult> {
+  const ai = getGoogleGenAI();
+  const modelName = getModelName();
+
+  try {
+    const result = await ai.models.generateContent({
+      model: modelName,
+      contents: userMessage,
+      config: buildGeminiConfig({
+        systemInstruction,
+        maxOutputTokens,
+        responseMimeType: "application/json",
+        responseSchema: AI_RESPONSE_SCHEMA,
+      }),
+    } as Parameters<GoogleGenAI["models"]["generateContent"]>[0]);
+
+    return parseJSONContent(getText(result));
+  } catch (err) {
+    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, fallbackError);
+  }
 }
 
 /**
- * Generate full post in a single pass (including trending keywords research)
+ * Generate full post in a single pass (publish-optimized for DEV.to, Medium, Google)
  */
 export async function generatePost(keyword: string): Promise<GeneratePostResult> {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
+  const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
   const ai = getGoogleGenAI();
   const modelName = getModelName();
-  const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
 
-  // Google Search grounding path
   if (config.aiUseGoogleSearchRetrieval) {
     try {
       const result = await ai.models.generateContent({
         model: modelName,
         contents: userMessage,
-        safetySettings: AI_SAFETY_SETTINGS,
-        safety_settings: AI_SAFETY_SETTINGS,
         config: buildGeminiConfig({
           systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
           maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
@@ -215,34 +244,44 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
           responseSchema: AI_RESPONSE_SCHEMA,
           tools: [{ googleSearch: {} }],
         }),
-      } as any);
+      } as Parameters<GoogleGenAI["models"]["generateContent"]>[0]);
       const parsed = parseJSONContent(getText(result));
-      // Only use grounded result if parsing actually extracted structured fields
       if (parsed.title && parsed.content) return parsed;
-      // Otherwise fall through to standard model
     } catch {
-      // Google Search grounding not enabled – fall through to standard model below.
+      // Google Search grounding unavailable — fall through to standard model.
     }
   }
 
-  // Standard (non-grounded) path
-  try {
-    const result = await ai.models.generateContent({
-      model: modelName,
-      contents: userMessage,
-      safetySettings: AI_SAFETY_SETTINGS,
-      safety_settings: AI_SAFETY_SETTINGS,
-      config: buildGeminiConfig({
-        systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
-        maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
-        responseMimeType: "application/json",
-        responseSchema: AI_RESPONSE_SCHEMA,
-      }),
-    } as any);
-    return parseJSONContent(getText(result));
-  } catch (err) {
-    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_DRAFT_FAILED);
+  return generateStructuredPost(
+    userMessage,
+    AI_PROMPTS.FULL_POST_SYSTEM,
+    AI_CONFIG.MAX_DRAFT_TOKENS,
+    ERROR_MESSAGES.AI_DRAFT_FAILED,
+  );
+}
+
+/**
+ * Optimise an existing draft for publish (metadata + content tuned for DEV.to/Medium/Google)
+ */
+export async function optimiseForPublish(input: OptimiseForPublishInput): Promise<GeneratePostResult> {
+  const content = input.content_markdown?.trim();
+  if (!content) {
+    throw new AppError(ERROR_MESSAGES.AI_CONTENT_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
+
+  const userMessage = AI_PROMPTS.OPTIMISE_FOR_PUBLISH_USER({
+    title: input.title || "",
+    meta_description: input.meta_description,
+    tags: input.tags,
+    content_markdown: content,
+  });
+
+  return generateStructuredPost(
+    userMessage,
+    AI_PROMPTS.OPTIMISE_FOR_PUBLISH_SYSTEM,
+    AI_CONFIG.MAX_OPTIMISE_TOKENS,
+    ERROR_MESSAGES.AI_OPTIMISE_FAILED,
+  );
 }
 
 /**
@@ -258,13 +297,11 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
     const result = await ai.models.generateContent({
       model: modelName,
       contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
-      safetySettings: AI_SAFETY_SETTINGS,
-      safety_settings: AI_SAFETY_SETTINGS,
       config: buildGeminiConfig({
         systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS,
       }),
-    } as any);
+    } as Parameters<GoogleGenAI["models"]["generateContent"]>[0]);
     return getText(result);
   } catch (err) {
     return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_IMAGE_FAILED);
@@ -313,7 +350,7 @@ export async function generateImageFromTopic(
 }
 
 /**
- * Handle inline editing tasks (proofread, adjust, comment, add paragraph)
+ * Handle inline editing tasks (proofread, adjust, comment, add paragraph, optimise for publish)
  */
 export async function generateEdit(action: string, contextText: string): Promise<string> {
   if (!contextText || typeof contextText !== "string" || !contextText.trim()) {
@@ -325,13 +362,11 @@ export async function generateEdit(action: string, contextText: string): Promise
     const result = await ai.models.generateContent({
       model: modelName,
       contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
-      safetySettings: AI_SAFETY_SETTINGS,
-      safety_settings: AI_SAFETY_SETTINGS,
       config: buildGeminiConfig({
         systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
       }),
-    } as any);
+    } as Parameters<GoogleGenAI["models"]["generateContent"]>[0]);
     return getText(result);
   } catch (err) {
     return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_EDIT_FAILED);

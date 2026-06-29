@@ -12,7 +12,8 @@ import {
   FiEdit2, 
   FiTrendingUp, 
   FiCheckSquare,
-  FiLoader
+  FiLoader,
+  FiGlobe,
 } from "react-icons/fi";
 
 
@@ -143,6 +144,12 @@ export const AIToolkitDropdown = ({ editor, onAction }: AIToolkitDropdownProps) 
               <button disabled={isAnyLoading} onClick={() => handleTrigger("adjust", "Adjust text selection")} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
                 <FiEdit2 className="h-4 w-4 text-gray-500" />
                 Adjust text selection
+              </button>
+            </li>
+            <li>
+              <button disabled={isAnyLoading} onClick={() => handleTrigger("optimise for publish", "Optimise for publish")} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
+                <FiGlobe className="h-4 w-4 text-gray-500" />
+                Optimise for publish
               </button>
             </li>
             <li>

@@ -21,6 +21,7 @@ import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
 import dynamic from "next/dynamic";
 
+import { CANONICAL_BASE_URL } from "@constants/api";
 import { POST_STATUS } from "@constants/postStatus";
 import { SEO_THRESHOLDS } from "@constants/seo";
 
@@ -29,21 +30,39 @@ const EditorContent = dynamic(() => import("@components/editor/EditorContent"), 
   loading: () => <EditorContentSkeleton />,
 });
 
+function buildCanonicalFromAi(slugOrUrl: string): string {
+  const value = slugOrUrl.trim();
+  if (!value) return "";
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return CANONICAL_BASE_URL ? `${CANONICAL_BASE_URL}/${value.replace(/^\/+/, "")}` : value;
+}
+
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
   const ai = useEditorAI({
     postId: state.id,
-    onDraftGenerated: (data) => {
+    getPostDraft: () => ({
+      title: state.formData.title,
+      meta_description: state.formData.meta_description,
+      content_markdown: state.formData.content_markdown,
+      tags: state.tagList,
+    }),
+    onDraftGenerated: (data, source = "generate") => {
       state.setFormData((prev) => ({
         ...prev,
         content_markdown: data.content || "",
         title: data.title || prev.title,
         meta_description: data.meta_description || prev.meta_description,
+        canonical_url: data.canonical_url
+          ? buildCanonicalFromAi(data.canonical_url) || prev.canonical_url
+          : prev.canonical_url,
       }));
       if (data.tags && data.tags.length > 0) {
         state.setTagList(data.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
       }
-      setTimeout(() => ai.handleGenerateImage(), 500);
+      if (source === "generate") {
+        setTimeout(() => ai.handleGenerateImage(), 500);
+      }
     },
     onCoverImageSet: (url) => {
       state.setFormData((prev) => ({ ...prev, cover_image: url }));
@@ -147,6 +166,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         generatedImageDataUrl={ai.generatedImageDataUrl}
         uploadingCover={ai.uploadingCover}
         onGeneratePost={ai.handleGeneratePost}
+        onOptimiseForPublish={ai.handleOptimiseForPublish}
         onGenerateImage={ai.handleGenerateImage}
         onUseAsFeaturedImage={ai.handleUseAsFeaturedImage}
         onUploadAndAttach={ai.handleUploadAndAttach}

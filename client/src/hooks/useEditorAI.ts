@@ -21,7 +21,6 @@ function tryParseJSON(raw: string): Record<string, unknown> | null {
       .trim();
     return JSON.parse(clean);
   } catch {
-    // Try extracting first { ... } block
     const match = raw.match(/\{[\s\S]*\}/);
     if (match) {
       try {
@@ -40,10 +39,8 @@ function tryParseJSON(raw: string): Record<string, unknown> | null {
  * string inside the `content` field instead of parsed fields.
  */
 function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
-  // Happy path: server already parsed everything correctly
   if (raw.title && raw.content) return raw;
 
-  // Fallback: content holds the raw JSON string – parse it client-side
   if (raw.content) {
     const parsed = tryParseJSON(raw.content);
     if (parsed) {
@@ -52,6 +49,8 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
         meta_description: (parsed.meta_description as string) || raw.meta_description || "",
         tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : (raw.tags ?? []),
         content: (parsed.content_markdown as string) || (parsed.content as string) || raw.content,
+        canonical_url:
+          typeof parsed.canonical_url === "string" ? parsed.canonical_url : raw.canonical_url,
       };
     }
   }
@@ -59,9 +58,17 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
   return raw;
 }
 
+export interface PostDraftSnapshot {
+  title: string;
+  meta_description: string;
+  content_markdown: string;
+  tags: string[];
+}
+
 interface UseEditorAIOptions {
   postId?: string;
-  onDraftGenerated: (data: GeneratedPostData) => void;
+  getPostDraft: () => PostDraftSnapshot;
+  onDraftGenerated: (data: GeneratedPostData, source?: "generate" | "optimise") => void;
   onCoverImageSet: (url: string) => void;
 }
 
@@ -74,18 +81,32 @@ interface UseEditorAIReturn {
   generatedImageDataUrl: string | null;
   uploadingCover: boolean;
   handleGeneratePost: () => Promise<void>;
+  handleOptimiseForPublish: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
 }
 
-export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
+export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  const applyGeneratedData = useCallback(
+    (data: GeneratedPostData, successTitle: string, successMessage: string, source: "generate" | "optimise") => {
+      if (!data.content) {
+        toast.apiError("Failed to generate post content");
+        return false;
+      }
+      onDraftGenerated(data, source);
+      toast.success(successTitle, successMessage);
+      return true;
+    },
+    [onDraftGenerated, toast],
+  );
 
   const handleGeneratePost = useCallback(async () => {
     const keyword = aiKeyword.trim();
@@ -98,12 +119,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
       const response = await apiClient.aiGenerate(keyword);
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
-        if (!data.content) {
-          toast.apiError(response?.error || "Failed to generate post");
-          return;
-        }
-        onDraftGenerated(data);
-        toast.success("Post generated", "Draft added to the editor.");
+        applyGeneratedData(data, "Post generated", "Draft added to the editor.", "generate");
       } else {
         toast.apiError(response?.error || "Failed to generate post");
       }
@@ -112,7 +128,39 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     } finally {
       setAiLoading("");
     }
-  }, [aiKeyword, onDraftGenerated, toast]);
+  }, [aiKeyword, applyGeneratedData, toast]);
+
+  const handleOptimiseForPublish = useCallback(async () => {
+    const draft = getPostDraft();
+    if (!draft.content_markdown.trim()) {
+      toast.validationError("Write some content before optimising for publish");
+      return;
+    }
+    setAiLoading("optimise");
+    try {
+      const response = await apiClient.aiOptimise({
+        title: draft.title,
+        meta_description: draft.meta_description,
+        tags: draft.tags,
+        content_markdown: draft.content_markdown,
+      });
+      if (response?.success && response.data) {
+        const data = parseAIResponse(response.data as GeneratedPostData);
+        applyGeneratedData(
+          data,
+          "Optimised for publish",
+          "Title, tags, meta, and content updated for DEV.to and Google.",
+          "optimise",
+        );
+      } else {
+        toast.apiError(response?.error || "Failed to optimise post");
+      }
+    } catch (error) {
+      toast.apiError((error as Error).message || "Failed to optimise post");
+    } finally {
+      setAiLoading("");
+    }
+  }, [applyGeneratedData, getPostDraft, toast]);
 
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
@@ -149,7 +197,6 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     try {
       const response = await apiClient.uploadPostCover(postId, generatedImageDataUrl);
       if (response?.success && response.data?.url) {
-        // Cache the base64 URL with the public GCS URL as the key to allow direct preview bypass
         if (typeof window !== "undefined") {
           sessionStorage.setItem(`cover_preview_${response.data.url}`, generatedImageDataUrl);
         }
@@ -175,6 +222,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     generatedImageDataUrl,
     uploadingCover,
     handleGeneratePost,
+    handleOptimiseForPublish,
     handleGenerateImage,
     handleUseAsFeaturedImage,
     handleUploadAndAttach,
