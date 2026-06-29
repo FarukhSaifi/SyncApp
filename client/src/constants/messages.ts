@@ -762,6 +762,8 @@ export const EDITOR_UI = Object.freeze({
   GENERATE_AI_COVER_IMAGE: "Generate AI Cover Image",
   GENERATING_POST: "Generating Post...",
   GENERATE_FULL_POST: "Generate Post",
+  OPTIMISE_FOR_PUBLISH: "Optimise for publish",
+  OPTIMISING_POST: "Optimising...",
   CREATING_MASTERPIECE: "Creating Masterpiece...",
   GENERATE_AI_IMAGE: "Generate AI Image",
 
