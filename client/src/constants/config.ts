@@ -15,10 +15,10 @@ export const APP_CONFIG = Object.freeze({
   COPYRIGHT: "© 2025 SyncApp. All rights reserved.",
 
   // API
-  API_TIMEOUT: 10000, // 10 seconds
-  API_AI_TIMEOUT: 60000, // 60 seconds for AI (outline/draft can be slow, especially with grounding)
-  API_AI_IMAGE_TIMEOUT: 65000, // 65 seconds for AI image generation
-  API_COVER_UPLOAD_TIMEOUT: 30000, // 30 seconds for cover image upload
+  API_TIMEOUT: 60000, // 1 minute for API timeout
+  API_AI_TIMEOUT: 60000, // 1 minute for AI (outline/draft can be slow, especially with grounding)
+  API_AI_IMAGE_TIMEOUT: 120000, // 2 minutes for AI image generation
+  API_COVER_UPLOAD_TIMEOUT: 60000, // 1 minute for cover image upload
 
   // Pagination
   DEFAULT_PAGE: 1,
@@ -53,7 +53,7 @@ export const EXTERNAL_LINKS = Object.freeze({
   MEDIUM_SETTINGS: "https://medium.com/me/settings",
   DEVTO_SETTINGS: "https://dev.to/settings/account",
   WORDPRESS_JWT_PLUGIN: "https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/",
-  GITHUB_REPO: "https://github.com/your-repo/syncapp",
+  GITHUB_REPO: "https://github.com/FarukhSaifi/syncapp",
 } as const);
 
 export const ROLE_CONFIG = Object.freeze({

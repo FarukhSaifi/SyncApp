@@ -11,6 +11,7 @@ import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
+import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials";
 import { sanitizeJsonString } from "../utils/sanitizeJson";
 
 let cachedGoogleGenAI: GoogleGenAI | null = null;
@@ -47,16 +48,9 @@ function getGoogleGenAI(): GoogleGenAI {
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
   const { configuredLocation, location } = getAiRuntimeConfig();
 
-  let credentialsObj: any = null;
-  if (process.env.GOOGLE_CREDENTIALS_JSON) {
-    try {
-      credentialsObj = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-      if (!project && credentialsObj && credentialsObj.project_id) {
-        project = credentialsObj.project_id;
-      }
-    } catch (e) {
-      throw new AppError("Invalid GOOGLE_CREDENTIALS_JSON environment variable", HTTP_STATUS.INTERNAL_SERVER_ERROR);
-    }
+  const credentialsObj = loadGoogleServiceAccountCredentials();
+  if (credentialsObj?.project_id && !project) {
+    project = credentialsObj.project_id;
   }
 
   if (!project || project.trim() === "") {
@@ -71,8 +65,6 @@ function getGoogleGenAI(): GoogleGenAI {
 
   if (credentialsObj) {
     opts.googleAuthOptions = { credentials: credentialsObj };
-  } else if (config.googleApplicationCredentials) {
-    opts.googleAuthOptions = { keyFilename: config.googleApplicationCredentials };
   }
 
   cachedGoogleGenAI = new GoogleGenAI(opts);
@@ -85,6 +77,24 @@ function getText(result: GenerateContentResponse): string {
     throw new Error(ERROR_MESSAGES.AI_EMPTY_RESPONSE);
   }
   return text.trim();
+}
+
+/** Merge generation config; disable Flash thinking so maxOutputTokens go to visible output. */
+function buildGeminiConfig(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  const generationConfig: Record<string, unknown> = {
+    ...overrides,
+    safetySettings: AI_SAFETY_SETTINGS,
+  };
+  const model = getModelName();
+  if (/flash/i.test(model) && AI_CONFIG.FLASH_THINKING_BUDGET === 0) {
+    generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
+  return generationConfig;
+}
+
+function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime = "image/png"): string {
+  const base64 = typeof bytes === "string" ? bytes : Buffer.from(bytes).toString("base64");
+  return `data:${mime};base64,${base64}`;
 }
 
 /** Normalize Vertex AI 403 (API not enabled or billing disabled) into a clear message for the client. */
@@ -115,6 +125,11 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
 
   if (is404 && (msg.includes("/publishers/google/models/") || msg.includes("Publisher Model"))) {
     throw new AppError(ERROR_MESSAGES.VERTEX_AI_MODEL_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const is429 = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("Resource exhausted");
+  if (is429) {
+    throw new AppError(ERROR_MESSAGES.AI_IMAGE_RATE_LIMITED, HTTP_STATUS.TOO_MANY_REQUESTS);
   }
 
   throw new AppError(err.message || fallbackMessage, err.status ?? HTTP_STATUS.BAD_GATEWAY, err.details);
@@ -193,14 +208,13 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
         contents: userMessage,
         safetySettings: AI_SAFETY_SETTINGS,
         safety_settings: AI_SAFETY_SETTINGS,
-        config: {
+        config: buildGeminiConfig({
           systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
           maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
           responseMimeType: "application/json",
           responseSchema: AI_RESPONSE_SCHEMA,
-          safetySettings: AI_SAFETY_SETTINGS,
           tools: [{ googleSearch: {} }],
-        },
+        }),
       } as any);
       const parsed = parseJSONContent(getText(result));
       // Only use grounded result if parsing actually extracted structured fields
@@ -218,24 +232,17 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
       contents: userMessage,
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: {
+      config: buildGeminiConfig({
         systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
         responseMimeType: "application/json",
         responseSchema: AI_RESPONSE_SCHEMA,
-        safetySettings: AI_SAFETY_SETTINGS,
-      },
+      }),
     } as any);
     return parseJSONContent(getText(result));
   } catch (err) {
     return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_DRAFT_FAILED);
   }
-}
-
-/** Placeholder featured image (SVG) when Imagen is not available or fails */
-function placeholderFeaturedImageDataUrl(): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="#f0f0f0" width="800" height="450"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#666">Featured image – generate with AI when Imagen is enabled</text></svg>`;
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
 /**
@@ -253,11 +260,10 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
       contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: {
+      config: buildGeminiConfig({
         systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS,
-        safetySettings: AI_SAFETY_SETTINGS,
-      },
+      }),
     } as any);
     return getText(result);
   } catch (err) {
@@ -266,40 +272,44 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
 }
 
 /**
- * Generate a featured image from a blog topic: Gemini builds prompt, then Imagen (or placeholder)
+ * Generate a featured image from a blog topic: Gemini builds prompt, then Imagen.
  */
 export async function generateImageFromTopic(
   topic: string,
   additionalPrompt?: string,
 ): Promise<{ imageDataUrl: string }> {
+  const imagePrompt =
+    additionalPrompt && additionalPrompt.trim()
+      ? additionalPrompt.trim()
+      : await generateImagePromptFromTopic(topic, additionalPrompt);
+
+  if (!imagePrompt?.trim()) {
+    throw new AppError(ERROR_MESSAGES.AI_IMAGE_FAILED, HTTP_STATUS.BAD_GATEWAY);
+  }
+
   try {
-    const imagePrompt =
-      additionalPrompt && additionalPrompt.trim()
-        ? additionalPrompt.trim()
-        : await generateImagePromptFromTopic(topic, additionalPrompt);
     const ai = getGoogleGenAI();
     const modelId = process.env.IMAGEN_MODEL || AI_CONFIG.IMAGEN_MODEL;
 
     const response = await ai.models.generateImages({
       model: modelId,
-      prompt: imagePrompt,
+      prompt: imagePrompt.trim(),
       config: {
         numberOfImages: 1,
         aspectRatio: "16:9",
       },
     });
 
-    if (response?.generatedImages?.[0]?.image) {
-      const img = response.generatedImages[0].image;
-      const base64 = img.imageBytes;
+    const img = response?.generatedImages?.[0]?.image;
+    if (img?.imageBytes) {
       const mime = img.mimeType || "image/png";
-      return { imageDataUrl: `data:${mime};base64,${base64}` };
+      return { imageDataUrl: toBase64DataUrl(img.imageBytes, mime) };
     }
-  } catch {
-    // Imagen not enabled or quota – return placeholder so UI flow still works
+  } catch (err) {
+    return normalizeVertexError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_IMAGE_FAILED);
   }
 
-  return { imageDataUrl: placeholderFeaturedImageDataUrl() };
+  throw new AppError(ERROR_MESSAGES.AI_IMAGE_FAILED, HTTP_STATUS.BAD_GATEWAY);
 }
 
 /**
@@ -317,11 +327,10 @@ export async function generateEdit(action: string, contextText: string): Promise
       contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: {
+      config: buildGeminiConfig({
         systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
-        safetySettings: AI_SAFETY_SETTINGS,
-      },
+      }),
     } as any);
     return getText(result);
   } catch (err) {

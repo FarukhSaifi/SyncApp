@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { config } from "../config";
 import { AppError } from "../middleware/errorHandler";
+import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials";
 
 // ─── Module-level constants ──────────────────────────────────────────────────
 // UPLOADS_DIR is fully resolved at module load time using only internal values.
@@ -23,7 +24,6 @@ try {
   // Ignored or logged safely
 }
 
-
 // ─── GCS client singleton ────────────────────────────────────────────────────
 let storageClient: Storage | null = null;
 
@@ -32,27 +32,15 @@ function getStorageClient(): Storage {
 
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
 
-  let credentialsObj: GCSCredentials | null = null;
-  if (process.env.GOOGLE_CREDENTIALS_JSON) {
-    try {
-      credentialsObj = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON) as GCSCredentials;
-      if (!project && credentialsObj?.project_id) {
-        project = credentialsObj.project_id;
-      }
-    } catch {
-      throw new AppError(
-        "Invalid GOOGLE_CREDENTIALS_JSON environment variable",
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      );
-    }
+  const credentialsObj = loadGoogleServiceAccountCredentials() as GCSCredentials | null;
+  if (credentialsObj?.project_id && !project) {
+    project = credentialsObj.project_id;
   }
 
   const opts: StorageOptions = { projectId: project };
 
   if (credentialsObj) {
     opts.credentials = credentialsObj as StorageOptions["credentials"];
-  } else if (config.googleApplicationCredentials) {
-    opts.keyFilename = config.googleApplicationCredentials;
   }
 
   storageClient = new Storage(opts);
@@ -122,9 +110,13 @@ async function uploadToGCSBucket(
   const uniquePrefix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
   // Use the safe mime-based extension for GCS as well where possible; fall back
   // to the sanitised file extension only if mimetype resolves to default.
-  const ext = getSafeExtension(mimetype) !== DEFAULT_VALUES.DEFAULT_FILE_EXTENSION
-    ? getSafeExtension(mimetype)
-    : (originalname.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "bin");
+  const ext =
+    getSafeExtension(mimetype) !== DEFAULT_VALUES.DEFAULT_FILE_EXTENSION
+      ? getSafeExtension(mimetype)
+      : originalname
+          .split(".")
+          .pop()
+          ?.replace(/[^a-zA-Z0-9]/g, "") || "bin";
 
   const filename = `${DEFAULT_VALUES.GCS_UPLOAD_PREFIX}${uniquePrefix}.${ext}`;
   const blob = bucket.file(filename);
@@ -154,8 +146,8 @@ async function uploadToGCSBucket(
         if (!isFirebase) {
           logger.warn(
             `Could not make GCS blob public (this is normal if Uniform Bucket-Level Access is ` +
-            `enabled. Ensure 'allUsers' has 'Storage Object Viewer' role on your bucket): ` +
-            `${(err as Error).message}`,
+              `enabled. Ensure 'allUsers' has 'Storage Object Viewer' role on your bucket): ` +
+              `${(err as Error).message}`,
           );
         }
       }

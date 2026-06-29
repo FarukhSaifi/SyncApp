@@ -89,7 +89,7 @@ export const ERROR_MESSAGES = {
     "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes.",
   VERTEX_AI_BILLING_ENABLE_URL: "https://console.cloud.google.com/billing/enable",
   VERTEX_AI_MODEL_NOT_FOUND:
-    "The specified Gemini model was not found or your project does not have access. Try GOOGLE_AI_MODEL=gemini-3.1-flash-lite with GOOGLE_CLOUD_LOCATION=global (or us-central1, europe-west1, asia-northeast1 where supported). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
+    "The specified Gemini model was not found or your project does not have access. Try GOOGLE_AI_MODEL=gemini-3.5-flash with GOOGLE_CLOUD_LOCATION=global (or us-central1, europe-west1, asia-northeast1 where supported). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
   AI_OUTLINE_FAILED: "Failed to generate outline",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_GENERATE_FAILED: "Failed to generate content",
@@ -99,6 +99,8 @@ export const ERROR_MESSAGES = {
   AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",
   AI_EMPTY_RESPONSE: "Empty response from Vertex AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
+  AI_IMAGE_RATE_LIMITED:
+    "Vertex AI rate limit reached. Wait a minute and try Generate Image again (especially after generating a full post).",
   AI_EDIT_FAILED: "Failed to perform AI edit",
   // Upload
   UPLOAD_NO_FILE: "No file provided",

@@ -13,9 +13,23 @@ export const SITE_ORIGINS = Object.freeze({
 
 /** Resolve backend origin (no /api suffix) for rewrites and CSP connect-src. */
 export function resolveApiOrigin(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL || API_ORIGINS.PRODUCTION;
+  const isLocalDev = process.env.NODE_ENV !== "production" && !process.env.VERCEL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
+
+  if (isLocalDev) {
+    if (!apiUrl) return API_ORIGINS.DEVELOPMENT;
+    try {
+      const origin = new URL(apiUrl).origin;
+      if (origin.includes("vercel.app")) return API_ORIGINS.DEVELOPMENT;
+      return origin;
+    } catch {
+      return API_ORIGINS.DEVELOPMENT;
+    }
+  }
+
+  const resolved = apiUrl || API_ORIGINS.PRODUCTION;
   try {
-    return new URL(apiUrl).origin;
+    return new URL(resolved).origin;
   } catch {
     return API_ORIGINS.PRODUCTION;
   }

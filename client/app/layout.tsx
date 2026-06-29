@@ -1,3 +1,6 @@
+import appleIcon from "@assets/icons/apple-icon.png";
+import favicon from "@assets/icons/favicon.png";
+import icon from "@assets/icons/icon.png";
 import type { Metadata } from "next";
 
 import { APP_CONFIG } from "@constants/config";
@@ -20,6 +23,13 @@ export const metadata: Metadata = {
     template: `%s | ${APP_CONFIG.APP_NAME}`,
   },
   description: APP_CONFIG.APP_DESCRIPTION,
+  icons: {
+    icon: [
+      { url: favicon.src, type: "image/png" },
+      { url: icon.src, type: "image/png" },
+    ],
+    apple: [{ url: appleIcon.src, type: "image/png" }],
+  },
   ...(isProd && {
     robots: { index: false, follow: false },
   }),

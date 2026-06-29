@@ -108,7 +108,7 @@
 | `GOOGLE_CLOUD_LOCATION` | Vertex AI region (free tier is usage-based; e.g. `us-central1`, `europe-west1`, `global`) | `us-central1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (for local development) | _(not set)_ |
 | `GOOGLE_CREDENTIALS_JSON` | Raw JSON string of service account (for Vercel deployment) | _(not set)_ |
-| `GOOGLE_AI_MODEL` | Gemini model (Vertex AI free tier default: ~1,000 req/day) | `gemini-3.1-flash-lite` |
+| `GOOGLE_AI_MODEL` | Gemini model (Vertex AI free tier default: ~1,000 req/day) | `gemini-3.5-flash` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
 
 ## 🏗️ Tech Stack
@@ -220,7 +220,7 @@ server/
 
 Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account file locally, or `GOOGLE_CREDENTIALS_JSON` containing the raw JSON for Vercel). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
 
-**Vertex AI free tier (usage-based):** The default model `gemini-3.1-flash-lite` includes a rate-limited free tier (~1,000 requests/day). This is not tied to a specific region — it applies wherever the model is supported (`us-central1`, `europe-west1`, `asia-northeast1`, `global`, etc.). Usage beyond the daily limit is billed at standard pay-as-you-go rates.
+**Vertex AI free tier (usage-based):** The default model `gemini-3.5-flash` includes a rate-limited free tier (~1,000 requests/day). This is not tied to a specific region — it applies wherever the model is supported (`us-central1`, `europe-west1`, `asia-northeast1`, `global`, etc.). Usage beyond the daily limit is billed at standard pay-as-you-go rates.
 
 ### System
 

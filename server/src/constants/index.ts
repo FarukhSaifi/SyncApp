@@ -9,7 +9,7 @@ export {
   AI_PROMPTS,
   AI_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
-  AI_SYSTEM_INSTRUCTIONS,
+  AI_SYSTEM_INSTRUCTIONS
 } from "./ai";
 export { API_URLS } from "./api";
 export { DATABASE } from "./database";

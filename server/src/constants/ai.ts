@@ -91,13 +91,26 @@ export const AI_CONFIG = Object.freeze({
   DEFAULT_MODEL: "gemini-3.5-flash",
   /** Documented Vertex AI free-tier daily request cap. */
   VERTEX_FREE_TIER_DAILY_REQUESTS: 1000,
-  /** Gemini global endpoint fallbacks. */
-  VERTEX_GLOBAL_MODEL_PREFIXES: ["gemini-3.1-pro-preview", "gemini-3.1-flash-lite"] as readonly string[],
+  /** Gemini models that require the global Vertex endpoint (not regional us-central1). */
+  VERTEX_GLOBAL_MODEL_PREFIXES: [
+    "gemini-3.5-flash",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite",
+  ] as readonly string[],
   DEFAULT_VERTEX_LOCATION: "us-central1",
   VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
-  MAX_OUTLINE_TOKENS: 1024,
-  MAX_DRAFT_TOKENS: 16384,
-  MAX_IMAGE_PROMPT_TOKENS: 1024,
+  /**
+   * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
+   * tokens count toward this budget — see FLASH_THINKING_BUDGET in aiService.
+   */
+  /** Legacy outline step (unused); keep above reasoning-model floor. */
+  MAX_OUTLINE_TOKENS: 2048,
+  /** Full-post JSON: ~800–1200 words + title/meta/tags. 8192 is enough with thinking off. */
+  MAX_DRAFT_TOKENS: 8192,
+  /** Image prompt (~80 words). 512 is sufficient with thinking off. */
+  MAX_IMAGE_PROMPT_TOKENS: 512,
+  /** 0 = disable Flash thinking so maxOutputTokens goes to visible JSON/text, not reasoning. */
+  FLASH_THINKING_BUDGET: 0,
   IMAGEN_MODEL: "imagen-4.0-fast-generate-001",
 } as const);
 

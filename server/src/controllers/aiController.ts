@@ -2,10 +2,10 @@
  * AI Controller – outline, draft, and full generate
  */
 
-import type { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/errorHandler';
-import * as aiService from '../services/aiService';
-import { HTTP_STATUS } from '../constants';
+import type { Request, Response } from "express";
+import { HTTP_STATUS } from "../constants";
+import { asyncHandler } from "../middleware/errorHandler";
+import * as aiService from "../services/aiService";
 
 export const postGenerate = asyncHandler(async (req: Request, res: Response) => {
   const { keyword } = req.body as { keyword: string };
