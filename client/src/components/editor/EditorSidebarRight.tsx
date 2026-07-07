@@ -63,6 +63,11 @@ const EditorSidebarRight = ({
   // AI props
   aiKeyword,
   setAiKeyword,
+  aiModel,
+  setAiModel,
+  aiModels,
+  targetPlatforms,
+  setTargetPlatforms,
   aiImagePrompt,
   setAiImagePrompt,
   aiLoading,
@@ -303,6 +308,11 @@ const EditorSidebarRight = ({
         onClose={() => setIsGenerateModalOpen(false)}
         keyword={aiKeyword}
         onKeywordChange={setAiKeyword}
+        selectedModel={aiModel}
+        onModelChange={setAiModel}
+        models={aiModels}
+        targetPlatforms={targetPlatforms}
+        onTargetPlatformsChange={setTargetPlatforms}
         onGenerate={onGeneratePost}
         isGenerating={aiLoading === "post"}
       />
