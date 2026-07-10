@@ -184,11 +184,21 @@ export interface SchedulePostModalProps {
   isSaving?: boolean;
 }
 
+export interface AiModelOption {
+  id: string;
+  label: string;
+}
+
 export interface GeneratePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   keyword: string;
   onKeywordChange: (value: string) => void;
+  selectedModel: string;
+  onModelChange: (value: string) => void;
+  models: readonly AiModelOption[];
+  targetPlatforms: string[];
+  onTargetPlatformsChange: (platforms: string[]) => void;
   onGenerate: () => void;
   isGenerating: boolean;
 }
@@ -243,6 +253,11 @@ export interface EditorSidebarRightProps {
   coverImage?: string;
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
+  aiModel: string;
+  setAiModel: (v: string) => void;
+  aiModels: readonly AiModelOption[];
+  targetPlatforms: string[];
+  setTargetPlatforms: (v: string[]) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;

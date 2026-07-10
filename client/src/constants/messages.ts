@@ -819,6 +819,12 @@ export const EDITOR_UI = Object.freeze({
   GENERATE_POST_CANCEL: "Cancel",
   GENERATE_POST_CONFIRM: "Generate draft",
   GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",
+  GENERATE_POST_MODEL_LABEL: "AI model",
+  GENERATE_POST_TARGETS_LABEL: "Optimize for",
+  GENERATE_POST_TARGETS_HINT: "Select at least one platform to tailor the draft.",
+  GENERATE_POST_TARGET_DEVTO: "DEV.to",
+  GENERATE_POST_TARGET_LINKEDIN: "LinkedIn",
+  GENERATE_POST_TARGETS_REQUIRED: "Select at least one target platform",
 } as const);
 
 // ============================================================================

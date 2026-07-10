@@ -160,6 +160,11 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         coverImage={state.formData.cover_image}
         aiKeyword={ai.aiKeyword}
         setAiKeyword={ai.setAiKeyword}
+        aiModel={ai.aiModel}
+        setAiModel={ai.setAiModel}
+        aiModels={ai.aiModels}
+        targetPlatforms={ai.targetPlatforms}
+        setTargetPlatforms={ai.setTargetPlatforms}
         aiImagePrompt={ai.aiImagePrompt}
         setAiImagePrompt={ai.setAiImagePrompt}
         aiLoading={ai.aiLoading}

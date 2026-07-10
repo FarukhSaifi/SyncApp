@@ -8,3 +8,11 @@ export const PLATFORMS = Object.freeze({
 } as const);
 
 export type PlatformSlug = (typeof PLATFORMS)[keyof typeof PLATFORMS];
+
+/** Platforms the Generate Post flow can optimize content for (subset of publishing targets). */
+export const OPTIMIZATION_TARGETS = Object.freeze({
+  DEVTO: "devto",
+  LINKEDIN: "linkedin",
+} as const);
+
+export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTIMIZATION_TARGETS];

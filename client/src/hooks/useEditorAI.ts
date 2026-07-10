@@ -5,8 +5,23 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { GeneratedPostData } from "@types";
+import type { AiModelOption, GeneratedPostData } from "@types";
 import { apiClient } from "@utils/apiClient";
+
+import {
+  AI_CONTENT_MODELS,
+  DEFAULT_AI_CONTENT_MODEL,
+  resolveStoredContentModel,
+  type AiContentModelId,
+} from "@constants/ai";
+import { OPTIMIZATION_TARGETS } from "@constants/platforms";
+
+const AI_MODEL_STORAGE_KEY = "syncapp.ai.generate.model";
+
+function readStoredModel(): AiContentModelId {
+  if (typeof window === "undefined") return DEFAULT_AI_CONTENT_MODEL;
+  return resolveStoredContentModel(localStorage.getItem(AI_MODEL_STORAGE_KEY));
+}
 
 /**
  * Strips markdown code fences and parses JSON from a string.
@@ -75,6 +90,11 @@ interface UseEditorAIOptions {
 interface UseEditorAIReturn {
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
+  aiModel: AiContentModelId;
+  setAiModel: (v: string) => void;
+  aiModels: readonly AiModelOption[];
+  targetPlatforms: string[];
+  setTargetPlatforms: (v: string[]) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
@@ -90,10 +110,20 @@ interface UseEditorAIReturn {
 export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
+  const [aiModel, setAiModelState] = useState<AiContentModelId>(readStoredModel);
+  const [targetPlatforms, setTargetPlatforms] = useState<string[]>([OPTIMIZATION_TARGETS.DEVTO]);
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  const setAiModel = useCallback((model: string) => {
+    const resolved = resolveStoredContentModel(model);
+    setAiModelState(resolved);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(AI_MODEL_STORAGE_KEY, resolved);
+    }
+  }, []);
 
   const applyGeneratedData = useCallback(
     (data: GeneratedPostData, successTitle: string, successMessage: string, source: "generate" | "optimise") => {
@@ -114,9 +144,16 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
       toast.validationError("Enter a keyword or topic");
       return;
     }
+    if (targetPlatforms.length === 0) {
+      toast.validationError("Select at least one target platform");
+      return;
+    }
     setAiLoading("post");
     try {
-      const response = await apiClient.aiGenerate(keyword);
+      const response = await apiClient.aiGenerate(keyword, {
+        model: aiModel,
+        targetPlatforms,
+      });
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
         if (!applyGeneratedData(data, "Post generated", "Draft added to the editor.", "generate")) {
@@ -130,7 +167,7 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
     } finally {
       setAiLoading("");
     }
-  }, [aiKeyword, applyGeneratedData, toast]);
+  }, [aiKeyword, aiModel, applyGeneratedData, targetPlatforms, toast]);
 
   const handleOptimiseForPublish = useCallback(async () => {
     const draft = getPostDraft();
@@ -218,6 +255,11 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
   return {
     aiKeyword,
     setAiKeyword,
+    aiModel,
+    setAiModel,
+    aiModels: AI_CONTENT_MODELS,
+    targetPlatforms,
+    setTargetPlatforms,
     aiImagePrompt,
     setAiImagePrompt,
     aiLoading,
