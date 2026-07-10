@@ -20,6 +20,8 @@ Functional and non-functional requirements as implemented. See college report Ch
 | FR12 | Admin user management                              | Done   |
 | FR13 | MDX export                                         | Done   |
 | FR14 | Scheduled-publish notifications (email + Slack)    | Done   |
+| FR15 | AI model picker (curated Gemini list)              | Done   |
+| FR16 | Platform-target AI optimization (DEV.to, LinkedIn) | Done   |
 
 ## Non-Functional Requirements
 
@@ -34,6 +36,8 @@ Functional and non-functional requirements as implemented. See college report Ch
 
 ## Recent Enhancements
 
+- **AI model picker** — Choose Gemini model in Generate Post modal from static allowlist in [`client/src/constants/ai.ts`](../client/src/constants/ai.ts).
+- **Platform optimization** — Target DEV.to and/or LinkedIn; single blended draft via prompt rules in [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts). LinkedIn is optimize-only until OAuth publish (Phase 2).
 - **Disconnect** — Remove credentials without replacement API key ([`Settings.tsx`](../client/src/views/Settings.tsx)).
 - **Smart publish menu** — Only connected platforms in editor dropdown.
 - **Schedule clear on manual publish** — Avoids validation errors from past `scheduled_for`.
@@ -41,6 +45,7 @@ Functional and non-functional requirements as implemented. See college report Ch
 
 ## Out of Scope (Future)
 
+- **LinkedIn publish** — OAuth + UGC Posts API (Phase 2; optimization ships in Phase 1)
 - Hashnode/Ghost integration
 - Real-time collaborative editing
 - Team workspaces

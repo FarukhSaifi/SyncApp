@@ -2,6 +2,7 @@
  * Central exports for all client constants.
  * Import from `@constants` — avoid deep paths unless breaking circular deps.
  */
+export * from "./ai";
 export * from "./analytics";
 export * from "./api";
 export * from "./colorClasses";

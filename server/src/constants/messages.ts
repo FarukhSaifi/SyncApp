@@ -86,14 +86,21 @@ export const ERROR_MESSAGES = {
     "Vertex AI API is not enabled for this project. Enable it in Google Cloud Console, then retry in a few minutes.",
   VERTEX_AI_API_ENABLE_URL: "https://console.cloud.google.com/apis/library/aiplatform.googleapis.com",
   VERTEX_AI_BILLING_DISABLED:
-    "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes.",
+    "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes — or set GEMINI_API_KEY (Google AI Studio) for local dev without GCP billing.",
   VERTEX_AI_BILLING_ENABLE_URL: "https://console.cloud.google.com/billing/enable",
+  GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
+  GEMINI_API_KEY_MISSING:
+    "No AI credentials configured. Set GEMINI_API_KEY (from Google AI Studio) or configure Vertex AI with GOOGLE_CLOUD_PROJECT and service account credentials.",
+  IMAGEN_REQUIRES_VERTEX:
+    "Featured image generation uses Imagen on Vertex AI. Enable GCP billing or use text-only AI with GEMINI_API_KEY.",
   VERTEX_AI_MODEL_NOT_FOUND:
     "The specified Gemini model was not found or your project does not have access. Try GOOGLE_AI_MODEL=gemini-3.5-flash with GOOGLE_CLOUD_LOCATION=global (or us-central1, europe-west1, asia-northeast1 where supported). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
   AI_OUTLINE_FAILED: "Failed to generate outline",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_GENERATE_FAILED: "Failed to generate content",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",
+  AI_INVALID_MODEL: "The selected AI model is not allowed. Choose a model from the list.",
+  AI_INVALID_OPTIMIZATION_TARGETS: "Invalid optimization targets. Allowed: devto, linkedin.",
   AI_OUTLINE_REQUIRED: "Outline is required",
   AI_CONTENT_REQUIRED: "Content is required",
   AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",

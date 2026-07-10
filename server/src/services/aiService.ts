@@ -6,7 +6,16 @@
 
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { config } from "../config";
-import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
+import {
+  AI_CONFIG,
+  AI_POST_LIMITS,
+  AI_PROMPTS,
+  AI_RESPONSE_SCHEMA,
+  AI_SAFETY_SETTINGS,
+  buildFullPostSystemPrompt,
+  buildFullPostUserPrompt,
+  resolveContentModel,
+} from "../constants";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
@@ -15,9 +24,10 @@ import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials"
 import { sanitizeJsonString } from "../utils/sanitizeJson";
 
 let cachedGoogleGenAI: GoogleGenAI | null = null;
+let cachedRuntimeKey = "";
 
-function getModelName(): string {
-  return config.googleAiModel;
+function getModelName(override?: string): string {
+  return override ? resolveContentModel(override) : config.googleAiModel;
 }
 
 function getConfiguredLocation(): string {
@@ -26,8 +36,8 @@ function getConfiguredLocation(): string {
   );
 }
 
-function getAiRuntimeConfig() {
-  const model = getModelName();
+function getAiRuntimeConfig(modelOverride?: string) {
+  const model = getModelName(modelOverride);
   const configuredLocation = getConfiguredLocation();
   const location = resolveVertexLocation(configuredLocation, model);
   const project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT || "";
@@ -42,11 +52,31 @@ function resolveVertexLocation(configuredLocation: string, modelName: string): s
   return needsGlobal ? AI_CONFIG.VERTEX_GLOBAL_FALLBACK_LOCATION : configuredLocation;
 }
 
-function getGoogleGenAI(): GoogleGenAI {
-  if (cachedGoogleGenAI) return cachedGoogleGenAI;
+function resolveGeminiApiKey(): string {
+  return (
+    config.geminiApiKey ||
+    process.env[AI_CONFIG.ENV_GEMINI_API_KEY]?.trim() ||
+    process.env[AI_CONFIG.ENV_GOOGLE_API_KEY]?.trim() ||
+    ""
+  );
+}
+
+function usesGeminiStudio(): boolean {
+  return Boolean(resolveGeminiApiKey());
+}
+
+function getGoogleGenAI(modelOverride?: string): GoogleGenAI {
+  if (usesGeminiStudio()) {
+    if (cachedGoogleGenAI && cachedRuntimeKey === "studio") {
+      return cachedGoogleGenAI;
+    }
+    cachedRuntimeKey = "studio";
+    cachedGoogleGenAI = new GoogleGenAI({ apiKey: resolveGeminiApiKey() });
+    return cachedGoogleGenAI;
+  }
 
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
-  const { configuredLocation, location } = getAiRuntimeConfig();
+  const { location } = getAiRuntimeConfig(modelOverride);
 
   const credentialsObj = loadGoogleServiceAccountCredentials();
   if (credentialsObj?.project_id && !project) {
@@ -54,7 +84,12 @@ function getGoogleGenAI(): GoogleGenAI {
   }
 
   if (!project || project.trim() === "") {
-    throw new AppError(ERROR_MESSAGES.VERTEX_AI_PROJECT_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
+    throw new AppError(ERROR_MESSAGES.GEMINI_API_KEY_MISSING, HTTP_STATUS.SERVICE_UNAVAILABLE);
+  }
+
+  const runtimeKey = `vertex:${project}:${location}`;
+  if (cachedGoogleGenAI && cachedRuntimeKey === runtimeKey) {
+    return cachedGoogleGenAI;
   }
 
   const opts: any = {
@@ -67,6 +102,7 @@ function getGoogleGenAI(): GoogleGenAI {
     opts.googleAuthOptions = { credentials: credentialsObj };
   }
 
+  cachedRuntimeKey = runtimeKey;
   cachedGoogleGenAI = new GoogleGenAI(opts);
   return cachedGoogleGenAI;
 }
@@ -80,13 +116,12 @@ function getText(result: GenerateContentResponse): string {
 }
 
 /** Merge generation config; disable Flash thinking so maxOutputTokens go to visible output. */
-function buildGeminiConfig(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function buildGeminiConfig(modelName: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
   const generationConfig: Record<string, unknown> = {
     ...overrides,
     safetySettings: AI_SAFETY_SETTINGS,
   };
-  const model = getModelName();
-  if (/flash/i.test(model) && AI_CONFIG.FLASH_THINKING_BUDGET === 0) {
+  if (/flash/i.test(modelName) && AI_CONFIG.FLASH_THINKING_BUDGET === 0) {
     generationConfig.thinkingConfig = { thinkingBudget: 0 };
   }
   return generationConfig;
@@ -109,8 +144,9 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
     const billingUrl = project
       ? `https://console.cloud.google.com/billing/enable?project=${project}`
       : ERROR_MESSAGES.VERTEX_AI_BILLING_ENABLE_URL;
+    const studioHint = ` Or set GEMINI_API_KEY from ${ERROR_MESSAGES.GEMINI_API_KEY_URL} in server/.env.dev (no GCP billing required).`;
     throw new AppError(
-      `${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}`,
+      `${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}.${studioHint}`,
       HTTP_STATUS.FORBIDDEN,
     );
   }
@@ -191,14 +227,19 @@ function parseJSONContent(rawText: string): GeneratePostResult {
 /**
  * Generate full post in a single pass (including trending keywords research)
  */
-export async function generatePost(keyword: string): Promise<GeneratePostResult> {
+export async function generatePost(
+  keyword: string,
+  options: { model?: string; targetPlatforms?: string[] } = {},
+): Promise<GeneratePostResult> {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const ai = getGoogleGenAI();
-  const modelName = getModelName();
-  const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
+  const modelName = getModelName(options.model);
+  const systemInstruction = buildFullPostSystemPrompt(options.targetPlatforms);
+  const userMessage = buildFullPostUserPrompt(keyword.trim(), options.targetPlatforms);
+
+  const ai = getGoogleGenAI(options.model);
 
   // Google Search grounding path
   if (config.aiUseGoogleSearchRetrieval) {
@@ -208,8 +249,8 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
         contents: userMessage,
         safetySettings: AI_SAFETY_SETTINGS,
         safety_settings: AI_SAFETY_SETTINGS,
-        config: buildGeminiConfig({
-          systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
+        config: buildGeminiConfig(modelName, {
+          systemInstruction,
           maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
           responseMimeType: "application/json",
           responseSchema: AI_RESPONSE_SCHEMA,
@@ -232,8 +273,8 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
       contents: userMessage,
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: buildGeminiConfig({
-        systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
+      config: buildGeminiConfig(modelName, {
+        systemInstruction,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
         responseMimeType: "application/json",
         responseSchema: AI_RESPONSE_SCHEMA,
@@ -260,7 +301,7 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
       contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: buildGeminiConfig({
+      config: buildGeminiConfig(modelName, {
         systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS,
       }),
@@ -285,6 +326,10 @@ export async function generateImageFromTopic(
 
   if (!imagePrompt?.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_IMAGE_FAILED, HTTP_STATUS.BAD_GATEWAY);
+  }
+
+  if (usesGeminiStudio()) {
+    throw new AppError(ERROR_MESSAGES.IMAGEN_REQUIRES_VERTEX, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
 
   try {
@@ -327,7 +372,7 @@ export async function generateEdit(action: string, contextText: string): Promise
       contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
       safetySettings: AI_SAFETY_SETTINGS,
       safety_settings: AI_SAFETY_SETTINGS,
-      config: buildGeminiConfig({
+      config: buildGeminiConfig(modelName, {
         systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
       }),

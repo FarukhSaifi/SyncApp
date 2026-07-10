@@ -20,11 +20,22 @@ export const AI_POST_LIMITS = Object.freeze({
   SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
 } as const);
 
-export const AI_PROMPTS = {
-  // Single-pass Full Post Generator
-  FULL_POST_SYSTEM: `You are an expert technical writer, and SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks #1 on Google and goes viral on DEV.to and Medium.
+/** Curated Gemini models exposed to the client model picker. */
+export const AI_CONTENT_MODELS = Object.freeze([
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (default, fast)" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (lighter)" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (quality)" },
+] as const);
 
-### Tone & Humanization (CRITICAL)
+export type AiContentModelId = (typeof AI_CONTENT_MODELS)[number]["id"];
+
+const ALLOWED_CONTENT_MODEL_IDS = new Set<string>(AI_CONTENT_MODELS.map((m) => m.id));
+
+export function isAllowedContentModel(model: string): boolean {
+  return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());
+}
+
+const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL)
 - **Sound Human:** Write conversationally, as if explaining a concept to a respected colleague over coffee.
 - **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion." 
 - **Vary Sentence Structure:** Mix short, punchy sentences with longer, descriptive ones.
@@ -55,7 +66,13 @@ You MUST output a valid JSON object matching this exact schema. Do not output ma
   "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
   "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')"
-}`,
+}`;
+
+export const AI_PROMPTS = {
+  // Base rules; platform blocks appended by buildFullPostSystemPrompt()
+  FULL_POST_SYSTEM_BASE: `You are an expert technical writer, and SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
+
+${FULL_POST_SYSTEM_BODY}`,
 
   FULL_POST_USER: (keyword: string) =>
     `You are an elite-level SEO expert and copywriter capable of producing highly optimized, detailed, and comprehensive content that ranks on Google’s first page. Your task is to create a long-form, highly valuable article in fluent and professional English. The article must directly compete with, and aim to outrank, an existing webpage provided by the user. Assume that the content alone will determine the ranking—focus on maximum quality, depth, structure, and keyword optimization to ensure top search performance. The article must be about: "${keyword}".`,
@@ -87,6 +104,11 @@ export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
   ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
+  /** Google AI Studio API key — bypasses Vertex billing for text generation (local dev). */
+  ENV_GEMINI_API_KEY: "GEMINI_API_KEY",
+  /** Alternate env name supported by @google/genai SDK. */
+  ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
+  GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
   /** Default model — Vertex AI usage-based free tier (~1,000 requests/day, rate-limited). */
   DEFAULT_MODEL: "gemini-3.5-flash",
   /** Documented Vertex AI free-tier daily request cap. */
@@ -113,6 +135,13 @@ export const AI_CONFIG = Object.freeze({
   FLASH_THINKING_BUDGET: 0,
   IMAGEN_MODEL: "imagen-4.0-fast-generate-001",
 } as const);
+
+/** Resolve request model or fall back to env default. */
+export function resolveContentModel(requested?: string): string {
+  const trimmed = requested?.trim();
+  if (trimmed && isAllowedContentModel(trimmed)) return trimmed;
+  return process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL;
+}
 
 /**
  * Default safety settings applied to every Gemini generateContent() call.
