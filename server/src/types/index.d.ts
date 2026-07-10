@@ -226,6 +226,7 @@ export interface AppConfig {
   googleCloudLocation: string;
   googleApplicationCredentials: string;
   googleAiModel: string;
+  geminiApiKey: string;
   gcpBucketName: string;
   aiUseGoogleSearchRetrieval: boolean;
   canonicalBaseUrl: string;

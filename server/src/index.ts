@@ -7,7 +7,7 @@ import helmet from "helmet";
 import path from "path";
 
 import { config } from "./config";
-import { DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
+import { AI_CONFIG, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
 import connectDB, { getDbConnectionMeta, isDbConnected } from "./database/connection";
 import { ensureDb } from "./middleware/ensureDb";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
@@ -126,6 +126,11 @@ if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
       corsOrigin: config.corsOrigin,
       healthCheck: HEALTH.HEALTH_URL_LOCAL(PORT),
     });
+    if (!config.geminiApiKey && config.googleCloudProject) {
+      logger.warn(
+        `AI: GEMINI_API_KEY not set — post generation will use Vertex (requires GCP billing). Add GEMINI_API_KEY from ${AI_CONFIG.GEMINI_API_KEY_URL} to server/.env.dev`,
+      );
+    }
   });
 }
 

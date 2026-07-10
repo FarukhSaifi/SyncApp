@@ -1,11 +1,19 @@
 /**
  * AI Service – Google Gen AI SDK for blog post generation, optimisation, and images.
- * Uses GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_CREDENTIALS_JSON, or ADC.
+ * Uses GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_CREDENTIALS_JSON, ADC, or GEMINI_API_KEY.
  */
 
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { config } from "../config";
-import { AI_CONFIG, AI_PROMPTS, AI_RESPONSE_SCHEMA, AI_SAFETY_SETTINGS } from "../constants";
+import {
+  AI_CONFIG,
+  AI_PROMPTS,
+  AI_RESPONSE_SCHEMA,
+  AI_SAFETY_SETTINGS,
+  buildFullPostSystemPrompt,
+  buildFullPostUserPrompt,
+  resolveContentModel,
+} from "../constants";
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
@@ -26,6 +34,7 @@ function ensureValidPostResult(result: GeneratePostResult, fallbackError: string
 type GeminiClientCache = { key: string; client: GoogleGenAI };
 
 let cachedGeminiClient: GeminiClientCache | null = null;
+let cachedStudioClient: GoogleGenAI | null = null;
 
 interface GeminiCallOptions {
   userMessage: string;
@@ -33,10 +42,11 @@ interface GeminiCallOptions {
   maxOutputTokens: number;
   structuredJson?: boolean;
   tools?: Array<Record<string, unknown>>;
+  modelOverride?: string;
 }
 
-function getModelName(): string {
-  return config.googleAiModel || AI_CONFIG.DEFAULT_MODEL;
+function getModelName(override?: string): string {
+  return override ? resolveContentModel(override) : config.googleAiModel || AI_CONFIG.DEFAULT_MODEL;
 }
 
 function getConfiguredLocation(): string {
@@ -53,6 +63,19 @@ function resolveVertexLocation(configuredLocation: string, modelName: string): s
   return needsGlobal ? AI_CONFIG.VERTEX_GLOBAL_FALLBACK_LOCATION : configuredLocation;
 }
 
+function resolveGeminiApiKey(): string {
+  return (
+    config.geminiApiKey ||
+    process.env[AI_CONFIG.ENV_GEMINI_API_KEY]?.trim() ||
+    process.env[AI_CONFIG.ENV_GOOGLE_API_KEY]?.trim() ||
+    ""
+  );
+}
+
+function usesGeminiStudio(): boolean {
+  return Boolean(resolveGeminiApiKey());
+}
+
 function getProjectId(): string {
   let project = config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT || "";
   const credentialsObj = loadGoogleServiceAccountCredentials();
@@ -60,6 +83,12 @@ function getProjectId(): string {
     project = credentialsObj.project_id;
   }
   return project.trim();
+}
+
+function getStudioClient(): GoogleGenAI {
+  if (cachedStudioClient) return cachedStudioClient;
+  cachedStudioClient = new GoogleGenAI({ apiKey: resolveGeminiApiKey() });
+  return cachedStudioClient;
 }
 
 function getGeminiClient(modelName: string, locationOverride?: string): GoogleGenAI {
@@ -89,6 +118,13 @@ function getGeminiClient(modelName: string, locationOverride?: string): GoogleGe
   const client = new GoogleGenAI(opts);
   cachedGeminiClient = { key: cacheKey, client };
   return client;
+}
+
+function getGoogleGenAI(modelOverride?: string, locationOverride?: string): GoogleGenAI {
+  if (usesGeminiStudio()) {
+    return getStudioClient();
+  }
+  return getGeminiClient(getModelName(modelOverride), locationOverride);
 }
 
 /** Disable internal thinking only on models known to spend output tokens on reasoning. */
@@ -142,14 +178,15 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
   const msg = err.message || "";
   const is403 = msg.includes("403") || msg.includes("PERMISSION_DENIED") || msg.includes("Forbidden");
   const is404 = msg.includes("404") || msg.includes("NOT_FOUND");
-  const project = getProjectId();
+  const project = getProjectId() || config.googleCloudProject || process.env.GOOGLE_CLOUD_PROJECT;
 
   if (is403 && (msg.includes("BILLING_DISABLED") || msg.includes("billing to be enabled"))) {
     const billingUrl = project
       ? `https://console.cloud.google.com/billing/enable?project=${project}`
       : ERROR_MESSAGES.VERTEX_AI_BILLING_ENABLE_URL;
+    const studioHint = ` Or set GEMINI_API_KEY from ${ERROR_MESSAGES.GEMINI_API_KEY_URL} in server/.env.dev (no GCP billing required).`;
     throw new AppError(
-      `${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}`,
+      `${ERROR_MESSAGES.VERTEX_AI_BILLING_DISABLED} Enable billing here: ${billingUrl}.${studioHint}`,
       HTTP_STATUS.FORBIDDEN,
     );
   }
@@ -183,8 +220,8 @@ function normalizeVertexError(err: Error & { status?: number; details?: unknown 
   throw new AppError(msg || fallbackMessage, err.status ?? HTTP_STATUS.BAD_GATEWAY, err.details);
 }
 
-function getModelAttempts(): Array<{ model: string; location: string }> {
-  const primary = getModelName();
+function getModelAttempts(modelOverride?: string): Array<{ model: string; location: string }> {
+  const primary = getModelName(modelOverride);
   const primaryLocation = resolveVertexLocation(getConfiguredLocation(), primary);
   const attempts: Array<{ model: string; location: string }> = [{ model: primary, location: primaryLocation }];
 
@@ -200,11 +237,15 @@ async function callGeminiGenerate(
   options: GeminiCallOptions,
   fallbackError: string,
 ): Promise<GenerateContentResponse> {
-  const attempts = getModelAttempts();
+  const attempts = usesGeminiStudio()
+    ? [{ model: getModelName(options.modelOverride), location: "" }]
+    : getModelAttempts(options.modelOverride);
+
   let lastError: Error | null = null;
+  const primaryModel = getModelName(options.modelOverride);
 
   for (const { model, location } of attempts) {
-    const ai = getGeminiClient(model, location);
+    const ai = getGoogleGenAI(options.modelOverride, location || undefined);
     const configs: Array<Record<string, unknown>> = [];
 
     if (options.structuredJson) {
@@ -217,7 +258,6 @@ async function callGeminiGenerate(
           ...(options.tools ? { tools: options.tools } : {}),
         }),
       );
-      // Fallback without schema if Vertex rejects structured output for this model/region.
       configs.push(
         buildGeminiConfig(model, {
           systemInstruction: `${options.systemInstruction}\n\nReturn ONLY valid JSON with keys: title, meta_description, tags, content_markdown, canonical_url.`,
@@ -244,7 +284,10 @@ async function callGeminiGenerate(
         } as Parameters<GoogleGenAI["models"]["generateContent"]>[0]);
 
         extractResponseText(result);
-        if (model !== getModelName() || location !== resolveVertexLocation(getConfiguredLocation(), getModelName())) {
+        if (
+          !usesGeminiStudio() &&
+          (model !== primaryModel || location !== resolveVertexLocation(getConfiguredLocation(), primaryModel))
+        ) {
           logger.warn("AI request succeeded using fallback model/location", { model, location });
         }
         return result;
@@ -274,6 +317,7 @@ async function generateStructuredPost(
   systemInstruction: string,
   maxOutputTokens: number,
   fallbackError: string,
+  modelOverride?: string,
 ): Promise<GeneratePostResult> {
   try {
     const result = await callGeminiGenerate(
@@ -282,6 +326,7 @@ async function generateStructuredPost(
         systemInstruction,
         maxOutputTokens,
         structuredJson: true,
+        modelOverride,
       },
       fallbackError,
     );
@@ -292,28 +337,36 @@ async function generateStructuredPost(
 }
 
 /**
- * Generate a full blog post from a keyword/topic (general-purpose + syndication-ready metadata).
+ * Generate a full blog post from a keyword/topic with optional model and platform targets.
  */
-export async function generatePost(keyword: string): Promise<GeneratePostResult> {
+export async function generatePost(
+  keyword: string,
+  options: { model?: string; targetPlatforms?: string[] } = {},
+): Promise<GeneratePostResult> {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const userMessage = AI_PROMPTS.FULL_POST_USER(keyword.trim());
+  const systemInstruction = buildFullPostSystemPrompt(options.targetPlatforms);
+  const userMessage = buildFullPostUserPrompt(keyword.trim(), options.targetPlatforms);
 
   if (config.aiUseGoogleSearchRetrieval) {
     try {
       const result = await callGeminiGenerate(
         {
           userMessage,
-          systemInstruction: AI_PROMPTS.FULL_POST_SYSTEM,
+          systemInstruction,
           maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
           structuredJson: true,
           tools: [{ googleSearch: {} }],
+          modelOverride: options.model,
         },
         ERROR_MESSAGES.AI_DRAFT_FAILED,
       );
-      const parsed = ensureValidPostResult(parseJSONContent(extractResponseText(result)), ERROR_MESSAGES.AI_DRAFT_FAILED);
+      const parsed = ensureValidPostResult(
+        parseJSONContent(extractResponseText(result)),
+        ERROR_MESSAGES.AI_DRAFT_FAILED,
+      );
       if (parsed.title && parsed.content) return parsed;
     } catch (err) {
       logger.warn("Grounded AI generate failed; falling back to standard generation", {
@@ -324,9 +377,10 @@ export async function generatePost(keyword: string): Promise<GeneratePostResult>
 
   return generateStructuredPost(
     userMessage,
-    AI_PROMPTS.FULL_POST_SYSTEM,
+    systemInstruction,
     AI_CONFIG.MAX_DRAFT_TOKENS,
     ERROR_MESSAGES.AI_DRAFT_FAILED,
+    options.model,
   );
 }
 
@@ -384,6 +438,10 @@ export async function generateImageFromTopic(
 
   if (!imagePrompt?.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_IMAGE_FAILED, HTTP_STATUS.BAD_GATEWAY);
+  }
+
+  if (usesGeminiStudio()) {
+    throw new AppError(ERROR_MESSAGES.IMAGEN_REQUIRES_VERTEX, HTTP_STATUS.SERVICE_UNAVAILABLE);
   }
 
   try {

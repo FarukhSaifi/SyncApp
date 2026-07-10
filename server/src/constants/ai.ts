@@ -20,47 +20,61 @@ export const AI_POST_LIMITS = Object.freeze({
   SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
 } as const);
 
+/** Curated Gemini models exposed to the client model picker. */
+export const AI_CONTENT_MODELS = Object.freeze([
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (default, fast)" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (lighter)" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (quality)" },
+] as const);
+
+export type AiContentModelId = (typeof AI_CONTENT_MODELS)[number]["id"];
+
+const ALLOWED_CONTENT_MODEL_IDS = new Set<string>(AI_CONTENT_MODELS.map((m) => m.id));
+
+export function isAllowedContentModel(model: string): boolean {
+  return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());
+}
+
 const PLATFORM_TAG_GUIDANCE = `exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase tags without #. Prefer relevant developer/tech tags (e.g. webdev, programming, javascript, tutorial, nextjs, react, typescript). No hyphens or spaces in tag names.`;
 
-export const AI_PROMPTS = {
-  // Single-pass Full Post Generator — general technical blog + syndication-ready metadata
-  FULL_POST_SYSTEM: `You are an expert technical writer and SEO specialist. Write a high-quality technical blog post that is useful on its own and ready to syndicate to Medium, DEV.to, or a personal blog.
+const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL)
+- **Sound Human:** Write conversationally, as if explaining a concept to a respected colleague over coffee.
+- **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion."
+- **Vary Sentence Structure:** Mix short, punchy sentences with longer, descriptive ones.
+- **Formatting:** Use short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences). Use bold text for emphasis.
 
-### Tone & Humanization (CRITICAL)
-- Sound human: explain concepts like a respected colleague, not a marketing bot.
-- Avoid AI clichés: never use "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion."
-- Vary sentence structure; use short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences).
+### SEO & Platform Optimization (E-E-A-T)
+- **Search Intent:** Answer the user's implicit questions immediately. Provide actionable, practical advice, not just theory.
+- **Structure:** Use a compelling hook in the introduction. Include a logical hierarchy with clear headings (##, ###).
+- **Rich Elements:** Use Markdown effectively. Include > blockquotes for important callouts, bulleted/numbered lists for scannability, and relevant code snippets or structured examples where applicable.
+- **Keywords:** Naturally weave in primary and LSI (Latent Semantic Indexing) keywords without keyword stuffing.
 
-### Metadata
-- Title: clear, specific, keyword-frontloaded. ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} characters.
-- Tags: ${PLATFORM_TAG_GUIDANCE}
-- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} characters; state the problem and approach; snippet-ready for search.
-
-### Structure
-- Heading hierarchy: ## for main sections, ### for sub-sections (never skip levels).
-- Direct Answer Block: after the intro, add 2–3 sentences that directly answer the main question.
-- Code fences: always label with language (e.g. \`\`\`typescript).
-- Hook: open with problem + outcome — never generic throat-clearing intros.
-- End with a specific discussion question when it fits the topic.
-- Use **bold**, lists, blockquotes, and tables where they add scannability.
-
-### Conciseness
-- Length scales to topic complexity (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}).
-- Stop when the reader's problem is fully solved — no filler or repeated points.
+CONCISENESS (quality over word count)
+- No minimum word count. Length scales to topic complexity (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}).
+- Stop the moment the reader's problem is fully solved. Do not stretch a solvable topic to hit an arbitrary length.
+- Never repeat points, restate the intro, or add generic transitions.
+- Ban filler patterns: "In conclusion", "It's worth noting", "Let's dive in", recap paragraphs, duplicated explanations.
+- Prefer dense code + short explanation over long prose.
 
 OUTPUT RULES:
-- Do NOT include YAML front matter in content_markdown.
+- Do NOT include YAML front matter in content_markdown — metadata goes in the JSON fields only.
+- tags must be ${PLATFORM_TAG_GUIDANCE}
 - canonical_url must be an empty string (the app sets this on publish).
-- content_markdown must be the complete post body in Markdown only.
-
-Return ONLY a valid JSON object (no markdown fences):
+- content_markdown must be the complete, concise post body in Markdown only — no filler.
+You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
-  "title": "specific title, 30-60 chars",
-  "meta_description": "under 150 chars",
+  "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
+  "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
   "tags": ["webdev", "programming", "nextjs", "typescript"],
-  "content_markdown": "complete markdown body",
+  "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
   "canonical_url": ""
-}`,
+}`;
+
+export const AI_PROMPTS = {
+  // Base rules; platform blocks appended by buildFullPostSystemPrompt()
+  FULL_POST_SYSTEM_BASE: `You are an expert technical writer, SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
+
+${FULL_POST_SYSTEM_BODY}`,
 
   FULL_POST_USER: (keyword: string) =>
     `Write a complete, high-quality technical blog post about: "${keyword}".
@@ -135,6 +149,11 @@ export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
   ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
+  /** Google AI Studio API key — bypasses Vertex billing for text generation (local dev). */
+  ENV_GEMINI_API_KEY: "GEMINI_API_KEY",
+  /** Alternate env name supported by @google/genai SDK. */
+  ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
+  GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
   /** Default model — Vertex AI usage-based free tier (~1,000 requests/day, rate-limited). */
   DEFAULT_MODEL: "gemini-3.5-flash",
   /** Documented Vertex AI free-tier daily request cap. */
@@ -168,6 +187,13 @@ export const AI_CONFIG = Object.freeze({
   FLASH_THINKING_BUDGET: 0,
   IMAGEN_MODEL: "imagen-4.0-fast-generate-001",
 } as const);
+
+/** Resolve request model or fall back to env default. */
+export function resolveContentModel(requested?: string): string {
+  const trimmed = requested?.trim();
+  if (trimmed && isAllowedContentModel(trimmed)) return trimmed;
+  return process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL;
+}
 
 /**
  * Default safety settings applied to every Gemini generateContent() call.

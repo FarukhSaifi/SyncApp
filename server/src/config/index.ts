@@ -46,6 +46,8 @@ export const config: AppConfig = {
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
   googleAiModel: process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL,
+  /** When set, text AI uses Google AI Studio instead of Vertex (no GCP billing required). */
+  geminiApiKey: (process.env[AI_CONFIG.ENV_GEMINI_API_KEY] || process.env[AI_CONFIG.ENV_GOOGLE_API_KEY] || "").trim(),
   gcpBucketName:
     process.env.GCS_BUCKET_NAME ||
     process.env.GOOGLE_CLOUD_BUCKET ||

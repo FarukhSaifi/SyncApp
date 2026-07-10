@@ -45,6 +45,11 @@ export const TOAST_TITLES = Object.freeze({
   PUBLISH_FAILED: "Publish Failed",
   // Export
   EXPORT_FAILED: "Export Failed",
+  // AI
+  POST_GENERATED: "Post generated",
+  IMAGE_GENERATED: "Image generated",
+  FEATURED_IMAGE_SET: "Featured image set",
+  IMAGE_UPLOADED: "Image uploaded",
   // Validation
   VALIDATION_ERROR: "Validation Error",
   // Network
@@ -76,6 +81,11 @@ const createSuccessMessages = () => {
     POST_UPDATED: "Post updated successfully",
     POST_DELETED: "Post deleted successfully",
     IMAGE_UPLOADED: "Image uploaded successfully",
+    // AI
+    AI_POST_GENERATED: "Draft added to the editor.",
+    AI_IMAGE_GENERATED: "Preview below. Use as featured image or upload to attach.",
+    AI_FEATURED_IMAGE_SET: "You can save the post to keep it.",
+    AI_COVER_ATTACHED: "Cover image attached to this post.",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
@@ -151,6 +161,10 @@ export const ERROR_MESSAGES = Object.freeze({
   // Uploads
   FAILED_TO_UPLOAD_IMAGE: "Failed to upload image",
   FAILED_TO_UPLOAD_DROPPED_IMAGE: "Failed to upload dropped image",
+  // AI
+  FAILED_TO_GENERATE_POST: "Failed to generate post",
+  FAILED_TO_GENERATE_IMAGE: "Failed to generate image",
+  FAILED_TO_UPLOAD_COVER: "Upload failed",
 } as const);
 
 // ============================================================================
@@ -179,6 +193,10 @@ export const VALIDATION_MESSAGES = Object.freeze({
   ENTER_DEVTO_CREDENTIALS: "Please enter both DEV.to API key and username",
   ENTER_WORDPRESS_CREDENTIALS: "Please enter both WordPress API key and site URL",
   VALID_WORDPRESS_URL: "Please enter a valid WordPress site URL (must start with http:// or https://)",
+  // AI
+  AI_KEYWORD_REQUIRED: "Enter a keyword or topic",
+  AI_KEYWORD_REQUIRED_FOR_IMAGE: "Enter a keyword or topic first to generate an image.",
+  AI_TARGETS_REQUIRED: "Select at least one platform to optimize for",
 } as const);
 
 // ============================================================================
@@ -811,7 +829,13 @@ export const EDITOR_UI = Object.freeze({
   // Generate post modal
   GENERATE_POST_MODAL_TITLE: "Generate SEO post",
   GENERATE_POST_MODAL_DESC:
-    "Pick a trending topic or enter your own keyword. AI will draft a DEV.to + Google-optimized post with the right tag mix.",
+    "Pick a topic, AI model, and target platforms. AI drafts one post optimized for your selection.",
+  GENERATE_POST_MODEL_LABEL: "AI model",
+  GENERATE_POST_TARGETS_LABEL: "Optimize for",
+  GENERATE_POST_TARGETS_HINT: "Select at least one platform. LinkedIn is content optimization only for now.",
+  GENERATE_POST_TARGET_DEVTO: "DEV.to",
+  GENERATE_POST_TARGET_LINKEDIN: "LinkedIn",
+  GENERATE_POST_TARGETS_REQUIRED: "Select at least one platform",
   GENERATE_POST_KEYWORD_LABEL: "Topic or keyword",
   GENERATE_POST_KEYWORD_PLACEHOLDER: "e.g. Building a Next.js app with MongoDB",
   REACH_TAGS_TITLE: "High-reach DEV.to tags",
@@ -819,12 +843,6 @@ export const EDITOR_UI = Object.freeze({
   GENERATE_POST_CANCEL: "Cancel",
   GENERATE_POST_CONFIRM: "Generate draft",
   GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",
-  GENERATE_POST_MODEL_LABEL: "AI model",
-  GENERATE_POST_TARGETS_LABEL: "Optimize for",
-  GENERATE_POST_TARGETS_HINT: "Select at least one platform to tailor the draft.",
-  GENERATE_POST_TARGET_DEVTO: "DEV.to",
-  GENERATE_POST_TARGET_LINKEDIN: "LinkedIn",
-  GENERATE_POST_TARGETS_REQUIRED: "Select at least one target platform",
 } as const);
 
 // ============================================================================

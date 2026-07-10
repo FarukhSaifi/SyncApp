@@ -218,7 +218,7 @@ class ApiClient {
   // AI
   aiGenerate(
     keyword: string,
-    options: Record<string, unknown> = {},
+    options: { model?: string; targetPlatforms?: string[] } = {},
   ): Promise<ApiResponse<{ title: string; meta_description: string; tags: string[]; content: string }>> {
     return this.request(`${API_PATHS.AI}/generate`, {
       method: HTTP_METHODS.POST,

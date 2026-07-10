@@ -5,28 +5,18 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { AiModelOption, GeneratedPostData } from "@types";
+import type { AiContentModel, GeneratedPostData } from "@types";
+import {
+  persistAiModel,
+  persistOptimizationTargets,
+  readStoredAiModel,
+  readStoredOptimizationTargets,
+} from "@utils/aiPreferences";
 import { apiClient } from "@utils/apiClient";
 
-import {
-  AI_CONTENT_MODELS,
-  DEFAULT_AI_CONTENT_MODEL,
-  resolveStoredContentModel,
-  type AiContentModelId,
-} from "@constants/ai";
-import { OPTIMIZATION_TARGETS } from "@constants/platforms";
+import { AI_CONTENT_MODELS, resolveStoredContentModel } from "@constants/ai";
+import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 
-const AI_MODEL_STORAGE_KEY = "syncapp.ai.generate.model";
-
-function readStoredModel(): AiContentModelId {
-  if (typeof window === "undefined") return DEFAULT_AI_CONTENT_MODEL;
-  return resolveStoredContentModel(localStorage.getItem(AI_MODEL_STORAGE_KEY));
-}
-
-/**
- * Strips markdown code fences and parses JSON from a string.
- * Returns null if the string is not valid JSON after stripping fences.
- */
 function tryParseJSON(raw: string): Record<string, unknown> | null {
   try {
     const clean = raw
@@ -48,11 +38,6 @@ function tryParseJSON(raw: string): Record<string, unknown> | null {
   }
 }
 
-/**
- * Normalises the raw API response into a clean GeneratedPostData.
- * Handles the case where the server returns the full JSON as a code-fenced
- * string inside the `content` field instead of parsed fields.
- */
 function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
   if (raw.title && raw.content) return raw;
 
@@ -90,11 +75,11 @@ interface UseEditorAIOptions {
 interface UseEditorAIReturn {
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
-  aiModel: AiContentModelId;
+  aiModel: string;
   setAiModel: (v: string) => void;
-  aiModels: readonly AiModelOption[];
+  aiModels: AiContentModel[];
   targetPlatforms: string[];
-  setTargetPlatforms: (v: string[]) => void;
+  setTargetPlatforms: (platforms: string[]) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
@@ -110,8 +95,8 @@ interface UseEditorAIReturn {
 export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
-  const [aiModel, setAiModelState] = useState<AiContentModelId>(readStoredModel);
-  const [targetPlatforms, setTargetPlatforms] = useState<string[]>([OPTIMIZATION_TARGETS.DEVTO]);
+  const [aiModel, setAiModelState] = useState(() => readStoredAiModel());
+  const [targetPlatforms, setTargetPlatformsState] = useState<string[]>(() => readStoredOptimizationTargets());
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
@@ -120,15 +105,18 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
   const setAiModel = useCallback((model: string) => {
     const resolved = resolveStoredContentModel(model);
     setAiModelState(resolved);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(AI_MODEL_STORAGE_KEY, resolved);
-    }
+    persistAiModel(resolved);
+  }, []);
+
+  const setTargetPlatforms = useCallback((platforms: string[]) => {
+    setTargetPlatformsState(platforms);
+    persistOptimizationTargets(platforms);
   }, []);
 
   const applyGeneratedData = useCallback(
     (data: GeneratedPostData, successTitle: string, successMessage: string, source: "generate" | "optimise") => {
       if (!data.content) {
-        toast.apiError("Failed to generate post content");
+        toast.apiError(SYNC_LABEL.FAILED_TO_GENERATE_POST);
         return false;
       }
       onDraftGenerated(data, source);
@@ -141,11 +129,11 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
   const handleGeneratePost = useCallback(async () => {
     const keyword = aiKeyword.trim();
     if (!keyword) {
-      toast.validationError("Enter a keyword or topic");
+      toast.validationError(SYNC_LABEL.AI_KEYWORD_REQUIRED);
       return;
     }
     if (targetPlatforms.length === 0) {
-      toast.validationError("Select at least one target platform");
+      toast.validationError(SYNC_LABEL.AI_TARGETS_REQUIRED);
       return;
     }
     setAiLoading("post");
@@ -156,14 +144,16 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
       });
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
-        if (!applyGeneratedData(data, "Post generated", "Draft added to the editor.", "generate")) {
-          toast.apiError(response?.error || "AI returned no content — check server Vertex AI config");
+        if (
+          !applyGeneratedData(data, TOAST_TITLES.POST_GENERATED, SYNC_LABEL.AI_POST_GENERATED, "generate")
+        ) {
+          toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
         }
       } else {
-        toast.apiError(response?.error || "Failed to generate post");
+        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || "Failed to generate post");
+      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_POST);
     } finally {
       setAiLoading("");
     }
@@ -204,7 +194,7 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
     if (!topic) {
-      toast.validationError("Enter a keyword or topic first to generate an image.");
+      toast.validationError(SYNC_LABEL.AI_KEYWORD_REQUIRED_FOR_IMAGE);
       return;
     }
     setAiLoading("image");
@@ -213,12 +203,12 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
       const response = await apiClient.aiGenerateImage(topic, aiImagePrompt.trim() || undefined);
       if (response?.success && response.data?.imageDataUrl) {
         setGeneratedImageDataUrl(response.data.imageDataUrl);
-        toast.success("Image generated", "Preview below. Use as featured image or upload to attach.");
+        toast.success(TOAST_TITLES.IMAGE_GENERATED, SYNC_LABEL.AI_IMAGE_GENERATED);
       } else {
-        toast.apiError(response?.error || "Failed to generate image");
+        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || "Failed to generate image");
+      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
     } finally {
       setAiLoading("");
     }
@@ -227,7 +217,7 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
   const handleUseAsFeaturedImage = useCallback(() => {
     if (!generatedImageDataUrl) return;
     onCoverImageSet(generatedImageDataUrl);
-    toast.success("Featured image set", "You can save the post to keep it.");
+    toast.success(TOAST_TITLES.FEATURED_IMAGE_SET, SYNC_LABEL.AI_FEATURED_IMAGE_SET);
   }, [generatedImageDataUrl, onCoverImageSet, toast]);
 
   const handleUploadAndAttach = useCallback(async () => {
@@ -241,12 +231,12 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
         }
         onCoverImageSet(response.data.url);
         setGeneratedImageDataUrl(null);
-        toast.success("Image uploaded", "Cover image attached to this post.");
+        toast.success(TOAST_TITLES.IMAGE_UPLOADED, SYNC_LABEL.AI_COVER_ATTACHED);
       } else {
-        toast.apiError(response?.error || "Upload failed");
+        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_UPLOAD_COVER);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || "Upload failed");
+      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_UPLOAD_COVER);
     } finally {
       setUploadingCover(false);
     }
@@ -257,7 +247,7 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
     setAiKeyword,
     aiModel,
     setAiModel,
-    aiModels: AI_CONTENT_MODELS,
+    aiModels: [...AI_CONTENT_MODELS],
     targetPlatforms,
     setTargetPlatforms,
     aiImagePrompt,

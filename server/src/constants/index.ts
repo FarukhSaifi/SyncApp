@@ -9,7 +9,9 @@ export {
   AI_PROMPTS,
   AI_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
-  AI_SYSTEM_INSTRUCTIONS
+  AI_SYSTEM_INSTRUCTIONS,
+  isAllowedContentModel,
+  resolveContentModel,
 } from "./ai";
 export { API_URLS } from "./api";
 export { DATABASE } from "./database";
@@ -23,6 +25,14 @@ export { DB_LOG, REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "./logging";
 export { MDX_CONFIG } from "./mdx";
 export { ERROR_MESSAGES, SUCCESS_MESSAGES } from "./messages";
 export { PLATFORM_CONFIG } from "./platformConfig";
+export {
+  AI_OPTIMIZATION_TARGETS,
+  buildFullPostSystemPrompt,
+  buildFullPostUserPrompt,
+  isValidOptimizationTargets,
+  resolveOptimizationTargets,
+} from "./platformOptimization";
+export type { OptimizationTarget } from "./platformOptimization";
 export { ROUTES } from "./routes";
 export { USER_ROLE_LABELS, USER_ROLES, VALID_USER_ROLES } from "./userRoles";
 export type { UserRole } from "./userRoles";

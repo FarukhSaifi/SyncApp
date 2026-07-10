@@ -3,13 +3,41 @@
  */
 
 import type { Request, Response } from "express";
-import { HTTP_STATUS } from "../constants";
-import { asyncHandler } from "../middleware/errorHandler";
+import {
+  HTTP_STATUS,
+  isAllowedContentModel,
+  isValidOptimizationTargets,
+  resolveOptimizationTargets,
+} from "../constants";
+import { ERROR_MESSAGES } from "../constants/messages";
+import { AppError, asyncHandler } from "../middleware/errorHandler";
 import * as aiService from "../services/aiService";
 
 export const postGenerate = asyncHandler(async (req: Request, res: Response) => {
-  const { keyword } = req.body as { keyword: string };
-  const result = await aiService.generatePost(keyword);
+  const { keyword, model, targetPlatforms } = req.body as {
+    keyword: string;
+    model?: string;
+    targetPlatforms?: string[];
+  };
+
+  if (model !== undefined && model !== null && model !== "" && !isAllowedContentModel(model)) {
+    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (
+    targetPlatforms !== undefined &&
+    targetPlatforms !== null &&
+    (!Array.isArray(targetPlatforms) || !isValidOptimizationTargets(targetPlatforms))
+  ) {
+    throw new AppError(ERROR_MESSAGES.AI_INVALID_OPTIMIZATION_TARGETS, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const resolvedTargets = resolveOptimizationTargets(targetPlatforms);
+
+  const result = await aiService.generatePost(keyword, {
+    model: model?.trim() || undefined,
+    targetPlatforms: resolvedTargets,
+  });
   res.status(HTTP_STATUS.OK).json({ success: true, data: result });
 });
 
