@@ -20,74 +20,71 @@ export const AI_POST_LIMITS = Object.freeze({
   SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
 } as const);
 
-const DEVTO_TAG_GUIDANCE = `exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase tags without # (DEV.to rejects more than 4). Use 2 high-reach feed tags (webdev, programming, javascript, tutorial, beginners, devops, ai) + 2 stack-specific tags (e.g. nextjs, mongodb, typescript, react). No hyphens or spaces in tag names.`;
+const PLATFORM_TAG_GUIDANCE = `exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase tags without #. Prefer relevant developer/tech tags (e.g. webdev, programming, javascript, tutorial, nextjs, react, typescript). No hyphens or spaces in tag names.`;
 
 export const AI_PROMPTS = {
-  // Single-pass Full Post Generator — publish-ready for DEV.to, Medium, and Google
-  FULL_POST_SYSTEM: `You are an expert technical writer, SEO specialist, and engaging technical storyteller. Write a blog post engineered to rank on Google Search and perform on the DEV.to community feed and Medium.
+  // Single-pass Full Post Generator — general technical blog + syndication-ready metadata
+  FULL_POST_SYSTEM: `You are an expert technical writer and SEO specialist. Write a high-quality technical blog post that is useful on its own and ready to syndicate to Medium, DEV.to, or a personal blog.
 
 ### Tone & Humanization (CRITICAL)
 - Sound human: explain concepts like a respected colleague, not a marketing bot.
 - Avoid AI clichés: never use "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion."
 - Vary sentence structure; use short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences).
 
-### DEV.to & Medium Publish Metadata
-- Title: front-load core technology + problem. ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} characters.
-- Tags: ${DEVTO_TAG_GUIDANCE}
-- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} characters; state the problem and tech stack; snippet-ready for Google CTR.
+### Metadata
+- Title: clear, specific, keyword-frontloaded. ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} characters.
+- Tags: ${PLATFORM_TAG_GUIDANCE}
+- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} characters; state the problem and approach; snippet-ready for search.
 
-### Structure for Google & syndication
+### Structure
 - Heading hierarchy: ## for main sections, ### for sub-sections (never skip levels).
-- Direct Answer Block: after the intro, add 2–3 sentences that directly answer the main question (Featured Snippet target).
+- Direct Answer Block: after the intro, add 2–3 sentences that directly answer the main question.
 - Code fences: always label with language (e.g. \`\`\`typescript).
-- Hook: open with problem + outcome — never "Hi everyone" or "Today I want to talk about…".
-- Discussion CTA: end with a specific question to drive DEV.to comments.
+- Hook: open with problem + outcome — never generic throat-clearing intros.
+- End with a specific discussion question when it fits the topic.
 - Use **bold**, lists, blockquotes, and tables where they add scannability.
 
-### Conciseness (quality over word count)
+### Conciseness
 - Length scales to topic complexity (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}).
-- Stop when the reader's problem is fully solved — no filler, recaps, or repeated points.
+- Stop when the reader's problem is fully solved — no filler or repeated points.
 
 OUTPUT RULES:
 - Do NOT include YAML front matter in content_markdown.
-- tags must be ${DEVTO_TAG_GUIDANCE}
-- canonical_url must be an empty string (the app sets the canonical URL on publish).
+- canonical_url must be an empty string (the app sets this on publish).
 - content_markdown must be the complete post body in Markdown only.
 
-You MUST output a valid JSON object matching this exact schema. Do not wrap the JSON in markdown code fences:
+Return ONLY a valid JSON object (no markdown fences):
 {
-  "title": "keyword-frontloaded title, 30-60 chars",
-  "meta_description": "under 150 chars, problem + tech stack",
+  "title": "specific title, 30-60 chars",
+  "meta_description": "under 150 chars",
   "tags": ["webdev", "programming", "nextjs", "typescript"],
   "content_markdown": "complete markdown body",
   "canonical_url": ""
 }`,
 
   FULL_POST_USER: (keyword: string) =>
-    `Write a complete, publish-ready DEV.to + Google-optimized technical post about: "${keyword}".
+    `Write a complete, high-quality technical blog post about: "${keyword}".
 
-Front-load the technology in the title, use exactly ${AI_POST_LIMITS.TAG_COUNT} DEV.to-compatible tags (2 high-reach + 2 stack-specific), include a Direct Answer Block for Featured Snippets, and end with a specific discussion question. Stop when the problem is solved — do not pad word count.`,
+Make it genuinely useful for developers. Include a clear title, ${AI_POST_LIMITS.TAG_COUNT} relevant tags, meta description, and well-structured markdown content. Stop when the problem is solved — do not pad word count.`,
 
-  // Optimise an existing draft before publishing
-  OPTIMISE_FOR_PUBLISH_SYSTEM: `You are an expert SEO editor preparing a technical blog post for syndication to DEV.to, Medium, and Google Search.
+  // Optimise an existing draft before publishing (any platform)
+  OPTIMISE_FOR_PUBLISH_SYSTEM: `You are an expert technical editor preparing a blog post for publication on Medium, DEV.to, WordPress, or a personal site.
 
-Optimize the draft for publish without changing the core facts or code examples. Apply:
+Optimize the draft without changing core facts or code examples:
 
-### Metadata (publish-critical)
-- Title: ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} chars; front-load tech + problem.
-- Tags: ${DEVTO_TAG_GUIDANCE}
-- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} chars; problem + stack; click-worthy for Google.
-- canonical_url: always return an empty string (the app sets this on publish).
+### Metadata
+- Title: ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} chars; specific and keyword-frontloaded.
+- Tags: ${PLATFORM_TAG_GUIDANCE}
+- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} chars.
+- canonical_url: always return an empty string.
 
-### Content (SEO + platform)
-- Fix heading hierarchy (## / ### only; no skipped levels).
-- Add or tighten a Direct Answer Block after the intro if missing.
-- Label all code fences with language identifiers.
-- Shorten paragraphs to max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences; remove filler and AI clichés.
-- Keep working code and technical accuracy — tighten prose, do not delete substantive content.
-- End with a specific discussion question if the post lacks one.
+### Content
+- Fix heading hierarchy (## / ### only).
+- Tighten intro; add a direct answer block if missing.
+- Label code fences; shorten paragraphs; remove filler and AI clichés.
+- Keep working code and technical accuracy.
 
-Return ONLY a JSON object (no markdown fences) with keys: title, meta_description, tags, content_markdown, canonical_url.`,
+Return ONLY JSON with keys: title, meta_description, tags, content_markdown, canonical_url.`,
 
   OPTIMISE_FOR_PUBLISH_USER: (input: {
     title: string;
@@ -95,7 +92,7 @@ Return ONLY a JSON object (no markdown fences) with keys: title, meta_descriptio
     tags?: string[];
     content_markdown: string;
   }) =>
-    `Optimise this draft for publish to DEV.to, Medium, and Google Search:
+    `Optimise this draft for publication:
 
 TITLE: ${input.title || "(untitled)"}
 META DESCRIPTION: ${input.meta_description || "(none)"}
@@ -114,23 +111,15 @@ ${input.content_markdown.slice(0, 12000)}
       additionalPrompt ? `\n\nAdditional instructions:\n${additionalPrompt.slice(0, 500)}` : ""
     }`,
 
-  // Inline Editor Tools — publish/SEO-aware edits
-  EDITOR_TOOL_SYSTEM: `You are an AI Markdown editor assistant for DEV.to technical posts optimized for Google Search and syndication.
+  // Inline Editor Tools
+  EDITOR_TOOL_SYSTEM: `You are an AI Markdown editor assistant for technical blog posts.
 
 When editing or generating text, enforce:
-- Heading hierarchy: ## for main sections, ### for sub-sections (never skip levels).
-- Short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences), punchy sentences, no filler.
-- Labeled code fences with language identifiers (e.g., \`\`\`typescript).
-- **Bold** key terms, bulleted steps, tables for comparisons where appropriate.
-- Human tone — no AI clichés or corporate jargon.
+- Heading hierarchy: ## for main sections, ### for sub-sections.
+- Short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences), no filler.
+- Labeled code fences; **bold** key terms; human tone.
 
-Conciseness rules:
-- Proofread / Adjust: tighten prose, remove repetition; never expand unless fixing clarity.
-- Add paragraph: only new substantive information.
-- Add AI comment: brief and specific.
-- Optimise for publish: apply all rules above across the selection without changing facts.
-
-Return ONLY the edited markdown. No filler like "Here is the revised text:". No extra code block wrappers unless required.`,
+Return ONLY the edited markdown. No filler like "Here is the revised text:".`,
 
   EDITOR_TOOL_USER: (action: string, context: string) =>
     `Perform this editing action: "${action}".
@@ -156,7 +145,13 @@ export const AI_CONFIG = Object.freeze({
     "gemini-3.1-pro-preview",
     "gemini-3.1-flash-lite",
   ] as readonly string[],
-  DEFAULT_VERTEX_LOCATION: "us-central1",
+  /** Tried when primary model/region fails (404, schema, or thinking errors). */
+  FALLBACK_MODELS: [
+    { model: "gemini-3.5-flash", location: "global" },
+    { model: "gemini-3.1-flash-lite", location: "global" },
+    { model: "gemini-2.5-flash", location: "us-central1" },
+  ] as readonly { model: string; location: string }[],
+  DEFAULT_VERTEX_LOCATION: "global",
   VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
@@ -197,7 +192,7 @@ export const AI_RESPONSE_SCHEMA = {
     content_markdown: { type: Type.STRING },
     canonical_url: { type: Type.STRING },
   },
-  required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
+  required: ["title", "meta_description", "tags", "content_markdown"],
 };
 
 export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({

@@ -65,7 +65,7 @@ cd client && npm run build
 
 | Area | Check |
 |------|-------|
-| AI / Vertex | `GOOGLE_AI_MODEL`, `GOOGLE_CLOUD_LOCATION=global` for gemini-3.5-flash |
+| AI / Vertex | `GOOGLE_AI_MODEL=gemini-3.5-flash` + `GOOGLE_CLOUD_LOCATION=global` |
 | Publish | Encrypted credentials, public cover URL for DEV.to |
 | Client API | `client/next.config.ts` rewrites `/api/*` in dev |
 | Serverless DB | `ensureDb` middleware on all `/api` routes |

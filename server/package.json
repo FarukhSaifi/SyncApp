@@ -9,6 +9,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:setup": "APP_ENV=dev tsx src/database/setup.ts",
+    "test:ai-parse": "tsx scripts/test-ai-parse.ts",
     "vercel-build": "echo 'Vercel build complete'"
   },
   "dependencies": {

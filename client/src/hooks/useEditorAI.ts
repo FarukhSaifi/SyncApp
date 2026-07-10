@@ -119,7 +119,9 @@ export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverIma
       const response = await apiClient.aiGenerate(keyword);
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
-        applyGeneratedData(data, "Post generated", "Draft added to the editor.", "generate");
+        if (!applyGeneratedData(data, "Post generated", "Draft added to the editor.", "generate")) {
+          toast.apiError(response?.error || "AI returned no content — check server Vertex AI config");
+        }
       } else {
         toast.apiError(response?.error || "Failed to generate post");
       }

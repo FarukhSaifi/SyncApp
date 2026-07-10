@@ -41,9 +41,9 @@ Create a Vercel project with **Root Directory** = `server`.
 | `ENCRYPTION_IV`           | Yes       | 16-byte hex                                                                 |
 | `CORS_ORIGIN`             | Yes       | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
 | `GOOGLE_CLOUD_PROJECT`    | For AI    | GCP project ID                                                              |
-| `GOOGLE_CLOUD_LOCATION`   | For AI    | e.g. `us-central1`                                                          |
+| `GOOGLE_CLOUD_LOCATION`   | For AI    | Use `global` for `gemini-3.5-flash`; `us-central1` for older models |
 | `GOOGLE_CREDENTIALS_JSON` | For AI    | **Use this on Vercel** — paste full service account JSON (one line)         |
-| `GOOGLE_AI_MODEL`         | Optional  | e.g. `gemini-3.1-flash-lite`                                                |
+| `GOOGLE_AI_MODEL`         | Optional  | Default `gemini-3.5-flash` (use with `global` location)                     |
 | `GCS_BUCKET_NAME`         | Optional  | Overrides default bucket                                                    |
 | `CANONICAL_BASE_URL`      | Optional  | Public blog base URL for post canonicals                                    |
 | `CRON_SECRET`             | Optional  | If using cron routes                                                        |
@@ -93,9 +93,9 @@ ENCRYPTION_KEY=
 ENCRYPTION_IV=
 CORS_ORIGIN=https://sync-app-client.vercel.app
 GOOGLE_CLOUD_PROJECT=
-GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_CLOUD_LOCATION=global
 GOOGLE_CREDENTIALS_JSON=
-GOOGLE_AI_MODEL=gemini-3.1-flash-lite
+GOOGLE_AI_MODEL=gemini-3.5-flash
 RESEND_API_KEY=
 NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
 NOTIFICATION_CC_EMAIL=farook1x95@gmail.com

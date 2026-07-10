@@ -44,7 +44,7 @@ export const DEFAULT_VALUES = Object.freeze({
   CACHE_KEY_PUBLIC: "public",
 
   // Google Cloud / AI
-  DEFAULT_GOOGLE_CLOUD_LOCATION: "us-central1",
+  DEFAULT_GOOGLE_CLOUD_LOCATION: "global",
 
   // Google Cloud Storage
   GCS_UPLOAD_PREFIX: "uploads/",
