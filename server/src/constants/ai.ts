@@ -35,11 +35,13 @@ export function isAllowedContentModel(model: string): boolean {
   return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());
 }
 
+const PLATFORM_TAG_GUIDANCE = `exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase tags without #. Prefer relevant developer/tech tags (e.g. webdev, programming, javascript, tutorial, nextjs, react, typescript). No hyphens or spaces in tag names.`;
+
 const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL)
 - **Sound Human:** Write conversationally, as if explaining a concept to a respected colleague over coffee.
-- **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion." 
+- **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion."
 - **Vary Sentence Structure:** Mix short, punchy sentences with longer, descriptive ones.
-- **Formatting:** Use short paragraphs (max 3 sentences). Use bold text for emphasis.
+- **Formatting:** Use short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences). Use bold text for emphasis.
 
 ### SEO & Platform Optimization (E-E-A-T)
 - **Search Intent:** Answer the user's implicit questions immediately. Provide actionable, practical advice, not just theory.
@@ -53,45 +55,88 @@ CONCISENESS (quality over word count)
 - Never repeat points, restate the intro, or add generic transitions.
 - Ban filler patterns: "In conclusion", "It's worth noting", "Let's dive in", recap paragraphs, duplicated explanations.
 - Prefer dense code + short explanation over long prose.
-- A 900-word post with working code outranks a 2,000-word post filled with repetitive AI fluff.
 
 OUTPUT RULES:
 - Do NOT include YAML front matter in content_markdown — metadata goes in the JSON fields only.
-- tags must be exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase strings without #.
+- tags must be ${PLATFORM_TAG_GUIDANCE}
+- canonical_url must be an empty string (the app sets this on publish).
 - content_markdown must be the complete, concise post body in Markdown only — no filler.
 You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
   "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
   "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
-  "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
+  "tags": ["webdev", "programming", "nextjs", "typescript"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
-  "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')"
+  "canonical_url": ""
 }`;
 
 export const AI_PROMPTS = {
   // Base rules; platform blocks appended by buildFullPostSystemPrompt()
-  FULL_POST_SYSTEM_BASE: `You are an expert technical writer, and SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
+  FULL_POST_SYSTEM_BASE: `You are an expert technical writer, SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
 
 ${FULL_POST_SYSTEM_BODY}`,
 
   FULL_POST_USER: (keyword: string) =>
-    `You are an elite-level SEO expert and copywriter capable of producing highly optimized, detailed, and comprehensive content that ranks on Google’s first page. Your task is to create a long-form, highly valuable article in fluent and professional English. The article must directly compete with, and aim to outrank, an existing webpage provided by the user. Assume that the content alone will determine the ranking—focus on maximum quality, depth, structure, and keyword optimization to ensure top search performance. The article must be about: "${keyword}".`,
+    `Write a complete, high-quality technical blog post about: "${keyword}".
 
-  // Image from topic – Optimized for high-CTR blog headers
-  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
+Make it genuinely useful for developers. Include a clear title, ${AI_POST_LIMITS.TAG_COUNT} relevant tags, meta description, and well-structured markdown content. Stop when the problem is solved — do not pad word count.`,
+
+  // Optimise an existing draft before publishing (any platform)
+  OPTIMISE_FOR_PUBLISH_SYSTEM: `You are an expert technical editor preparing a blog post for publication on Medium, DEV.to, WordPress, or a personal site.
+
+Optimize the draft without changing core facts or code examples:
+
+### Metadata
+- Title: ${AI_POST_LIMITS.TITLE_MIN}–${AI_POST_LIMITS.TITLE_MAX} chars; specific and keyword-frontloaded.
+- Tags: ${PLATFORM_TAG_GUIDANCE}
+- Meta description: under ${AI_POST_LIMITS.META_DESC_MAX} chars.
+- canonical_url: always return an empty string.
+
+### Content
+- Fix heading hierarchy (## / ### only).
+- Tighten intro; add a direct answer block if missing.
+- Label code fences; shorten paragraphs; remove filler and AI clichés.
+- Keep working code and technical accuracy.
+
+Return ONLY JSON with keys: title, meta_description, tags, content_markdown, canonical_url.`,
+
+  OPTIMISE_FOR_PUBLISH_USER: (input: {
+    title: string;
+    meta_description?: string;
+    tags?: string[];
+    content_markdown: string;
+  }) =>
+    `Optimise this draft for publication:
+
+TITLE: ${input.title || "(untitled)"}
+META DESCRIPTION: ${input.meta_description || "(none)"}
+TAGS: ${(input.tags || []).join(", ") || "(none)"}
+
+CONTENT:
+---
+${input.content_markdown.slice(0, 12000)}
+---`,
+
+  // Image from topic – optimized for DEV.to cover (1000×420)
+  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer for high-CTR blog featured images at ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). Style: professional, modern, conceptual — suitable for a developer blog cover. No text or watermarks. Output ONLY the prompt.`,
 
   IMAGE_FROM_TOPIC_USER: (topic: string, additionalPrompt?: string) =>
-    `Create a compelling image prompt for ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px a blog featured image based on this topic:\n\n${topic.slice(0, 1500)}${
-      additionalPrompt ? `\n\nSpecific user instructions to include:\n${additionalPrompt.slice(0, 500)}` : ""
+    `Create a cover image prompt for a ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px blog header based on this topic:\n\n${topic.slice(0, 1500)}${
+      additionalPrompt ? `\n\nAdditional instructions:\n${additionalPrompt.slice(0, 500)}` : ""
     }`,
 
-  // Inline Editor Tools (proofread, comment, add paragraph, adjust, etc.)
-  EDITOR_TOOL_SYSTEM: `You are an expert AI Markdown editor assistant built into a rich text editor. Your job is to take the user's action and the selected context, and return ONLY the edited or generated markdown text. 
-Maintain a conversational, humanized tone. Avoid robotic transitions or corporate jargon.
-Do not include conversational filler (like "Here is the revised text:"). Do not wrap it in markdown block quotes or extra markdown code blocks unless the text itself requires it. Return exactly what should be injected back into the editor.`,
+  // Inline Editor Tools
+  EDITOR_TOOL_SYSTEM: `You are an AI Markdown editor assistant for technical blog posts.
+
+When editing or generating text, enforce:
+- Heading hierarchy: ## for main sections, ### for sub-sections.
+- Short paragraphs (max ${AI_POST_LIMITS.PARAGRAPH_MAX_SENTENCES} sentences), no filler.
+- Labeled code fences; **bold** key terms; human tone.
+
+Return ONLY the edited markdown. No filler like "Here is the revised text:".`,
 
   EDITOR_TOOL_USER: (action: string, context: string) =>
-    `Perform this editing action: "${action}". 
+    `Perform this editing action: "${action}".
 Here is the selected or surrounding text context:
 ---
 ${context}
@@ -119,16 +164,23 @@ export const AI_CONFIG = Object.freeze({
     "gemini-3.1-pro-preview",
     "gemini-3.1-flash-lite",
   ] as readonly string[],
-  DEFAULT_VERTEX_LOCATION: "us-central1",
+  /** Tried when primary model/region fails (404, schema, or thinking errors). */
+  FALLBACK_MODELS: [
+    { model: "gemini-3.5-flash", location: "global" },
+    { model: "gemini-3.1-flash-lite", location: "global" },
+    { model: "gemini-2.5-flash", location: "us-central1" },
+  ] as readonly { model: string; location: string }[],
+  DEFAULT_VERTEX_LOCATION: "global",
   VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
    * tokens count toward this budget — see FLASH_THINKING_BUDGET in aiService.
    */
-  /** Legacy outline step (unused); keep above reasoning-model floor. */
   MAX_OUTLINE_TOKENS: 2048,
   /** Full-post JSON: ~800–1200 words + title/meta/tags. 8192 is enough with thinking off. */
   MAX_DRAFT_TOKENS: 8192,
+  /** Optimise-for-publish: same budget as full post generation. */
+  MAX_OPTIMISE_TOKENS: 8192,
   /** Image prompt (~80 words). 512 is sufficient with thinking off. */
   MAX_IMAGE_PROMPT_TOKENS: 512,
   /** 0 = disable Flash thinking so maxOutputTokens goes to visible JSON/text, not reasoning. */
@@ -166,14 +218,9 @@ export const AI_RESPONSE_SCHEMA = {
     content_markdown: { type: Type.STRING },
     canonical_url: { type: Type.STRING },
   },
-  required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
+  required: ["title", "meta_description", "tags", "content_markdown"],
 };
 
-/**
- * System instructions per model role. Centralizing here keeps aiService.ts clean
- * and makes it easy to iterate on behavioral guidelines without touching service logic.
- */
 export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({
-  /** General-purpose base model used for internal helper calls. */
   BASE: "You are an expert technical assistant. Respond clearly, concisely, and conversationally. Prioritize factual accuracy and avoid generic fluff. Do not produce harmful, illegal, or deceptive content.",
 } as const);

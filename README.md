@@ -384,6 +384,17 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 
 ## Contributing
 
+### Automated bug-fix agent
+
+CI failures on `main`, weekly scans, and manual runs can trigger a **Cursor Cloud Agent** that fixes bugs and opens a draft PR.
+
+1. Add GitHub secret `CURSOR_API_KEY` (from [Cursor API Keys](https://cursor.com/settings))
+2. See **[docs/BUG_AGENT_AUTOMATION.md](docs/BUG_AGENT_AUTOMATION.md)** for full setup
+
+Agent instructions live in `AGENTS.md` and `.github/cursor/bug-fix-prompt.txt`.
+
+### Manual contributions
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit with clear messages

@@ -74,6 +74,7 @@ const EditorSidebarRight = ({
   generatedImageDataUrl,
   uploadingCover,
   onGeneratePost,
+  onOptimiseForPublish,
   onGenerateImage,
   onUseAsFeaturedImage,
   onUploadAndAttach,
@@ -286,6 +287,18 @@ const EditorSidebarRight = ({
           >
             <FiZap className="h-3.5 w-3.5 mr-1.5" />
             {aiLoading === "post" ? EDITOR_UI.GENERATING_POST : EDITOR_UI.GENERATE_FULL_POST}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onOptimiseForPublish}
+            disabled={!!aiLoading}
+            className="w-full justify-center"
+          >
+            <FiGlobe className="h-3.5 w-3.5 mr-1.5 text-primary" />
+            {aiLoading === "optimise" ? EDITOR_UI.OPTIMISING_POST : EDITOR_UI.OPTIMISE_FOR_PUBLISH}
           </Button>
 
           <div className="pt-2 border-t border-border">

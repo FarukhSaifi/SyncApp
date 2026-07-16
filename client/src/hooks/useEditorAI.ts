@@ -49,6 +49,8 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
         meta_description: (parsed.meta_description as string) || raw.meta_description || "",
         tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : (raw.tags ?? []),
         content: (parsed.content_markdown as string) || (parsed.content as string) || raw.content,
+        canonical_url:
+          typeof parsed.canonical_url === "string" ? parsed.canonical_url : raw.canonical_url,
       };
     }
   }
@@ -56,9 +58,17 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
   return raw;
 }
 
+export interface PostDraftSnapshot {
+  title: string;
+  meta_description: string;
+  content_markdown: string;
+  tags: string[];
+}
+
 interface UseEditorAIOptions {
   postId?: string;
-  onDraftGenerated: (data: GeneratedPostData) => void;
+  getPostDraft: () => PostDraftSnapshot;
+  onDraftGenerated: (data: GeneratedPostData, source?: "generate" | "optimise") => void;
   onCoverImageSet: (url: string) => void;
 }
 
@@ -76,12 +86,13 @@ interface UseEditorAIReturn {
   generatedImageDataUrl: string | null;
   uploadingCover: boolean;
   handleGeneratePost: () => Promise<void>;
+  handleOptimiseForPublish: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
 }
 
-export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
+export function useEditorAI({ postId, getPostDraft, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
   const [aiModel, setAiModelState] = useState(() => readStoredAiModel());
@@ -102,6 +113,19 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     persistOptimizationTargets(platforms);
   }, []);
 
+  const applyGeneratedData = useCallback(
+    (data: GeneratedPostData, successTitle: string, successMessage: string, source: "generate" | "optimise") => {
+      if (!data.content) {
+        toast.apiError(SYNC_LABEL.FAILED_TO_GENERATE_POST);
+        return false;
+      }
+      onDraftGenerated(data, source);
+      toast.success(successTitle, successMessage);
+      return true;
+    },
+    [onDraftGenerated, toast],
+  );
+
   const handleGeneratePost = useCallback(async () => {
     const keyword = aiKeyword.trim();
     if (!keyword) {
@@ -120,12 +144,11 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
       });
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
-        if (!data.content) {
+        if (
+          !applyGeneratedData(data, TOAST_TITLES.POST_GENERATED, SYNC_LABEL.AI_POST_GENERATED, "generate")
+        ) {
           toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
-          return;
         }
-        onDraftGenerated(data);
-        toast.success(TOAST_TITLES.POST_GENERATED, SYNC_LABEL.AI_POST_GENERATED);
       } else {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
       }
@@ -134,7 +157,39 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     } finally {
       setAiLoading("");
     }
-  }, [aiKeyword, aiModel, onDraftGenerated, targetPlatforms, toast]);
+  }, [aiKeyword, aiModel, applyGeneratedData, targetPlatforms, toast]);
+
+  const handleOptimiseForPublish = useCallback(async () => {
+    const draft = getPostDraft();
+    if (!draft.content_markdown.trim()) {
+      toast.validationError("Write some content before optimising for publish");
+      return;
+    }
+    setAiLoading("optimise");
+    try {
+      const response = await apiClient.aiOptimise({
+        title: draft.title,
+        meta_description: draft.meta_description,
+        tags: draft.tags,
+        content_markdown: draft.content_markdown,
+      });
+      if (response?.success && response.data) {
+        const data = parseAIResponse(response.data as GeneratedPostData);
+        applyGeneratedData(
+          data,
+          "Optimised for publish",
+          "Title, tags, meta, and content updated for DEV.to and Google.",
+          "optimise",
+        );
+      } else {
+        toast.apiError(response?.error || "Failed to optimise post");
+      }
+    } catch (error) {
+      toast.apiError((error as Error).message || "Failed to optimise post");
+    } finally {
+      setAiLoading("");
+    }
+  }, [applyGeneratedData, getPostDraft, toast]);
 
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
@@ -201,6 +256,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     generatedImageDataUrl,
     uploadingCover,
     handleGeneratePost,
+    handleOptimiseForPublish,
     handleGenerateImage,
     handleUseAsFeaturedImage,
     handleUploadAndAttach,

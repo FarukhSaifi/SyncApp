@@ -109,6 +109,7 @@ export const ERROR_MESSAGES = {
   AI_IMAGE_RATE_LIMITED:
     "Vertex AI rate limit reached. Wait a minute and try Generate Image again (especially after generating a full post).",
   AI_EDIT_FAILED: "Failed to perform AI edit",
+  AI_OPTIMISE_FAILED: "Failed to optimise post for publish",
   // Upload
   UPLOAD_NO_FILE: "No file provided",
   UPLOAD_IMAGE_DATA_URL_REQUIRED: "Image data URL is required",
