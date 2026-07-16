@@ -41,7 +41,7 @@ Create a Vercel project with **Root Directory** = `server`.
 | `ENCRYPTION_IV` | Yes | 16-byte hex |
 | `CORS_ORIGIN` | Yes | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
 | `GEMINI_API_KEY` | **Yes (AI)** | Key from [Google AI Studio](https://aistudio.google.com/apikey) — required for all AI routes |
-| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.1-flash-lite` (stable free-tier default) |
+| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.5-flash` (default + primary fallback) |
 | `GEMINI_IMAGE_MODEL` | Optional | e.g. `gemini-2.5-flash-image` when image quota is available |
 | `GOOGLE_CLOUD_PROJECT` | Optional (GCS) | Only for cover image uploads to Cloud Storage |
 | `GOOGLE_CREDENTIALS_JSON` | Optional (GCS) | Service account JSON on Vercel for Storage |
@@ -94,7 +94,7 @@ ENCRYPTION_KEY=
 ENCRYPTION_IV=
 CORS_ORIGIN=https://sync-app-client.vercel.app
 GEMINI_API_KEY=          # REQUIRED — paste working Studio key, then Redeploy
-GOOGLE_AI_MODEL=gemini-3.1-flash-lite
+GOOGLE_AI_MODEL=gemini-3.5-flash
 # GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 # Optional GCS only:
 # GOOGLE_CLOUD_PROJECT=
@@ -136,7 +136,7 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
   3. **Redeploy** after adding env vars — Vercel does not inject new vars into running deployments until redeploy.
   4. **Health response `database.error`** — After redeploy, `GET /health` includes the connection error message when DB fails (e.g. auth, timeout, IP block).
 - **CORS errors** — `CORS_ORIGIN` on the **server** project must include your client URL exactly (scheme + host, no trailing slash).
-- **AI errors** — Set `GEMINI_API_KEY` + `GOOGLE_AI_MODEL=gemini-3.1-flash-lite` on **sync-app-server** ([AI Studio](https://aistudio.google.com/apikey)), then **Redeploy**. See [AI_SETUP.md](./AI_SETUP.md).
+- **AI errors** — Set `GEMINI_API_KEY` + `GOOGLE_AI_MODEL=gemini-3.5-flash` on **sync-app-server** ([AI Studio](https://aistudio.google.com/apikey)), then **Redeploy**. See [AI_SETUP.md](./AI_SETUP.md).
 - **`FUNCTION_INVOCATION_FAILED` / `ERR_REQUIRE_ESM` (uuid)** — Production must not use ESM-only `uuid@14` with `@vercel/node` CJS. SyncApp uses `crypto.randomUUID()` instead. Redeploy after pulling this fix.
 - **Client hits wrong API** — rebuild client after changing `NEXT_PUBLIC_API_BACKEND_URL`.
 - **Resend email not delivered** — See [Resend + Namecheap DNS](#resend-email--namecheap-basicdns) below.

@@ -86,7 +86,7 @@ export const ERROR_MESSAGES = {
   GEMINI_API_KEY_INVALID:
     "GEMINI_API_KEY is invalid or revoked. Create a new key at Google AI Studio, update server/.env.dev, and restart the server (nodemon does not always pick up env edits until restart).",
   AI_MODEL_NOT_FOUND:
-    "The selected AI model was not found or is not available with your API key. Try gemini-3.1-flash-lite.",
+    "The selected AI model was not found or is not available with your API key. Try gemini-3.5-flash.",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_PARSE_FAILED: "AI returned invalid JSON. Please try again with a different model or keyword.",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",
@@ -95,8 +95,8 @@ export const ERROR_MESSAGES = {
   AI_EMPTY_RESPONSE: "Empty response from AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
   AI_RATE_LIMITED:
-    "AI rate limit reached for this model (Pro often needs a paid Google AI plan). Wait a minute, or use Gemini 3.1 Flash Lite.",
-  AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.1 Flash Lite.",
+    "AI rate limit reached for this model (Pro often needs a paid Google AI plan). Wait a minute, or use Gemini 3.5 Flash.",
+  AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.5 Flash.",
   AI_EDIT_FAILED: "Failed to perform AI edit",
   AI_EDIT_CONTEXT_REQUIRED: "Context text is required for AI edit actions",
   // Upload

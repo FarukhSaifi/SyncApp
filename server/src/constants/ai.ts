@@ -17,11 +17,11 @@ export const AI_POST_LIMITS = Object.freeze({
 
 /** Curated Gemini models exposed to the client model picker. */
 export const AI_CONTENT_MODELS = Object.freeze([
-  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (default, fast)" },
-  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (higher quality)" },
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (default)" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (fast)" },
   {
     id: "gemini-3.1-pro-preview",
-    label: "Gemini 3.1 Pro Preview (paid quota; auto-falls back to Flash Lite)",
+    label: "Gemini 3.1 Pro Preview (paid quota; auto-falls back to 3.5 Flash)",
   },
 ] as const);
 
@@ -105,13 +105,13 @@ export const AI_CONFIG = Object.freeze({
   /** Alternate env name supported by @google/genai SDK. */
   ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
-  /** Prefer flash-lite — 3.5 Flash often returns 503 under Studio free-tier demand. */
-  DEFAULT_MODEL: "gemini-3.1-flash-lite",
+  /** Default + primary fallback — Gemini 3.5 Flash on Google AI Studio. */
+  DEFAULT_MODEL: "gemini-3.5-flash",
   /**
-   * Tried in order when the selected model returns 429/503 (quota or overload).
-   * Pro models on free tier almost always need this path.
+   * Tried in order when the selected model returns 429/503/404.
+   * Always prefer gemini-3.5-flash first.
    */
-  MODEL_FALLBACKS: ["gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash"] as readonly string[],
+  MODEL_FALLBACKS: ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"] as readonly string[],
   /**
    * Image model candidates (Studio). Imagen is often unavailable to new free keys;
    * Gemini native image may hit quota — SVG cover is last resort in generateImage.
