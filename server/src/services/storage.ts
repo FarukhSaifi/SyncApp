@@ -47,13 +47,6 @@ function getStorageClient(): Storage {
   return storageClient;
 }
 
-// ─── Mock support (testing) ──────────────────────────────────────────────────
-let mockUploadFn: typeof uploadToGCS | null = null;
-
-export function setMockUpload(fn: typeof uploadToGCS | null): void {
-  mockUploadFn = fn;
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 /**
  * Resolves a file extension from the MIME type using a strict static mapping.
@@ -73,18 +66,46 @@ function getSafeExtension(mimetype: string): string {
 }
 
 /**
- * Saves a buffer to the local uploads directory as a fallback when GCS is not
- * configured.  Only the buffer and sanitised mimetype are received – no
- * user-supplied filename ever touches the filesystem.
+ * Sanitize a caller-provided basename (e.g. cover-my-post-slug) for object keys.
+ * Strips path segments and non-safe chars; never used as a raw path join alone.
  */
-async function saveToLocalBackup(fileBuffer: Buffer, mimetype: string): Promise<string> {
-  // Both UPLOADS_DIR and the generated filename are fully server-controlled.
-  // The directory was already created at module init, so no fs check is needed here.
-  const uniquePrefix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const ext = getSafeExtension(mimetype);
-  const filename = `local-${uniquePrefix}.${ext}`;
+function sanitizeObjectBasename(originalname: string): string {
+  const leaf = path.basename(originalname || "file").replace(/\.[^.]+$/, "");
+  const cleaned = leaf
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 100);
+  return cleaned || "file";
+}
 
-  // filePath is derived entirely from constants and random numbers – zero user input.
+/**
+ * Build a unique storage object name that keeps post slug / title in the name.
+ * Example: uploads/cover-how-to-optimize-react-1737123456789-42.png
+ */
+function buildStoredObjectName(originalname: string, mimetype: string, withPrefix: boolean): string {
+  const mimeExt = getSafeExtension(mimetype);
+  const ext =
+    mimeExt !== DEFAULT_VALUES.DEFAULT_FILE_EXTENSION
+      ? mimeExt
+      : originalname
+          .split(".")
+          .pop()
+          ?.replace(/[^a-zA-Z0-9]/g, "") || DEFAULT_VALUES.DEFAULT_FILE_EXTENSION;
+  const base = sanitizeObjectBasename(originalname);
+  const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+  const name = `${base}-${unique}.${ext}`;
+  return withPrefix ? `${DEFAULT_VALUES.GCS_UPLOAD_PREFIX}${name}` : name;
+}
+
+/**
+ * Saves a buffer to the local uploads directory as a fallback when GCS is not
+ * configured. Basename is sanitised; a unique suffix avoids overwrites.
+ */
+async function saveToLocalBackup(fileBuffer: Buffer, mimetype: string, originalname: string): Promise<string> {
+  const filename = buildStoredObjectName(originalname, mimetype, false);
+
   const filePath = path.normalize(path.join(UPLOADS_DIR, filename));
   if (!filePath.startsWith(UPLOADS_DIR)) {
     throw new AppError("Path traversal attempt detected", HTTP_STATUS.BAD_REQUEST);
@@ -107,18 +128,7 @@ async function uploadToGCSBucket(
   const storage = getStorageClient();
   const bucket = storage.bucket(bucketName);
 
-  const uniquePrefix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  // Use the safe mime-based extension for GCS as well where possible; fall back
-  // to the sanitised file extension only if mimetype resolves to default.
-  const ext =
-    getSafeExtension(mimetype) !== DEFAULT_VALUES.DEFAULT_FILE_EXTENSION
-      ? getSafeExtension(mimetype)
-      : originalname
-          .split(".")
-          .pop()
-          ?.replace(/[^a-zA-Z0-9]/g, "") || "bin";
-
-  const filename = `${DEFAULT_VALUES.GCS_UPLOAD_PREFIX}${uniquePrefix}.${ext}`;
+  const filename = buildStoredObjectName(originalname, mimetype, true);
   const blob = bucket.file(filename);
 
   return new Promise((resolve, reject) => {
@@ -170,10 +180,6 @@ export async function uploadToGCS(
   mimetype: string,
   forceGCS = false,
 ): Promise<string> {
-  if (mockUploadFn) {
-    return mockUploadFn(fileBuffer, originalname, mimetype, forceGCS);
-  }
-
   const bucketName = config.gcpBucketName || process.env.GCS_BUCKET_NAME;
 
   if (!bucketName) {
@@ -183,7 +189,7 @@ export async function uploadToGCS(
         HTTP_STATUS.SERVICE_UNAVAILABLE,
       );
     }
-    const filename = await saveToLocalBackup(fileBuffer, mimetype);
+    const filename = await saveToLocalBackup(fileBuffer, mimetype, originalname);
     const backendUrl = process.env.API_URL || `http://localhost:${config.port ?? DEFAULT_VALUES.DEFAULT_PORT}`;
     return `${backendUrl.replace(/\/$/, "")}/uploads/${filename}`;
   }

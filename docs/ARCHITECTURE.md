@@ -17,7 +17,7 @@ flowchart TB
   end
   API -->|HTTPS_JWT| Routes
   Models --> MongoDB[(MongoDB_Atlas)]
-  Services --> External[Platforms_GCS_Vertex_Resend_Slack]
+  Services --> External[Platforms_GCS_StudioAI_Resend_Slack]
   Cron[Vercel_Cron] --> Routes
 ```
 

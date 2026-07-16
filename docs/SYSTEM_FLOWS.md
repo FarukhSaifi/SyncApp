@@ -23,7 +23,7 @@
 3. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms? }`.
 4. Server validates model against allowlist and targets against `devto` / `linkedin`.
 5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` only — no Vertex required).
-6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is Zod-validated JSON.
+6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is parsed as JSON (`schemas.ts`).
 7. Client fills the editor with `{ title, meta_description, tags, content }`.
 
 **Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx).

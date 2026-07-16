@@ -42,10 +42,9 @@ At its core, SyncApp reduces operational overhead in content distribution. Inste
 
 ### AI-Assisted Workflow
 
-- Generate outlines from topic prompts
-- Expand outlines into draft content
-- Generate image prompts and AI images
-- Use generated assets to accelerate content completion
+- Generate a full SEO post from a keyword (title, meta, tags, markdown)
+- Inline edit selected text (proofread, shorten, expand)
+- Generate featured cover images from a topic
 
 ### Integrations and Settings
 
@@ -100,7 +99,7 @@ SyncApp is split into two major applications:
 
 1. User authenticates and enters dashboard
 2. User creates or edits a post in the editor
-3. User optionally uses AI tools for outline/draft/image generation
+3. User optionally uses AI tools for generate / edit / image
 4. User saves draft and updates metadata
 5. User publishes to one or multiple **connected** platforms (smart publish menu)
 6. User monitors publish status in dashboard; optional schedule for automatic cron publish

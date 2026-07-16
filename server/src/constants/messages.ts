@@ -82,9 +82,9 @@ export const ERROR_MESSAGES = {
   // AI (Google AI Studio)
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
   GEMINI_API_KEY_REQUIRED:
-    "GEMINI_API_KEY is required. Get a free key from Google AI Studio and set it in server/.env.dev (or Vercel env), then restart.",
+    "GEMINI_API_KEY is required. Local: set it in server/.env.dev and restart. Production: add GEMINI_API_KEY on Vercel → sync-app-server → Settings → Environment Variables, then Redeploy.",
   GEMINI_API_KEY_INVALID:
-    "GEMINI_API_KEY is invalid or revoked. Create a new key at Google AI Studio, update server/.env.dev, and restart the server (nodemon does not always pick up env edits until restart).",
+    "GEMINI_API_KEY is invalid or revoked. Create a new key at Google AI Studio, update server/.env.dev (or Vercel env), and restart / Redeploy.",
   AI_MODEL_NOT_FOUND:
     "The selected AI model was not found or is not available with your API key. Try gemini-3.5-flash.",
   AI_DRAFT_FAILED: "Failed to generate draft",

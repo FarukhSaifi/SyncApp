@@ -8,6 +8,7 @@ import { normalizeScheduledFor } from "../utils/scheduleUtils";
 import { config } from "../config";
 import { ForbiddenError, NotFoundError } from "../middleware/errorHandler";
 import Post from "../models/Post";
+import { buildCoverFilename, buildInlineImageFilename } from "../utils/mediaFilename";
 import { uploadToGCS } from "./storage";
 
 /**
@@ -22,7 +23,10 @@ function buildCanonicalUrl(slug: string): string {
   return base ? `${base}/${slug}` : slug;
 }
 
-async function processBase64CoverImage(coverImage?: string | null, postId?: string): Promise<string | null> {
+async function processBase64CoverImage(
+  coverImage?: string | null,
+  opts?: { postId?: string; slug?: string | null; title?: string | null },
+): Promise<string | null> {
   if (!coverImage || typeof coverImage !== "string" || coverImage.trim() === "") {
     return null;
   }
@@ -36,11 +40,15 @@ async function processBase64CoverImage(coverImage?: string | null, postId?: stri
   const base64Data = match[2];
   const buffer = Buffer.from(base64Data, "base64");
 
-  const idSegment = postId || `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const ext = mimetype.split("/")[1] || "png";
-  const filename = `cover-${idSegment}.${ext}`;
+  const ext = mimetype.split("/")[1]?.replace("+xml", "") || "png";
+  const filename = buildCoverFilename({
+    slug: opts?.slug,
+    title: opts?.title,
+    postId: opts?.postId,
+    ext: ext === "svg+xml" ? "svg" : ext,
+  });
 
-  logger.debug(`Intercepted base64 cover image for post [${postId || "new"}]. Uploading to GCS/Firebase Storage...`);
+  logger.debug(`Intercepted base64 cover image for post [${opts?.postId || "new"}] as ${filename}. Uploading...`);
 
   const url = await uploadToGCS(buffer, filename, mimetype, true);
   return url;
@@ -49,7 +57,10 @@ async function processBase64CoverImage(coverImage?: string | null, postId?: stri
 /**
  * Scans markdown content for base64 data URLs and uploads them to GCS/Firebase Storage
  */
-async function processBase64MarkdownImages(contentMarkdown?: string, postId?: string): Promise<string | undefined> {
+async function processBase64MarkdownImages(
+  contentMarkdown?: string,
+  opts?: { postId?: string; slug?: string | null; title?: string | null },
+): Promise<string | undefined> {
   if (!contentMarkdown || typeof contentMarkdown !== "string") {
     return contentMarkdown;
   }
@@ -80,9 +91,15 @@ async function processBase64MarkdownImages(contentMarkdown?: string, postId?: st
   for (const item of matches) {
     try {
       const buffer = Buffer.from(item.base64.trim(), "base64");
-      const idSegment = postId || `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const ext = item.mime.split("/")[1] || "png";
-      const filename = `inline-${idSegment}-${index++}.${ext}`;
+      const rawExt = item.mime.split("/")[1] || "png";
+      const ext = rawExt.replace("+xml", "") === "svg" ? "svg" : rawExt.replace("+xml", "");
+      const filename = buildInlineImageFilename({
+        slug: opts?.slug,
+        title: opts?.title,
+        postId: opts?.postId,
+        index: index++,
+        ext,
+      });
 
       const url = await uploadToGCS(buffer, filename, item.mime, true);
       newContent = newContent.replace(item.fullMatch, url);
@@ -115,8 +132,8 @@ export async function createPost(input: CreatePostInput) {
     throw new Error(`${VALIDATION_ERRORS.TITLE_REQUIRED} and ${VALIDATION_ERRORS.CONTENT_REQUIRED}`);
   }
 
-  const processedCoverImage = await processBase64CoverImage(cover_image);
-  const processedContentMarkdown = await processBase64MarkdownImages(content_markdown);
+  const processedCoverImage = await processBase64CoverImage(cover_image, { title });
+  const processedContentMarkdown = await processBase64MarkdownImages(content_markdown, { title });
 
   const postPayload: Record<string, unknown> = {
     title,
@@ -366,11 +383,16 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   }
 
   // Intercept and upload base64 images to GCS/Firebase Storage
+  const mediaOpts = {
+    postId: id,
+    slug: activeSlug,
+    title: (updateData.title as string) || post.title,
+  };
   if (updateData.cover_image && typeof updateData.cover_image === "string") {
-    updateData.cover_image = await processBase64CoverImage(updateData.cover_image, id);
+    updateData.cover_image = await processBase64CoverImage(updateData.cover_image, mediaOpts);
   }
   if (updateData.content_markdown && typeof updateData.content_markdown === "string") {
-    updateData.content_markdown = await processBase64MarkdownImages(updateData.content_markdown, id);
+    updateData.content_markdown = await processBase64MarkdownImages(updateData.content_markdown, mediaOpts);
   }
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {

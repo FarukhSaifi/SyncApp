@@ -10,14 +10,14 @@ flowchart TB
   subgraph external [External_Services]
     MongoDB[(MongoDB_Atlas)]
     GCS[Cloud_Storage]
-    Vertex[Vertex_AI]
+    Studio[Google_AI_Studio]
     Platforms[Medium_DEVto_WordPress]
     Notify[Resend_Slack]
   end
   API -->|HTTPS_JWT| Routes
   Models --> MongoDB
   Services --> GCS
-  Services --> Vertex
+  Services --> Studio
   Services --> Platforms
   Services --> Notify
   Cron[Vercel_Cron] --> Routes

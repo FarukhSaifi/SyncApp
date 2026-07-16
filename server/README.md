@@ -104,12 +104,12 @@
 | `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID (optional if using GOOGLE_CREDENTIALS_JSON) | _(not set)_ |
-| `GOOGLE_CLOUD_LOCATION` | Vertex AI region (free tier is usage-based; e.g. `us-central1`, `europe-west1`, `global`) | `us-central1` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (for local development) | _(not set)_ |
-| `GOOGLE_CREDENTIALS_JSON` | Raw JSON string of service account (for Vercel deployment) | _(not set)_ |
-| `GOOGLE_AI_MODEL` | Gemini model (Vertex AI free tier default: ~1,000 req/day) | `gemini-3.5-flash` |
-| `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for outline (SEO) | `true` |
+| `GEMINI_API_KEY` | Google AI Studio API key ([get one free](https://aistudio.google.com/apikey)) — required for AI routes | _(not set)_ |
+| `GOOGLE_AI_MODEL` | Gemini content model | `gemini-3.5-flash` |
+| `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for SEO posts | `true` |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID (optional — GCS cover uploads only) | _(not set)_ |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local GCS) | _(not set)_ |
+| `GOOGLE_CREDENTIALS_JSON` | Raw service account JSON (Vercel GCS) | _(not set)_ |
 
 ## 🏗️ Tech Stack
 
@@ -119,7 +119,6 @@
 - **Mongoose** - ODM
 - **JWT** - Authentication
 - **bcryptjs** - Password hashing
-- **Joi** - Input validation
 - **Axios** - HTTP client for external APIs
 
 ## 📁 Project Structure
@@ -211,16 +210,14 @@ server/
 
 - `GET /api/mdx/:id` - Export post as MDX
 
-### AI (AI Sandwich – auth required)
+### AI (auth required) — Google AI Studio
 
-- `POST /api/ai/outline` - Generate SEO outline from keyword (body: `{ keyword }`)
-- `POST /api/ai/draft` - Generate draft from outline (body: `{ outline }`)
-- `POST /api/ai/comedian` - Add humor to content (body: `{ content, tone? }`, tone: low/medium/high)
-- `POST /api/ai/generate` - Full chain: outline → draft → comedian (body: `{ keyword, tone?, skipComedian? }`)
+- `GET /api/ai/capabilities` - `{ textAi, imageAi, provider, defaultModel }`
+- `POST /api/ai/generate` - Full SEO post from keyword (body: `{ keyword, model?, targetPlatforms? }`)
+- `POST /api/ai/generate-image` - Featured image from topic
+- `POST /api/ai/edit` - Inline edit selected text (body: `{ action, text }`)
 
-Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account file locally, or `GOOGLE_CREDENTIALS_JSON` containing the raw JSON for Vercel). Enable the [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com) for your project. If not set, requests return 503.
-
-**Vertex AI free tier (usage-based):** The default model `gemini-3.5-flash` includes a rate-limited free tier (~1,000 requests/day). This is not tied to a specific region — it applies wherever the model is supported (`us-central1`, `europe-west1`, `asia-northeast1`, `global`, etc.). Usage beyond the daily limit is billed at standard pay-as-you-go rates.
+Requires `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). Default model: `gemini-3.5-flash`. See [docs/AI_SETUP.md](../docs/AI_SETUP.md). Without the key, AI routes return **503**.
 
 ### System
 
@@ -234,7 +231,7 @@ Requires `GOOGLE_CLOUD_PROJECT` and credentials (`GOOGLE_APPLICATION_CREDENTIALS
 - **CORS Protection**: Configurable origin restrictions
 - **Rate Limiting**: Prevent abuse (100 requests per 15 minutes)
 - **Helmet.js**: Security headers
-- **Input Validation**: Joi schemas prevent injection attacks
+- **Input Validation**: Request body checks in controllers / middleware
 
 ## 🚀 Deployment
 

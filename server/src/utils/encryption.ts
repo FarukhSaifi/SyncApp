@@ -56,19 +56,3 @@ export function decrypt(encryptedText: string): string {
     throw new Error(ERROR_MESSAGES.FAILED_TO_DECRYPT);
   }
 }
-
-/**
- * Generate a random encryption key (32 bytes)
- * @returns A random 32-character string
- */
-export function generateKey(): string {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-/**
- * Generate a random IV (16 bytes)
- * @returns A random 16-character string
- */
-export function generateIV(): string {
-  return crypto.randomBytes(16).toString("hex");
-}

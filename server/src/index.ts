@@ -65,6 +65,20 @@ app.use(
 // Request logging middleware
 app.use(requestLogger);
 
+// Root + browser probes — avoid ERROR spam on Vercel dashboard / crawlers
+app.get("/", (_req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    service: "sync-app-server",
+    health: "/health",
+    api: "/api",
+  });
+});
+
+app.get(["/favicon.ico", "/favicon.png"], (_req: Request, res: Response) => {
+  res.status(204).end();
+});
+
 // Health check endpoint — awaits DB connect (important on Vercel cold starts)
 app.get("/health", async (req: Request, res: Response) => {
   let connectionError: string | undefined;
@@ -77,6 +91,7 @@ app.get("/health", async (req: Request, res: Response) => {
 
   const dbConnected = isDbConnected();
   const { host, name } = getDbConnectionMeta();
+  const aiConfigured = Boolean(config.geminiApiKey?.trim());
   const healthInfo = {
     status: HEALTH.STATUS.OK,
     timestamp: dayjs().toISOString(),
@@ -89,9 +104,15 @@ app.get("/health", async (req: Request, res: Response) => {
       mongoUriConfigured: Boolean(config.mongoUri?.trim()),
       ...(connectionError && !dbConnected ? { error: connectionError } : {}),
     },
+    ai: {
+      configured: aiConfigured,
+      provider: aiConfigured ? "studio" : "none",
+      model: config.googleAiModel,
+    },
     services: {
       mongodb: dbConnected ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
       server: HEALTH.SERVICE.HEALTHY,
+      ai: aiConfigured ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
     },
   };
 

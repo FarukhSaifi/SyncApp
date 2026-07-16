@@ -9,7 +9,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:setup": "APP_ENV=dev tsx src/database/setup.ts",
-    "vercel-build": "echo 'Vercel build complete'"
+    "vercel-build": "echo 'Vercel build complete'",
+    "env:sync": "node scripts/sync-vercel-env.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.21.0",

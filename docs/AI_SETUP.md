@@ -2,11 +2,11 @@
 
 All AI features use one key from [Google AI Studio](https://aistudio.google.com/apikey):
 
-| Feature | Requirement |
-| --- | --- |
-| Generate post, inline edit | `GEMINI_API_KEY` |
-| Featured image | Same key (Gemini image / Imagen when allowed; SVG cover fallback otherwise) |
-| Cover upload to GCS | Optional — separate GCP Storage credentials |
+| Feature                    | Requirement                                                                 |
+| -------------------------- | --------------------------------------------------------------------------- |
+| Generate post, inline edit | `GEMINI_API_KEY`                                                            |
+| Featured image             | Same key (Gemini image / Imagen when allowed; SVG cover fallback otherwise) |
+| Cover upload to GCS        | Optional — separate GCP Storage credentials                                 |
 
 No Vertex billing is required for Generate Post or Generate Image.
 
@@ -44,12 +44,31 @@ GOOGLE_AI_MODEL=gemini-3.5-flash
 
 Set these on the **server** project (Root Directory = `server`), Production + Preview:
 
-| Variable | Required | Value |
-| --- | --- | --- |
-| `GEMINI_API_KEY` | **Yes** | Same working Studio key as local |
-| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.5-flash` |
+| Variable          | Required    | Value                            |
+| ----------------- | ----------- | -------------------------------- |
+| `GEMINI_API_KEY`  | **Yes**     | Same working Studio key as local |
+| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.5-flash`               |
 
 Then **Redeploy** (env changes do not apply to an already-running deployment).
+
+**Dashboard:** [vercel.com](https://vercel.com) → **sync-app-server** → Settings → Environment Variables.
+
+**CLI** (from `server/`, after `npx vercel login`):
+
+```bash
+# Production + Preview <- .env.prod ; Development <- .env.dev (all non-sensitive)
+npm run env:sync
+```
+
+Or manually:
+
+```bash
+grep '^GEMINI_API_KEY=' .env.prod | cut -d= -f2- | tr -d '"' | \
+  npx vercel env add GEMINI_API_KEY production preview --force --yes --no-sensitive
+echo gemini-3.5-flash | npx vercel env add GOOGLE_AI_MODEL production preview --force --yes --no-sensitive
+```
+
+Confirm: `GET https://sync-app-server.vercel.app/health` → `ai.configured: true`.
 
 Do **not** rely on `GOOGLE_CLOUD_PROJECT` / Vertex for AI. Those are optional GCS only.
 

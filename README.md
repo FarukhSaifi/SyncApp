@@ -28,7 +28,7 @@
 - Node.js 22+, Express 5, TypeScript
 - MongoDB Atlas + Mongoose
 - JWT auth, bcrypt password hashing
-- Google Vertex AI (`gemini-3.1-flash-lite`) for AI features
+- Google AI Studio (`GEMINI_API_KEY`, default `gemini-3.5-flash`) for AI features
 - Google Cloud Storage for image uploads
 - Axios for external platform APIs
 
@@ -81,7 +81,7 @@ SyncApp/
 - Node.js v22+
 - MongoDB Atlas (or local MongoDB)
 - Optional: Medium, DEV.to, WordPress API credentials for publishing
-- Optional: Google Cloud / Vertex AI credentials for AI features
+- Optional: `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey) for AI features
 
 ### Install
 
@@ -160,11 +160,33 @@ Protect the cron route with `Authorization: Bearer <CRON_SECRET>` when set.
 
 ### 4. AI toolkit
 
+Uses **Google AI Studio** only (`GEMINI_API_KEY`). No Vertex project required. See [docs/AI_SETUP.md](./docs/AI_SETUP.md).
+
 - **Generate Post** — full draft from a keyword (title, meta, tags, markdown body)
-- **Generate Image** — featured image from topic (Imagen or placeholder fallback)
+- **Generate Image** — featured image from topic (Gemini image / Imagen when available, else SVG cover)
 - **Edit Content** — proofread, shorten, expand selected text
 
-Default model: `gemini-3.1-flash-lite` via Vertex AI.
+**Local** (`server/.env.dev`):
+
+```bash
+GEMINI_API_KEY=your_key_from_aistudio
+GOOGLE_AI_MODEL=gemini-3.5-flash
+```
+
+Then restart the server. Confirm logs show `AI: Google AI Studio key detected`.
+
+**Production** — on Vercel project **sync-app-server** → Settings → Environment Variables, set the same vars for Production (+ Preview), then **Redeploy**. Local `.env.*` files are not used on Vercel.
+
+**Example** (auth required):
+
+```bash
+curl -X POST https://sync-app-server.vercel.app/api/ai/generate \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"keyword":"serverless Node tips","model":"gemini-3.5-flash"}'
+```
+
+Default model: `gemini-3.5-flash` (fallbacks: `gemini-3.1-flash-lite`, `gemini-flash-lite-latest`).
 
 ### 5. Analytics
 
@@ -242,8 +264,9 @@ ENCRYPTION_KEY=...          # scripts/generate-keys.js
 ENCRYPTION_IV=...
 CORS_ORIGIN=https://your-frontend.vercel.app
 CANONICAL_BASE_URL=https://yourblog.com/blog   # DEV.to canonical fallback
-GOOGLE_AI_MODEL=gemini-3.1-flash-lite
-GOOGLE_CREDENTIALS_JSON=...  # Vercel: paste service account JSON
+GEMINI_API_KEY=...           # Google AI Studio — required for AI routes
+GOOGLE_AI_MODEL=gemini-3.5-flash
+GOOGLE_CREDENTIALS_JSON=...  # Optional: GCS cover uploads only
 CRON_SECRET=...              # Vercel Cron auth (Bearer token)
 RESEND_API_KEY=...           # Scheduled publish emails (optional)
 NOTIFICATION_FROM_EMAIL=...  # Verified Resend sender
@@ -318,18 +341,18 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 
 ## Documentation
 
-| Doc                                                    | Description                          |
-| ------------------------------------------------------ | ------------------------------------ |
-| [client/README.md](./client/README.md)                 | Frontend setup                       |
-| [server/README.md](./server/README.md)                 | Backend setup                        |
-| [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)             | Vercel env vars & troubleshooting    |
-| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)         | System architecture                  |
-| [docs/DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md)   | MongoDB collections & ER diagram     |
-| [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md)         | Auth, publish, cron, notifications   |
-| [docs/FEATURES.md](./docs/FEATURES.md)                 | Functional requirements matrix       |
-| [docs/PROJECT_SYNOPSIS.md](./docs/PROJECT_SYNOPSIS.md) | Project overview                     |
-| [docs/college-report/](./docs/college-report/)         | BCA project report source (markdown) |
-| [CHANGELOG.md](./CHANGELOG.md)                         | Version history                      |
+| Doc                                                    | Description                        |
+| ------------------------------------------------------ | ---------------------------------- |
+| [client/README.md](./client/README.md)                 | Frontend setup                     |
+| [server/README.md](./server/README.md)                 | Backend setup                      |
+| [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md)             | Vercel env vars & troubleshooting  |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)         | System architecture                |
+| [docs/DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md)   | MongoDB collections & ER diagram   |
+| [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md)         | Auth, publish, cron, notifications |
+| [docs/FEATURES.md](./docs/FEATURES.md)                 | Functional requirements matrix     |
+| [docs/PROJECT_SYNOPSIS.md](./docs/PROJECT_SYNOPSIS.md) | Project overview                   |
+| [docs/AI_SETUP.md](./docs/AI_SETUP.md)                 | Google AI Studio setup             |
+| [CHANGELOG.md](./CHANGELOG.md)                         | Version history                    |
 
 ---
 
@@ -359,7 +382,7 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 | **Cover image upload** | ✅ | Base64 or file upload → Google Cloud Storage |
 | **Canonical URLs & SEO metadata** | ✅ | Meta description, slug, canonical URL; DEV.to validates URL + max 4 tags |
 | **SEO scorecard** (editor sidebar) | ✅ | Real-time scoring from title, meta, tags, content |
-| **AI writing assistant** | ✅ | Full post generation, inline edit, featured image (Vertex AI) |
+| **AI writing assistant** | ✅ | Full post generation, inline edit, featured image (Google AI Studio) |
 | **Analytics dashboard** | ✅ | Summary stats, platform breakdown, 30-day activity charts |
 | **Post scheduling** | ✅ | Schedule in editor; daily cron at 12:00 AM UTC; overdue drafts publish on next run |
 | **Scheduled publish notifications** | ✅ | Slack webhook + Resend email (success, partial, failed, skipped) |

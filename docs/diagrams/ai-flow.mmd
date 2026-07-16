@@ -5,5 +5,5 @@ flowchart LR
   prompts --> svc[ai.generatePost]
   svc --> studio[Google_AI_Studio]
   studio --> json[title_tags_content]
-  json --> zod[Zod_validate]
-  zod --> editor[Editor]
+  json --> parse[JSON_parse_schemas]
+  parse --> editor[Editor]

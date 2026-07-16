@@ -115,12 +115,19 @@ export const errorHandler: ErrorRequestHandler = (
   const statusCode = error.statusCode || err.status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const message = error.message || ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
 
-  logger.error(message, error instanceof Error ? error : null, {
+  const isNotFound = statusCode === HTTP_STATUS.NOT_FOUND;
+  const logMeta = {
     method: req.method,
     path: req.path,
     statusCode,
     ...(error.details != null ? { details: error.details } : {}),
-  });
+  };
+
+  if (isNotFound) {
+    logger.debug(message, logMeta);
+  } else {
+    logger.error(message, error instanceof Error ? error : null, logMeta);
+  }
 
   const response: Record<string, unknown> = {
     success: false,

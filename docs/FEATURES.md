@@ -1,6 +1,6 @@
 # SyncApp Features
 
-Functional and non-functional requirements as implemented. See college report Chapter 2 for full analysis.
+Functional and non-functional requirements as implemented.
 
 ## Functional Requirements
 
@@ -14,7 +14,7 @@ Functional and non-functional requirements as implemented. See college report Ch
 | FR6  | Connect/disconnect platform credentials            | Done   |
 | FR7  | Manual publish to one or all connected platforms   | Done   |
 | FR8  | Scheduled publishing with cron                     | Done   |
-| FR9  | AI outline, draft, edit, image generation          | Done   |
+| FR9  | AI generate post, edit, image (Google AI Studio)   | Done   |
 | FR10 | Cover image upload to cloud storage                | Done   |
 | FR11 | Analytics dashboard                                | Done   |
 | FR12 | Admin user management                              | Done   |

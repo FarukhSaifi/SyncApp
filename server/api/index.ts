@@ -13,7 +13,7 @@ function createBootstrapErrorApp(error: unknown): Application {
     res.status(503).json({
       success: false,
       error: message,
-      hint: "Open the sync-app-server project → Settings → Environment Variables. Ensure MONGODB_URI, JWT_SECRET, ENCRYPTION_KEY, ENCRYPTION_IV, CORS_ORIGIN, and GEMINI_API_KEY are set for Production, then Redeploy.",
+      hint: "Open the sync-app-server project → Settings → Environment Variables. Ensure MONGODB_URI, JWT_SECRET, ENCRYPTION_KEY, ENCRYPTION_IV, CORS_ORIGIN, and GEMINI_API_KEY are set for Production and Preview, then Redeploy. Or from server/: npm run env:sync",
     });
   });
 
