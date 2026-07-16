@@ -6,6 +6,7 @@
 
 import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
 import type { AnalyticsStats, ApiResponse, ListResponse, PaginatedResponse, Post, RequestOptions, User } from "@types";
+import { coerceErrorMessage, extractApiErrorMessage } from "@utils/errorMessage";
 import { devLog, logError } from "@utils/logger";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
@@ -49,16 +50,17 @@ class ApiClient {
       (error) => {
         logError(`API ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error);
         if (error.response) {
-          const message =
-            error.response.data?.error ||
-            error.response.data?.message ||
-            `HTTP ${error.response.status}: ${error.response.statusText}`;
+          const message = extractApiErrorMessage(
+            error.response.data,
+            error.response.status,
+            error.response.statusText,
+          );
           return Promise.reject(new Error(message));
         }
         if (error.request) {
           return Promise.reject(new Error("Network error: Unable to connect to server"));
         }
-        return Promise.reject(new Error(error.message || "Request failed"));
+        return Promise.reject(new Error(coerceErrorMessage(error.message, "Request failed")));
       },
     );
   }

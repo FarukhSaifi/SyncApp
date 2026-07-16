@@ -11,6 +11,7 @@ import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-ico
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
+import { coerceErrorMessage } from "@utils/errorMessage";
 
 
 const Register = () => {
@@ -75,7 +76,7 @@ const Register = () => {
       if (result.success) {
         router.push(ROUTES.DASHBOARD);
       } else {
-        setError(result.error ?? SYNC_LABEL.UNEXPECTED_ERROR);
+        setError(coerceErrorMessage(result.error, SYNC_LABEL.UNEXPECTED_ERROR));
       }
     } catch {
       setError(SYNC_LABEL.UNEXPECTED_ERROR);

@@ -11,6 +11,7 @@ import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
+import { coerceErrorMessage } from "@utils/errorMessage";
 
 const Login = () => {
   const [formData, setFormData] = useState<LoginFormState>({
@@ -45,7 +46,7 @@ const Login = () => {
       if (result.success) {
         router.push(ROUTES.DASHBOARD);
       } else {
-        setError(result.error ?? SYNC_LABEL.UNEXPECTED_ERROR);
+        setError(coerceErrorMessage(result.error, SYNC_LABEL.UNEXPECTED_ERROR));
       }
     } catch {
       setError(SYNC_LABEL.UNEXPECTED_ERROR);

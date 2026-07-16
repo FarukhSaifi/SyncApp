@@ -5,14 +5,18 @@ import { clearPostsCache } from "@hooks/usePosts";
 import { useToast } from "@hooks/useToast";
 import type { AuthContextValue, AuthResult, User } from "@types";
 import { apiClient } from "@utils/apiClient";
+import { coerceErrorMessage } from "@utils/errorMessage";
 import { logError } from "@utils/logger";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;
 
 function resolveAuthErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) return error.message;
-  return fallback;
+  return coerceErrorMessage(error, fallback);
+}
+
+function resolveApiResponseError(error: unknown, fallback: string): string {
+  return coerceErrorMessage(error, fallback);
 }
 
 function isNetworkFailureMessage(message: string): boolean {
@@ -104,8 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success(TOAST_TITLES.WELCOME_BACK, SYNC_LABEL.WELCOME_MESSAGE(userData.firstName || userData.username));
         return { success: true };
       } else {
-        toast.authError(data.error || SYNC_LABEL.INVALID_CREDENTIALS);
-        return { success: false, error: data.error };
+        const message = resolveApiResponseError(data.error, SYNC_LABEL.INVALID_CREDENTIALS);
+        toast.authError(message);
+        return { success: false, error: message };
       }
     } catch (error) {
       logError("Login error", error);
@@ -134,8 +139,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
         return { success: true };
       } else {
-        toast.error(TOAST_TITLES.REGISTRATION_FAILED, data.error || SYNC_LABEL.REGISTRATION_FAILED);
-        return { success: false, error: data.error };
+        const message = resolveApiResponseError(data.error, SYNC_LABEL.REGISTRATION_FAILED);
+        toast.error(TOAST_TITLES.REGISTRATION_FAILED, message);
+        return { success: false, error: message };
       }
     } catch (error) {
       logError("Registration error", error);
@@ -158,8 +164,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success(TOAST_TITLES.PROFILE_UPDATED, SYNC_LABEL.PROFILE_UPDATED_SUCCESS);
         return { success: true };
       } else {
-        toast.error(TOAST_TITLES.UPDATE_FAILED, data.error || SYNC_LABEL.PROFILE_UPDATE_FAILED);
-        return { success: false, error: data.error };
+        const message = resolveApiResponseError(data.error, SYNC_LABEL.PROFILE_UPDATE_FAILED);
+        toast.error(TOAST_TITLES.UPDATE_FAILED, message);
+        return { success: false, error: message };
       }
     } catch (error) {
       logError("Profile update error", error);
@@ -176,8 +183,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success(TOAST_TITLES.PASSWORD_CHANGED, SYNC_LABEL.PASSWORD_CHANGED_SUCCESS);
         return { success: true };
       } else {
-        toast.error(TOAST_TITLES.PASSWORD_CHANGE_FAILED, data.error || SYNC_LABEL.PASSWORD_CHANGE_FAILED);
-        return { success: false, error: data.error };
+        const message = resolveApiResponseError(data.error, SYNC_LABEL.PASSWORD_CHANGE_FAILED);
+        toast.error(TOAST_TITLES.PASSWORD_CHANGE_FAILED, message);
+        return { success: false, error: message };
       }
     } catch (error) {
       logError("Password change error", error);
