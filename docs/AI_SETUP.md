@@ -70,6 +70,17 @@ echo gemini-3.5-flash | npx vercel env add GOOGLE_AI_MODEL production preview --
 
 Confirm: `GET https://sync-app-server.vercel.app/health` → `ai.configured: true`.
 
+### Real-time topics, Google keywords, and DEV.to tags
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/ai/trending-topics` | 6 blog topics + 8 Google SEO keywords via AI Studio Search grounding (`?refresh=1` bypasses cache) |
+| `GET /api/ai/devto-tags` | Top popular DEV.to tags from `https://dev.to/api/tags` (`?refresh=1` bypasses cache) |
+
+On failure (quota, missing key, or DEV.to unavailable), these endpoints return an error — the Generate Post modal shows the error and does **not** display curated fallback lists.
+
+Google Ads **Keyword Planner** is not integrated (requires a Google Ads account). Search grounding is the Studio-native equivalent for “what people are researching now.”
+
 Do **not** rely on `GOOGLE_CLOUD_PROJECT` / Vertex for AI. Those are optional GCS only.
 
 See [VERCEL_ENV.md](./VERCEL_ENV.md).

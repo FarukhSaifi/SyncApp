@@ -5,7 +5,7 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { AiContentModel, GeneratedPostData } from "@types";
+import type { AiContentModel, AiImageSource, GeneratedPostData } from "@types";
 import {
   persistAiModel,
   persistOptimizationTargets,
@@ -74,6 +74,7 @@ interface UseEditorAIReturn {
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
+  generatedImageSource: AiImageSource | null;
   uploadingCover: boolean;
   handleGeneratePost: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
@@ -89,6 +90,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
+  const [generatedImageSource, setGeneratedImageSource] = useState<AiImageSource | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
 
   const setAiModel = useCallback((model: string) => {
@@ -144,11 +146,16 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     }
     setAiLoading("image");
     setGeneratedImageDataUrl(null);
+    setGeneratedImageSource(null);
     try {
       const response = await apiClient.aiGenerateImage(topic, aiImagePrompt.trim() || undefined);
       if (response?.success && response.data?.imageDataUrl) {
         setGeneratedImageDataUrl(response.data.imageDataUrl);
-        toast.success(TOAST_TITLES.IMAGE_GENERATED, SYNC_LABEL.AI_IMAGE_GENERATED);
+        setGeneratedImageSource(response.data.source || null);
+        toast.success(
+          TOAST_TITLES.IMAGE_GENERATED,
+          response.data.source === "svg_fallback" ? SYNC_LABEL.AI_IMAGE_SVG_FALLBACK : SYNC_LABEL.AI_IMAGE_GENERATED,
+        );
       } else {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
       }
@@ -199,6 +206,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     setAiImagePrompt,
     aiLoading,
     generatedImageDataUrl,
+    generatedImageSource,
     uploadingCover,
     handleGeneratePost,
     handleGenerateImage,

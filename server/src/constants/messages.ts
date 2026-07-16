@@ -99,6 +99,8 @@ export const ERROR_MESSAGES = {
   AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.5 Flash.",
   AI_EDIT_FAILED: "Failed to perform AI edit",
   AI_EDIT_CONTEXT_REQUIRED: "Context text is required for AI edit actions",
+  AI_TRENDING_TOPICS_FAILED: "Failed to fetch real-time trending topics",
+  AI_DEVTO_TAGS_FAILED: "Failed to fetch high-reach tags from DEV.to",
   // Upload
   UPLOAD_NO_FILE: "No file provided",
   UPLOAD_IMAGE_DATA_URL_REQUIRED: "Image data URL is required",

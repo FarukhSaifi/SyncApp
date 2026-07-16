@@ -213,6 +213,8 @@ server/
 ### AI (auth required) — Google AI Studio
 
 - `GET /api/ai/capabilities` - `{ textAi, imageAi, provider, defaultModel }`
+- `GET /api/ai/trending-topics` - Live topics + Google SEO keywords via Search grounding (`?refresh=1`)
+- `GET /api/ai/devto-tags` - High-reach DEV.to tags from Forem `/api/tags` (`?refresh=1`)
 - `POST /api/ai/generate` - Full SEO post from keyword (body: `{ keyword, model?, targetPlatforms? }`)
 - `POST /api/ai/generate-image` - Featured image from topic
 - `POST /api/ai/edit` - Inline edit selected text (body: `{ action, text }`)

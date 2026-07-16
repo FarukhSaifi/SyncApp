@@ -12,7 +12,7 @@ import { EditorContent as TipTapEditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { EditorContentProps } from "@types";
 import { apiClient } from "@utils/apiClient";
-import { isLikelyMarkdown, markdownToHtml } from "@utils/contentUtils";
+import { toEditorHtml } from "@utils/contentUtils";
 import editorLowlight from "@utils/editorLowlight";
 import dynamic from "next/dynamic";
 import {
@@ -375,12 +375,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
     if (!editor || activeTab !== "edit") return;
     const currentContent = editor.getHTML();
     const newContent = formData.content_markdown || "";
-
-    // If content is markdown, convert to HTML first
-    let htmlContent = newContent;
-    if (isLikelyMarkdown(newContent)) {
-      htmlContent = markdownToHtml(newContent);
-    }
+    const htmlContent = toEditorHtml(newContent);
 
     // Only update if content actually changed (avoids cursor jumping)
     if (currentContent !== htmlContent && htmlContent !== "<p></p>") {

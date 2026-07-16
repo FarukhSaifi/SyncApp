@@ -13,8 +13,23 @@ import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError, asyncHandler } from "../middleware/errorHandler";
 import * as aiService from "../services/aiService";
 
+function isRefreshQuery(value: unknown): boolean {
+  const raw = String(value || "");
+  return raw === "1" || raw === "true";
+}
+
 export const getCapabilities = asyncHandler(async (_req: Request, res: Response) => {
   const data = aiService.getAiCapabilities();
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
+});
+
+export const getTrendingTopics = asyncHandler(async (req: Request, res: Response) => {
+  const data = await aiService.getTrendingTopics({ refresh: isRefreshQuery(req.query.refresh) });
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
+});
+
+export const getDevtoReachTags = asyncHandler(async (req: Request, res: Response) => {
+  const data = await aiService.getDevtoReachTags({ refresh: isRefreshQuery(req.query.refresh) });
   res.status(HTTP_STATUS.OK).json({ success: true, data });
 });
 

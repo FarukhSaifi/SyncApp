@@ -189,6 +189,8 @@ export interface AiContentModel {
   label: string;
 }
 
+export type AiImageSource = "gemini" | "imagen" | "svg_fallback";
+
 export interface GeneratePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -261,6 +263,7 @@ export interface EditorSidebarRightProps {
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
+  generatedImageSource?: AiImageSource | null;
   uploadingCover: boolean;
   onGeneratePost: () => void;
   onGenerateImage: () => void;

@@ -72,6 +72,7 @@ const EditorSidebarRight = ({
   setAiImagePrompt,
   aiLoading,
   generatedImageDataUrl,
+  generatedImageSource = null,
   uploadingCover,
   onGeneratePost,
   onGenerateImage,
@@ -400,7 +401,7 @@ const EditorSidebarRight = ({
                   <div className="relative group rounded-lg overflow-hidden border border-border bg-background shadow-md transition-all duration-300 hover:shadow-lg">
                     <LazyImage
                       src={generatedImageDataUrl || cachedBase64 || coverImage || ""}
-                      alt="Cover masterpiece"
+                      alt={EDITOR_UI.AI_COVER_IMAGE_ALT}
                       viewportLazy={false}
                       className="w-full aspect-video object-cover"
                       containerClassName="w-full aspect-video"
@@ -413,7 +414,11 @@ const EditorSidebarRight = ({
                     </div>
                   </div>
                   <p className="text-[11px] text-center text-muted-foreground italic">
-                    {generatedImageDataUrl ? EDITOR_UI.IMAGE_GENERATED_CAPTION : EDITOR_UI.IMAGE_CURRENT_CAPTION}
+                    {generatedImageDataUrl
+                      ? generatedImageSource === "svg_fallback"
+                        ? EDITOR_UI.IMAGE_SVG_FALLBACK_CAPTION
+                        : EDITOR_UI.IMAGE_GENERATED_CAPTION
+                      : EDITOR_UI.IMAGE_CURRENT_CAPTION}
                   </p>
                 </div>
               ) : (

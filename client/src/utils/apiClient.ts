@@ -5,7 +5,16 @@
  */
 
 import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
-import type { AnalyticsStats, ApiResponse, ListResponse, PaginatedResponse, Post, RequestOptions, User } from "@types";
+import type {
+  AiImageSource,
+  AnalyticsStats,
+  ApiResponse,
+  ListResponse,
+  PaginatedResponse,
+  Post,
+  RequestOptions,
+  User,
+} from "@types";
 import { devLog, logError } from "@utils/logger";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
@@ -227,7 +236,10 @@ class ApiClient {
     });
   }
 
-  aiGenerateImage(topic: string, additionalPrompt?: string): Promise<ApiResponse<{ imageDataUrl: string }>> {
+  aiGenerateImage(
+    topic: string,
+    additionalPrompt?: string,
+  ): Promise<ApiResponse<{ imageDataUrl: string; source?: AiImageSource }>> {
     return this.request(`${API_PATHS.AI}/generate-image`, {
       method: HTTP_METHODS.POST,
       body: { topic, additionalPrompt },
@@ -239,6 +251,32 @@ class ApiClient {
     return this.request(`${API_PATHS.AI}/edit`, {
       method: HTTP_METHODS.POST,
       body: { action, text },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
+  aiTrendingTopics(refresh = false): Promise<
+    ApiResponse<{
+      topics: string[];
+      keywords: string[];
+      source: "google_search";
+      cached: boolean;
+      updatedAt: string;
+    }>
+  > {
+    const q = refresh ? "?refresh=1" : "";
+    return this.request(`${API_PATHS.AI}/trending-topics${q}`, {
+      method: HTTP_METHODS.GET,
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
+  aiDevtoTags(
+    refresh = false,
+  ): Promise<ApiResponse<{ tags: string[]; source: "devto"; cached: boolean; updatedAt: string }>> {
+    const q = refresh ? "?refresh=1" : "";
+    return this.request(`${API_PATHS.AI}/devto-tags${q}`, {
+      method: HTTP_METHODS.GET,
       timeout: APP_CONFIG.API_AI_TIMEOUT,
     });
   }

@@ -17,7 +17,7 @@ export const SEO_THRESHOLDS = Object.freeze({
   SCORE_WITHOUT_CONTENT_DIVISOR: 80,
 } as const);
 
-/** High-reach DEV.to tags — at least one improves feed placement */
+/** High-reach DEV.to tags for SEO scorecard — at least one improves feed placement */
 export const DEVTO_HIGH_REACH_TAGS = Object.freeze([
   "webdev",
   "programming",
@@ -28,16 +28,6 @@ export const DEVTO_HIGH_REACH_TAGS = Object.freeze([
   "ai",
   "react",
   "productivity",
-] as const);
-
-/** Suggested topics for AI generation — click to prefill keyword */
-export const DEVTO_TRENDING_TOPICS = Object.freeze([
-  "Next.js 16 App Router patterns",
-  "MongoDB Atlas search in production",
-  "React Server Components pitfalls",
-  "TypeScript strict mode migration",
-  "AI-assisted code review workflow",
-  "Vercel deployment optimization",
 ] as const);
 
 export const SEO_WEIGHTS = Object.freeze({

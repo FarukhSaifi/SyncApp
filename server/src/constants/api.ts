@@ -15,12 +15,13 @@ export const API_URLS = {
     BASE_URL: "https://dev.to/api",
     ARTICLES_ENDPOINT: "https://dev.to/api/articles",
     ARTICLE_BY_ID: (id: string) => `https://dev.to/api/articles/${id}`,
+    /** Popular tags ordered by reach — https://developers.forem.com/api/v1#tag/tags/operation/getTags */
+    TAGS_ENDPOINT: "https://dev.to/api/tags",
   },
 
   // WordPress API
   WORDPRESS: {
     POSTS_ENDPOINT: (siteUrl: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`,
-    POST_BY_ID: (siteUrl: string, id: string) =>
-      `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts/${id}`,
+    POST_BY_ID: (siteUrl: string, id: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts/${id}`,
   },
 } as const;

@@ -19,6 +19,7 @@ import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
+import { toEditorHtml } from "@utils/contentUtils";
 import dynamic from "next/dynamic";
 
 import { POST_STATUS } from "@constants/postStatus";
@@ -36,7 +37,8 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     onDraftGenerated: (data) => {
       state.setFormData((prev) => ({
         ...prev,
-        content_markdown: data.content || "",
+        // AI returns markdown; TipTap stores HTML — convert so headings/code render.
+        content_markdown: toEditorHtml(data.content || ""),
         title: data.title || prev.title,
         meta_description: data.meta_description || prev.meta_description,
       }));
@@ -150,6 +152,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         setAiImagePrompt={ai.setAiImagePrompt}
         aiLoading={ai.aiLoading}
         generatedImageDataUrl={ai.generatedImageDataUrl}
+        generatedImageSource={ai.generatedImageSource}
         uploadingCover={ai.uploadingCover}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}

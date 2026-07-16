@@ -84,6 +84,8 @@ const createSuccessMessages = () => {
     // AI
     AI_POST_GENERATED: "Draft added to the editor.",
     AI_IMAGE_GENERATED: "Preview below. Use as featured image or upload to attach.",
+    AI_IMAGE_SVG_FALLBACK:
+      "Image model quota hit — branded SVG cover ready. Retry later or enable AI Studio billing for real images.",
     AI_FEATURED_IMAGE_SET: "You can save the post to keep it.",
     AI_COVER_ATTACHED: "Cover image attached to this post.",
     // Publishing
@@ -786,7 +788,10 @@ export const EDITOR_UI = Object.freeze({
 
   // Modal – image captions
   IMAGE_GENERATED_CAPTION: "Successfully generated. Select an action below to attach it to your post.",
+  IMAGE_SVG_FALLBACK_CAPTION:
+    "Gemini image quota is unavailable right now — using a branded SVG cover. Retry later or enable billing in Google AI Studio.",
   IMAGE_CURRENT_CAPTION: "Currently active post cover image.",
+  AI_COVER_IMAGE_ALT: "Cover masterpiece",
 
   // Modal – empty state
   NO_IMAGE_TITLE: "No image generated yet",
@@ -803,6 +808,17 @@ export const EDITOR_UI = Object.freeze({
   // Trending topics (AI assistant)
   TRENDING_TOPICS_TITLE: "Trending topics for better reach",
   TRENDING_TOPICS_HINT: "Click a topic to use it, or type your own.",
+  TRENDING_TOPICS_LIVE_HINT: "Real-time topics via Google Search grounding (AI Studio).",
+  TRENDING_TOPICS_ERROR: "Could not load live Google topics and keywords. Check the AI key/quota, then try Refresh.",
+  TRENDING_TOPICS_EMPTY: "No live topics loaded yet. Click Refresh to try again.",
+  TRENDING_TOPICS_LOADING: "Fetching real-time topics\u2026",
+  TRENDING_TOPICS_REFRESH: "Refresh",
+  TRENDING_TOPICS_SOURCE_LIVE: "Live · Google Search",
+  TRENDING_TOPICS_PENDING: "Waiting for Google Search",
+  GOOGLE_KEYWORDS_TITLE: "Google SEO keywords",
+  GOOGLE_KEYWORDS_HINT: "Click a keyword to use it as your primary search term for the draft.",
+  GOOGLE_KEYWORDS_LIVE_HINT: "Search-intent keywords from the same Google Search grounding pass.",
+  GOOGLE_KEYWORDS_EMPTY: "No live Google keywords loaded yet.",
 
   // Generate post modal
   GENERATE_POST_MODAL_TITLE: "Generate SEO post",
@@ -817,7 +833,14 @@ export const EDITOR_UI = Object.freeze({
   GENERATE_POST_KEYWORD_LABEL: "Topic or keyword",
   GENERATE_POST_KEYWORD_PLACEHOLDER: "e.g. Building a Next.js app with MongoDB",
   REACH_TAGS_TITLE: "High-reach DEV.to tags",
-  REACH_TAGS_HINT: "AI picks 2 reach tags from this list + 2 stack-specific tags (4 total).",
+  REACH_TAGS_HINT:
+    "Live popular tags from DEV.to. AI picks 2 reach tags from this list + 2 stack-specific tags (4 total).",
+  REACH_TAGS_LIVE_HINT: "Fetched from DEV.to /api/tags (ordered by popularity).",
+  REACH_TAGS_LOADING: "Fetching DEV.to tags\u2026",
+  REACH_TAGS_EMPTY: "No DEV.to tags loaded yet. Click Refresh to try again.",
+  REACH_TAGS_ERROR: "Could not load high-reach tags from DEV.to. Try Refresh.",
+  REACH_TAGS_SOURCE_LIVE: "Live · DEV.to",
+  REACH_TAGS_PENDING: "Waiting for DEV.to",
   GENERATE_POST_CANCEL: "Cancel",
   GENERATE_POST_CONFIRM: "Generate draft",
   GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",

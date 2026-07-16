@@ -97,6 +97,18 @@ Here is the selected or surrounding text context:
 ${context}
 ---
 Output ONLY the resulting markdown text.`,
+
+  TRENDING_TOPICS_SYSTEM: `You are a tech content and SEO strategist. Using current Google Search trends for developers and software engineering, propose blog topics AND primary Google search keywords.
+Return ONLY valid JSON (no markdown fences):
+{"topics":["topic 1","topic 2","topic 3","topic 4","topic 5","topic 6"],"keywords":["keyword 1","keyword 2","keyword 3","keyword 4","keyword 5","keyword 6","keyword 7","keyword 8"]}
+Rules:
+- Exactly 6 topics: short phrases (4–10 words), specific and timely (tools, frameworks, practices)
+- Exactly 8 keywords: Google-search style primary keywords (2–5 words each), lowercase, high commercial/informational intent for ranking blog posts
+- Keywords should match what someone would type into Google (e.g. "next.js app router", "react server components")
+- No hashtags, no numbering, no quotes inside topics or keywords
+- Prefer developer/SEO-friendly angles (tutorials, pitfalls, production tips)`,
+
+  TRENDING_TOPICS_USER: `Search for what developers are researching and talking about right now (web, cloud, AI tooling, TypeScript/React/Next.js, databases, DevOps). Return 6 high-reach blog topic phrases and 8 Google SEO keywords as JSON.`,
 };
 
 export const AI_CONFIG = Object.freeze({
@@ -117,9 +129,9 @@ export const AI_CONFIG = Object.freeze({
    * Gemini native image may hit quota — SVG cover is last resort in generateImage.
    */
   IMAGE_MODEL_FALLBACKS: [
-    "gemini-2.5-flash-image",
-    "gemini-3.1-flash-image",
+    "gemini-3-pro-image-preview",
     "imagen-4.0-generate-001",
+    "imagen-4.0-fast-generate-001",
   ] as readonly string[],
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
@@ -128,6 +140,30 @@ export const AI_CONFIG = Object.freeze({
   MAX_DRAFT_TOKENS: 8192,
   MAX_EDIT_TOKENS: 4096,
   MAX_IMAGE_PROMPT_TOKENS: 512,
+  /** Trending topics + keywords: short JSON list. */
+  MAX_TRENDING_TOPICS_TOKENS: 768,
+  /** Cache live trending topics to limit Search grounding calls. */
+  TRENDING_TOPICS_CACHE_MS: 15 * 60 * 1000,
+  TRENDING_TOPICS_COUNT: 6,
+  GOOGLE_KEYWORDS_COUNT: 8,
+  /** Parsed topic phrase length bounds. */
+  TOPIC_MIN_LEN: 8,
+  TOPIC_MAX_LEN: 120,
+  /** Parsed Google keyword length bounds. */
+  KEYWORD_MIN_LEN: 3,
+  KEYWORD_MAX_LEN: 60,
+  /** Minimum items required after parse before accepting a live response. */
+  TRENDING_PARSE_MIN_ITEMS: 3,
+  /** Top popular DEV.to tags from /api/tags (ordered by reach). */
+  DEVTO_REACH_TAGS_COUNT: 12,
+  DEVTO_REACH_TAGS_MIN: 3,
+  /** Cache DEV.to tags longer — popularity shifts slowly. */
+  DEVTO_REACH_TAGS_CACHE_MS: 60 * 60 * 1000,
+  DEVTO_API_USER_AGENT: "SyncApp/1.0",
+  DEVTO_TAG_NAME_PATTERN: /^[a-z0-9][a-z0-9-]{0,29}$/,
+  /** SVG cover fallback copy when image models are unavailable. */
+  COVER_SVG_FALLBACK_TITLE: "Generated cover image",
+  COVER_SVG_BADGE: "FEATURED COVER",
   /** Structured posts: enough creativity, stable JSON. */
   TEMPERATURE_POST: 0.55,
   /** Inline edits: stay close to source text. */
