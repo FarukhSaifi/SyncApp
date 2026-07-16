@@ -113,12 +113,10 @@ server/google-credentials.json
 postman
 .postman
 
-# Cursor AI files (keep .cursor/rules in repo for Cloud Agents)
-.cursor/*
-!.cursor/rules/
-!.cursor/rules/**
+# Cursor AI files
 .agent
-/scripts
+.cursor
+scripts
 .vercel
 yarn.lock
 pnpm-lock.yaml

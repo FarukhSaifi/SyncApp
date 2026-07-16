@@ -78,7 +78,6 @@ Cron: `GET /api/cron/publish-scheduled` at `0 0 * * *` UTC ([`server/vercel.json
 - [FEATURES.md](./FEATURES.md) — FR/NFR matrix
 - [VERCEL_ENV.md](./VERCEL_ENV.md) — Environment variables
 - [PROJECT_SYNOPSIS.md](./PROJECT_SYNOPSIS.md) — Product overview
-- [BUG_AGENT_AUTOMATION.md](./BUG_AGENT_AUTOMATION.md) — Cursor Cloud Agent auto-fix + PR setup
 
 ## Conventions
 

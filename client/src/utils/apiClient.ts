@@ -243,21 +243,6 @@ class ApiClient {
     });
   }
 
-  aiOptimise(payload: {
-    title?: string;
-    meta_description?: string;
-    tags?: string[];
-    content_markdown: string;
-  }): Promise<
-    ApiResponse<{ title: string; meta_description: string; tags: string[]; content: string; canonical_url?: string }>
-  > {
-    return this.request(`${API_PATHS.AI}/optimise`, {
-      method: HTTP_METHODS.POST,
-      body: payload,
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
-    });
-  }
-
   uploadPostCover(postId: string, imageDataUrl: string): Promise<ApiResponse<{ url: string; post: unknown }>> {
     return this.request(`${API_PATHS.POSTS}/${postId}/cover`, {
       method: HTTP_METHODS.PUT,

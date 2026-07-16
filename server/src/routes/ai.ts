@@ -8,6 +8,5 @@ const router: Router = Router();
 router.post("/generate", authenticateToken, aiController.postGenerate);
 router.post("/generate-image", authenticateToken, aiController.postGenerateImage);
 router.post("/edit", authenticateToken, aiController.postEdit);
-router.post("/optimise", authenticateToken, aiController.postOptimise);
 
 export default router;

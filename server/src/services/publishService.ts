@@ -26,7 +26,6 @@ import type {
   ScheduledPublishPostResult,
 } from "../types";
 import { cache, cacheKeys } from "../utils/cache";
-import { normalizeDevtoTags } from "../utils/devtoTags";
 import { decrypt } from "../utils/encryption";
 import { logger } from "../utils/logger";
 import { scheduledPublishDueFilter } from "../utils/scheduleUtils";
@@ -77,7 +76,22 @@ function existingPlatformUpdates(post: IPostDocument, platform: string): Record<
 
 /** Dev.to allows max 4 tags; normalize to lowercase single-token names (no hyphens). */
 function prepareDevtoTags(tags: string[] | undefined): string[] {
-  return normalizeDevtoTags(tags, PLATFORM_CONFIG.devto.maxTags);
+  const maxTags = PLATFORM_CONFIG.devto.maxTags;
+  const seen = new Set<string>();
+
+  return (tags || [])
+    .map((tag) =>
+      tag
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, ""),
+    )
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) return false;
+      seen.add(tag);
+      return true;
+    })
+    .slice(0, maxTags);
 }
 
 /** Resolve a public HTTP(S) cover URL for Dev.to, or empty when not publishable. */

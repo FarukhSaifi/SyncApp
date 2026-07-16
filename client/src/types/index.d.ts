@@ -208,7 +208,6 @@ export interface GeneratedPostData {
   meta_description: string;
   tags: string[];
   content: string;
-  canonical_url?: string;
 }
 
 export interface ShortcutHandlers {
@@ -264,7 +263,6 @@ export interface EditorSidebarRightProps {
   generatedImageDataUrl: string | null;
   uploadingCover: boolean;
   onGeneratePost: () => void;
-  onOptimiseForPublish: () => void;
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;
   onUploadAndAttach: () => void;

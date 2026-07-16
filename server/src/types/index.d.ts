@@ -102,14 +102,6 @@ export interface GeneratePostResult {
   content?: string;
   meta_description?: string;
   tags?: string[];
-  canonical_url?: string;
-}
-
-export interface OptimiseForPublishInput {
-  title?: string;
-  meta_description?: string;
-  tags?: string[];
-  content_markdown: string;
 }
 
 import type { Request as ExpressRequest, Response as ExpressResponse } from "express";

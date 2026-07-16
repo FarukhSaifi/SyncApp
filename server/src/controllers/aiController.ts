@@ -52,19 +52,3 @@ export const postEdit = asyncHandler(async (req: Request, res: Response) => {
   const editedText = await aiService.generateEdit(action, text);
   res.status(HTTP_STATUS.OK).json({ success: true, data: { result: editedText } });
 });
-
-export const postOptimise = asyncHandler(async (req: Request, res: Response) => {
-  const { title, meta_description, tags, content_markdown } = req.body as {
-    title?: string;
-    meta_description?: string;
-    tags?: string[];
-    content_markdown: string;
-  };
-  const result = await aiService.optimiseForPublish({
-    title,
-    meta_description,
-    tags,
-    content_markdown,
-  });
-  res.status(HTTP_STATUS.OK).json({ success: true, data: result });
-});
