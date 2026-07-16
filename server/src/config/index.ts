@@ -41,12 +41,10 @@ export const config: AppConfig = {
     key: requireEnv("ENCRYPTION_KEY"),
     iv: requireEnv("ENCRYPTION_IV"),
   },
-  // AI (Google Vertex AI) – optional; AI routes return 503 if project not set
+  // AI — Studio via GEMINI_API_KEY; GCP project/creds optional for GCS cover uploads
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
-  googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || DEFAULT_VALUES.DEFAULT_GOOGLE_CLOUD_LOCATION,
   googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
   googleAiModel: process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL,
-  /** When set, text AI uses Google AI Studio instead of Vertex (no GCP billing required). */
   geminiApiKey: (process.env[AI_CONFIG.ENV_GEMINI_API_KEY] || process.env[AI_CONFIG.ENV_GOOGLE_API_KEY] || "").trim(),
   gcpBucketName:
     process.env.GCS_BUCKET_NAME ||

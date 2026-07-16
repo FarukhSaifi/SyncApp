@@ -125,6 +125,7 @@ async function uploadToGCSBucket(
     const writeOptions: CreateWriteStreamOptions = {
       resumable: false,
       contentType: mimetype,
+      validation: false,
     };
 
     const blobStream = blob.createWriteStream(writeOptions);

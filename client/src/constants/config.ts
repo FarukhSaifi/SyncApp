@@ -16,8 +16,8 @@ export const APP_CONFIG = Object.freeze({
 
   // API
   API_TIMEOUT: 60000, // 1 minute for API timeout
-  API_AI_TIMEOUT: 120000, // 2 minutes — post generate can exceed 30s (avoid client abort before server finishes)
-  API_AI_IMAGE_TIMEOUT: 120000, // 2 minutes for AI image generation
+  API_AI_TIMEOUT: 180000, // 3 minutes — allow one fallback model after a slow 503
+  API_AI_IMAGE_TIMEOUT: 180000, // 3 minutes for AI image generation
   API_COVER_UPLOAD_TIMEOUT: 60000, // 1 minute for cover image upload
 
   // Pagination

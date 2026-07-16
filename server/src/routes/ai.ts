@@ -5,6 +5,7 @@ import { authenticateToken } from "../utils/auth";
 const router: Router = Router();
 
 // All AI routes require authentication
+router.get("/capabilities", authenticateToken, aiController.getCapabilities);
 router.post("/generate", authenticateToken, aiController.postGenerate);
 router.post("/generate-image", authenticateToken, aiController.postGenerateImage);
 router.post("/edit", authenticateToken, aiController.postEdit);

@@ -126,10 +126,14 @@ if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
       corsOrigin: config.corsOrigin,
       healthCheck: HEALTH.HEALTH_URL_LOCAL(PORT),
     });
-    if (!config.geminiApiKey && config.googleCloudProject) {
+    if (!config.geminiApiKey) {
       logger.warn(
-        `AI: GEMINI_API_KEY not set — post generation will use Vertex (requires GCP billing). Add GEMINI_API_KEY from ${AI_CONFIG.GEMINI_API_KEY_URL} to server/.env.dev`,
+        `AI: GEMINI_API_KEY is empty — add a free key from ${AI_CONFIG.GEMINI_API_KEY_URL} (usually starts with AIza)`,
       );
+    } else {
+      const key = config.geminiApiKey;
+      const hint = key.length > 12 ? `${key.slice(0, 6)}…${key.slice(-4)}` : "(set)";
+      logger.info(`AI: Google AI Studio key detected (${hint}) — text and image generation use GEMINI_API_KEY`);
     }
   });
 }

@@ -19,12 +19,16 @@
 ## AI Post Generation
 
 1. Editor opens **Generate Post** modal — user picks keyword, **Gemini model** (static client list), and optimization targets (DEV.to, LinkedIn, or both).
-2. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms? }`.
-3. Server validates model against allowlist and targets against `devto` / `linkedin`.
-4. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions (blended when both selected).
-5. Vertex AI returns JSON `{ title, meta_description, tags, content_markdown }`; client fills the editor.
+2. Client may call `GET /api/ai/capabilities` (`textAi`, `imageAi`, `provider`).
+3. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms? }`.
+4. Server validates model against allowlist and targets against `devto` / `linkedin`.
+5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` only — no Vertex required).
+6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is Zod-validated JSON.
+7. Client fills the editor with `{ title, meta_description, tags, content }`.
 
-**Key files:** [`aiController.ts`](../server/src/controllers/aiController.ts), [`aiService.ts`](../server/src/services/aiService.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx).
+**Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx).
+
+**Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md).
 
 **Phase 2 (planned):** LinkedIn OAuth credentials + `publishToLinkedin` — same draft optimized in Phase 1 can be published without re-generation.
 

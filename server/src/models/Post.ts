@@ -1,6 +1,6 @@
+import { randomUUID } from "crypto";
 import mongoose, { Document, Model, Schema } from "mongoose";
 import createSlug from "slugify";
-import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "../constants";
 import { POST_INDEXES } from "../constants/indexes";
@@ -103,7 +103,7 @@ async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
     if (suffix <= NUMERIC_LIMITS.SLUG_MAX_SUFFIX_ATTEMPTS) {
       candidate = `${base}-${suffix++}`;
     } else {
-      candidate = `${base}-${uuidv4().slice(0, NUMERIC_LIMITS.SLUG_UUID_LENGTH)}`;
+      candidate = `${base}-${randomUUID().slice(0, NUMERIC_LIMITS.SLUG_UUID_LENGTH)}`;
       break;
     }
   }

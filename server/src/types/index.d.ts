@@ -215,7 +215,6 @@ export interface AppConfig {
   rateLimit: RateLimitConfig;
   encryption: EncryptionConfig;
   googleCloudProject: string;
-  googleCloudLocation: string;
   googleApplicationCredentials: string;
   googleAiModel: string;
   geminiApiKey: string;

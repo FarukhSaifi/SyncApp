@@ -1,5 +1,5 @@
 /**
- * AI Controller – outline, draft, and full generate
+ * AI Controller – generate post, image, edit, capabilities
  */
 
 import type { Request, Response } from "express";
@@ -12,6 +12,11 @@ import {
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError, asyncHandler } from "../middleware/errorHandler";
 import * as aiService from "../services/aiService";
+
+export const getCapabilities = asyncHandler(async (_req: Request, res: Response) => {
+  const data = aiService.getAiCapabilities();
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
+});
 
 export const postGenerate = asyncHandler(async (req: Request, res: Response) => {
   const { keyword, model, targetPlatforms } = req.body as {

@@ -1,30 +1,28 @@
 /**
- * AI (Vertex AI) constants: prompts, config keys and safety settings for the AI service.
- * Optimized for DEV.to/Medium community ranking, Google Search E-E-A-T, and high humanization.
+ * AI (Google AI Studio) constants: prompts, config keys and safety settings.
  */
 import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
 
 /** DEV.to + Google ranking constraints referenced by prompts and downstream validation. */
 export const AI_POST_LIMITS = Object.freeze({
-  TITLE_MIN: 30,
   TITLE_MAX: 60,
   META_DESC_MAX: 150,
   /** DEV.to API allows max 4 tags per article. */
   TAG_COUNT: 4,
   COVER_WIDTH: 1000,
   COVER_HEIGHT: 420,
-  PARAGRAPH_MAX_SENTENCES: 3,
-  /** No minimum word count — length scales to topic complexity, search intent, and value depth. */
-  NO_MIN_WORD_COUNT: true,
   /** Editorial guidance for the model; value density matters more than word count. */
   SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
 } as const);
 
 /** Curated Gemini models exposed to the client model picker. */
 export const AI_CONTENT_MODELS = Object.freeze([
-  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (default, fast)" },
-  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (lighter)" },
-  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (quality)" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (default, fast)" },
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (higher quality)" },
+  {
+    id: "gemini-3.1-pro-preview",
+    label: "Gemini 3.1 Pro Preview (paid quota; auto-falls back to Flash Lite)",
+  },
 ] as const);
 
 export type AiContentModelId = (typeof AI_CONTENT_MODELS)[number]["id"];
@@ -75,7 +73,9 @@ export const AI_PROMPTS = {
 ${FULL_POST_SYSTEM_BODY}`,
 
   FULL_POST_USER: (keyword: string) =>
-    `You are an elite-level SEO expert and copywriter capable of producing highly optimized, detailed, and comprehensive content that ranks on Google’s first page. Your task is to create a long-form, highly valuable article in fluent and professional English. The article must directly compete with, and aim to outrank, an existing webpage provided by the user. Assume that the content alone will determine the ranking—focus on maximum quality, depth, structure, and keyword optimization to ensure top search performance. The article must be about: "${keyword}".`,
+    `Write one high-quality technical article about: "${keyword}".
+Follow the system rules and platform optimization blocks exactly.
+Prefer actionable depth and working examples over length. No fluff, no SEO spam.`,
 
   // Image from topic – Optimized for high-CTR blog headers
   IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
@@ -100,40 +100,46 @@ Output ONLY the resulting markdown text.`,
 };
 
 export const AI_CONFIG = Object.freeze({
-  ENV_GOOGLE_CLOUD_PROJECT: "GOOGLE_CLOUD_PROJECT",
-  ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
-  ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
-  /** Google AI Studio API key — bypasses Vertex billing for text generation (local dev). */
   ENV_GEMINI_API_KEY: "GEMINI_API_KEY",
   /** Alternate env name supported by @google/genai SDK. */
   ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
-  /** Default model — Vertex AI usage-based free tier (~1,000 requests/day, rate-limited). */
-  DEFAULT_MODEL: "gemini-3.5-flash",
-  /** Documented Vertex AI free-tier daily request cap. */
-  VERTEX_FREE_TIER_DAILY_REQUESTS: 1000,
-  /** Gemini models that require the global Vertex endpoint (not regional us-central1). */
-  VERTEX_GLOBAL_MODEL_PREFIXES: [
-    "gemini-3.5-flash",
-    "gemini-3.1-pro-preview",
-    "gemini-3.1-flash-lite",
+  /** Prefer flash-lite — 3.5 Flash often returns 503 under Studio free-tier demand. */
+  DEFAULT_MODEL: "gemini-3.1-flash-lite",
+  /**
+   * Tried in order when the selected model returns 429/503 (quota or overload).
+   * Pro models on free tier almost always need this path.
+   */
+  MODEL_FALLBACKS: ["gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash"] as readonly string[],
+  /**
+   * Image model candidates (Studio). Imagen is often unavailable to new free keys;
+   * Gemini native image may hit quota — SVG cover is last resort in generateImage.
+   */
+  IMAGE_MODEL_FALLBACKS: [
+    "gemini-2.5-flash-image",
+    "gemini-3.1-flash-image",
+    "imagen-4.0-generate-001",
   ] as readonly string[],
-  DEFAULT_VERTEX_LOCATION: "us-central1",
-  VERTEX_GLOBAL_FALLBACK_LOCATION: "global",
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
-   * tokens count toward this budget — see FLASH_THINKING_BUDGET in aiService.
+   * tokens count toward this budget — see FLASH_THINKING_BUDGET.
    */
-  /** Legacy outline step (unused); keep above reasoning-model floor. */
-  MAX_OUTLINE_TOKENS: 2048,
-  /** Full-post JSON: ~800–1200 words + title/meta/tags. 8192 is enough with thinking off. */
   MAX_DRAFT_TOKENS: 8192,
-  /** Image prompt (~80 words). 512 is sufficient with thinking off. */
+  MAX_EDIT_TOKENS: 4096,
   MAX_IMAGE_PROMPT_TOKENS: 512,
-  /** 0 = disable Flash thinking so maxOutputTokens goes to visible JSON/text, not reasoning. */
+  /** Structured posts: enough creativity, stable JSON. */
+  TEMPERATURE_POST: 0.55,
+  /** Inline edits: stay close to source text. */
+  TEMPERATURE_EDIT: 0.25,
+  TOP_P: 0.95,
+  /** 0 = disable Flash thinking so maxOutputTokens go to visible JSON/text, not reasoning. */
   FLASH_THINKING_BUDGET: 0,
-  IMAGEN_MODEL: "imagen-4.0-fast-generate-001",
+  /** Legacy Imagen id (often 404 for new Studio keys). Prefer IMAGE_MODEL_FALLBACKS. */
+  IMAGEN_MODEL: "imagen-4.0-generate-001",
+  /** Keep low — retries × slow 503s previously exceeded the client AI timeout. */
+  RETRY_ATTEMPTS: 2,
+  RETRY_BASE_DELAY_MS: 400,
 } as const);
 
 /** Resolve request model or fall back to env default. */
@@ -168,12 +174,3 @@ export const AI_RESPONSE_SCHEMA = {
   },
   required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
 };
-
-/**
- * System instructions per model role. Centralizing here keeps aiService.ts clean
- * and makes it easy to iterate on behavioral guidelines without touching service logic.
- */
-export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({
-  /** General-purpose base model used for internal helper calls. */
-  BASE: "You are an expert technical assistant. Respond clearly, concisely, and conversationally. Prioritize factual accuracy and avoid generic fluff. Do not produce harmful, illegal, or deceptive content.",
-} as const);

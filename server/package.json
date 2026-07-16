@@ -5,14 +5,14 @@
   "main": "dist/src/index.js",
   "scripts": {
     "start": "APP_ENV=prod node dist/src/index.js",
-    "dev": "APP_ENV=dev nodemon --watch src --ext ts,js,json --exec 'tsx src/index.ts'",
+    "dev": "APP_ENV=dev nodemon --watch src --watch .env.dev --watch .env --ext ts,js,json,dev --exec 'tsx src/index.ts'",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:setup": "APP_ENV=dev tsx src/database/setup.ts",
     "vercel-build": "echo 'Vercel build complete'"
   },
   "dependencies": {
-    "@google-cloud/storage": "7.19.0",
+    "@google-cloud/storage": "^7.21.0",
     "@google/genai": "2.6.0",
     "axios": "1.17.0",
     "bcryptjs": "3.0.3",
@@ -26,8 +26,7 @@
     "mongoose": "9.6.2",
     "multer": "2.2.0",
     "resend": "^6.12.4",
-    "slugify": "1.6.9",
-    "uuid": "^14.0.0"
+    "slugify": "1.6.9"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
@@ -35,9 +34,12 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/multer": "2.1.0",
     "@types/node": "25.9.1",
-    "@types/uuid": "9.0.8",
     "nodemon": "3.1.14",
     "tsx": "4.22.3",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "gaxios": "^7.1.5",
+    "google-auth-library": "^10.7.0"
   }
 }

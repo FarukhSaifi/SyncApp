@@ -11,7 +11,7 @@ export const SITE_ORIGINS = Object.freeze({
   LOCAL: "http://localhost:3000",
 } as const);
 
-/** Local dev hostnames — browser calls Express directly to avoid Next.js proxy timeouts on long AI requests. */
+/** Local loopback hostnames. */
 export const LOCAL_DEV_HOSTS = Object.freeze(["localhost", "127.0.0.1"] as const);
 
 export const API_PATH_SUFFIX = "/api" as const;
@@ -19,11 +19,22 @@ export const API_PATH_SUFFIX = "/api" as const;
 /** Same-origin API path used in production (Next.js rewrite). */
 export const PROXY_API_BASE = "/api" as const;
 
-/** True when the app runs on a local dev origin (browser or SSR). */
+const DEFAULT_API_PORT = "9000";
+
+/** True for RFC1918 / link-local hosts used when testing from phone on LAN. */
+export function isPrivateNetworkHostname(hostname: string): boolean {
+  if (LOCAL_DEV_HOSTS.includes(hostname as (typeof LOCAL_DEV_HOSTS)[number])) return true;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+}
+
+/** True when the app runs on a local / LAN dev origin (browser or SSR). */
 export function isLocalDevRuntime(): boolean {
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) return false;
   if (typeof window !== "undefined") {
-    return LOCAL_DEV_HOSTS.includes(window.location.hostname as (typeof LOCAL_DEV_HOSTS)[number]);
+    return isPrivateNetworkHostname(window.location.hostname);
   }
   return true;
 }
@@ -34,6 +45,13 @@ export function resolveApiOrigin(): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
 
   if (isLocalDev) {
+    // Phone / LAN: hit Express on the same host so we skip the Next rewrite timeout path.
+    if (typeof window !== "undefined" && isPrivateNetworkHostname(window.location.hostname)) {
+      const host = window.location.hostname;
+      if (!LOCAL_DEV_HOSTS.includes(host as (typeof LOCAL_DEV_HOSTS)[number])) {
+        return `http://${host}:${DEFAULT_API_PORT}`;
+      }
+    }
     if (!apiUrl) return API_ORIGINS.DEVELOPMENT;
     try {
       const origin = new URL(apiUrl).origin;

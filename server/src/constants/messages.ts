@@ -79,36 +79,26 @@ export const ERROR_MESSAGES = {
   ADMIN_CHECK_ERROR_LOG: "Admin check error",
   ENCRYPTION_ERROR_LOG: "Encryption error",
   DECRYPTION_ERROR_LOG_GENERIC: "Decryption error",
-  // AI (Vertex AI)
-  VERTEX_AI_PROJECT_MISSING:
-    "Google Cloud project is not configured. Set GOOGLE_CLOUD_PROJECT and ensure GOOGLE_APPLICATION_CREDENTIALS (or gcloud auth application-default login) is set.",
-  VERTEX_AI_API_DISABLED:
-    "Vertex AI API is not enabled for this project. Enable it in Google Cloud Console, then retry in a few minutes.",
-  VERTEX_AI_API_ENABLE_URL: "https://console.cloud.google.com/apis/library/aiplatform.googleapis.com",
-  VERTEX_AI_BILLING_DISABLED:
-    "Vertex AI requires billing to be enabled on your Google Cloud project. Enable billing, then retry in a few minutes — or set GEMINI_API_KEY (Google AI Studio) for local dev without GCP billing.",
-  VERTEX_AI_BILLING_ENABLE_URL: "https://console.cloud.google.com/billing/enable",
+  // AI (Google AI Studio)
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
-  GEMINI_API_KEY_MISSING:
-    "No AI credentials configured. Set GEMINI_API_KEY (from Google AI Studio) or configure Vertex AI with GOOGLE_CLOUD_PROJECT and service account credentials.",
-  IMAGEN_REQUIRES_VERTEX:
-    "Featured image generation uses Imagen on Vertex AI. Enable GCP billing or use text-only AI with GEMINI_API_KEY.",
-  VERTEX_AI_MODEL_NOT_FOUND:
-    "The specified Gemini model was not found or your project does not have access. Try GOOGLE_AI_MODEL=gemini-3.5-flash with GOOGLE_CLOUD_LOCATION=global (or us-central1, europe-west1, asia-northeast1 where supported). See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
-  AI_OUTLINE_FAILED: "Failed to generate outline",
+  GEMINI_API_KEY_REQUIRED:
+    "GEMINI_API_KEY is required. Get a free key from Google AI Studio and set it in server/.env.dev (or Vercel env), then restart.",
+  GEMINI_API_KEY_INVALID:
+    "GEMINI_API_KEY is invalid or revoked. Create a new key at Google AI Studio, update server/.env.dev, and restart the server (nodemon does not always pick up env edits until restart).",
+  AI_MODEL_NOT_FOUND:
+    "The selected AI model was not found or is not available with your API key. Try gemini-3.1-flash-lite.",
   AI_DRAFT_FAILED: "Failed to generate draft",
-  AI_GENERATE_FAILED: "Failed to generate content",
+  AI_PARSE_FAILED: "AI returned invalid JSON. Please try again with a different model or keyword.",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",
   AI_INVALID_MODEL: "The selected AI model is not allowed. Choose a model from the list.",
   AI_INVALID_OPTIMIZATION_TARGETS: "Invalid optimization targets. Allowed: devto, linkedin.",
-  AI_OUTLINE_REQUIRED: "Outline is required",
-  AI_CONTENT_REQUIRED: "Content is required",
-  AI_EMPTY_OR_BLOCKED_RESPONSE: "Empty or blocked response from Vertex AI",
-  AI_EMPTY_RESPONSE: "Empty response from Vertex AI",
+  AI_EMPTY_RESPONSE: "Empty response from AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
-  AI_IMAGE_RATE_LIMITED:
-    "Vertex AI rate limit reached. Wait a minute and try Generate Image again (especially after generating a full post).",
+  AI_RATE_LIMITED:
+    "AI rate limit reached for this model (Pro often needs a paid Google AI plan). Wait a minute, or use Gemini 3.1 Flash Lite.",
+  AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.1 Flash Lite.",
   AI_EDIT_FAILED: "Failed to perform AI edit",
+  AI_EDIT_CONTEXT_REQUIRED: "Context text is required for AI edit actions",
   // Upload
   UPLOAD_NO_FILE: "No file provided",
   UPLOAD_IMAGE_DATA_URL_REQUIRED: "Image data URL is required",
