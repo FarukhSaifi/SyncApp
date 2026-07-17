@@ -102,6 +102,12 @@ export interface GeneratePostResult {
   content?: string;
   meta_description?: string;
   tags?: string[];
+  /** Short LinkedIn-native teaser when LinkedIn was an optimize target. */
+  linkedin_post?: string;
+  /** Full article URL for Read more (from CANONICAL_BASE_URL + slug). */
+  read_more_url?: string;
+  /** True when LinkedIn was requested but CANONICAL_BASE_URL is unset. */
+  linkedin_missing_canonical?: boolean;
 }
 
 import type { Request as ExpressRequest, Response as ExpressResponse } from "express";

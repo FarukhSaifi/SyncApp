@@ -50,6 +50,7 @@ export const TOAST_TITLES = Object.freeze({
   IMAGE_GENERATED: "Image generated",
   FEATURED_IMAGE_SET: "Featured image set",
   IMAGE_UPLOADED: "Image uploaded",
+  LINKEDIN_COPIED: "LinkedIn post copied",
   // Validation
   VALIDATION_ERROR: "Validation Error",
   // Network
@@ -83,6 +84,7 @@ const createSuccessMessages = () => {
     IMAGE_UPLOADED: "Image uploaded successfully",
     // AI
     AI_POST_GENERATED: "Draft added to the editor.",
+    AI_LINKEDIN_COPIED: "Paste it into LinkedIn when you are ready to post.",
     AI_IMAGE_GENERATED: "Preview below. Use as featured image or upload to attach.",
     AI_IMAGE_SVG_FALLBACK:
       "Image model quota hit — branded SVG cover ready. Retry later or enable AI Studio billing for real images.",
@@ -167,6 +169,9 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_GENERATE_POST: "Failed to generate post",
   FAILED_TO_GENERATE_IMAGE: "Failed to generate image",
   FAILED_TO_UPLOAD_COVER: "Upload failed",
+  FAILED_TO_COPY_LINKEDIN: "Could not copy LinkedIn post to clipboard",
+  AI_LINKEDIN_MISSING_CANONICAL:
+    "LinkedIn summary is ready, but no blog base URL is set — add CANONICAL_BASE_URL / NEXT_PUBLIC_CANONICAL_BASE_URL for a Read more link.",
 } as const);
 
 // ============================================================================
@@ -826,7 +831,8 @@ export const EDITOR_UI = Object.freeze({
     "Pick a topic, AI model, and target platforms. AI drafts one post optimized for your selection.",
   GENERATE_POST_MODEL_LABEL: "AI model",
   GENERATE_POST_TARGETS_LABEL: "Optimize for",
-  GENERATE_POST_TARGETS_HINT: "Select at least one platform. LinkedIn is content optimization only for now.",
+  GENERATE_POST_TARGETS_HINT:
+    "Select at least one. LinkedIn adds a short summary + Read more link to your site; the full article stays in the editor.",
   GENERATE_POST_TARGET_DEVTO: "DEV.to",
   GENERATE_POST_TARGET_LINKEDIN: "LinkedIn",
   GENERATE_POST_TARGETS_REQUIRED: "Select at least one platform",
@@ -844,6 +850,15 @@ export const EDITOR_UI = Object.freeze({
   GENERATE_POST_CANCEL: "Cancel",
   GENERATE_POST_CONFIRM: "Generate draft",
   GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",
+
+  // LinkedIn teaser panel
+  LINKEDIN_POST_TITLE: "LinkedIn summary",
+  LINKEDIN_POST_HINT: "Short post for LinkedIn. Full article stays in the editor — link readers to your site.",
+  LINKEDIN_POST_COPY: "Copy for LinkedIn",
+  LINKEDIN_POST_READ_MORE_LABEL: "Read more URL",
+  LINKEDIN_POST_MISSING_CANONICAL:
+    "Set NEXT_PUBLIC_CANONICAL_BASE_URL (and server CANONICAL_BASE_URL) to your live blog so Read more can link to the full article.",
+  LINKEDIN_POST_EMPTY: "Generate a draft with LinkedIn checked to get a summary here.",
 } as const);
 
 // ============================================================================

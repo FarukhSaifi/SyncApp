@@ -28,6 +28,7 @@ export {
   AI_OPTIMIZATION_TARGETS,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
+  includesLinkedInTarget,
   isValidOptimizationTargets,
   resolveOptimizationTargets,
 } from "./platformOptimization";

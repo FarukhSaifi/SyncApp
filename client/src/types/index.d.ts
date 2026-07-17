@@ -210,6 +210,9 @@ export interface GeneratedPostData {
   meta_description: string;
   tags: string[];
   content: string;
+  linkedin_post?: string;
+  read_more_url?: string;
+  linkedin_missing_canonical?: boolean;
 }
 
 export interface ShortcutHandlers {
@@ -265,6 +268,10 @@ export interface EditorSidebarRightProps {
   generatedImageDataUrl: string | null;
   generatedImageSource?: AiImageSource | null;
   uploadingCover: boolean;
+  linkedinPost: string | null;
+  linkedinReadMoreUrl: string | null;
+  linkedinMissingCanonical: boolean;
+  onCopyLinkedInPost: () => void;
   onGeneratePost: () => void;
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;

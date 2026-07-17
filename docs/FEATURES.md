@@ -37,7 +37,7 @@ Functional and non-functional requirements as implemented.
 ## Recent Enhancements
 
 - **AI model picker** — Choose Gemini model in Generate Post modal from static allowlist in [`client/src/constants/ai.ts`](../client/src/constants/ai.ts).
-- **Platform optimization** — Target DEV.to and/or LinkedIn; single blended draft via prompt rules in [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts). LinkedIn is optimize-only until OAuth publish (Phase 2).
+- **Platform optimization** — Target DEV.to and/or LinkedIn. Full article goes to the editor; LinkedIn also returns a short summary + Read more URL (`CANONICAL_BASE_URL`). LinkedIn OAuth publish is Phase 2.
 - **Studio-primary AI** — Text + images via `GEMINI_API_KEY` only ([AI Studio](https://aistudio.google.com/apikey)). See [`docs/AI_SETUP.md`](./AI_SETUP.md).
 - **Disconnect** — Remove credentials without replacement API key ([`Settings.tsx`](../client/src/views/Settings.tsx)).
 - **Smart publish menu** — Only connected platforms in editor dropdown.

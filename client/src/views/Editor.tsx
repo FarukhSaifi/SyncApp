@@ -32,8 +32,13 @@ const EditorContent = dynamic(() => import("@components/editor/EditorContent"), 
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
+  const preferredReadMoreUrl = (state.formData.canonical_url || "").trim().startsWith("http")
+    ? state.formData.canonical_url.trim()
+    : undefined;
+
   const ai = useEditorAI({
     postId: state.id,
+    preferredReadMoreUrl,
     onDraftGenerated: (data) => {
       state.setFormData((prev) => ({
         ...prev,
@@ -154,6 +159,10 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         generatedImageDataUrl={ai.generatedImageDataUrl}
         generatedImageSource={ai.generatedImageSource}
         uploadingCover={ai.uploadingCover}
+        linkedinPost={ai.linkedinPost}
+        linkedinReadMoreUrl={ai.linkedinReadMoreUrl}
+        linkedinMissingCanonical={ai.linkedinMissingCanonical}
+        onCopyLinkedInPost={() => void ai.handleCopyLinkedInPost()}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}
         onUseAsFeaturedImage={ai.handleUseAsFeaturedImage}

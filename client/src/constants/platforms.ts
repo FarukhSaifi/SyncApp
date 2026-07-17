@@ -9,7 +9,7 @@ export const PLATFORMS = Object.freeze({
 
 export type PlatformSlug = (typeof PLATFORMS)[keyof typeof PLATFORMS];
 
-/** AI optimization targets (Phase 1 — LinkedIn is optimize-only until publish integration). */
+/** AI optimization targets (LinkedIn = summary + Read more; OAuth publish is Phase 2). */
 export const OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",
   LINKEDIN: "linkedin",

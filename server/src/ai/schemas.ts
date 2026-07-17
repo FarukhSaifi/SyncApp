@@ -6,6 +6,7 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
 import type { GeneratePostResult } from "../types";
+import { buildReadMoreUrl, finalizeLinkedInPost } from "../utils/linkedinPost";
 import { sanitizeJsonString } from "../utils/sanitizeJson";
 
 function normalizeTags(tags: unknown): string[] {
@@ -53,8 +54,13 @@ function tryParseObject(raw: string): Record<string, unknown> {
   throw new Error("unparseable");
 }
 
+export type ParseGeneratePostOptions = {
+  /** When true, require/normalize linkedin_post and attach read_more_url. */
+  includeLinkedIn?: boolean;
+};
+
 /** Parse model JSON into GeneratePostResult; fail hard if title/content missing. */
-export function parseGeneratePostResponse(rawText: string): GeneratePostResult {
+export function parseGeneratePostResponse(rawText: string, options: ParseGeneratePostOptions = {}): GeneratePostResult {
   try {
     const parsed = tryParseObject(rawText);
     const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
@@ -66,12 +72,29 @@ export function parseGeneratePostResponse(rawText: string): GeneratePostResult {
     if (!title || !content) {
       throw new AppError(ERROR_MESSAGES.AI_PARSE_FAILED, HTTP_STATUS.BAD_GATEWAY);
     }
-    return {
+
+    const result: GeneratePostResult = {
       title: softClampTitle(title),
       meta_description: softClampMeta(typeof parsed.meta_description === "string" ? parsed.meta_description : ""),
       tags: normalizeTags(parsed.tags),
       content,
     };
+
+    if (options.includeLinkedIn) {
+      const aiSlug = typeof parsed.canonical_url === "string" ? parsed.canonical_url : "";
+      const readMoreUrl = buildReadMoreUrl(result.title || title, aiSlug);
+      const linkedinRaw = typeof parsed.linkedin_post === "string" ? parsed.linkedin_post.trim() : "";
+
+      if (!linkedinRaw) {
+        throw new AppError(ERROR_MESSAGES.AI_PARSE_FAILED, HTTP_STATUS.BAD_GATEWAY);
+      }
+
+      result.linkedin_post = finalizeLinkedInPost(linkedinRaw, readMoreUrl);
+      result.read_more_url = readMoreUrl;
+      result.linkedin_missing_canonical = !readMoreUrl;
+    }
+
+    return result;
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError(ERROR_MESSAGES.AI_PARSE_FAILED, HTTP_STATUS.BAD_GATEWAY);

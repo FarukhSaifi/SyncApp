@@ -24,13 +24,14 @@
 4. Server validates model against allowlist and targets against `devto` / `linkedin`.
 5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` only — no Vertex required).
 6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is parsed as JSON (`schemas.ts`).
-7. Client fills the editor with `{ title, meta_description, tags, content }`.
+7. Client fills the editor with the full article `{ title, meta_description, tags, content }`.
+8. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor sidebar shows a **LinkedIn summary** panel with Copy. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
 
-**Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx).
+**Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`linkedinPost.ts`](../server/src/utils/linkedinPost.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx), [`LinkedInPostPanel.tsx`](../client/src/components/editor/LinkedInPostPanel.tsx).
 
-**Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md).
+**Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md). Set `CANONICAL_BASE_URL` (server) and `NEXT_PUBLIC_CANONICAL_BASE_URL` (client) to your live blog for LinkedIn Read more links.
 
-**Phase 2 (planned):** LinkedIn OAuth credentials + `publishToLinkedin` — same draft optimized in Phase 1 can be published without re-generation.
+**Phase 2 (planned):** LinkedIn OAuth credentials + `publishToLinkedin` — paste/copy summary ships now; API publish later.
 
 ## Smart Publish Menu
 

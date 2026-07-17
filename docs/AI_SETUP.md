@@ -81,6 +81,17 @@ On failure (quota, missing key, or DEV.to unavailable), these endpoints return a
 
 Google Ads **Keyword Planner** is not integrated (requires a Google Ads account). Search grounding is the Studio-native equivalent for “what people are researching now.”
 
+### LinkedIn summary + Read more
+
+When Generate Post includes the **LinkedIn** target:
+
+- `content` / `content_markdown` — full article for the editor (and DEV.to when selected)
+- `linkedin_post` — short LinkedIn-native teaser; server appends `Read more: {url}`
+- `read_more_url` — `{CANONICAL_BASE_URL}/{slug}` when `CANONICAL_BASE_URL` or `SITE_URL` is set
+- `linkedin_missing_canonical` — `true` when the blog base URL is unset (no invented domain)
+
+Also set `NEXT_PUBLIC_CANONICAL_BASE_URL` on the client so the sidebar can rewrite Read more after save when the post has a real `canonical_url`.
+
 Do **not** rely on `GOOGLE_CLOUD_PROJECT` / Vertex for AI. Those are optional GCS only.
 
 See [VERCEL_ENV.md](./VERCEL_ENV.md).

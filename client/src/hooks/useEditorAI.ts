@@ -2,7 +2,7 @@
  * useEditorAI — AI assistant state and handlers for the editor.
  * Extracted from the monolithic Editor.tsx to keep concerns separated.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
 import type { AiContentModel, AiImageSource, GeneratedPostData } from "@types";
@@ -16,6 +16,7 @@ import { apiClient } from "@utils/apiClient";
 
 import { AI_CONTENT_MODELS, resolveStoredContentModel } from "@constants/ai";
 import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
+import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
 
 function tryParseJSON(raw: string): Record<string, unknown> | null {
   try {
@@ -39,7 +40,14 @@ function tryParseJSON(raw: string): Record<string, unknown> | null {
 }
 
 function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
-  if (raw.title && raw.content) return raw;
+  if (raw.title && raw.content) {
+    return {
+      ...raw,
+      linkedin_post: raw.linkedin_post?.trim() || undefined,
+      read_more_url: raw.read_more_url?.trim() || undefined,
+      linkedin_missing_canonical: Boolean(raw.linkedin_missing_canonical),
+    };
+  }
 
   if (raw.content) {
     const parsed = tryParseJSON(raw.content);
@@ -49,6 +57,11 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
         meta_description: (parsed.meta_description as string) || raw.meta_description || "",
         tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : (raw.tags ?? []),
         content: (parsed.content_markdown as string) || (parsed.content as string) || raw.content,
+        linkedin_post:
+          (typeof parsed.linkedin_post === "string" && parsed.linkedin_post.trim()) || raw.linkedin_post || undefined,
+        read_more_url:
+          (typeof parsed.read_more_url === "string" && parsed.read_more_url.trim()) || raw.read_more_url || undefined,
+        linkedin_missing_canonical: Boolean(parsed.linkedin_missing_canonical ?? raw.linkedin_missing_canonical),
       };
     }
   }
@@ -58,6 +71,8 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
 
 interface UseEditorAIOptions {
   postId?: string;
+  /** Preferred public article URL for LinkedIn Read more (post canonical). */
+  preferredReadMoreUrl?: string;
   onDraftGenerated: (data: GeneratedPostData) => void;
   onCoverImageSet: (url: string) => void;
 }
@@ -76,13 +91,23 @@ interface UseEditorAIReturn {
   generatedImageDataUrl: string | null;
   generatedImageSource: AiImageSource | null;
   uploadingCover: boolean;
+  linkedinPost: string | null;
+  linkedinReadMoreUrl: string | null;
+  linkedinMissingCanonical: boolean;
   handleGeneratePost: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
+  handleCopyLinkedInPost: () => Promise<void>;
+  clearLinkedInPost: () => void;
 }
 
-export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEditorAIOptions): UseEditorAIReturn {
+export function useEditorAI({
+  postId,
+  preferredReadMoreUrl,
+  onDraftGenerated,
+  onCoverImageSet,
+}: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
   const [aiModel, setAiModelState] = useState(() => readStoredAiModel());
@@ -92,6 +117,19 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
   const [generatedImageSource, setGeneratedImageSource] = useState<AiImageSource | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [linkedinPost, setLinkedinPost] = useState<string | null>(null);
+  const [linkedinMissingCanonical, setLinkedinMissingCanonical] = useState(false);
+
+  const linkedinReadMoreUrl = linkedinPost ? extractLinkedInReadMoreUrl(linkedinPost) : null;
+
+  useEffect(() => {
+    if (!linkedinPost || !preferredReadMoreUrl) return;
+    const next = applyLinkedInReadMoreUrl(linkedinPost, preferredReadMoreUrl);
+    if (next !== linkedinPost) {
+      setLinkedinPost(next);
+      setLinkedinMissingCanonical(false);
+    }
+  }, [preferredReadMoreUrl, linkedinPost]);
 
   const setAiModel = useCallback((model: string) => {
     const resolved = resolveStoredContentModel(model);
@@ -102,6 +140,11 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
   const setTargetPlatforms = useCallback((platforms: string[]) => {
     setTargetPlatformsState(platforms);
     persistOptimizationTargets(platforms);
+  }, []);
+
+  const clearLinkedInPost = useCallback(() => {
+    setLinkedinPost(null);
+    setLinkedinMissingCanonical(false);
   }, []);
 
   const handleGeneratePost = useCallback(async () => {
@@ -126,8 +169,29 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
           toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
           return;
         }
-        onDraftGenerated(data);
+
+        const withPreferredUrl =
+          data.linkedin_post && preferredReadMoreUrl
+            ? {
+                ...data,
+                linkedin_post: applyLinkedInReadMoreUrl(data.linkedin_post, preferredReadMoreUrl),
+                linkedin_missing_canonical: false,
+                read_more_url: preferredReadMoreUrl,
+              }
+            : data;
+
+        if (withPreferredUrl.linkedin_post?.trim()) {
+          setLinkedinPost(withPreferredUrl.linkedin_post.trim());
+          setLinkedinMissingCanonical(Boolean(withPreferredUrl.linkedin_missing_canonical));
+        } else {
+          clearLinkedInPost();
+        }
+
+        onDraftGenerated(withPreferredUrl);
         toast.success(TOAST_TITLES.POST_GENERATED, SYNC_LABEL.AI_POST_GENERATED);
+        if (withPreferredUrl.linkedin_post && withPreferredUrl.linkedin_missing_canonical) {
+          toast.warning(TOAST_TITLES.WARNING, SYNC_LABEL.AI_LINKEDIN_MISSING_CANONICAL);
+        }
       } else {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
       }
@@ -136,7 +200,7 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     } finally {
       setAiLoading("");
     }
-  }, [aiKeyword, aiModel, onDraftGenerated, targetPlatforms, toast]);
+  }, [aiKeyword, aiModel, clearLinkedInPost, onDraftGenerated, preferredReadMoreUrl, targetPlatforms, toast]);
 
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
@@ -194,6 +258,16 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     }
   }, [generatedImageDataUrl, postId, onCoverImageSet, toast]);
 
+  const handleCopyLinkedInPost = useCallback(async () => {
+    if (!linkedinPost?.trim()) return;
+    try {
+      await navigator.clipboard.writeText(linkedinPost);
+      toast.success(TOAST_TITLES.LINKEDIN_COPIED, SYNC_LABEL.AI_LINKEDIN_COPIED);
+    } catch {
+      toast.apiError(SYNC_LABEL.FAILED_TO_COPY_LINKEDIN);
+    }
+  }, [linkedinPost, toast]);
+
   return {
     aiKeyword,
     setAiKeyword,
@@ -208,9 +282,14 @@ export function useEditorAI({ postId, onDraftGenerated, onCoverImageSet }: UseEd
     generatedImageDataUrl,
     generatedImageSource,
     uploadingCover,
+    linkedinPost,
+    linkedinReadMoreUrl,
+    linkedinMissingCanonical,
     handleGeneratePost,
     handleGenerateImage,
     handleUseAsFeaturedImage,
     handleUploadAndAttach,
+    handleCopyLinkedInPost,
+    clearLinkedInPost,
   };
 }

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import PostStatusPill from "@components/dashboard/PostStatusPill";
 import GeneratePostModal from "@components/editor/GeneratePostModal";
+import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
 import { APP_CONFIG, PLATFORMS } from "@constants";
 import type { EditorSidebarRightProps } from "@types";
@@ -74,6 +75,10 @@ const EditorSidebarRight = ({
   generatedImageDataUrl,
   generatedImageSource = null,
   uploadingCover,
+  linkedinPost = null,
+  linkedinReadMoreUrl = null,
+  linkedinMissingCanonical = false,
+  onCopyLinkedInPost,
   onGeneratePost,
   onGenerateImage,
   onUseAsFeaturedImage,
@@ -300,6 +305,16 @@ const EditorSidebarRight = ({
               <FiImage className="h-3.5 w-3.5 mr-1.5 text-primary" />
               {EDITOR_UI.GENERATE_AI_COVER_IMAGE}
             </Button>
+          </div>
+
+          <div className="pt-2 border-t border-border">
+            <LinkedInPostPanel
+              linkedinPost={linkedinPost}
+              linkedinReadMoreUrl={linkedinReadMoreUrl}
+              linkedinMissingCanonical={linkedinMissingCanonical}
+              onCopy={onCopyLinkedInPost}
+              disabled={!!aiLoading}
+            />
           </div>
         </div>
       </Section>

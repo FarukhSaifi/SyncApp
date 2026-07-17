@@ -2,11 +2,18 @@
  * Full-post generation — Google AI Studio only.
  */
 import { config } from "../config";
-import { AI_CONFIG, AI_RESPONSE_SCHEMA, buildFullPostSystemPrompt, buildFullPostUserPrompt } from "../constants";
+import {
+  AI_CONFIG,
+  AI_RESPONSE_SCHEMA,
+  buildFullPostSystemPrompt,
+  buildFullPostUserPrompt,
+  includesLinkedInTarget,
+} from "../constants";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
 import type { GeneratePostResult } from "../types";
+import { buildReadMoreUrl, slugifyArticlePath } from "../utils/linkedinPost";
 import { buildModelCandidates, getModelName, getText, studioGenerateContent } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
@@ -22,6 +29,7 @@ async function generateWithModel(
   systemInstruction: string,
   userMessage: string,
   useSearch: boolean,
+  includeLinkedIn: boolean,
 ): Promise<GeneratePostResult> {
   // Pro / paid-quota models: one shot then fall back (avoid burning retries on 429).
   const attempts = /pro/i.test(modelName) ? 1 : AI_CONFIG.RETRY_ATTEMPTS;
@@ -39,7 +47,7 @@ async function generateWithModel(
       }),
     { attempts },
   );
-  return parseGeneratePostResponse(getText(result));
+  return parseGeneratePostResponse(getText(result), { includeLinkedIn });
 }
 
 export async function generatePost(
@@ -50,14 +58,22 @@ export async function generatePost(
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
+  const includeLinkedIn = includesLinkedInTarget(options.targetPlatforms);
+  // Hint URL from keyword slug when base is configured (final URL uses AI title/slug after parse).
+  const readMoreHint = includeLinkedIn
+    ? buildReadMoreUrl(keyword.trim(), slugifyArticlePath(keyword.trim()))
+    : undefined;
+
   const primaryModel = getModelName(options.model);
   const systemInstruction = buildFullPostSystemPrompt(options.targetPlatforms);
-  const userMessage = buildFullPostUserPrompt(keyword.trim(), options.targetPlatforms);
+  const userMessage = buildFullPostUserPrompt(keyword.trim(), options.targetPlatforms, {
+    readMoreUrl: readMoreHint,
+  });
   const candidates = buildModelCandidates(primaryModel);
 
   if (config.aiUseGoogleSearchRetrieval) {
     try {
-      return await generateWithModel(primaryModel, systemInstruction, userMessage, true);
+      return await generateWithModel(primaryModel, systemInstruction, userMessage, true, includeLinkedIn);
     } catch {
       // Grounding unavailable — fall through to standard generation.
     }
@@ -66,7 +82,7 @@ export async function generatePost(
   let lastError: unknown;
   for (const modelName of candidates) {
     try {
-      return await generateWithModel(modelName, systemInstruction, userMessage, false);
+      return await generateWithModel(modelName, systemInstruction, userMessage, false, includeLinkedIn);
     } catch (err) {
       lastError = err;
       if (!isFallbackWorthyError(err)) {

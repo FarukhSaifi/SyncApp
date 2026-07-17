@@ -1,6 +1,6 @@
 /**
  * Platform-specific AI optimization targets (Phase 1: DEV.to + LinkedIn).
- * LinkedIn is optimize-only until Phase 2 publish integration.
+ * LinkedIn: short summary + Read more URL (optimize/copy). OAuth publish is Phase 2.
  */
 import { AI_POST_LIMITS, AI_PROMPTS } from "./ai";
 
@@ -26,23 +26,28 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
 - Use Markdown with ##/### headings, code blocks, lists, and > blockquotes where helpful.
 - tags must be exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase strings without # (2 high-reach + 2 stack-specific).
 - Title 30–60 chars; meta_description 120–150 chars for search CTR.
-- Prioritize actionable depth, working examples, and scannability for the DEV community.`,
+- Prioritize actionable depth, working examples, and scannability for the DEV community.
+- content_markdown is the full article. Do not put LinkedIn teaser text in content_markdown.`,
 
-  linkedin: `### LinkedIn Optimization (content format only — user may copy/paste)
-- Professional, confident tone; avoid overly casual slang.
-- **Hook (CRITICAL):** The first 2 lines must stop the scroll — strong insight or bold claim before any fluff (LinkedIn truncates with "see more").
-- Short paragraphs (1–3 sentences). Minimal heavy Markdown — prefer plain text, line breaks, and simple bullets.
-- End content_markdown with a standalone line of 3–5 relevant hashtags (e.g. #WebDev #JavaScript).
-- Length: ~500–900 words unless the topic truly needs more; stay punchy and value-dense.
-- Include a soft CTA when natural (e.g. "What's your experience?" — no hard sell).`,
+  linkedin: `### LinkedIn Optimization (summary + Read more)
+- content_markdown MUST still be the FULL blog article readers open on the website (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}, Markdown, headings, examples).
+- ALSO fill linkedin_post with a SHORT native LinkedIn post (plain text, NOT Markdown headings/code fences):
+  - Hook in the first 2 lines (LinkedIn truncates with "see more").
+  - Short paragraphs (1–3 sentences). Length ~${AI_POST_LIMITS.LINKEDIN_POST_MIN_CHARS}–${AI_POST_LIMITS.LINKEDIN_POST_MAX_CHARS} characters.
+  - End with 3–5 relevant hashtags on their own line (e.g. #WebDev #JavaScript).
+  - Soft CTA is fine ("What's your take?").
+  - Do NOT invent or invent a domain. Do NOT include a "Read more:" URL — the server appends the real link.
+- tags JSON field: still exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to-style tags (no # in JSON).`,
 };
 
-const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (single draft)
-- Produce ONE content_markdown that works for both: DEV.to depth + LinkedIn readability.
-- Open with a LinkedIn-style hook in the first 2 lines, then expand with DEV.to-style structure (headings, code, lists).
-- Keep paragraphs short throughout; use headings and code for DEV.to, but avoid walls of text.
-- End with 3–5 hashtags on their own line after the main body.
-- tags JSON field: still exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to tags (no # in JSON).`;
+const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (dual output — CRITICAL)
+- Produce TWO deliverables in one JSON response:
+  1) content_markdown = full DEV.to-style article (headings, code, lists, depth).
+  2) linkedin_post = separate short LinkedIn teaser (plain text + hashtags only).
+- Do NOT merge the LinkedIn teaser into content_markdown.
+- Do NOT put DEV.to Markdown structure into linkedin_post.
+- Open the full article with a strong hook; LinkedIn teaser has its own hook.
+- tags JSON field: exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to tags (no #).`;
 
 function normalizeTargets(targets?: string[]): OptimizationTarget[] {
   if (!targets?.length) return [...DEFAULT_OPTIMIZATION_TARGETS];
@@ -63,6 +68,10 @@ export function resolveOptimizationTargets(targets?: string[]): OptimizationTarg
   return normalizeTargets(targets);
 }
 
+export function includesLinkedInTarget(targets?: string[]): boolean {
+  return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS.LINKEDIN);
+}
+
 export function buildFullPostSystemPrompt(targets?: string[]): string {
   const resolved = normalizeTargets(targets);
   const platformBlocks = resolved.map((t) => PLATFORM_OPTIMIZATION_RULES[t]).join("\n\n");
@@ -74,8 +83,23 @@ export function buildFullPostSystemPrompt(targets?: string[]): string {
   return `${AI_PROMPTS.FULL_POST_SYSTEM_BASE}\n\n${platformBlocks}${blended}`;
 }
 
-export function buildFullPostUserPrompt(keyword: string, targets?: string[]): string {
+export function buildFullPostUserPrompt(
+  keyword: string,
+  targets?: string[],
+  options?: { readMoreUrl?: string },
+): string {
   const resolved = normalizeTargets(targets);
   const platformLabels = resolved.map((t) => OPTIMIZATION_TARGET_LABELS[t]).join(" and ");
-  return `${AI_PROMPTS.FULL_POST_USER(keyword)}\n\nOptimize this draft primarily for: ${platformLabels}.`;
+  let prompt = `${AI_PROMPTS.FULL_POST_USER(keyword)}\n\nOptimize this draft primarily for: ${platformLabels}.`;
+
+  if (resolved.includes(AI_OPTIMIZATION_TARGETS.LINKEDIN)) {
+    prompt += `\n\nLinkedIn: fill linkedin_post with a short teaser only. Do not invent a Read more URL.`;
+    if (options?.readMoreUrl) {
+      prompt += ` The live article URL will be: ${options.readMoreUrl} (server appends it — do not invent another domain).`;
+    } else {
+      prompt += ` No public blog base URL is configured yet — write linkedin_post without any URL.`;
+    }
+  }
+
+  return prompt;
 }

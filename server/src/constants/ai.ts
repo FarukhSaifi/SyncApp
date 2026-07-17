@@ -13,6 +13,10 @@ export const AI_POST_LIMITS = Object.freeze({
   COVER_HEIGHT: 420,
   /** Editorial guidance for the model; value density matters more than word count. */
   SOFT_WORD_GUIDANCE: "800-1200 words for a focused, high-value blog; never fluff or pad to hit a target.",
+  /** LinkedIn native post length (characters, including spaces). */
+  LINKEDIN_POST_MIN_CHARS: 400,
+  LINKEDIN_POST_MAX_CHARS: 1300,
+  LINKEDIN_READ_MORE_PREFIX: "Read more:",
 } as const);
 
 /** Curated Gemini models exposed to the client model picker. */
@@ -57,13 +61,16 @@ OUTPUT RULES:
 - Do NOT include YAML front matter in content_markdown — metadata goes in the JSON fields only.
 - tags must be exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase strings without #.
 - content_markdown must be the complete, concise post body in Markdown only — no filler.
+- canonical_url must be a slugified version of the title (e.g. 'how-to-optimize-react-apps'), not a full URL.
+- When LinkedIn optimization is selected, also fill linkedin_post (short native LinkedIn text). When LinkedIn is not selected, omit linkedin_post or use "".
 You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
   "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
   "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
   "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
-  "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')"
+  "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')",
+  "linkedin_post": "Short LinkedIn-native summary only when LinkedIn is a target; otherwise empty string"
 }`;
 
 export const AI_PROMPTS = {
@@ -207,6 +214,7 @@ export const AI_RESPONSE_SCHEMA = {
     },
     content_markdown: { type: Type.STRING },
     canonical_url: { type: Type.STRING },
+    linkedin_post: { type: Type.STRING },
   },
   required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
 };
