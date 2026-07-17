@@ -138,7 +138,8 @@ export function usePosts(
           p.platform_status &&
           (p.platform_status.medium?.published ||
             p.platform_status.devto?.published ||
-            p.platform_status.wordpress?.published),
+            p.platform_status.wordpress?.published ||
+            p.platform_status.linkedin?.published),
       ).length,
     }),
     [posts],

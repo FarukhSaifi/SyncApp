@@ -10,6 +10,7 @@ router.get("/trending-topics", authenticateToken, aiController.getTrendingTopics
 router.get("/devto-tags", authenticateToken, aiController.getDevtoReachTags);
 router.post("/generate", authenticateToken, aiController.postGenerate);
 router.post("/generate-image", authenticateToken, aiController.postGenerateImage);
+router.post("/generate-linkedin-summary", authenticateToken, aiController.postGenerateLinkedInSummary);
 router.post("/edit", authenticateToken, aiController.postEdit);
 
 export default router;

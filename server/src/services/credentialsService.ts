@@ -19,6 +19,22 @@ function decryptApiKey(credential: Record<string, unknown>) {
   }
 }
 
+/** Never expose LinkedIn OAuth tokens to the client. */
+function sanitizeCredentialForClient(credential: Record<string, unknown>) {
+  if (credential.platform_name !== PLATFORMS.LINKEDIN) return credential;
+
+  delete credential.api_key;
+  delete credential.refresh_token;
+  if (credential.platform_config && typeof credential.platform_config === "object") {
+    const cfg = { ...(credential.platform_config as Record<string, unknown>) };
+    // Keep person URN so Settings can show connected; no secrets.
+    credential.platform_config = {
+      linkedin_person_urn: cfg.linkedin_person_urn,
+    };
+  }
+  return credential;
+}
+
 /**
  * Get all credentials for a user (with decrypted API keys for settings display)
  */
@@ -32,7 +48,11 @@ export async function getAllCredentials(userId: string) {
   const credentials = (await Credential.find({ author: userId }).lean()) as unknown as Record<string, unknown>[];
 
   for (const credential of credentials) {
-    decryptApiKey(credential);
+    if (credential.platform_name === PLATFORMS.LINKEDIN) {
+      sanitizeCredentialForClient(credential);
+    } else {
+      decryptApiKey(credential);
+    }
   }
 
   cache.set(cacheKey, credentials, 300000);
@@ -53,6 +73,10 @@ export async function getCredentialByPlatform(userId: string, platformName: stri
     return null;
   }
 
+  if (credential.platform_name === PLATFORMS.LINKEDIN) {
+    return sanitizeCredentialForClient(credential);
+  }
+
   decryptApiKey(credential);
 
   return credential;
@@ -70,6 +94,10 @@ export async function upsertCredential(
 
   if (!api_key) {
     throw new ValidationError(ERROR_MESSAGES.API_KEY_REQUIRED);
+  }
+
+  if (platformName === PLATFORMS.LINKEDIN) {
+    throw new ValidationError("Connect LinkedIn via OAuth in Settings (API key paste is not supported for LinkedIn).");
   }
 
   if (platformName === PLATFORMS.WORDPRESS && !site_url) {

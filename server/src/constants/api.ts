@@ -24,4 +24,15 @@ export const API_URLS = {
     POSTS_ENDPOINT: (siteUrl: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`,
     POST_BY_ID: (siteUrl: string, id: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts/${id}`,
   },
+
+  // LinkedIn OAuth + Share (UGC Posts API — Share on LinkedIn / w_member_social)
+  LINKEDIN: {
+    AUTHORIZE_URL: "https://www.linkedin.com/oauth/v2/authorization",
+    TOKEN_URL: "https://www.linkedin.com/oauth/v2/accessToken",
+    USERINFO_URL: "https://api.linkedin.com/v2/userinfo",
+    UGC_POSTS_URL: "https://api.linkedin.com/v2/ugcPosts",
+    /** Space-delimited; OpenID Connect + member share. Must match enabled LinkedIn products. */
+    SCOPES: "openid profile email w_member_social",
+    FEED_UPDATE_URL: (urn: string) => `https://www.linkedin.com/feed/update/${encodeURIComponent(urn)}`,
+  },
 } as const;

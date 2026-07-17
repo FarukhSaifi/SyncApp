@@ -27,8 +27,10 @@ import type {
 } from "../types";
 import { cache, cacheKeys } from "../utils/cache";
 import { decrypt } from "../utils/encryption";
+import { finalizeLinkedInPost } from "../utils/linkedinPost";
 import { logger } from "../utils/logger";
 import { scheduledPublishDueFilter } from "../utils/scheduleUtils";
+import { resolveLinkedInAccess } from "./linkedinOAuthService";
 import { notifyScheduledPublishResult } from "./notificationService";
 
 function isValidHttpUrl(value: string): boolean {
@@ -191,6 +193,20 @@ function wordpressAuthHeaders(apiKey: string) {
   };
 }
 
+function linkedinErrorMessage(error: unknown): string {
+  const axiosError = error as Error & {
+    isAxiosError?: boolean;
+    response?: { status?: number; data?: { message?: string; error?: string; error_description?: string } };
+  };
+  const data = axiosError.response?.data;
+  if (axiosError.isAxiosError && data) {
+    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    if (typeof data.error_description === "string" && data.error_description.trim()) return data.error_description;
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+  }
+  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+}
+
 export async function publishToMedium(
   post: IPostDocument,
   credential: ICredentialDocument,
@@ -326,12 +342,78 @@ export async function publishToWordpress(
   };
 }
 
+/**
+ * Publish the Phase 1 LinkedIn summary (not the full TipTap article) via UGC Posts API.
+ */
+export async function publishToLinkedin(
+  post: IPostDocument,
+  credential: ICredentialDocument,
+): Promise<PlatformPublishResult> {
+  if (isAlreadyPublishedOnPlatform(post, PLATFORMS.LINKEDIN)) {
+    return { updates: existingPlatformUpdates(post, PLATFORMS.LINKEDIN), action: "skip" };
+  }
+
+  const summary = (post.linkedin_post || "").trim();
+  if (!summary) {
+    throw new Error(ERROR_MESSAGES.LINKEDIN_SUMMARY_REQUIRED);
+  }
+
+  const readMore =
+    (post.linkedin_read_more_url || "").trim() ||
+    ((post.canonical_url || "").trim().startsWith("http") ? (post.canonical_url || "").trim() : undefined);
+  const commentary = finalizeLinkedInPost(summary, readMore);
+
+  const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
+
+  const payload = {
+    author: personUrn,
+    lifecycleState: "PUBLISHED",
+    specificContent: {
+      "com.linkedin.ugc.ShareContent": {
+        shareCommentary: { text: commentary },
+        shareMediaCategory: "NONE",
+      },
+    },
+    visibility: {
+      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+    },
+  };
+
+  const publishResponse = await axios.post(API_URLS.LINKEDIN.UGC_POSTS_URL, payload, {
+    headers: {
+      [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${accessToken}`,
+      [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
+      "X-Restli-Protocol-Version": "2.0.0",
+    },
+  });
+
+  const postUrn =
+    (typeof publishResponse.data?.id === "string" && publishResponse.data.id) ||
+    (typeof publishResponse.headers?.["x-restli-id"] === "string" && publishResponse.headers["x-restli-id"]) ||
+    "";
+
+  if (!postUrn) {
+    throw new Error(ERROR_MESSAGES.PUBLISHING_FAILED);
+  }
+
+  return {
+    updates: {
+      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.LINKEDIN)]: true,
+      [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.LINKEDIN)]: postUrn,
+      [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.LINKEDIN)]: API_URLS.LINKEDIN.FEED_UPDATE_URL(postUrn),
+      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.LINKEDIN)]: dayjs().toDate(),
+    },
+    action: "create",
+  };
+}
+
 type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<PlatformPublishResult>;
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: PublishFn }> = {
   [PLATFORMS.MEDIUM]: { name: PLATFORM_CONFIG.medium.name, publishFn: publishToMedium },
   [PLATFORMS.DEVTO]: { name: PLATFORM_CONFIG.devto.name, publishFn: publishToDevto },
   [PLATFORMS.WORDPRESS]: { name: PLATFORM_CONFIG.wordpress.name, publishFn: publishToWordpress },
+  [PLATFORMS.LINKEDIN]: { name: PLATFORM_CONFIG.linkedin.name, publishFn: publishToLinkedin },
 };
 
 function platformSuccessMessage(platformName: string, action: PlatformPublishAction): string {
@@ -418,7 +500,9 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
             ? mediumErrorMessage(error)
             : platformName === PLATFORMS.DEVTO
               ? devtoErrorMessage(error)
-              : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+              : platformName === PLATFORMS.LINKEDIN
+                ? linkedinErrorMessage(error)
+                : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
         errors.push({
           platform: platformCfg.name,
           error: errorMessage,

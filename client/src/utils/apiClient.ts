@@ -190,6 +190,11 @@ class ApiClient {
     });
   }
 
+  /** LinkedIn OAuth — returns authorize URL for browser redirect */
+  linkedinOAuthStart(): Promise<ApiResponse<{ url: string }>> {
+    return this.request(`${API_PATHS.LINKEDIN}/oauth/start`);
+  }
+
   /** Analytics */
   async getAnalyticsStats(): Promise<ApiResponse<AnalyticsStats>> {
     return this.request("/analytics/stats");
@@ -254,6 +259,25 @@ class ApiClient {
       method: HTTP_METHODS.POST,
       body: { topic, additionalPrompt },
       timeout: APP_CONFIG.API_AI_IMAGE_TIMEOUT,
+    });
+  }
+
+  aiGenerateLinkedInSummary(payload: {
+    title?: string;
+    content?: string;
+    model?: string;
+    readMoreUrl?: string;
+  }): Promise<
+    ApiResponse<{
+      linkedin_post: string;
+      read_more_url?: string;
+      linkedin_missing_canonical?: boolean;
+    }>
+  > {
+    return this.request(`${API_PATHS.AI}/generate-linkedin-summary`, {
+      method: HTTP_METHODS.POST,
+      body: payload,
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
     });
   }
 

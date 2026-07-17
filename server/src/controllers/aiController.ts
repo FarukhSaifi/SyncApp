@@ -72,3 +72,24 @@ export const postEdit = asyncHandler(async (req: Request, res: Response) => {
   const editedText = await aiService.generateEdit(action, text);
   res.status(HTTP_STATUS.OK).json({ success: true, data: { result: editedText } });
 });
+
+export const postGenerateLinkedInSummary = asyncHandler(async (req: Request, res: Response) => {
+  const { title, content, model, readMoreUrl } = req.body as {
+    title?: string;
+    content?: string;
+    model?: string;
+    readMoreUrl?: string;
+  };
+
+  if (model !== undefined && model !== null && model !== "" && !isAllowedContentModel(model)) {
+    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const result = await aiService.generateLinkedInSummary({
+    title,
+    content,
+    model: model?.trim() || undefined,
+    readMoreUrl,
+  });
+  res.status(HTTP_STATUS.OK).json({ success: true, data: result });
+});

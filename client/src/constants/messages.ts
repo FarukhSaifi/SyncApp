@@ -51,6 +51,7 @@ export const TOAST_TITLES = Object.freeze({
   FEATURED_IMAGE_SET: "Featured image set",
   IMAGE_UPLOADED: "Image uploaded",
   LINKEDIN_COPIED: "LinkedIn post copied",
+  LINKEDIN_SUMMARY_GENERATED: "LinkedIn summary ready",
   // Validation
   VALIDATION_ERROR: "Validation Error",
   // Network
@@ -84,6 +85,7 @@ const createSuccessMessages = () => {
     IMAGE_UPLOADED: "Image uploaded successfully",
     // AI
     AI_POST_GENERATED: "Draft added to the editor.",
+    AI_LINKEDIN_SUMMARY_GENERATED: "Short LinkedIn post added to the panel.",
     AI_LINKEDIN_COPIED: "Paste it into LinkedIn when you are ready to post.",
     AI_IMAGE_GENERATED: "Preview below. Use as featured image or upload to attach.",
     AI_IMAGE_SVG_FALLBACK:
@@ -168,6 +170,9 @@ export const ERROR_MESSAGES = Object.freeze({
   // AI
   FAILED_TO_GENERATE_POST: "Failed to generate post",
   FAILED_TO_GENERATE_IMAGE: "Failed to generate image",
+  FAILED_TO_GENERATE_LINKEDIN_SUMMARY: "Failed to generate LinkedIn summary",
+  AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED:
+    "Add a title and article content in the editor first, then generate a LinkedIn summary.",
   FAILED_TO_UPLOAD_COVER: "Upload failed",
   FAILED_TO_COPY_LINKEDIN: "Could not copy LinkedIn post to clipboard",
   AI_LINKEDIN_MISSING_CANONICAL:
@@ -269,6 +274,7 @@ export const LABELS = Object.freeze({
   PLATFORM_MEDIUM: "Medium",
   PLATFORM_DEVTO: "DEV.to",
   PLATFORM_WORDPRESS: "WordPress",
+  PLATFORM_LINKEDIN: "LinkedIn",
   // Accessibility Labels
   HIDE_API_KEY: "Hide API key",
   SHOW_API_KEY: "Show API key",
@@ -389,15 +395,21 @@ export const BUTTON_LABELS = Object.freeze({
   PUBLISH_TO_MEDIUM: "Publish to Medium",
   PUBLISH_TO_DEVTO: "Publish to DEV.to",
   PUBLISH_TO_WORDPRESS: "Publish to WordPress",
+  PUBLISH_TO_LINKEDIN: "Publish to LinkedIn",
   PUBLISH_TO_ALL: "Publish to All",
   REMOVE_FROM_MEDIUM: "Remove from Medium",
   REMOVE_FROM_DEVTO: "Remove from DEV.to",
   REMOVE_FROM_WORDPRESS: "Remove from WordPress",
+  CONNECT_LINKEDIN: "Connect with LinkedIn",
+  DISCONNECT_LINKEDIN: "Disconnect LinkedIn",
+  CONNECTING_LINKEDIN: "Connecting…",
   // Settings
   SAVE_CREDENTIALS: "Save Credentials",
   DISCONNECT_PLATFORM: "Disconnect",
   CLEAR_FIELDS_TO_DISCONNECT: "Clear all fields and save to disconnect",
   CONNECT_PLATFORM_TO_PUBLISH: "Connect a platform in Settings to publish",
+  LINKEDIN_CONNECT_HINT: "Connect LinkedIn in Settings to publish this summary",
+  LINKEDIN_SUMMARY_REQUIRED_PUBLISH: "Generate a LinkedIn summary before publishing",
   // Auth
   SIGN_IN: "Sign In",
   SIGN_UP: "Sign Up",
@@ -524,6 +536,21 @@ export const INFO_MESSAGES = Object.freeze({
   DEVTO_INTEGRATION_DESC: "Connect your DEV.to account to publish posts directly",
   WORDPRESS_INTEGRATION: "WordPress Integration",
   WORDPRESS_INTEGRATION_DESC: "Connect your WordPress site to publish posts directly",
+  LINKEDIN_INTEGRATION: "LinkedIn Integration",
+  LINKEDIN_INTEGRATION_DESC: "Connect LinkedIn with OAuth to publish the short summary (not the full article)",
+  LINKEDIN_HOW_TO_CONNECT: "Before Connect — LinkedIn app + browser checklist:",
+  LINKEDIN_OAUTH_STEP_1: "Auth tab: add the exact Redirect URI below (and keep Update saved)",
+  LINKEDIN_OAUTH_STEP_2: "Products: enable Sign In with LinkedIn (OpenID) AND Share on LinkedIn",
+  LINKEDIN_OAUTH_STEP_3:
+    "Use Incognito / disable ad blockers — LinkedIn OAuth breaks when trackers are blocked (ERR_BLOCKED_BY_CLIENT)",
+  LINKEDIN_REDIRECT_URI_LABEL: "Redirect URI SyncApp sends (must match LinkedIn Auth tab)",
+  LINKEDIN_COPY_REDIRECT_URI: "Copy redirect URI",
+  LINKEDIN_REDIRECT_COPIED: "Redirect URI copied",
+  LINKEDIN_OAUTH_BROWSER_HINT:
+    "If you see LinkedIn “Bummer, something went wrong”, retry in a private window with extensions off.",
+  LINKEDIN_CONNECTED_SUCCESS: "LinkedIn connected successfully",
+  LINKEDIN_CONNECT_FAILED: "Failed to start LinkedIn connection",
+  LINKEDIN_OAUTH_NOT_CONFIGURED: "LinkedIn OAuth is not configured on the server",
   PLATFORM_STATUS: "Platform Status",
   PLATFORM_STATUS_DESC: "Current status of your connected platforms",
   HELP_SUPPORT: "Help & Support",
@@ -853,12 +880,18 @@ export const EDITOR_UI = Object.freeze({
 
   // LinkedIn teaser panel
   LINKEDIN_POST_TITLE: "LinkedIn summary",
-  LINKEDIN_POST_HINT: "Short post for LinkedIn. Full article stays in the editor — link readers to your site.",
+  LINKEDIN_POST_HINT:
+    "Short interactive LinkedIn post (with emojis). Full article stays in the editor — link readers to your site.",
   LINKEDIN_POST_COPY: "Copy for LinkedIn",
+  LINKEDIN_POST_PUBLISH: "Publish to LinkedIn",
+  LINKEDIN_POST_GENERATE: "Generate LinkedIn summary",
+  LINKEDIN_POST_REGENERATE: "Regenerate summary",
+  LINKEDIN_POST_GENERATING: "Generating summary…",
   LINKEDIN_POST_READ_MORE_LABEL: "Read more URL",
   LINKEDIN_POST_MISSING_CANONICAL:
     "Set NEXT_PUBLIC_CANONICAL_BASE_URL (and server CANONICAL_BASE_URL) to your live blog so Read more can link to the full article.",
-  LINKEDIN_POST_EMPTY: "Generate a draft with LinkedIn checked to get a summary here.",
+  LINKEDIN_POST_EMPTY:
+    "No LinkedIn summary yet. Generate one from your article title and content, or include LinkedIn when generating a full draft.",
 } as const);
 
 // ============================================================================

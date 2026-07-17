@@ -38,6 +38,7 @@ export async function getPlatformDistribution(userId: string) {
         medium: [{ $match: { "platform_status.medium.published": true } }, { $count: "count" }],
         devto: [{ $match: { "platform_status.devto.published": true } }, { $count: "count" }],
         wordpress: [{ $match: { "platform_status.wordpress.published": true } }, { $count: "count" }],
+        linkedin: [{ $match: { "platform_status.linkedin.published": true } }, { $count: "count" }],
       },
     },
   ]);
@@ -47,6 +48,7 @@ export async function getPlatformDistribution(userId: string) {
     medium: stats.medium[0]?.count || 0,
     devto: stats.devto[0]?.count || 0,
     wordpress: stats.wordpress[0]?.count || 0,
+    linkedin: stats.linkedin[0]?.count || 0,
   };
 }
 

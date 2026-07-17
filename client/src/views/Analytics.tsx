@@ -141,6 +141,7 @@ const Analytics = () => {
     { name: ANALYTICS_LABELS.PLATFORM_MEDIUM, count: data.platformStats.medium },
     { name: ANALYTICS_LABELS.PLATFORM_DEVTO, count: data.platformStats.devto },
     { name: ANALYTICS_LABELS.PLATFORM_WORDPRESS, count: data.platformStats.wordpress },
+    { name: ANALYTICS_LABELS.PLATFORM_LINKEDIN, count: data.platformStats.linkedin || 0 },
   ];
 
   return (

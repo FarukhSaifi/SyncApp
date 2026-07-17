@@ -124,6 +124,8 @@ export async function createPost(input: CreatePostInput) {
     cover_image,
     canonical_url,
     meta_description,
+    linkedin_post,
+    linkedin_read_more_url,
     scheduled_for,
     author,
   } = input;
@@ -143,6 +145,8 @@ export async function createPost(input: CreatePostInput) {
     cover_image: processedCoverImage as any,
     canonical_url,
     meta_description: meta_description?.trim() || null,
+    linkedin_post: typeof linkedin_post === "string" ? linkedin_post : "",
+    linkedin_read_more_url: typeof linkedin_read_more_url === "string" ? linkedin_read_more_url.trim() : "",
     author,
   };
 
@@ -359,6 +363,13 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   if (updates.meta_description !== undefined) {
     updateData.meta_description =
       typeof updates.meta_description === "string" ? updates.meta_description.trim() : updates.meta_description;
+  }
+  if (updates.linkedin_post !== undefined) {
+    updateData.linkedin_post = typeof updates.linkedin_post === "string" ? updates.linkedin_post : "";
+  }
+  if (updates.linkedin_read_more_url !== undefined) {
+    updateData.linkedin_read_more_url =
+      typeof updates.linkedin_read_more_url === "string" ? updates.linkedin_read_more_url.trim() : "";
   }
   if (updates.scheduled_for !== undefined) {
     updateData.scheduled_for = normalizeScheduledFor(updates.scheduled_for, {

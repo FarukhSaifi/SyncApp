@@ -31,6 +31,16 @@ export const ERROR_MESSAGES = {
   INVALID_MEDIUM_API_KEY: "Invalid Medium API key",
   INVALID_DEVTO_API_KEY: "Invalid DEV.to API key",
   INVALID_WORDPRESS_API_KEY: "Invalid WordPress API key",
+  INVALID_LINKEDIN_TOKEN: "Invalid or expired LinkedIn access token. Reconnect LinkedIn in Settings.",
+  LINKEDIN_NOT_CONFIGURED:
+    "LinkedIn OAuth is not configured. Set LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, and LINKEDIN_REDIRECT_URI.",
+  LINKEDIN_OAUTH_STATE_INVALID: "LinkedIn OAuth state is invalid or expired. Try connecting again.",
+  LINKEDIN_OAUTH_DENIED: "LinkedIn authorization was denied or cancelled.",
+  LINKEDIN_PERSON_URN_MISSING: "Could not resolve LinkedIn member identity. Reconnect LinkedIn in Settings.",
+  LINKEDIN_SUMMARY_REQUIRED:
+    "No LinkedIn summary on this post. Generate one from the LinkedIn panel (or a draft with LinkedIn checked), then publish.",
+  LINKEDIN_UNPUBLISH_UNSUPPORTED:
+    "LinkedIn posts cannot be unpublished from SyncApp. Delete the post from LinkedIn if needed.",
   FAILED_TO_PUBLISH_ANY_PLATFORM: "Failed to publish to any platform",
   // Encryption
   FAILED_TO_ENCRYPT: "Failed to encrypt data",
@@ -99,6 +109,9 @@ export const ERROR_MESSAGES = {
   AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.5 Flash.",
   AI_EDIT_FAILED: "Failed to perform AI edit",
   AI_EDIT_CONTEXT_REQUIRED: "Context text is required for AI edit actions",
+  AI_LINKEDIN_SUMMARY_FAILED: "Failed to generate LinkedIn summary",
+  AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED:
+    "Add a title and article content in the editor first, then generate a LinkedIn summary.",
   AI_TRENDING_TOPICS_FAILED: "Failed to fetch real-time trending topics",
   AI_DEVTO_TAGS_FAILED: "Failed to fetch high-reach tags from DEV.to",
   // Upload

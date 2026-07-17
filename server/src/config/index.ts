@@ -59,4 +59,7 @@ export const config: AppConfig = {
   resendApiKey: process.env.RESEND_API_KEY || "",
   notificationFromEmail: process.env.NOTIFICATION_FROM_EMAIL || "",
   notificationCcEmail: (process.env.NOTIFICATION_CC_EMAIL || NOTIFICATION_CC_EMAIL_DEFAULT).trim(),
+  linkedinClientId: (process.env.LINKEDIN_CLIENT_ID || "").trim(),
+  linkedinClientSecret: (process.env.LINKEDIN_CLIENT_SECRET || "").trim(),
+  linkedinRedirectUri: (process.env.LINKEDIN_REDIRECT_URI || "").trim(),
 };

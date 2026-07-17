@@ -11,6 +11,8 @@ export const INITIAL_EDITOR_FORM = Object.freeze({
   cover_image: "",
   canonical_url: "",
   scheduled_for: "",
+  linkedin_post: "",
+  linkedin_read_more_url: "",
 } as const);
 
 /** Autosave interval (ms). Drafts are saved automatically when dirty. */

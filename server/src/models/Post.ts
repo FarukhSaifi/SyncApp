@@ -63,6 +63,12 @@ const postSchema = new Schema<IPostDocument>(
         url: String,
         published_at: Date,
       },
+      linkedin: {
+        published: { type: Boolean, default: false },
+        post_id: String,
+        url: String,
+        published_at: Date,
+      },
     },
     tags: [String],
     meta_description: {
@@ -72,6 +78,15 @@ const postSchema = new Schema<IPostDocument>(
     },
     cover_image: String,
     canonical_url: String,
+    linkedin_post: {
+      type: String,
+      default: "",
+    },
+    linkedin_read_more_url: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     scheduled_for: {
       type: Date,
     },

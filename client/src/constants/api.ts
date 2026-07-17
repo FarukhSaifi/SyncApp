@@ -18,6 +18,7 @@ export const API_PATHS = Object.freeze({
   AI: `${API_BASE}/ai`,
   UPLOAD: `${API_BASE}/upload`,
   ANALYTICS: `${API_BASE}/analytics`,
+  LINKEDIN: `${API_BASE}/linkedin`,
 } as const);
 
 export const HTTP_METHODS = Object.freeze({

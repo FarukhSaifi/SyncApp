@@ -5,7 +5,7 @@
  * All business logic lives in useEditorState and useEditorAI hooks.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import "../components/editor/editor.css";
 
@@ -20,8 +20,10 @@ import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
 import { toEditorHtml } from "@utils/contentUtils";
+import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
 import dynamic from "next/dynamic";
 
+import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { SEO_THRESHOLDS } from "@constants/seo";
 
@@ -39,18 +41,33 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const ai = useEditorAI({
     postId: state.id,
     preferredReadMoreUrl,
+    getArticleContext: () => ({
+      title: state.formData.title || "",
+      content: state.formData.content_markdown || "",
+    }),
     onDraftGenerated: (data) => {
+      const linkedinPost = data.linkedin_post?.trim() || "";
+      const readMore = data.read_more_url?.trim() || preferredReadMoreUrl || "";
       state.setFormData((prev) => ({
         ...prev,
         // AI returns markdown; TipTap stores HTML — convert so headings/code render.
         content_markdown: toEditorHtml(data.content || ""),
         title: data.title || prev.title,
         meta_description: data.meta_description || prev.meta_description,
+        linkedin_post: linkedinPost,
+        linkedin_read_more_url: readMore,
       }));
       if (data.tags && data.tags.length > 0) {
         state.setTagList(data.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
       }
       setTimeout(() => ai.handleGenerateImage(), 500);
+    },
+    onLinkedInSummaryGenerated: (data) => {
+      state.setFormData((prev) => ({
+        ...prev,
+        linkedin_post: data.linkedin_post,
+        linkedin_read_more_url: data.read_more_url?.trim() || preferredReadMoreUrl || "",
+      }));
     },
     onCoverImageSet: (url) => {
       state.setFormData((prev) => ({ ...prev, cover_image: url }));
@@ -60,6 +77,32 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
 
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+
+  // Hydrate LinkedIn panel from persisted post fields once load completes.
+  useEffect(() => {
+    if (state.initialLoading) return;
+    const saved = String(state.formData.linkedin_post || "").trim();
+    if (saved) {
+      ai.hydrateLinkedInPost(saved, false);
+    }
+    // Only when finishing initial load / switching posts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.initialLoading, state.id]);
+
+  // Keep form LinkedIn teaser in sync when canonical URL becomes available.
+  useEffect(() => {
+    const currentPost = String(state.formData.linkedin_post || "");
+    const currentReadMore = String(state.formData.linkedin_read_more_url || "");
+    if (!preferredReadMoreUrl || !currentPost.trim()) return;
+    const next = applyLinkedInReadMoreUrl(currentPost, preferredReadMoreUrl);
+    if (next !== currentPost || currentReadMore !== preferredReadMoreUrl) {
+      state.setFormData((prev) => ({
+        ...prev,
+        linkedin_post: next,
+        linkedin_read_more_url: preferredReadMoreUrl,
+      }));
+    }
+  }, [preferredReadMoreUrl, state.formData.linkedin_post, state.formData.linkedin_read_more_url, state.setFormData]);
 
   const closeSidebars = useCallback(() => {
     setLeftSidebarOpen(false);
@@ -83,6 +126,13 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     },
     [state],
   );
+
+  const linkedinConnected = state.connectedPlatforms.includes(PLATFORMS.LINKEDIN);
+  const formLinkedInPost = String(state.formData.linkedin_post || "").trim() || null;
+  const formLinkedInReadMore = String(state.formData.linkedin_read_more_url || "").trim() || null;
+  const displayLinkedInPost = ai.linkedinPost || formLinkedInPost;
+  const displayLinkedInReadMore =
+    ai.linkedinReadMoreUrl || extractLinkedInReadMoreUrl(displayLinkedInPost || "") || formLinkedInReadMore;
 
   return (
     <div className="editor-layout">
@@ -159,10 +209,18 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         generatedImageDataUrl={ai.generatedImageDataUrl}
         generatedImageSource={ai.generatedImageSource}
         uploadingCover={ai.uploadingCover}
-        linkedinPost={ai.linkedinPost}
-        linkedinReadMoreUrl={ai.linkedinReadMoreUrl}
+        linkedinPost={displayLinkedInPost}
+        linkedinReadMoreUrl={displayLinkedInReadMore}
         linkedinMissingCanonical={ai.linkedinMissingCanonical}
-        onCopyLinkedInPost={() => void ai.handleCopyLinkedInPost()}
+        linkedinConnected={linkedinConnected}
+        onCopyLinkedInPost={() => {
+          if (!ai.linkedinPost?.trim() && displayLinkedInPost) {
+            ai.hydrateLinkedInPost(displayLinkedInPost, false);
+          }
+          void ai.handleCopyLinkedInPost();
+        }}
+        onPublishLinkedInPost={() => state.handlePublishToPlatform(PLATFORMS.LINKEDIN)}
+        onGenerateLinkedInSummary={() => void ai.handleGenerateLinkedInSummary()}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}
         onUseAsFeaturedImage={ai.handleUseAsFeaturedImage}

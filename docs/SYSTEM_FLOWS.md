@@ -25,17 +25,24 @@
 5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` only — no Vertex required).
 6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is parsed as JSON (`schemas.ts`).
 7. Client fills the editor with the full article `{ title, meta_description, tags, content }`.
-8. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor sidebar shows a **LinkedIn summary** panel with Copy. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
+8. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor persists these on the Post (`linkedin_post`, `linkedin_read_more_url`) and shows a **LinkedIn summary** panel with Copy + Publish. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
 
 **Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`linkedinPost.ts`](../server/src/utils/linkedinPost.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx), [`LinkedInPostPanel.tsx`](../client/src/components/editor/LinkedInPostPanel.tsx).
 
 **Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md). Set `CANONICAL_BASE_URL` (server) and `NEXT_PUBLIC_CANONICAL_BASE_URL` (client) to your live blog for LinkedIn Read more links.
 
-**Phase 2 (planned):** LinkedIn OAuth credentials + `publishToLinkedin` — paste/copy summary ships now; API publish later.
+## LinkedIn OAuth + publish (Phase 2)
+
+1. Settings → **Connect with LinkedIn** → `GET /api/linkedin/oauth/start` returns authorize URL (JWT-signed state).
+2. Member approves scopes `openid profile w_member_social`; callback `GET /api/linkedin/oauth/callback` exchanges code, fetches person URN via userinfo, stores encrypted access/refresh tokens on Credential (`platform_name: linkedin`).
+3. Editor **Publish to LinkedIn** (or Publish All / scheduled cron) calls `publishToLinkedin`, which posts the **saved summary** via UGC Posts API — never the full TipTap article.
+4. Empty `linkedin_post` → clear error; LinkedIn unpublish from SyncApp is unsupported.
+
+**Env:** `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI` (must match the LinkedIn app callback, e.g. `https://…/api/linkedin/oauth/callback`). Also set `SITE_URL` so OAuth redirects back to `/settings`.
 
 ## Smart Publish Menu
 
-Editor loads `GET /api/credentials` and shows only platforms with active credentials. Publish is disabled when none are connected.
+Editor loads `GET /api/credentials` and shows only platforms with active credentials (Medium, DEV.to, WordPress, LinkedIn). Publish is disabled when none are connected.
 
 ## Credential Disconnect
 

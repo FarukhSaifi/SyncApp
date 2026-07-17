@@ -77,6 +77,8 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           cover_image: post.cover_image || "",
           canonical_url: post.canonical_url || buildClientCanonicalUrl(post.slug),
           scheduled_for: post.scheduled_for || "",
+          linkedin_post: post.linkedin_post || "",
+          linkedin_read_more_url: post.linkedin_read_more_url || "",
         });
         setTagList(Array.isArray(post.tags) ? post.tags : []);
         setIsDirty(false);
@@ -295,6 +297,10 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       }
       if (!connectedPlatforms.includes(platform)) {
         toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
+        return;
+      }
+      if (platform === "linkedin" && !String(formData.linkedin_post || "").trim()) {
+        toast.validationError(SYNC_LABEL.LINKEDIN_SUMMARY_REQUIRED_PUBLISH);
         return;
       }
       setPublishing(true);

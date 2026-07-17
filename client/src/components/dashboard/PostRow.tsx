@@ -74,6 +74,21 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       );
     }
 
+    if (post.platform_status?.linkedin?.published) {
+      platforms.push(
+        <a
+          key={PLATFORMS.LINKEDIN}
+          href={post.platform_status.linkedin.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
+        >
+          <span className="text-primary">●</span>
+          <span>{SYNC_LABEL.PLATFORM_LINKEDIN}</span>
+        </a>,
+      );
+    }
+
     if (platforms.length === 0) {
       return <span className="text-muted-foreground">{SYNC_LABEL.NOT_PUBLISHED}</span>;
     }

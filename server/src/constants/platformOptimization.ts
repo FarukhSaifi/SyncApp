@@ -1,6 +1,6 @@
 /**
  * Platform-specific AI optimization targets (Phase 1: DEV.to + LinkedIn).
- * LinkedIn: short summary + Read more URL (optimize/copy). OAuth publish is Phase 2.
+ * LinkedIn: short summary + Read more URL; OAuth publish posts that summary.
  */
 import { AI_POST_LIMITS, AI_PROMPTS } from "./ai";
 
@@ -30,23 +30,24 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
 - content_markdown is the full article. Do not put LinkedIn teaser text in content_markdown.`,
 
   linkedin: `### LinkedIn Optimization (summary + Read more)
-- content_markdown MUST still be the FULL blog article readers open on the website (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}, Markdown, headings, examples).
+- content_markdown MUST still be the FULL blog article readers open on the website (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}, Markdown, headings, examples). Do NOT put emojis in content_markdown unless natural in code comments.
 - ALSO fill linkedin_post with a SHORT native LinkedIn post (plain text, NOT Markdown headings/code fences):
   - Hook in the first 2 lines (LinkedIn truncates with "see more").
   - Short paragraphs (1–3 sentences). Length ~${AI_POST_LIMITS.LINKEDIN_POST_MIN_CHARS}–${AI_POST_LIMITS.LINKEDIN_POST_MAX_CHARS} characters.
+  - **Emojis (required for engagement):** Use 3–8 relevant emojis to make the post scannable and interactive — e.g. line-openers (🚀 💡 ✅ 🔥), bullet markers, and a light CTA emoji. Prefer tech-friendly emojis; never spam or use decorative emoji walls.
   - End with 3–5 relevant hashtags on their own line (e.g. #WebDev #JavaScript).
-  - Soft CTA is fine ("What's your take?").
-  - Do NOT invent or invent a domain. Do NOT include a "Read more:" URL — the server appends the real link.
+  - Soft CTA is fine ("What's your take? 👇").
+  - Do NOT invent a domain. Do NOT include a "Read more:" URL — the server appends the real link.
 - tags JSON field: still exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to-style tags (no # in JSON).`,
 };
 
 const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (dual output — CRITICAL)
 - Produce TWO deliverables in one JSON response:
-  1) content_markdown = full DEV.to-style article (headings, code, lists, depth).
-  2) linkedin_post = separate short LinkedIn teaser (plain text + hashtags only).
+  1) content_markdown = full DEV.to-style article (headings, code, lists, depth) — keep professional; minimal/no emoji.
+  2) linkedin_post = separate short LinkedIn teaser (plain text + strategic emojis + hashtags).
 - Do NOT merge the LinkedIn teaser into content_markdown.
 - Do NOT put DEV.to Markdown structure into linkedin_post.
-- Open the full article with a strong hook; LinkedIn teaser has its own hook.
+- Open the full article with a strong hook; LinkedIn teaser has its own emoji-assisted hook.
 - tags JSON field: exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to tags (no #).`;
 
 function normalizeTargets(targets?: string[]): OptimizationTarget[] {
@@ -93,7 +94,7 @@ export function buildFullPostUserPrompt(
   let prompt = `${AI_PROMPTS.FULL_POST_USER(keyword)}\n\nOptimize this draft primarily for: ${platformLabels}.`;
 
   if (resolved.includes(AI_OPTIMIZATION_TARGETS.LINKEDIN)) {
-    prompt += `\n\nLinkedIn: fill linkedin_post with a short teaser only. Do not invent a Read more URL.`;
+    prompt += `\n\nLinkedIn: fill linkedin_post with a short interactive teaser that includes strategic emojis (3–8). Do not invent a Read more URL.`;
     if (options?.readMoreUrl) {
       prompt += ` The live article URL will be: ${options.readMoreUrl} (server appends it — do not invent another domain).`;
     } else {

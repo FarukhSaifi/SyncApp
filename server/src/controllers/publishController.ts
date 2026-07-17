@@ -10,6 +10,7 @@ import {
   performPublishToAll,
   platformSuccessMessage,
   publishToDevto,
+  publishToLinkedin,
   publishToMedium,
   publishToWordpress,
 } from "../services/publishService";
@@ -20,6 +21,7 @@ const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, PlatformConfigWithFn> = {
   [PLATFORMS.MEDIUM]: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
   [PLATFORMS.DEVTO]: { ...PLATFORM_CONFIG.devto, publishFn: publishToDevto },
   [PLATFORMS.WORDPRESS]: { ...PLATFORM_CONFIG.wordpress, publishFn: publishToWordpress },
+  [PLATFORMS.LINKEDIN]: { ...PLATFORM_CONFIG.linkedin, publishFn: publishToLinkedin },
 };
 
 /**
@@ -46,6 +48,7 @@ function getPlatformConfig(platformName: string) {
   if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG.medium;
   if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG.devto;
   if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG.wordpress;
+  if (platformName === PLATFORMS.LINKEDIN) return PLATFORM_CONFIG.linkedin;
   return undefined;
 }
 
@@ -53,6 +56,7 @@ function getPlatformConfigWithFn(platformName: string) {
   if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG_WITH_FUNCTIONS.medium;
   if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG_WITH_FUNCTIONS.devto;
   if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG_WITH_FUNCTIONS.wordpress;
+  if (platformName === PLATFORMS.LINKEDIN) return PLATFORM_CONFIG_WITH_FUNCTIONS.linkedin;
   return undefined;
 }
 
@@ -61,6 +65,7 @@ function getPlatformStatusField(platformStatus: any, platformName: string) {
   if (platformName === PLATFORMS.MEDIUM) return platformStatus.medium;
   if (platformName === PLATFORMS.DEVTO) return platformStatus.devto;
   if (platformName === PLATFORMS.WORDPRESS) return platformStatus.wordpress;
+  if (platformName === PLATFORMS.LINKEDIN) return platformStatus.linkedin;
   return undefined;
 }
 
@@ -131,6 +136,11 @@ export const publishDevto = publishToPlatform(PLATFORMS.DEVTO);
 export const publishWordpress = publishToPlatform(PLATFORMS.WORDPRESS);
 
 /**
+ * Publish LinkedIn summary
+ */
+export const publishLinkedin = publishToPlatform(PLATFORMS.LINKEDIN);
+
+/**
  * Publish to all active platforms
  */
 export const publishAll = asyncHandler(async (req: Request, res: Response) => {
@@ -171,6 +181,10 @@ export const statusMedium = asyncHandler(async (req: Request, res: Response) => 
 export const unpublishPlatform = asyncHandler(async (req: Request, res: Response) => {
   const postId = req.params.postId as string;
   const platform = req.params.platform as string;
+
+  if (platform === PLATFORMS.LINKEDIN) {
+    throw new ValidationError(ERROR_MESSAGES.LINKEDIN_UNPUBLISH_UNSUPPORTED);
+  }
 
   const platformCfg = getPlatformConfig(platform);
   if (!platformCfg) {

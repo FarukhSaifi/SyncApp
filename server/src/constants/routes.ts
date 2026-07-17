@@ -13,4 +13,5 @@ export const ROUTES = Object.freeze({
   UPLOAD: "/upload",
   CRON: "/cron",
   ANALYTICS: "/analytics",
+  LINKEDIN: "/linkedin",
 } as const);

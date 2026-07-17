@@ -83,14 +83,18 @@ Google Ads **Keyword Planner** is not integrated (requires a Google Ads account)
 
 ### LinkedIn summary + Read more
 
-When Generate Post includes the **LinkedIn** target:
+**From a full draft** — when Generate Post includes the **LinkedIn** target:
 
 - `content` / `content_markdown` — full article for the editor (and DEV.to when selected)
 - `linkedin_post` — short LinkedIn-native teaser; server appends `Read more: {url}`
 - `read_more_url` — `{CANONICAL_BASE_URL}/{slug}` when `CANONICAL_BASE_URL` or `SITE_URL` is set
 - `linkedin_missing_canonical` — `true` when the blog base URL is unset (no invented domain)
 
+**From the editor panel** — `POST /api/ai/generate-linkedin-summary` builds a teaser from the current title + article only (no full draft regen). Body: `{ title, content, model?, readMoreUrl? }`. Response: `{ linkedin_post, read_more_url?, linkedin_missing_canonical? }`.
+
 Also set `NEXT_PUBLIC_CANONICAL_BASE_URL` on the client so the sidebar can rewrite Read more after save when the post has a real `canonical_url`.
+
+The teaser is persisted on the Post (`linkedin_post`, `linkedin_read_more_url`) and published via LinkedIn OAuth (`w_member_social`) — see [SYSTEM_FLOWS.md](./SYSTEM_FLOWS.md#linkedin-oauth--publish-phase-2).
 
 Do **not** rely on `GOOGLE_CLOUD_PROJECT` / Vertex for AI. Those are optional GCS only.
 
@@ -102,4 +106,4 @@ See [VERCEL_ENV.md](./VERCEL_ENV.md).
 
 ## Architecture
 
-`server/src/ai/` — Studio client (`studioGenerateContent`), generatePost / generateImage / generateEdit, JSON parse, retries + model fallbacks.
+`server/src/ai/` — Studio client (`studioGenerateContent`), generatePost / generateImage / generateEdit / generateLinkedInSummary, JSON parse, retries + model fallbacks.

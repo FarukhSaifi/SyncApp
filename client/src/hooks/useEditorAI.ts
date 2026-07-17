@@ -73,7 +73,14 @@ interface UseEditorAIOptions {
   postId?: string;
   /** Preferred public article URL for LinkedIn Read more (post canonical). */
   preferredReadMoreUrl?: string;
+  /** Current editor title + body for LinkedIn-only summary generation. */
+  getArticleContext: () => { title: string; content: string };
   onDraftGenerated: (data: GeneratedPostData) => void;
+  onLinkedInSummaryGenerated: (data: {
+    linkedin_post: string;
+    read_more_url?: string;
+    linkedin_missing_canonical?: boolean;
+  }) => void;
   onCoverImageSet: (url: string) => void;
 }
 
@@ -95,17 +102,21 @@ interface UseEditorAIReturn {
   linkedinReadMoreUrl: string | null;
   linkedinMissingCanonical: boolean;
   handleGeneratePost: () => Promise<void>;
+  handleGenerateLinkedInSummary: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
   handleCopyLinkedInPost: () => Promise<void>;
+  hydrateLinkedInPost: (post: string | null, missingCanonical?: boolean) => void;
   clearLinkedInPost: () => void;
 }
 
 export function useEditorAI({
   postId,
   preferredReadMoreUrl,
+  getArticleContext,
   onDraftGenerated,
+  onLinkedInSummaryGenerated,
   onCoverImageSet,
 }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
@@ -145,6 +156,17 @@ export function useEditorAI({
   const clearLinkedInPost = useCallback(() => {
     setLinkedinPost(null);
     setLinkedinMissingCanonical(false);
+  }, []);
+
+  const hydrateLinkedInPost = useCallback((post: string | null, missingCanonical = false) => {
+    const text = (post || "").trim();
+    if (!text) {
+      setLinkedinPost(null);
+      setLinkedinMissingCanonical(false);
+      return;
+    }
+    setLinkedinPost(text);
+    setLinkedinMissingCanonical(missingCanonical);
   }, []);
 
   const handleGeneratePost = useCallback(async () => {
@@ -201,6 +223,54 @@ export function useEditorAI({
       setAiLoading("");
     }
   }, [aiKeyword, aiModel, clearLinkedInPost, onDraftGenerated, preferredReadMoreUrl, targetPlatforms, toast]);
+
+  const handleGenerateLinkedInSummary = useCallback(async () => {
+    const { title, content } = getArticleContext();
+    const titleTrim = title.trim();
+    const contentTrim = content.trim();
+    if (!titleTrim && !contentTrim) {
+      toast.validationError(SYNC_LABEL.AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED);
+      return;
+    }
+    setAiLoading("linkedin");
+    try {
+      const response = await apiClient.aiGenerateLinkedInSummary({
+        title: titleTrim,
+        content: contentTrim,
+        model: aiModel,
+        readMoreUrl: preferredReadMoreUrl,
+      });
+      if (response?.success && response.data?.linkedin_post?.trim()) {
+        let postText = response.data.linkedin_post.trim();
+        let missingCanonical = Boolean(response.data.linkedin_missing_canonical);
+        let readMore = response.data.read_more_url?.trim() || preferredReadMoreUrl;
+
+        if (preferredReadMoreUrl) {
+          postText = applyLinkedInReadMoreUrl(postText, preferredReadMoreUrl);
+          readMore = preferredReadMoreUrl;
+          missingCanonical = false;
+        }
+
+        setLinkedinPost(postText);
+        setLinkedinMissingCanonical(missingCanonical);
+        onLinkedInSummaryGenerated({
+          linkedin_post: postText,
+          read_more_url: readMore,
+          linkedin_missing_canonical: missingCanonical,
+        });
+        toast.success(TOAST_TITLES.LINKEDIN_SUMMARY_GENERATED, SYNC_LABEL.AI_LINKEDIN_SUMMARY_GENERATED);
+        if (missingCanonical) {
+          toast.warning(TOAST_TITLES.WARNING, SYNC_LABEL.AI_LINKEDIN_MISSING_CANONICAL);
+        }
+      } else {
+        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_LINKEDIN_SUMMARY);
+      }
+    } catch (error) {
+      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_LINKEDIN_SUMMARY);
+    } finally {
+      setAiLoading("");
+    }
+  }, [aiModel, getArticleContext, onLinkedInSummaryGenerated, preferredReadMoreUrl, toast]);
 
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
@@ -286,10 +356,12 @@ export function useEditorAI({
     linkedinReadMoreUrl,
     linkedinMissingCanonical,
     handleGeneratePost,
+    handleGenerateLinkedInSummary,
     handleGenerateImage,
     handleUseAsFeaturedImage,
     handleUploadAndAttach,
     handleCopyLinkedInPost,
+    hydrateLinkedInPost,
     clearLinkedInPost,
   };
 }

@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL } from "@constants";
+import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL, TOAST_TITLES } from "@constants";
 import { useToast } from "@hooks/useToast";
 import type { ApiCredential, ApiResponse, SavedState } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog, devWarn } from "@utils/logger";
-import { FiAlertCircle, FiExternalLink, FiEye, FiEyeOff, FiKey, FiSave } from "react-icons/fi";
+import { FiAlertCircle, FiCopy, FiExternalLink, FiEye, FiEyeOff, FiKey, FiLinkedin, FiSave } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
@@ -21,11 +21,18 @@ const Settings = () => {
   const [devtoUsername, setDevtoUsername] = useState<string>("");
   const [wordpressApiKey, setWordpressApiKey] = useState<string>("");
   const [wordpressSiteUrl, setWordpressSiteUrl] = useState<string>("");
-  const [saved, setSaved] = useState<SavedState>({ medium: false, devto: false, wordpress: false });
-  const [connected, setConnected] = useState<SavedState>({ medium: false, devto: false, wordpress: false });
+  const [saved, setSaved] = useState<SavedState>({ medium: false, devto: false, wordpress: false, linkedin: false });
+  const [connected, setConnected] = useState<SavedState>({
+    medium: false,
+    devto: false,
+    wordpress: false,
+    linkedin: false,
+  });
   const [showMediumKey, setShowMediumKey] = useState<boolean>(false);
   const [showDevtoKey, setShowDevtoKey] = useState<boolean>(false);
   const [showWordpressKey, setShowWordpressKey] = useState<boolean>(false);
+  const [linkedinConnecting, setLinkedinConnecting] = useState(false);
+  const [linkedinRedirectUri, setLinkedinRedirectUri] = useState("http://localhost:9000/api/linkedin/oauth/callback");
 
   useEffect(() => {
     const loadCredentials = async () => {
@@ -42,6 +49,7 @@ const Settings = () => {
           const medium = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.MEDIUM);
           const devto = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.DEVTO);
           const wordpress = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.WORDPRESS);
+          const linkedin = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.LINKEDIN);
 
           if (medium) {
             setConnected((prev) => ({ ...prev, medium: true }));
@@ -59,6 +67,9 @@ const Settings = () => {
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
             if (wordpress.api_key) setWordpressApiKey(wordpress.api_key as string);
           }
+          if (linkedin) {
+            setConnected((prev) => ({ ...prev, linkedin: true }));
+          }
         } else {
           devWarn((result as ApiResponse<unknown>)?.message || "No credentials found or invalid response");
         }
@@ -67,7 +78,36 @@ const Settings = () => {
         toast.apiError(`${SYNC_LABEL.FAILED_TO_LOAD_CREDENTIALS}: ${(e as Error)?.message || ""}`);
       }
     };
+
+    const loadLinkedInOAuthStatus = async () => {
+      try {
+        const result = await apiClient.request<ApiResponse<{ configured?: boolean; redirectUri?: string }>>(
+          `${API_PATHS.LINKEDIN}/oauth/status`,
+        );
+        if (result?.success && result.data?.redirectUri) {
+          setLinkedinRedirectUri(result.data.redirectUri);
+        }
+      } catch (e) {
+        devWarn("LinkedIn OAuth status unavailable", e);
+      }
+    };
+
     loadCredentials();
+    loadLinkedInOAuthStatus();
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("linkedin") === "connected") {
+        setConnected((prev) => ({ ...prev, linkedin: true }));
+        toast.success(TOAST_TITLES.SUCCESS, SYNC_LABEL.LINKEDIN_CONNECTED_SUCCESS);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      const linkedinError = params.get("linkedin_error");
+      if (linkedinError) {
+        toast.apiError(decodeURIComponent(linkedinError));
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount, toast is stable
 
@@ -242,6 +282,54 @@ const Settings = () => {
           (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
         );
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyLinkedInRedirectUri = async () => {
+    try {
+      await navigator.clipboard.writeText(linkedinRedirectUri);
+      toast.success(TOAST_TITLES.SUCCESS, SYNC_LABEL.LINKEDIN_REDIRECT_COPIED);
+    } catch {
+      toast.apiError(SYNC_LABEL.FAILED_TO_COPY_LINKEDIN);
+    }
+  };
+
+  const handleConnectLinkedIn = async () => {
+    setLinkedinConnecting(true);
+    try {
+      const result = await apiClient.linkedinOAuthStart();
+      if (result?.success && result.data?.url) {
+        window.location.href = result.data.url;
+        return;
+      }
+      toast.apiError(result?.error || SYNC_LABEL.LINKEDIN_CONNECT_FAILED);
+    } catch (error) {
+      toast.apiError((error as Error)?.message || SYNC_LABEL.LINKEDIN_CONNECT_FAILED);
+    } finally {
+      setLinkedinConnecting(false);
+    }
+  };
+
+  const handleDisconnectLinkedIn = async () => {
+    setLoading(true);
+    try {
+      const result = await apiClient.deleteCredential(PLATFORMS.LINKEDIN);
+      if (result?.success) {
+        setConnected((prev) => ({ ...prev, linkedin: false }));
+        toast.credentialsRemoved(SYNC_LABEL.PLATFORM_LINKEDIN);
+      } else {
+        toast.credentialsRemoveError(
+          SYNC_LABEL.PLATFORM_LINKEDIN,
+          result?.error || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
+        );
+      }
+    } catch (error) {
+      toast.credentialsRemoveError(
+        SYNC_LABEL.PLATFORM_LINKEDIN,
+        (error as Error)?.message || SYNC_LABEL.FAILED_TO_REMOVE_CREDENTIALS,
+      );
     } finally {
       setLoading(false);
     }
@@ -575,6 +663,82 @@ const Settings = () => {
         </CardFooter>
       </Card>
 
+      {/* LinkedIn Integration */}
+      <Card className="border shadow-sm">
+        <CardHeader>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-primary/15 rounded-lg">
+              <FiLinkedin className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <CardTitle>{SYNC_LABEL.LINKEDIN_INTEGRATION}</CardTitle>
+              <CardDescription>{SYNC_LABEL.LINKEDIN_INTEGRATION_DESC}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+              <div className="text-sm text-foreground">
+                <p className="font-medium mb-1">{SYNC_LABEL.LINKEDIN_HOW_TO_CONNECT}</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_1}</li>
+                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_2}</li>
+                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_3}</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-foreground">{SYNC_LABEL.LINKEDIN_REDIRECT_URI_LABEL}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <code className="flex-1 break-all rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground">
+                {linkedinRedirectUri}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLinkedInRedirectUri}
+                className="shrink-0 justify-center"
+              >
+                <FiCopy className="mr-1.5 h-3.5 w-3.5" />
+                {SYNC_LABEL.LINKEDIN_COPY_REDIRECT_URI}
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+          </p>
+          {!connected.linkedin ? (
+            <p className="text-[11px] text-muted-foreground">{SYNC_LABEL.LINKEDIN_OAUTH_BROWSER_HINT}</p>
+          ) : null}
+        </CardContent>
+        <CardFooter className="flex flex-wrap gap-2">
+          {connected.linkedin ? (
+            <Button
+              onClick={handleDisconnectLinkedIn}
+              disabled={loading || linkedinConnecting}
+              variant="outline"
+              className="flex items-center space-x-1.5 sm:space-x-2"
+            >
+              {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.DISCONNECT_LINKEDIN}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleConnectLinkedIn}
+              disabled={loading || linkedinConnecting}
+              variant="primary"
+              className="flex items-center space-x-1.5 sm:space-x-2"
+            >
+              <FiLinkedin className="h-3 w-3 sm:h-4 sm:w-4" />
+              {linkedinConnecting ? SYNC_LABEL.CONNECTING_LINKEDIN : SYNC_LABEL.CONNECT_LINKEDIN}
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+
       {/* Platform Status */}
       <Card className="border shadow-sm">
         <CardHeader>
@@ -627,6 +791,21 @@ const Settings = () => {
               </div>
               <ConnectionStatusPill connected={connected.wordpress} />
             </div>
+
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-primary/15 rounded-lg">
+                  <FiLinkedin className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{SYNC_LABEL.PLATFORM_LINKEDIN}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                  </p>
+                </div>
+              </div>
+              <ConnectionStatusPill connected={connected.linkedin} />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -673,6 +852,19 @@ const Settings = () => {
             <div className="flex items-center space-x-2 sm:space-x-3">
               <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               <span>{SYNC_LABEL.WORDPRESS_JWT_PLUGIN}</span>
+            </div>
+            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+          </a>
+
+          <a
+            href={EXTERNAL_LINKS.LINKEDIN_DEVELOPER}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              <span>{SYNC_LABEL.LINKEDIN_INTEGRATION}</span>
             </div>
             <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </a>

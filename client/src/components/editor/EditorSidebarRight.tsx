@@ -8,7 +8,17 @@ import SchedulePostModal from "@components/editor/SchedulePostModal";
 import { APP_CONFIG, PLATFORMS } from "@constants";
 import type { EditorSidebarRightProps } from "@types";
 import dayjs from "dayjs";
-import { FiChevronDown, FiClock, FiDownload, FiGlobe, FiImage, FiSend, FiUpload, FiZap } from "react-icons/fi";
+import {
+  FiChevronDown,
+  FiClock,
+  FiDownload,
+  FiGlobe,
+  FiImage,
+  FiLinkedin,
+  FiSend,
+  FiUpload,
+  FiZap,
+} from "react-icons/fi";
 
 import { PUBLISH_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
@@ -78,7 +88,10 @@ const EditorSidebarRight = ({
   linkedinPost = null,
   linkedinReadMoreUrl = null,
   linkedinMissingCanonical = false,
+  linkedinConnected = false,
   onCopyLinkedInPost,
+  onPublishLinkedInPost,
+  onGenerateLinkedInSummary,
   onGeneratePost,
   onGenerateImage,
   onUseAsFeaturedImage,
@@ -148,6 +161,7 @@ const EditorSidebarRight = ({
     { platform: PLATFORMS.MEDIUM, label: SYNC_LABEL.PUBLISH_TO_MEDIUM, icon: FiSend },
     { platform: PLATFORMS.DEVTO, label: SYNC_LABEL.PUBLISH_TO_DEVTO, icon: FiGlobe },
     { platform: PLATFORMS.WORDPRESS, label: SYNC_LABEL.PUBLISH_TO_WORDPRESS, icon: FiGlobe },
+    { platform: PLATFORMS.LINKEDIN, label: SYNC_LABEL.PUBLISH_TO_LINKEDIN, icon: FiLinkedin },
   ].filter((option) => connectedPlatforms.includes(option.platform));
 
   return (
@@ -312,8 +326,13 @@ const EditorSidebarRight = ({
               linkedinPost={linkedinPost}
               linkedinReadMoreUrl={linkedinReadMoreUrl}
               linkedinMissingCanonical={linkedinMissingCanonical}
+              linkedinConnected={linkedinConnected}
+              publishing={publishing}
+              generating={aiLoading === "linkedin"}
               onCopy={onCopyLinkedInPost}
-              disabled={!!aiLoading}
+              onPublish={onPublishLinkedInPost}
+              onGenerate={onGenerateLinkedInSummary}
+              disabled={!!aiLoading && aiLoading !== "linkedin"}
             />
           </div>
         </div>

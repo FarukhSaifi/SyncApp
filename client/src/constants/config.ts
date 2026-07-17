@@ -53,6 +53,7 @@ export const EXTERNAL_LINKS = Object.freeze({
   MEDIUM_SETTINGS: "https://medium.com/me/settings",
   DEVTO_SETTINGS: "https://dev.to/settings/account",
   WORDPRESS_JWT_PLUGIN: "https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/",
+  LINKEDIN_DEVELOPER: "https://www.linkedin.com/developers/apps",
   GITHUB_REPO: "https://github.com/FarukhSaifi/syncapp",
 } as const);
 

@@ -9,6 +9,7 @@ import analyticsRoutes from "./analytics";
 import authRoutes from "./auth";
 import credentialsRoutes from "./credentials";
 import cronRoutes from "./cron";
+import linkedinRoutes from "./linkedin";
 import mdxRoutes from "./mdx";
 import postsRoutes from "./posts";
 import publishRoutes from "./publish";
@@ -27,5 +28,6 @@ router.use(ROUTES.AI, aiRoutes);
 router.use(ROUTES.UPLOAD, uploadRoutes);
 router.use(ROUTES.CRON, cronRoutes);
 router.use(ROUTES.ANALYTICS, analyticsRoutes);
+router.use(ROUTES.LINKEDIN, linkedinRoutes);
 
 export default router;

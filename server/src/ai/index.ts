@@ -4,6 +4,7 @@
 export { getAiCapabilities } from "./client";
 export { generateEdit } from "./generateEdit";
 export { generateImageFromTopic } from "./generateImage";
+export { generateLinkedInSummary } from "./generateLinkedInSummary";
 export { generatePost } from "./generatePost";
 export { getTrendingTopics } from "./generateTrendingTopics";
 export { getDevtoReachTags } from "./getDevtoTags";

@@ -73,6 +73,21 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
       );
     }
 
+    if (post.platform_status?.linkedin?.published) {
+      platforms.push(
+        <a
+          key={PLATFORMS.LINKEDIN}
+          href={post.platform_status.linkedin.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-0.5 sm:space-x-1 text-primary hover:text-primary/90 text-xs sm:text-sm"
+        >
+          <span className="text-primary">●</span>
+          <span>{SYNC_LABEL.PLATFORM_LINKEDIN}</span>
+        </a>,
+      );
+    }
+
     if (platforms.length === 0) {
       return <span className="text-muted-foreground text-xs sm:text-sm">{SYNC_LABEL.NOT_PUBLISHED}</span>;
     }

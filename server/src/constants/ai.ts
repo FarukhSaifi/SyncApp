@@ -70,7 +70,7 @@ You MUST output a valid JSON object matching this exact schema. Do not output ma
   "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
   "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')",
-  "linkedin_post": "Short LinkedIn-native summary only when LinkedIn is a target; otherwise empty string"
+  "linkedin_post": "Short LinkedIn-native summary with strategic emojis when LinkedIn is a target; otherwise empty string"
 }`;
 
 export const AI_PROMPTS = {
@@ -104,6 +104,27 @@ Here is the selected or surrounding text context:
 ${context}
 ---
 Output ONLY the resulting markdown text.`,
+
+  LINKEDIN_SUMMARY_SYSTEM: `You write short native LinkedIn posts for developers. Output ONLY the LinkedIn post text (plain text, no Markdown headings or code fences).
+Rules:
+- Hook in the first 2 lines (LinkedIn truncates with "see more").
+- Short paragraphs (1–3 sentences). Length ~${AI_POST_LIMITS.LINKEDIN_POST_MIN_CHARS}–${AI_POST_LIMITS.LINKEDIN_POST_MAX_CHARS} characters.
+- Use 3–8 relevant emojis for scannability (line openers, bullets, light CTA). Never spam.
+- End with 3–5 relevant hashtags on their own line (e.g. #WebDev #JavaScript).
+- Soft CTA is fine ("What's your take? 👇").
+- Do NOT invent a domain. Do NOT include a "Read more:" URL — the server appends it.
+- Do NOT wrap the answer in quotes or code fences.`,
+
+  LINKEDIN_SUMMARY_USER: (title: string, articleExcerpt: string) =>
+    `Write a LinkedIn teaser for this article.
+
+Title: ${title}
+
+Article (excerpt):
+---
+${articleExcerpt}
+---
+Output ONLY the LinkedIn post text.`,
 
   TRENDING_TOPICS_SYSTEM: `You are a tech content and SEO strategist. Using current Google Search trends for developers and software engineering, propose blog topics AND primary Google search keywords.
 Return ONLY valid JSON (no markdown fences):
@@ -146,6 +167,8 @@ export const AI_CONFIG = Object.freeze({
    */
   MAX_DRAFT_TOKENS: 8192,
   MAX_EDIT_TOKENS: 4096,
+  /** LinkedIn teaser only — short plain text. */
+  MAX_LINKEDIN_SUMMARY_TOKENS: 2048,
   MAX_IMAGE_PROMPT_TOKENS: 512,
   /** Trending topics + keywords: short JSON list. */
   MAX_TRENDING_TOPICS_TOKENS: 768,

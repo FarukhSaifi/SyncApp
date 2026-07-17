@@ -5,11 +5,12 @@ export const PLATFORMS = Object.freeze({
   MEDIUM: "medium",
   DEVTO: "devto",
   WORDPRESS: "wordpress",
+  LINKEDIN: "linkedin",
 } as const);
 
 export type PlatformSlug = (typeof PLATFORMS)[keyof typeof PLATFORMS];
 
-/** AI optimization targets (LinkedIn = summary + Read more; OAuth publish is Phase 2). */
+/** AI optimization targets (LinkedIn summary + Read more; publish uses same summary). */
 export const OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",
   LINKEDIN: "linkedin",

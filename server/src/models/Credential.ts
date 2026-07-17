@@ -3,16 +3,19 @@ import { PLATFORMS, VALID_PLATFORMS } from "../constants";
 import { CREDENTIAL_INDEXES } from "../constants/indexes";
 import type { ICredential } from "../types/index";
 
-export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author"> {
+export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author" | "token_expires_at"> {
   author: mongoose.Types.ObjectId;
   platform_name: string;
   api_key: string;
   site_url?: string;
   is_active: boolean;
+  refresh_token?: string;
+  token_expires_at?: Date;
   platform_config?: {
     devto_username?: string;
     medium_user_id?: string;
     wordpress_url?: string;
+    linkedin_person_urn?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -49,10 +52,17 @@ const credentialSchema = new Schema<ICredentialDocument>(
       type: Boolean,
       default: true,
     },
+    refresh_token: {
+      type: String,
+    },
+    token_expires_at: {
+      type: Date,
+    },
     platform_config: {
       devto_username: String,
       medium_user_id: String,
       wordpress_url: String,
+      linkedin_person_urn: String,
     },
   },
   {

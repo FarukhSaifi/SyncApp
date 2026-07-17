@@ -22,4 +22,8 @@ export const PLATFORM_CONFIG = Object.freeze({
     errorMessage: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
     status: "publish",
   },
+  linkedin: {
+    name: "LinkedIn",
+    errorMessage: "LinkedIn is not connected. Connect LinkedIn in Settings to publish the summary.",
+  },
 } as const);

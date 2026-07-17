@@ -53,7 +53,10 @@ Create a Vercel project with **Root Directory** = `server`.
 | `NOTIFICATION_FROM_EMAIL` | For email | Verified sender, e.g. `SyncApp <noreply@farukh.me>` (not a Gmail address) |
 | `NOTIFICATION_CC_EMAIL` | Optional | Always CC’d on publish emails; default `farook1x95@gmail.com` (plus author) |
 | `SLACK_WEBHOOK_URL` | Optional | Slack webhook for scheduled publish notifications |
-| `SITE_URL` | Optional | Client app URL for links in notification emails |
+| `SITE_URL` | Optional | Client app URL for links in notification emails + LinkedIn OAuth return |
+| `LINKEDIN_CLIENT_ID` | For LinkedIn | LinkedIn Developer app Client ID |
+| `LINKEDIN_CLIENT_SECRET` | For LinkedIn | LinkedIn Developer app Client Secret |
+| `LINKEDIN_REDIRECT_URI` | For LinkedIn | Must match app callback, e.g. `https://sync-app-server.vercel.app/api/linkedin/oauth/callback` |
 | `RATE_LIMIT_WINDOW_MS` | Optional | Default `900000` |
 | `RATE_LIMIT_MAX_REQUESTS` | Optional | Default `100` |
 
@@ -106,6 +109,9 @@ NOTIFICATION_CC_EMAIL=farook1x95@gmail.com
 SLACK_WEBHOOK_URL=
 SITE_URL=https://sync-app-client.vercel.app
 CRON_SECRET=
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+LINKEDIN_REDIRECT_URI=https://sync-app-server.vercel.app/api/linkedin/oauth/callback
 ```
 
 ### Client → Vercel → Environment Variables → Production

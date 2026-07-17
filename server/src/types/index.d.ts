@@ -21,10 +21,15 @@ export interface IPost {
     medium?: IPlatformStatus;
     devto?: IPlatformStatus;
     wordpress?: IPlatformStatus;
+    linkedin?: IPlatformStatus;
   };
   tags: string[];
   cover_image?: string;
   canonical_url?: string;
+  /** Short LinkedIn-native teaser (Phase 1 AI / Phase 2 publish body). */
+  linkedin_post?: string;
+  /** Public article URL appended as Read more when publishing to LinkedIn. */
+  linkedin_read_more_url?: string;
   scheduled_for?: Date;
   createdAt?: Date;
   updatedAt?: Date;
@@ -52,10 +57,13 @@ export interface ICredential {
   api_key?: string;
   site_url?: string;
   is_active?: boolean;
+  refresh_token?: string;
+  token_expires_at?: Date;
   platform_config?: {
     devto_username?: string;
     medium_user_id?: string;
     wordpress_url?: string;
+    linkedin_person_urn?: string;
   };
 }
 
@@ -143,6 +151,8 @@ export interface CreatePostInput {
   canonical_url?: string;
   scheduled_for?: Date | string;
   meta_description?: string;
+  linkedin_post?: string;
+  linkedin_read_more_url?: string;
   author?: string;
 }
 
@@ -233,6 +243,9 @@ export interface AppConfig {
   resendApiKey: string;
   notificationFromEmail: string;
   notificationCcEmail: string;
+  linkedinClientId: string;
+  linkedinClientSecret: string;
+  linkedinRedirectUri: string;
 }
 
 // ----------------------------------------------------

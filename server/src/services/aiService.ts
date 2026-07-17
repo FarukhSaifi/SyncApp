@@ -5,6 +5,7 @@
 export {
   generateEdit,
   generateImageFromTopic,
+  generateLinkedInSummary,
   generatePost,
   getAiCapabilities,
   getDevtoReachTags,

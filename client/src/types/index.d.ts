@@ -40,7 +40,10 @@ export interface Post {
     medium?: PlatformStatus;
     devto?: PlatformStatus;
     wordpress?: PlatformStatus;
+    linkedin?: PlatformStatus;
   };
+  linkedin_post?: string;
+  linkedin_read_more_url?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -271,7 +274,10 @@ export interface EditorSidebarRightProps {
   linkedinPost: string | null;
   linkedinReadMoreUrl: string | null;
   linkedinMissingCanonical: boolean;
+  linkedinConnected: boolean;
   onCopyLinkedInPost: () => void;
+  onPublishLinkedInPost: () => void;
+  onGenerateLinkedInSummary: () => void;
   onGeneratePost: () => void;
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;
@@ -518,6 +524,7 @@ export interface SavedState {
   medium: boolean;
   devto: boolean;
   wordpress: boolean;
+  linkedin: boolean;
 }
 
 export interface ApiCredential extends Credential {
@@ -532,6 +539,8 @@ export interface EditorFormData {
   canonical_url: string;
   scheduled_for: string;
   status: string;
+  linkedin_post: string;
+  linkedin_read_more_url: string;
   [key: string]: string | string[];
 }
 
@@ -579,6 +588,7 @@ export interface AnalyticsStats {
     medium: number;
     devto: number;
     wordpress: number;
+    linkedin: number;
   };
   history: AnalyticsDailyActivity[];
 }
