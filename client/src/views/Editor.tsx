@@ -34,8 +34,8 @@ const EditorContent = dynamic(() => import("@components/editor/EditorContent"), 
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
-  // Prefer Farukh.me blog base over SyncApp editor host for LinkedIn Read more.
   const preferredReadMoreUrl = resolveLinkedInReadMoreUrl(state.formData.canonical_url);
+  const { setFormData } = state;
 
   const ai = useEditorAI({
     postId: state.id,
@@ -49,7 +49,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       const readMore = data.read_more_url?.trim() || preferredReadMoreUrl || "";
       // Keep markdown as source of truth — TipTap converts via toEditorHtml for display only.
       const markdown = toStorageMarkdown(normalizeMarkdownNewlines(data.content || ""));
-      state.setFormData((prev) => ({
+      setFormData((prev) => ({
         ...prev,
         content_markdown: markdown,
         title: data.title || prev.title,
@@ -63,14 +63,14 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       setTimeout(() => ai.handleGenerateImage(), 500);
     },
     onLinkedInSummaryGenerated: (data) => {
-      state.setFormData((prev) => ({
+      setFormData((prev) => ({
         ...prev,
         linkedin_post: data.linkedin_post,
         linkedin_read_more_url: data.read_more_url?.trim() || preferredReadMoreUrl || "",
       }));
     },
     onCoverImageSet: (url) => {
-      state.setFormData((prev) => ({ ...prev, cover_image: url }));
+      setFormData((prev) => ({ ...prev, cover_image: url }));
     },
   });
   const wordStats = useWordCount(state.formData.content_markdown);
@@ -96,13 +96,13 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     if (!preferredReadMoreUrl || !currentPost.trim()) return;
     const next = applyLinkedInReadMoreUrl(currentPost, preferredReadMoreUrl);
     if (next !== currentPost || currentReadMore !== preferredReadMoreUrl) {
-      state.setFormData((prev) => ({
+      setFormData((prev) => ({
         ...prev,
         linkedin_post: next,
         linkedin_read_more_url: preferredReadMoreUrl,
       }));
     }
-  }, [preferredReadMoreUrl, state.formData.linkedin_post, state.formData.linkedin_read_more_url, state.setFormData]);
+  }, [preferredReadMoreUrl, state.formData.linkedin_post, state.formData.linkedin_read_more_url, setFormData]);
 
   const closeSidebars = useCallback(() => {
     setLeftSidebarOpen(false);

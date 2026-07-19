@@ -13,10 +13,10 @@ import {
   readStoredOptimizationTargets,
 } from "@utils/aiPreferences";
 import { apiClient } from "@utils/apiClient";
+import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
 
 import { AI_CONTENT_MODELS, resolveStoredContentModel } from "@constants/ai";
 import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
-import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
 
 function tryParseJSON(raw: string): Record<string, unknown> | null {
   try {
@@ -121,8 +121,8 @@ export function useEditorAI({
 }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState("");
-  const [aiModel, setAiModelState] = useState(() => readStoredAiModel());
-  const [targetPlatforms, setTargetPlatformsState] = useState<string[]>(() => readStoredOptimizationTargets());
+  const [aiModel, setAiModel] = useState(() => readStoredAiModel());
+  const [targetPlatforms, setTargetPlatforms] = useState<string[]>(() => readStoredOptimizationTargets());
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
@@ -142,14 +142,14 @@ export function useEditorAI({
     }
   }, [preferredReadMoreUrl, linkedinPost]);
 
-  const setAiModel = useCallback((model: string) => {
+  const handleSetAiModel = useCallback((model: string) => {
     const resolved = resolveStoredContentModel(model);
-    setAiModelState(resolved);
+    setAiModel(resolved);
     persistAiModel(resolved);
   }, []);
 
-  const setTargetPlatforms = useCallback((platforms: string[]) => {
-    setTargetPlatformsState(platforms);
+  const handleSetTargetPlatforms = useCallback((platforms: string[]) => {
+    setTargetPlatforms(platforms);
     persistOptimizationTargets(platforms);
   }, []);
 
@@ -342,10 +342,10 @@ export function useEditorAI({
     aiKeyword,
     setAiKeyword,
     aiModel,
-    setAiModel,
+    setAiModel: handleSetAiModel,
     aiModels: [...AI_CONTENT_MODELS],
     targetPlatforms,
-    setTargetPlatforms,
+    setTargetPlatforms: handleSetTargetPlatforms,
     aiImagePrompt,
     setAiImagePrompt,
     aiLoading,

@@ -2,8 +2,9 @@
 
 import { FiCopy, FiLinkedin, FiRefreshCw, FiSend, FiZap } from "react-icons/fi";
 
-import Button from "@components/common/Button";
 import { BUTTON_LABELS, EDITOR_UI, INFO_MESSAGES } from "@constants/messages";
+
+import Button from "@components/common/Button";
 
 type LinkedInPostPanelProps = {
   linkedinPost: string | null;
