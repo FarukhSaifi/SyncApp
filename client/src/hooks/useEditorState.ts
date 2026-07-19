@@ -7,13 +7,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@hooks/useToast";
 import type { EditorFormData, Post } from "@types";
 import { apiClient } from "@utils/apiClient";
+import { toStorageMarkdown } from "@utils/contentUtils";
 import { devError, devLog } from "@utils/logger";
 import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
 import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
-import { EDITOR_UI, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
+import { EDITOR_UI, INFO_MESSAGES, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
+import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { ROUTES } from "@constants/routes";
 import { SEO_THRESHOLDS } from "@constants/seo";
@@ -25,12 +27,33 @@ import { SEO_THRESHOLDS } from "@constants/seo";
  */
 function buildClientCanonicalUrl(slug?: string): string {
   if (!slug) return "";
-  return CANONICAL_BASE_URL ? `${CANONICAL_BASE_URL}/${slug}` : slug;
+  const base = CANONICAL_BASE_URL.replace(/\/$/, "");
+  return base ? `${base}/${slug}` : slug;
+}
+
+/** Prefer the public blog URL when a stale SyncApp host was saved as canonical. */
+function resolveCanonicalUrl(existing?: string | null, slug?: string | null): string {
+  const built = buildClientCanonicalUrl(slug || undefined);
+  const current = (existing || "").trim();
+  if (built.startsWith("http") && (!current || /sync-app-client/i.test(current))) {
+    return built;
+  }
+  return current || built || "";
 }
 
 interface UseEditorStateOptions {
   onPostCreate: (post: Post) => void;
   onPostUpdate: (post: Post) => void;
+}
+
+type PublishFormOverrides = Partial<Pick<EditorFormData, "linkedin_post" | "linkedin_read_more_url">>;
+
+function platformDisplayName(platform: string): string {
+  if (platform === PLATFORMS.LINKEDIN) return SYNC_LABEL.PLATFORM_LINKEDIN;
+  if (platform === PLATFORMS.DEVTO) return SYNC_LABEL.PLATFORM_DEVTO;
+  if (platform === PLATFORMS.MEDIUM) return SYNC_LABEL.PLATFORM_MEDIUM;
+  if (platform === PLATFORMS.WORDPRESS) return SYNC_LABEL.PLATFORM_WORDPRESS;
+  return platform;
 }
 
 export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOptions) {
@@ -71,11 +94,11 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         const post = response.data;
         setFormData({
           title: post.title || "",
-          content_markdown: post.content_markdown || "",
+          content_markdown: toStorageMarkdown(post.content_markdown || ""),
           meta_description: post.meta_description || "",
           status: post.status,
           cover_image: post.cover_image || "",
-          canonical_url: post.canonical_url || buildClientCanonicalUrl(post.slug),
+          canonical_url: resolveCanonicalUrl(post.canonical_url, post.slug),
           scheduled_for: post.scheduled_for || "",
           linkedin_post: post.linkedin_post || "",
           linkedin_read_more_url: post.linkedin_read_more_url || "",
@@ -200,7 +223,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
       setLoading(true);
       try {
-        const postData = { ...formData, tags: tagList, status };
+        const postData = {
+          ...formData,
+          content_markdown: toStorageMarkdown(formData.content_markdown),
+          tags: tagList,
+          status,
+        };
         devLog("Saving post:", id ? "update" : "create");
         let response;
         if (id) {
@@ -217,9 +245,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
               ...prev,
               status: savedPost.status ?? status,
               // Prefer server's canonical_url, then build from slug, then keep whatever user had.
-              canonical_url: savedPost.canonical_url || buildClientCanonicalUrl(savedPost.slug) || prev.canonical_url,
+              canonical_url: resolveCanonicalUrl(savedPost.canonical_url, savedPost.slug) || prev.canonical_url,
               cover_image: savedPost.cover_image ?? prev.cover_image,
-              content_markdown: savedPost.content_markdown ?? prev.content_markdown,
+              content_markdown: toStorageMarkdown(savedPost.content_markdown ?? prev.content_markdown),
             }));
           }
           if (id) {
@@ -249,49 +277,84 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   );
 
   /** Ensures post exists and latest edits are saved before publishing */
-  const ensurePostSaved = useCallback(async (): Promise<string | null> => {
-    if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      return null;
-    }
+  const ensurePostSaved = useCallback(
+    async (overrides?: PublishFormOverrides): Promise<string | null> => {
+      const data = { ...formData, ...overrides };
 
-    const clearScheduledForInForm = () => {
-      setFormData((prev) => ({ ...prev, scheduled_for: "" }));
-    };
+      if (!data.title.trim() || !data.content_markdown.trim()) {
+        return null;
+      }
 
-    const status = formData.status ?? POST_STATUS.DRAFT;
-    const postData = {
-      ...formData,
-      tags: tagList,
-      status,
-      scheduled_for: null,
-    };
+      const clearScheduledForInForm = () => {
+        setFormData((prev) => ({ ...prev, scheduled_for: "", ...overrides }));
+      };
 
-    if (!id) {
-      devLog("Saving new post before publishing");
-      const saveResponse = await apiClient.createPost(postData);
-      if (!saveResponse?.success || !saveResponse.data) {
+      const status = data.status ?? POST_STATUS.DRAFT;
+      const postData = {
+        ...data,
+        content_markdown: toStorageMarkdown(data.content_markdown),
+        tags: tagList,
+        status,
+        scheduled_for: null,
+      };
+
+      if (!id) {
+        devLog("Saving new post before publishing");
+        const saveResponse = await apiClient.createPost(postData);
+        if (!saveResponse?.success || !saveResponse.data) {
+          throw new Error(saveResponse?.error || "Failed to save post");
+        }
+        onPostCreate(saveResponse.data);
+        clearScheduledForInForm();
+        router.replace(`${ROUTES.EDITOR}/${saveResponse.data._id}`);
+        return saveResponse.data._id;
+      }
+
+      devLog("Saving post edits before publishing");
+      const saveResponse = await apiClient.updatePost(id, postData);
+      if (!saveResponse?.success) {
         throw new Error(saveResponse?.error || "Failed to save post");
       }
-      onPostCreate(saveResponse.data);
+      if (saveResponse.data) {
+        onPostUpdate(saveResponse.data);
+        setFormData((prev) => ({
+          ...prev,
+          ...overrides,
+          linkedin_post: saveResponse.data?.linkedin_post ?? prev.linkedin_post,
+          linkedin_read_more_url: saveResponse.data?.linkedin_read_more_url ?? prev.linkedin_read_more_url,
+          status: saveResponse.data?.status ?? prev.status,
+        }));
+      }
       clearScheduledForInForm();
-      return saveResponse.data._id;
-    }
+      return id;
+    },
+    [id, formData, tagList, onPostCreate, onPostUpdate, router],
+  );
 
-    devLog("Saving post edits before publishing");
-    const saveResponse = await apiClient.updatePost(id, postData);
-    if (!saveResponse?.success) {
-      throw new Error(saveResponse?.error || "Failed to save post");
-    }
-    if (saveResponse.data) {
-      onPostUpdate(saveResponse.data);
-    }
-    clearScheduledForInForm();
-    return id;
-  }, [id, formData, tagList, onPostCreate, onPostUpdate]);
+  const refreshPostAfterPublish = useCallback(
+    async (postId: string): Promise<Post | null> => {
+      const response = await apiClient.getPost(postId);
+      if (!response?.success || !response.data) return null;
+      const post = response.data;
+      setFormData((prev) => ({
+        ...prev,
+        status: post.status ?? prev.status,
+        linkedin_post: post.linkedin_post ?? prev.linkedin_post,
+        linkedin_read_more_url: post.linkedin_read_more_url ?? prev.linkedin_read_more_url,
+        canonical_url: resolveCanonicalUrl(post.canonical_url, post.slug) || prev.canonical_url,
+        content_markdown: toStorageMarkdown(post.content_markdown ?? prev.content_markdown),
+      }));
+      onPostUpdate(post);
+      return post;
+    },
+    [onPostUpdate],
+  );
 
   const handlePublishToPlatform = useCallback(
-    async (platform: string) => {
-      if (!formData.title.trim() || !formData.content_markdown.trim()) {
+    async (platform: string, overrides?: PublishFormOverrides) => {
+      const effectiveForm = { ...formData, ...overrides };
+
+      if (!effectiveForm.title.trim() || !effectiveForm.content_markdown.trim()) {
         toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
         return;
       }
@@ -299,23 +362,27 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
         return;
       }
-      if (platform === "linkedin" && !String(formData.linkedin_post || "").trim()) {
+      if (platform === PLATFORMS.LINKEDIN && !String(effectiveForm.linkedin_post || "").trim()) {
         toast.validationError(SYNC_LABEL.LINKEDIN_SUMMARY_REQUIRED_PUBLISH);
         return;
       }
+
+      const platformLabel = platformDisplayName(platform);
+      toast.info(TOAST_TITLES.PUBLISHED, INFO_MESSAGES.PUBLISHING_TO_PLATFORM(platformLabel));
+
       setPublishing(true);
       try {
-        const currentPostId = await ensurePostSaved();
+        const currentPostId = await ensurePostSaved(overrides);
         if (!currentPostId) return;
 
-        if (platform === "devto") {
+        if (platform === PLATFORMS.DEVTO) {
           const warnings = getDevtoPublishWarnings({
-            title: formData.title,
+            title: effectiveForm.title,
             tags: tagList,
-            cover_image: formData.cover_image,
-            canonical_url: formData.canonical_url,
-            meta_description: formData.meta_description,
-            content_markdown: formData.content_markdown,
+            cover_image: effectiveForm.cover_image,
+            canonical_url: effectiveForm.canonical_url,
+            meta_description: effectiveForm.meta_description,
+            content_markdown: effectiveForm.content_markdown,
           });
           if (warnings.length > 0) {
             toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
@@ -325,67 +392,98 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         devLog(`Publishing to ${platform}`);
         const publishResponse = await apiClient.publish(platform, currentPostId);
         if (publishResponse?.success) {
-          if (publishResponse.data) onPostUpdate(publishResponse.data);
-          toast.publishSuccess(platform, publishResponse.message);
-          router.push("/");
+          const refreshed = await refreshPostAfterPublish(currentPostId);
+          const message = publishResponse.message || SYNC_LABEL.PUBLISHED_TO_PLATFORM(platformLabel);
+          const platformUrl = platform === PLATFORMS.LINKEDIN ? refreshed?.platform_status?.linkedin?.url : undefined;
+          toast.publishSuccess(platformLabel, platformUrl ? `${message} — ${platformUrl}` : message);
         } else {
-          throw new Error(publishResponse?.error || `Failed to publish to ${platform}`);
+          throw new Error(publishResponse?.error || `Failed to publish to ${platformLabel}`);
         }
       } catch (error) {
         devError(`Error publishing to ${platform}:`, error);
-        toast.publishError(platform, (error as Error).message);
+        toast.publishError(platformDisplayName(platform), (error as Error).message);
       } finally {
         setPublishing(false);
       }
     },
-    [formData, tagList, connectedPlatforms, ensurePostSaved, onPostUpdate, router, toast],
+    [formData, tagList, connectedPlatforms, ensurePostSaved, refreshPostAfterPublish, toast],
   );
 
-  const handlePublishToAll = useCallback(async () => {
-    if (!formData.title.trim() || !formData.content_markdown.trim()) {
-      toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
-      return;
-    }
-    if (connectedPlatforms.length === 0) {
-      toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
-      return;
-    }
-    setPublishing(true);
-    try {
-      const currentPostId = await ensurePostSaved();
-      if (!currentPostId) return;
+  const handlePublishToAll = useCallback(
+    async (overrides?: PublishFormOverrides) => {
+      const effectiveForm = { ...formData, ...overrides };
 
-      const warnings = getDevtoPublishWarnings({
-        title: formData.title,
-        tags: tagList,
-        cover_image: formData.cover_image,
-        canonical_url: formData.canonical_url,
-        meta_description: formData.meta_description,
-        content_markdown: formData.content_markdown,
-      });
-      if (warnings.length > 0) {
-        toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+      if (!effectiveForm.title.trim() || !effectiveForm.content_markdown.trim()) {
+        toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
+        return;
+      }
+      if (connectedPlatforms.length === 0) {
+        toast.validationError(SYNC_LABEL.CONNECT_PLATFORM_TO_PUBLISH);
+        return;
       }
 
-      devLog("Publishing to all platforms");
-      const publishResponse = await apiClient.publishAll(currentPostId);
-      if (publishResponse?.success) {
-        if (publishResponse.data) onPostUpdate(publishResponse.data);
-        toast.success(
-          "Published Everywhere!",
-          publishResponse.message || "Post published to all platforms successfully!",
-        );
-        router.push("/");
-      } else {
-        throw new Error(publishResponse?.error || "Failed to publish to all platforms");
+      toast.info(TOAST_TITLES.PUBLISHED, INFO_MESSAGES.PUBLISHING_TO_ALL);
+
+      setPublishing(true);
+      try {
+        const currentPostId = await ensurePostSaved(overrides);
+        if (!currentPostId) return;
+
+        const warnings = getDevtoPublishWarnings({
+          title: effectiveForm.title,
+          tags: tagList,
+          cover_image: effectiveForm.cover_image,
+          canonical_url: effectiveForm.canonical_url,
+          meta_description: effectiveForm.meta_description,
+          content_markdown: effectiveForm.content_markdown,
+        });
+        if (warnings.length > 0) {
+          toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+        }
+
+        devLog("Publishing to all platforms");
+        const publishResponse = await apiClient.publishAll(currentPostId);
+        if (publishResponse?.success) {
+          await refreshPostAfterPublish(currentPostId);
+
+          const successes = (publishResponse.data as { successes?: string[] } | undefined)?.successes ?? [];
+          const errors =
+            (publishResponse.data as { errors?: Array<{ platform: string; error: string }> } | undefined)?.errors ?? [];
+
+          if (errors.length > 0) {
+            const failureSummary = errors.map((e) => `${e.platform}: ${e.error}`).join("; ");
+            const successSummary = successes.length > 0 ? successes.join(", ") : "none";
+            toast.warning(
+              TOAST_TITLES.WARNING,
+              publishResponse.message ||
+                SYNC_LABEL.PUBLISH_PARTIAL_SUCCESS(
+                  successes.length ? successes : ["none"],
+                  errors.map((e) => `${e.platform}: ${e.error}`),
+                ),
+            );
+            devError("Partial publish failures:", failureSummary, "Successes:", successSummary);
+          } else {
+            toast.success(TOAST_TITLES.PUBLISHED_EVERYWHERE, publishResponse.message || SYNC_LABEL.PUBLISHED_ALL);
+          }
+        } else {
+          const errors =
+            (publishResponse?.data as { errors?: Array<{ platform: string; error: string }> } | undefined)?.errors ??
+            [];
+          const detail =
+            errors.map((e) => `${e.platform}: ${e.error}`).join("; ") ||
+            publishResponse?.error ||
+            SYNC_LABEL.FAILED_TO_PUBLISH_ALL;
+          throw new Error(detail);
+        }
+      } catch (error) {
+        devError("Error publishing to all platforms:", error);
+        toast.error(TOAST_TITLES.PUBLISH_FAILED, (error as Error).message || SYNC_LABEL.FAILED_TO_PUBLISH_ALL);
+      } finally {
+        setPublishing(false);
       }
-    } catch (error) {
-      devError("Error publishing to all platforms:", error);
-      toast.error("Publish Failed", `Failed to publish to all platforms: ${(error as Error).message}`);
-    } finally {
-      setPublishing(false);
-    }
-  }, [formData, tagList, connectedPlatforms, ensurePostSaved, onPostUpdate, router, toast]);
+    },
+    [formData, tagList, connectedPlatforms, ensurePostSaved, refreshPostAfterPublish, toast],
+  );
 
   const handleDownloadMdx = useCallback(async () => {
     try {
@@ -429,7 +527,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
             ...prev,
             scheduled_for: savedPost.scheduled_for || scheduledFor || "",
             status: savedPost.status ?? prev.status,
-            canonical_url: savedPost.canonical_url || buildClientCanonicalUrl(savedPost.slug) || prev.canonical_url,
+            canonical_url: resolveCanonicalUrl(savedPost.canonical_url, savedPost.slug) || prev.canonical_url,
           }));
 
           if (id) {

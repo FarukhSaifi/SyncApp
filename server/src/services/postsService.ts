@@ -2,6 +2,7 @@ import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, POST_STATUS, VALIDATION_ERRORS,
 import type { CreatePostInput, GetPostsParams } from "../types";
 
 import { cache, cacheKeys } from "../utils/cache";
+import { ensureMarkdownContent } from "../utils/contentMarkdown";
 import { logger } from "../utils/logger";
 import { normalizeScheduledFor } from "../utils/scheduleUtils";
 
@@ -135,7 +136,8 @@ export async function createPost(input: CreatePostInput) {
   }
 
   const processedCoverImage = await processBase64CoverImage(cover_image, { title });
-  const processedContentMarkdown = await processBase64MarkdownImages(content_markdown, { title });
+  const markdownBody = ensureMarkdownContent(content_markdown);
+  const processedContentMarkdown = await processBase64MarkdownImages(markdownBody, { title });
 
   const postPayload: Record<string, unknown> = {
     title,
@@ -403,7 +405,10 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
     updateData.cover_image = await processBase64CoverImage(updateData.cover_image, mediaOpts);
   }
   if (updateData.content_markdown && typeof updateData.content_markdown === "string") {
-    updateData.content_markdown = await processBase64MarkdownImages(updateData.content_markdown, mediaOpts);
+    updateData.content_markdown = await processBase64MarkdownImages(
+      ensureMarkdownContent(updateData.content_markdown),
+      mediaOpts,
+    );
   }
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {

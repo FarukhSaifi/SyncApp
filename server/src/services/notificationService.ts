@@ -52,7 +52,8 @@ function safeEmailHref(url: string): string {
 type SlackBlock = Record<string, unknown>;
 
 function getClientAppBaseUrl(): string {
-  const explicit = (config.canonicalBaseUrl || config.siteUrl || "").replace(/\/$/, "");
+  // SyncApp editor/dashboard links — never the public blog (CANONICAL_BASE_URL / farukh.me).
+  const explicit = (config.siteUrl || "").replace(/\/$/, "");
   if (explicit) return explicit;
 
   const corsOrigin = (config.corsOrigin || "").split(",")[0]?.trim().replace(/\/$/, "");

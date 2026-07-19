@@ -73,7 +73,7 @@ function getPlatformStatusField(platformStatus: any, platformName: string) {
  * Get and validate credential for platform
  */
 async function ensureCredential(platformName: string, authorId: IPostDocument["author"]): Promise<ICredentialDocument> {
-  const credential = await Credential.findOne({ platform_name: platformName, author: authorId });
+  const credential = await Credential.findOne({ platform_name: platformName, author: authorId, is_active: true });
 
   if (!credential) {
     const platformCfg = getPlatformConfig(platformName);

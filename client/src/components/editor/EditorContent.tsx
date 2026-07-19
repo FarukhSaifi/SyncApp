@@ -12,7 +12,7 @@ import { EditorContent as TipTapEditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { EditorContentProps } from "@types";
 import { apiClient } from "@utils/apiClient";
-import { toEditorHtml } from "@utils/contentUtils";
+import { toEditorHtml, toStorageMarkdown } from "@utils/contentUtils";
 import editorLowlight from "@utils/editorLowlight";
 import dynamic from "next/dynamic";
 import {
@@ -370,15 +370,19 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
     },
   });
 
-  // Sync formData → TipTap (AI draft, fetch post, tab switch)
+  // Sync formData → TipTap (AI draft, fetch post, tab switch).
+  // Compare markdown, not HTML, so TipTap↔markdown round-trips do not reset the cursor.
   useEffect(() => {
     if (!editor || activeTab !== "edit") return;
-    const currentContent = editor.getHTML();
-    const newContent = formData.content_markdown || "";
-    const htmlContent = toEditorHtml(newContent);
+    const incoming = formData.content_markdown || "";
+    if (!incoming.trim()) return;
 
-    // Only update if content actually changed (avoids cursor jumping)
-    if (currentContent !== htmlContent && htmlContent !== "<p></p>") {
+    const currentMd = toStorageMarkdown(editor.getHTML());
+    const incomingMd = toStorageMarkdown(incoming);
+    if (currentMd === incomingMd) return;
+
+    const htmlContent = toEditorHtml(incomingMd);
+    if (htmlContent && htmlContent !== "<p></p>") {
       editor.commands.setContent(htmlContent, { emitUpdate: false });
     }
   }, [editor, formData.content_markdown, activeTab]);

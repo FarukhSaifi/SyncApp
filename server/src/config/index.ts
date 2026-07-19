@@ -51,8 +51,10 @@ export const config: AppConfig = {
     process.env.GOOGLE_CLOUD_BUCKET ||
     (process.env.GOOGLE_CLOUD_PROJECT ? `${process.env.GOOGLE_CLOUD_PROJECT}.firebasestorage.app` : ""),
   aiUseGoogleSearchRetrieval: process.env.AI_USE_GOOGLE_SEARCH_RETRIEVAL === "true",
-  // Base URL for auto-generated canonical URLs (from post slug). e.g. https://yourblog.com/blog
-  canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || process.env.SITE_URL || "").trim().replace(/\/$/, ""),
+  // Public blog (Farukh.me) for LinkedIn Read more + post canonicals — NOT SyncApp.
+  // Do not fall back to SITE_URL (that is the SyncApp client for auth/OAuth/emails).
+  canonicalBaseUrl: (process.env.CANONICAL_BASE_URL || "").trim().replace(/\/$/, ""),
+  // SyncApp client — login, editor, LinkedIn OAuth return, notification “open in SyncApp” links.
   siteUrl: (process.env.SITE_URL || "").trim().replace(/\/$/, ""),
   cronSecret: process.env.CRON_SECRET || "",
   slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || "",

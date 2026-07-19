@@ -95,6 +95,11 @@ const createSuccessMessages = () => {
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
+    PUBLISH_PARTIAL_SUCCESS: (successes: string[], failures: string[]) =>
+      failures.length > 0
+        ? `Published: ${successes.join(", ")}. Failed: ${failures.join("; ")}`
+        : `Published: ${successes.join(", ")}`,
+    PUBLISH_ALREADY_ON_PLATFORM: (platform: string) => `Already published on ${platform}`,
     REMOVED_FROM_PLATFORM: (platform: string) => `Post removed from ${platform}`,
     // Credentials
     CREDENTIALS_SAVED: (platform: string) => `${platform} API credentials saved successfully`,
@@ -498,6 +503,8 @@ export const INFO_MESSAGES = Object.freeze({
   SAVING: "Saving...",
   UPDATING: "Updating...",
   PUBLISHING: "Publishing...",
+  PUBLISHING_TO_PLATFORM: (platform: string) => `Publishing to ${platform}…`,
+  PUBLISHING_TO_ALL: "Publishing to all connected platforms…",
   SIGNING_IN: "Signing in...",
   CREATING_ACCOUNT: "Creating account...",
   CHANGING_PASSWORD: "Changing Password...",

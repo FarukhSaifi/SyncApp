@@ -36,7 +36,8 @@
     "react-is": "^19.2.6",
     "react-markdown": "10.1.0",
     "react-syntax-highlighter": "16.1.1",
-    "recharts": "3.8.1"
+    "recharts": "3.8.1",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.8.12",
@@ -48,6 +49,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@types/react-syntax-highlighter": "15.5.13",
+    "@types/turndown": "^5.0.6",
     "@typescript-eslint/eslint-plugin": "8.59.4",
     "@typescript-eslint/parser": "8.59.4",
     "autoprefixer": "10.4.27",

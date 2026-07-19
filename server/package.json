@@ -27,7 +27,8 @@
     "mongoose": "9.6.2",
     "multer": "2.2.0",
     "resend": "^6.12.4",
-    "slugify": "1.6.9"
+    "slugify": "1.6.9",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
@@ -35,6 +36,7 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/multer": "2.1.0",
     "@types/node": "25.9.1",
+    "@types/turndown": "^5.0.6",
     "nodemon": "3.1.14",
     "tsx": "4.22.3",
     "typescript": "6.0.3"

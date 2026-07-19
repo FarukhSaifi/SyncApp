@@ -112,7 +112,7 @@ Rules:
 - Use 3–8 relevant emojis for scannability (line openers, bullets, light CTA). Never spam.
 - End with 3–5 relevant hashtags on their own line (e.g. #WebDev #JavaScript).
 - Soft CTA is fine ("What's your take? 👇").
-- Do NOT invent a domain. Do NOT include a "Read more:" URL — the server appends it.
+- Do NOT invent a domain. Do NOT include a "Read more:" URL — the server inserts it before the hashtags.
 - Do NOT wrap the answer in quotes or code fences.`,
 
   LINKEDIN_SUMMARY_USER: (title: string, articleExcerpt: string) =>

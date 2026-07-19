@@ -37,7 +37,7 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
   - **Emojis (required for engagement):** Use 3–8 relevant emojis to make the post scannable and interactive — e.g. line-openers (🚀 💡 ✅ 🔥), bullet markers, and a light CTA emoji. Prefer tech-friendly emojis; never spam or use decorative emoji walls.
   - End with 3–5 relevant hashtags on their own line (e.g. #WebDev #JavaScript).
   - Soft CTA is fine ("What's your take? 👇").
-  - Do NOT invent a domain. Do NOT include a "Read more:" URL — the server appends the real link.
+  - Do NOT invent a domain. Do NOT include a "Read more:" URL — the server inserts the real link before the hashtags.
 - tags JSON field: still exactly ${AI_POST_LIMITS.TAG_COUNT} lowercase DEV.to-style tags (no # in JSON).`,
 };
 

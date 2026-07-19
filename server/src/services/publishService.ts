@@ -343,16 +343,13 @@ export async function publishToWordpress(
 }
 
 /**
- * Publish the Phase 1 LinkedIn summary (not the full TipTap article) via UGC Posts API.
+ * Publish the LinkedIn summary (not the full TipTap article) via UGC Posts API.
+ * Always creates a new share with the current summary so "Publish" is never a silent no-op.
  */
 export async function publishToLinkedin(
   post: IPostDocument,
   credential: ICredentialDocument,
 ): Promise<PlatformPublishResult> {
-  if (isAlreadyPublishedOnPlatform(post, PLATFORMS.LINKEDIN)) {
-    return { updates: existingPlatformUpdates(post, PLATFORMS.LINKEDIN), action: "skip" };
-  }
-
   const summary = (post.linkedin_post || "").trim();
   if (!summary) {
     throw new Error(ERROR_MESSAGES.LINKEDIN_SUMMARY_REQUIRED);
@@ -363,48 +360,56 @@ export async function publishToLinkedin(
     ((post.canonical_url || "").trim().startsWith("http") ? (post.canonical_url || "").trim() : undefined);
   const commentary = finalizeLinkedInPost(summary, readMore);
 
-  const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
+  const wasPublished = isAlreadyPublishedOnPlatform(post, PLATFORMS.LINKEDIN);
 
-  const payload = {
-    author: personUrn,
-    lifecycleState: "PUBLISHED",
-    specificContent: {
-      "com.linkedin.ugc.ShareContent": {
-        shareCommentary: { text: commentary },
-        shareMediaCategory: "NONE",
+  try {
+    const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
+
+    const payload = {
+      author: personUrn,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: { text: commentary },
+          shareMediaCategory: "NONE",
+        },
       },
-    },
-    visibility: {
-      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-    },
-  };
+      visibility: {
+        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+      },
+    };
 
-  const publishResponse = await axios.post(API_URLS.LINKEDIN.UGC_POSTS_URL, payload, {
-    headers: {
-      [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${accessToken}`,
-      [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
-      "X-Restli-Protocol-Version": "2.0.0",
-    },
-  });
+    const publishResponse = await axios.post(API_URLS.LINKEDIN.UGC_POSTS_URL, payload, {
+      headers: {
+        [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${accessToken}`,
+        [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+    });
 
-  const postUrn =
-    (typeof publishResponse.data?.id === "string" && publishResponse.data.id) ||
-    (typeof publishResponse.headers?.["x-restli-id"] === "string" && publishResponse.headers["x-restli-id"]) ||
-    "";
+    const postUrn =
+      (typeof publishResponse.data?.id === "string" && publishResponse.data.id) ||
+      (typeof publishResponse.headers?.["x-restli-id"] === "string" && publishResponse.headers["x-restli-id"]) ||
+      "";
 
-  if (!postUrn) {
-    throw new Error(ERROR_MESSAGES.PUBLISHING_FAILED);
+    if (!postUrn) {
+      throw new Error(ERROR_MESSAGES.PUBLISHING_FAILED);
+    }
+
+    const existing = getExistingPlatformStatus(post, PLATFORMS.LINKEDIN);
+
+    return {
+      updates: {
+        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.LINKEDIN)]: true,
+        [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.LINKEDIN)]: postUrn,
+        [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.LINKEDIN)]: API_URLS.LINKEDIN.FEED_UPDATE_URL(postUrn),
+        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.LINKEDIN)]: existing?.published_at ?? dayjs().toDate(),
+      },
+      action: wasPublished ? "update" : "create",
+    };
+  } catch (error) {
+    throw new Error(linkedinErrorMessage(error));
   }
-
-  return {
-    updates: {
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.LINKEDIN)]: true,
-      [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.LINKEDIN)]: postUrn,
-      [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.LINKEDIN)]: API_URLS.LINKEDIN.FEED_UPDATE_URL(postUrn),
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.LINKEDIN)]: dayjs().toDate(),
-    },
-    action: "create",
-  };
 }
 
 type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<PlatformPublishResult>;

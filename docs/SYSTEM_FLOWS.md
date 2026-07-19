@@ -29,7 +29,7 @@
 
 **Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`linkedinPost.ts`](../server/src/utils/linkedinPost.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx), [`LinkedInPostPanel.tsx`](../client/src/components/editor/LinkedInPostPanel.tsx).
 
-**Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md). Set `CANONICAL_BASE_URL` (server) and `NEXT_PUBLIC_CANONICAL_BASE_URL` (client) to your live blog for LinkedIn Read more links.
+**Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md). Set `CANONICAL_BASE_URL` / `NEXT_PUBLIC_CANONICAL_BASE_URL` to your **public blog** (e.g. `https://www.farukh.me/blog`) for LinkedIn Read more. Keep `SITE_URL` as the **SyncApp client** for auth, editor, and OAuth return.
 
 ## LinkedIn OAuth + publish (Phase 2)
 

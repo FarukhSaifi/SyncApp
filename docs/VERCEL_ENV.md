@@ -47,13 +47,13 @@ Create a Vercel project with **Root Directory** = `server`.
 | `GOOGLE_CLOUD_PROJECT` | Optional (GCS) | Only for cover image uploads to Cloud Storage |
 | `GOOGLE_CREDENTIALS_JSON` | Optional (GCS) | Service account JSON on Vercel for Storage |
 | `GCS_BUCKET_NAME` | Optional | Overrides default bucket |
-| `CANONICAL_BASE_URL` | Optional | Public blog base URL for post canonicals |
+| `CANONICAL_BASE_URL` | Optional | **Public blog only** (LinkedIn Read more + post canonicals), e.g. `https://www.farukh.me/blog` |
 | `CRON_SECRET` | Optional | If using cron routes |
 | `RESEND_API_KEY` | For email | [Resend](https://resend.com) API key — scheduled publish author emails |
 | `NOTIFICATION_FROM_EMAIL` | For email | Verified sender, e.g. `SyncApp <noreply@farukh.me>` (not a Gmail address) |
 | `NOTIFICATION_CC_EMAIL` | Optional | Always CC’d on publish emails; default `farook1x95@gmail.com` (plus author) |
 | `SLACK_WEBHOOK_URL` | Optional | Slack webhook for scheduled publish notifications |
-| `SITE_URL` | Optional | Client app URL for links in notification emails + LinkedIn OAuth return |
+| `SITE_URL` | Optional | **SyncApp client** for login/editor, notification “open post” links, LinkedIn OAuth return (e.g. `https://sync-app-client.vercel.app`) |
 | `LINKEDIN_CLIENT_ID` | For LinkedIn | LinkedIn Developer app Client ID |
 | `LINKEDIN_CLIENT_SECRET` | For LinkedIn | LinkedIn Developer app Client Secret |
 | `LINKEDIN_REDIRECT_URI` | For LinkedIn | Must match app callback, e.g. `https://sync-app-server.vercel.app/api/linkedin/oauth/callback` |
@@ -81,7 +81,7 @@ Create a separate Vercel project with **Root Directory** = `client`.
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_BACKEND_URL` | Yes | Server URL, e.g. `https://sync-app-server.vercel.app` (no trailing `/api`) |
-| `NEXT_PUBLIC_CANONICAL_BASE_URL` | Optional | e.g. `https://yourblog.com/blog` |
+| `NEXT_PUBLIC_CANONICAL_BASE_URL` | Optional | e.g. `https://www.farukh.me/blog` |
 
 Next.js inlines `NEXT_PUBLIC_*` at **build time** — redeploy the client after changing these.
 
@@ -108,6 +108,7 @@ NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
 NOTIFICATION_CC_EMAIL=farook1x95@gmail.com
 SLACK_WEBHOOK_URL=
 SITE_URL=https://sync-app-client.vercel.app
+CANONICAL_BASE_URL=https://www.farukh.me/blog
 CRON_SECRET=
 LINKEDIN_CLIENT_ID=
 LINKEDIN_CLIENT_SECRET=
@@ -118,7 +119,7 @@ LINKEDIN_REDIRECT_URI=https://sync-app-server.vercel.app/api/linkedin/oauth/call
 
 ```
 NEXT_PUBLIC_API_BACKEND_URL=https://sync-app-server.vercel.app
-NEXT_PUBLIC_CANONICAL_BASE_URL=
+NEXT_PUBLIC_CANONICAL_BASE_URL=https://www.farukh.me/blog
 ```
 
 ---

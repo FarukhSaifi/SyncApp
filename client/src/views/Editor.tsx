@@ -19,8 +19,8 @@ import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
-import { toEditorHtml } from "@utils/contentUtils";
-import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
+import { normalizeMarkdownNewlines, toStorageMarkdown } from "@utils/contentUtils";
+import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl, resolveLinkedInReadMoreUrl } from "@utils/linkedinPost";
 import dynamic from "next/dynamic";
 
 import { PLATFORMS } from "@constants/platforms";
@@ -34,9 +34,8 @@ const EditorContent = dynamic(() => import("@components/editor/EditorContent"), 
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
-  const preferredReadMoreUrl = (state.formData.canonical_url || "").trim().startsWith("http")
-    ? state.formData.canonical_url.trim()
-    : undefined;
+  // Prefer Farukh.me blog base over SyncApp editor host for LinkedIn Read more.
+  const preferredReadMoreUrl = resolveLinkedInReadMoreUrl(state.formData.canonical_url);
 
   const ai = useEditorAI({
     postId: state.id,
@@ -48,10 +47,11 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     onDraftGenerated: (data) => {
       const linkedinPost = data.linkedin_post?.trim() || "";
       const readMore = data.read_more_url?.trim() || preferredReadMoreUrl || "";
+      // Keep markdown as source of truth — TipTap converts via toEditorHtml for display only.
+      const markdown = toStorageMarkdown(normalizeMarkdownNewlines(data.content || ""));
       state.setFormData((prev) => ({
         ...prev,
-        // AI returns markdown; TipTap stores HTML — convert so headings/code render.
-        content_markdown: toEditorHtml(data.content || ""),
+        content_markdown: markdown,
         title: data.title || prev.title,
         meta_description: data.meta_description || prev.meta_description,
         linkedin_post: linkedinPost,
@@ -117,9 +117,10 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
 
   const handleContentChange = useCallback(
     (html: string) => {
+      const markdown = toStorageMarkdown(html);
       state.setFormData((prev) => {
-        if (prev.content_markdown !== html) {
-          return { ...prev, content_markdown: html };
+        if (prev.content_markdown !== markdown) {
+          return { ...prev, content_markdown: markdown };
         }
         return prev;
       });
@@ -133,6 +134,11 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const displayLinkedInPost = ai.linkedinPost || formLinkedInPost;
   const displayLinkedInReadMore =
     ai.linkedinReadMoreUrl || extractLinkedInReadMoreUrl(displayLinkedInPost || "") || formLinkedInReadMore;
+
+  const linkedinPublishOverrides = {
+    linkedin_post: displayLinkedInPost || "",
+    linkedin_read_more_url: displayLinkedInReadMore || "",
+  };
 
   return (
     <div className="editor-layout">
@@ -189,8 +195,8 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         publishing={state.publishing}
         loading={state.loading}
         onSaveDraft={() => state.handleSave(POST_STATUS.DRAFT)}
-        onPublishToPlatform={state.handlePublishToPlatform}
-        onPublishToAll={state.handlePublishToAll}
+        onPublishToPlatform={(platform) => void state.handlePublishToPlatform(platform, linkedinPublishOverrides)}
+        onPublishToAll={() => void state.handlePublishToAll(linkedinPublishOverrides)}
         connectedPlatforms={state.connectedPlatforms}
         onDownloadMdx={state.handleDownloadMdx}
         scheduledFor={state.formData.scheduled_for}
@@ -219,7 +225,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
           }
           void ai.handleCopyLinkedInPost();
         }}
-        onPublishLinkedInPost={() => state.handlePublishToPlatform(PLATFORMS.LINKEDIN)}
+        onPublishLinkedInPost={() => void state.handlePublishToPlatform(PLATFORMS.LINKEDIN, linkedinPublishOverrides)}
         onGenerateLinkedInSummary={() => void ai.handleGenerateLinkedInSummary()}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}

@@ -1,10 +1,32 @@
 /**
  * Content format helpers for the editor.
- * AI returns markdown; TipTap uses HTML. We detect format and convert for display.
+ * Source of truth is markdown (`content_markdown`); TipTap uses HTML only for display.
  */
 import { marked } from "marked";
+import TurndownService from "turndown";
 
 marked.setOptions({ gfm: true, breaks: false });
+
+const turndown = new TurndownService({
+  headingStyle: "atx",
+  codeBlockStyle: "fenced",
+  bulletListMarker: "-",
+  emDelimiter: "*",
+  strongDelimiter: "**",
+});
+
+turndown.addRule("fencedCodeBlock", {
+  filter: (node) => node.nodeName === "PRE",
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const code =
+      el.firstChild && (el.firstChild as HTMLElement).nodeName === "CODE" ? (el.firstChild as HTMLElement) : el;
+    const className = code.getAttribute?.("class") || "";
+    const lang = (className.match(/language-([^\s]+)/) || [])[1] || "";
+    const text = code.textContent || "";
+    return `\n\`\`\`${lang}\n${text.replace(/\n$/, "")}\n\`\`\`\n\n`;
+  },
+});
 
 /** Real HTML open tags TipTap/saved posts use — not TypeScript generics like Promise<T>. */
 const HTML_BLOCK_OPEN =
@@ -74,6 +96,39 @@ export function markdownToHtml(markdown: string): string {
   if (!normalized) return "";
   const html = marked.parse(normalized, { async: false });
   return typeof html === "string" ? html : String(html ?? "");
+}
+
+/** Convert TipTap/HTML editor output to markdown for storage and platform APIs. */
+export function htmlToMarkdown(html: string): string {
+  if (!html || typeof html !== "string") return "";
+  const trimmed = html.trim();
+  if (!trimmed) return "";
+  return turndown
+    .turndown(trimmed)
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Normalize any editor payload (AI markdown or TipTap HTML) to markdown for `content_markdown`.
+ */
+export function toStorageMarkdown(content: string): string {
+  if (!content || typeof content !== "string") return "";
+  const trimmed = content.trim();
+  if (!trimmed) return "";
+  if (isLikelyHtml(trimmed) && !isLikelyMarkdown(trimmed)) {
+    return htmlToMarkdown(trimmed);
+  }
+  if (isLikelyHtml(trimmed) && isLikelyMarkdown(trimmed)) {
+    // Prefer HTML→MD when TipTap block tags dominate (saved HTML posts).
+    const blockHits = trimmed.match(HTML_BLOCK_ANY)?.length ?? 0;
+    if (blockHits >= 2 || HTML_BLOCK_OPEN.test(trimmed)) {
+      return htmlToMarkdown(trimmed);
+    }
+  }
+  return normalizeMarkdownNewlines(trimmed);
 }
 
 /**
