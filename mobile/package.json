@@ -35,7 +35,7 @@
     "@types/qs": "^6.15.1",
     "@types/react": "~19.1.0",
     "eas-cli": "^20.0.0",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "typescript": "~5.9.0"
   },
   "scripts": {
