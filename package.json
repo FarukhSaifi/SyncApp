@@ -30,6 +30,6 @@
     "audit:all": "npm run audit:client && npm run audit:server"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "concurrently": "^10.0.5"
   }
 }
