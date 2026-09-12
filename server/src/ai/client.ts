@@ -16,7 +16,7 @@ export type AiProvider = "studio" | "none";
 
 export interface AiCapabilities {
   textAi: boolean;
-  /** True when a Studio key is present; image may use Imagen/Gemini image or SVG fallback. */
+  /** True when a Studio key is present; generates images via Gemini multimodal & Imagen models. */
   imageAi: boolean;
   provider: AiProvider;
   defaultModel: string;
@@ -39,13 +39,45 @@ export function hasStudioKey(): boolean {
 /** Capability snapshot for UI and health messaging. */
 export function getAiCapabilities(): AiCapabilities {
   const ready = hasStudioKey();
+  const imageReady = ready || hasVertexConfig();
   return {
     textAi: ready,
-    imageAi: ready,
+    imageAi: imageReady,
     provider: ready ? "studio" : "none",
     defaultModel: resolveContentModel(),
     studioUrl: AI_CONFIG.GEMINI_API_KEY_URL,
   };
+}
+
+import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials";
+
+let cachedVertexClient: GoogleGenAI | null = null;
+
+export function hasVertexConfig(): boolean {
+  return Boolean(
+    config.googleCloudProject &&
+    (config.googleApplicationCredentials ||
+      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      process.env.GOOGLE_CREDENTIALS_JSON)
+  );
+}
+
+export function getVertexAiClient(): GoogleGenAI | null {
+  if (!hasVertexConfig()) return null;
+  if (cachedVertexClient) return cachedVertexClient;
+
+  const creds = loadGoogleServiceAccountCredentials();
+  const keyFile = !process.env.GOOGLE_CREDENTIALS_JSON
+    ? config.googleApplicationCredentials || process.env.GOOGLE_APPLICATION_CREDENTIALS
+    : undefined;
+
+  cachedVertexClient = new GoogleGenAI({
+    vertexai: true,
+    project: config.googleCloudProject,
+    location: process.env.GOOGLE_CLOUD_LOCATION || "us-central1",
+    googleAuthOptions: creds ? { credentials: creds as unknown as Record<string, unknown> } : (keyFile ? { keyFile } : undefined),
+  });
+  return cachedVertexClient;
 }
 
 /** Single Studio client for text and image generation. */

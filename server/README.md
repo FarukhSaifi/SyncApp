@@ -105,7 +105,7 @@
 | `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
 | `GEMINI_API_KEY` | Google AI Studio API key ([get one free](https://aistudio.google.com/apikey)) — required for AI routes | _(not set)_ |
-| `GOOGLE_AI_MODEL` | Gemini content model | `gemini-3.5-flash` |
+| `GOOGLE_AI_MODEL` | Gemini content model | `gemini-3.8-flash` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for SEO posts | `true` |
 | `GOOGLE_CLOUD_PROJECT` | GCP project ID (optional — GCS cover uploads only) | _(not set)_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local GCS) | _(not set)_ |
@@ -219,7 +219,7 @@ server/
 - `POST /api/ai/generate-image` - Featured image from topic
 - `POST /api/ai/edit` - Inline edit selected text (body: `{ action, text }`)
 
-Requires `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). Default model: `gemini-3.5-flash`. See [docs/AI_SETUP.md](../docs/AI_SETUP.md). Without the key, AI routes return **503**.
+Requires `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). Default model: `gemini-3.8-flash`. See [docs/AI_SETUP.md](../docs/AI_SETUP.md). Without the key, AI routes return **503**.
 
 ### System
 

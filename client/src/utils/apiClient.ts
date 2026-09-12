@@ -254,7 +254,7 @@ class ApiClient {
   aiGenerateImage(
     topic: string,
     additionalPrompt?: string,
-  ): Promise<ApiResponse<{ imageDataUrl: string; source?: AiImageSource }>> {
+  ): Promise<ApiResponse<{ imageDataUrl: string; imageUrl?: string; source?: AiImageSource }>> {
     return this.request(`${API_PATHS.AI}/generate-image`, {
       method: HTTP_METHODS.POST,
       body: { topic, additionalPrompt },

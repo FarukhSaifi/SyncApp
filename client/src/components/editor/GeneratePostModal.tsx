@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import type { GeneratePostModalProps } from "@types";
 import { apiClient } from "@utils/apiClient";
-import { FiHash, FiRefreshCw, FiSearch, FiTrendingUp, FiZap } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiHash, FiRefreshCw, FiSearch, FiTrendingUp, FiZap } from "react-icons/fi";
 
 import { EDITOR_UI } from "@constants/messages";
 import { OPTIMIZATION_TARGETS } from "@constants/platforms";
@@ -142,6 +142,35 @@ export default function GeneratePostModal({
     [keywords, trimmedKeyword],
   );
 
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+
+  const activeModel = useMemo(
+    () => models.find((m) => m.id === selectedModel) || models[0],
+    [models, selectedModel],
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setIsModelDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsModelDropdownOpen(false);
+      }
+    };
+    if (isModelDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isModelDropdownOpen]);
+
   const toggleTarget = (platform: string) => {
     if (targetPlatforms.includes(platform)) {
       const next = targetPlatforms.filter((p) => p !== platform);
@@ -193,19 +222,80 @@ export default function GeneratePostModal({
             >
               {EDITOR_UI.GENERATE_POST_MODEL_LABEL}
             </label>
-            <select
-              id="generate-post-model"
-              value={selectedModel}
-              onChange={(e) => onModelChange(e.target.value)}
-              disabled={isGenerating}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
-            >
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative" ref={modelDropdownRef}>
+              <button
+                type="button"
+                id="generate-post-model"
+                onClick={() => !isGenerating && setIsModelDropdownOpen((prev) => !prev)}
+                disabled={isGenerating}
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-3.5 py-2.5 text-left transition-all hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 shadow-sm"
+                aria-haspopup="listbox"
+                aria-expanded={isModelDropdownOpen}
+              >
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="text-sm font-medium text-foreground truncate">
+                    {activeModel?.label || selectedModel}
+                  </div>
+                  {activeModel?.description && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {activeModel.description}
+                    </div>
+                  )}
+                </div>
+                <FiChevronDown
+                  className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                    isModelDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isModelDropdownOpen && (
+                <div
+                  role="listbox"
+                  aria-label="Select AI Model"
+                  className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-2xl border border-border/80 bg-popover dark:bg-[#1e1f20] p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
+                >
+                  <div className="space-y-1">
+                    {models.map((model) => {
+                      const isSelected = model.id === selectedModel;
+                      return (
+                        <button
+                          key={model.id}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            onModelChange(model.id);
+                            setIsModelDropdownOpen(false);
+                          }}
+                          className={`group flex w-full items-center gap-2.5 rounded-2xl px-3 py-2 text-left transition-all ${
+                            isSelected
+                              ? "border border-neutral-300 dark:border-neutral-500 bg-neutral-100/60 dark:bg-neutral-800/40 text-foreground shadow-sm"
+                              : "border border-transparent hover:border-neutral-300/60 dark:hover:border-neutral-600/60 hover:bg-neutral-100/40 dark:hover:bg-neutral-800/30 text-foreground/90"
+                          }`}
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center shrink-0">
+                            {isSelected ? (
+                              <FiCheck className="h-4 w-4 text-foreground dark:text-neutral-100" />
+                            ) : null}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium leading-tight text-foreground dark:text-neutral-100">
+                              {model.label}
+                            </div>
+                            {model.description && (
+                              <div className="text-xs text-muted-foreground dark:text-neutral-400 mt-0.5">
+                                {model.description}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-1.5">

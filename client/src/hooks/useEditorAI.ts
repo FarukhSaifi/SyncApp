@@ -96,6 +96,7 @@ interface UseEditorAIReturn {
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
+  generatedImageUrl: string | null;
   generatedImageSource: AiImageSource | null;
   uploadingCover: boolean;
   linkedinPost: string | null;
@@ -107,6 +108,8 @@ interface UseEditorAIReturn {
   handleUseAsFeaturedImage: () => void;
   handleUploadAndAttach: () => Promise<void>;
   handleCopyLinkedInPost: () => Promise<void>;
+  handleCopyImageUrl: () => Promise<void>;
+  handleDownloadImage: () => void;
   hydrateLinkedInPost: (post: string | null, missingCanonical?: boolean) => void;
   clearLinkedInPost: () => void;
 }
@@ -126,6 +129,7 @@ export function useEditorAI({
   const [aiImagePrompt, setAiImagePrompt] = useState("");
   const [aiLoading, setAiLoading] = useState("");
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [generatedImageSource, setGeneratedImageSource] = useState<AiImageSource | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [linkedinPost, setLinkedinPost] = useState<string | null>(null);
@@ -280,16 +284,15 @@ export function useEditorAI({
     }
     setAiLoading("image");
     setGeneratedImageDataUrl(null);
+    setGeneratedImageUrl(null);
     setGeneratedImageSource(null);
     try {
       const response = await apiClient.aiGenerateImage(topic, aiImagePrompt.trim() || undefined);
       if (response?.success && response.data?.imageDataUrl) {
         setGeneratedImageDataUrl(response.data.imageDataUrl);
+        setGeneratedImageUrl(response.data.imageUrl || null);
         setGeneratedImageSource(response.data.source || null);
-        toast.success(
-          TOAST_TITLES.IMAGE_GENERATED,
-          response.data.source === "svg_fallback" ? SYNC_LABEL.AI_IMAGE_SVG_FALLBACK : SYNC_LABEL.AI_IMAGE_GENERATED,
-        );
+        toast.success(TOAST_TITLES.IMAGE_GENERATED, SYNC_LABEL.AI_IMAGE_GENERATED);
       } else {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
       }
@@ -301,10 +304,14 @@ export function useEditorAI({
   }, [aiKeyword, aiImagePrompt, toast]);
 
   const handleUseAsFeaturedImage = useCallback(() => {
-    if (!generatedImageDataUrl) return;
-    onCoverImageSet(generatedImageDataUrl);
+    const target = generatedImageUrl || generatedImageDataUrl;
+    if (!target) return;
+    if (typeof window !== "undefined" && generatedImageDataUrl) {
+      sessionStorage.setItem(`cover_preview_${target}`, generatedImageDataUrl);
+    }
+    onCoverImageSet(target);
     toast.success(TOAST_TITLES.FEATURED_IMAGE_SET, SYNC_LABEL.AI_FEATURED_IMAGE_SET);
-  }, [generatedImageDataUrl, onCoverImageSet, toast]);
+  }, [generatedImageUrl, generatedImageDataUrl, onCoverImageSet, toast]);
 
   const handleUploadAndAttach = useCallback(async () => {
     if (!generatedImageDataUrl || !postId) return;
@@ -317,6 +324,7 @@ export function useEditorAI({
         }
         onCoverImageSet(response.data.url);
         setGeneratedImageDataUrl(null);
+        setGeneratedImageUrl(null);
         toast.success(TOAST_TITLES.IMAGE_UPLOADED, SYNC_LABEL.AI_COVER_ATTACHED);
       } else {
         toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_UPLOAD_COVER);
@@ -327,6 +335,33 @@ export function useEditorAI({
       setUploadingCover(false);
     }
   }, [generatedImageDataUrl, postId, onCoverImageSet, toast]);
+
+  const handleCopyImageUrl = useCallback(async () => {
+    const target = generatedImageUrl || generatedImageDataUrl;
+    if (!target) return;
+    try {
+      await navigator.clipboard.writeText(target);
+      toast.success("Copied", "Image URL copied to clipboard");
+    } catch {
+      toast.apiError("Failed to copy image URL to clipboard");
+    }
+  }, [generatedImageUrl, generatedImageDataUrl, toast]);
+
+  const handleDownloadImage = useCallback(() => {
+    const target = generatedImageDataUrl || generatedImageUrl;
+    if (!target) return;
+    try {
+      const a = document.createElement("a");
+      a.href = target;
+      a.download = `cover-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("Downloaded", "Image downloaded to your device");
+    } catch {
+      toast.apiError("Failed to download image");
+    }
+  }, [generatedImageDataUrl, generatedImageUrl, toast]);
 
   const handleCopyLinkedInPost = useCallback(async () => {
     if (!linkedinPost?.trim()) return;
@@ -350,6 +385,7 @@ export function useEditorAI({
     setAiImagePrompt,
     aiLoading,
     generatedImageDataUrl,
+    generatedImageUrl,
     generatedImageSource,
     uploadingCover,
     linkedinPost,
@@ -361,6 +397,8 @@ export function useEditorAI({
     handleUseAsFeaturedImage,
     handleUploadAndAttach,
     handleCopyLinkedInPost,
+    handleCopyImageUrl,
+    handleDownloadImage,
     hydrateLinkedInPost,
     clearLinkedInPost,
   };

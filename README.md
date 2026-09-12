@@ -28,7 +28,7 @@
 - Node.js 22+, Express 5, TypeScript
 - MongoDB Atlas + Mongoose
 - JWT auth, bcrypt password hashing
-- Google AI Studio (`GEMINI_API_KEY`, default `gemini-3.5-flash`) for AI features
+- Google AI Studio (`GEMINI_API_KEY`, default `gemini-3.8-flash`) for AI features
 - Google Cloud Storage for image uploads
 - Axios for external platform APIs
 
@@ -163,14 +163,14 @@ Protect the cron route with `Authorization: Bearer <CRON_SECRET>` when set.
 Uses **Google AI Studio** only (`GEMINI_API_KEY`). No Vertex project required. See [docs/AI_SETUP.md](./docs/AI_SETUP.md).
 
 - **Generate Post** — full draft from a keyword (title, meta, tags, markdown body)
-- **Generate Image** — featured image from topic (Gemini image / Imagen when available, else SVG cover)
+- **Generate Image** — featured image from topic via Gemini multimodal & Imagen models
 - **Edit Content** — proofread, shorten, expand selected text
 
 **Local** (`server/.env.dev`):
 
 ```bash
 GEMINI_API_KEY=your_key_from_aistudio
-GOOGLE_AI_MODEL=gemini-3.5-flash
+GOOGLE_AI_MODEL=gemini-3.8-flash
 ```
 
 Then restart the server. Confirm logs show `AI: Google AI Studio key detected`.
@@ -183,10 +183,10 @@ Then restart the server. Confirm logs show `AI: Google AI Studio key detected`.
 curl -X POST https://sync-app-server.vercel.app/api/ai/generate \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"keyword":"serverless Node tips","model":"gemini-3.5-flash"}'
+  -d '{"keyword":"serverless Node tips","model":"gemini-3.8-flash"}'
 ```
 
-Default model: `gemini-3.5-flash` (fallbacks: `gemini-3.1-flash-lite`, `gemini-flash-lite-latest`).
+Default model: `gemini-3.8-flash` (fallbacks: `gemini-3.5-flash`, `gemini-3.1-flash-lite`, `gemini-flash-lite-latest`).
 
 ### 5. Analytics
 
@@ -265,7 +265,7 @@ ENCRYPTION_IV=...
 CORS_ORIGIN=https://your-frontend.vercel.app
 CANONICAL_BASE_URL=https://yourblog.com/blog   # DEV.to canonical fallback
 GEMINI_API_KEY=...           # Google AI Studio — required for AI routes
-GOOGLE_AI_MODEL=gemini-3.5-flash
+GOOGLE_AI_MODEL=gemini-3.8-flash
 GOOGLE_CREDENTIALS_JSON=...  # Optional: GCS cover uploads only
 CRON_SECRET=...              # Vercel Cron auth (Bearer token)
 RESEND_API_KEY=...           # Scheduled publish emails (optional)

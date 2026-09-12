@@ -21,17 +21,30 @@ export const AI_POST_LIMITS = Object.freeze({
 
 /** Curated Gemini models exposed to the client model picker. */
 export const AI_CONTENT_MODELS = Object.freeze([
-  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash (default)" },
-  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (fast)" },
+  {
+    id: "gemini-3.5-flash-lite",
+    label: "3.5 Flash-Lite",
+    description: "Fastest answers",
+  },
+  {
+    id: "gemini-3.8-flash",
+    label: "3.8 Flash",
+    description: "All-around help",
+  },
   {
     id: "gemini-3.1-pro-preview",
-    label: "Gemini 3.1 Pro Preview (paid quota; auto-falls back to 3.5 Flash)",
+    label: "3.1 Pro",
+    description: "Advanced reasoning",
   },
 ] as const);
 
 export type AiContentModelId = (typeof AI_CONTENT_MODELS)[number]["id"];
 
-const ALLOWED_CONTENT_MODEL_IDS = new Set<string>(AI_CONTENT_MODELS.map((m) => m.id));
+const ALLOWED_CONTENT_MODEL_IDS = new Set<string>([
+  ...AI_CONTENT_MODELS.map((m) => m.id),
+  "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+]);
 
 export function isAllowedContentModel(model: string): boolean {
   return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());
@@ -75,7 +88,7 @@ You MUST output a valid JSON object matching this exact schema. Do not output ma
 
 export const AI_PROMPTS = {
   // Base rules; platform blocks appended by buildFullPostSystemPrompt()
-  FULL_POST_SYSTEM_BASE: `You are an expert technical writer, and SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
+  FULL_POST_SYSTEM_BASE: `You are an expert technical blog writer, SEO specialist, and engaging technical storyteller. Your task is to write a comprehensive, highly optimized blog post that ranks on Google and performs well on the user's selected publishing platforms.
 
 ${FULL_POST_SYSTEM_BODY}`,
 
@@ -85,7 +98,7 @@ Follow the system rules and platform optimization blocks exactly.
 Prefer actionable depth and working examples over length. No fluff, no SEO spam.`,
 
   // Image from topic – Optimized for high-CTR blog headers
-  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
+  IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images generator in comic book style of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
 
   IMAGE_FROM_TOPIC_USER: (topic: string, additionalPrompt?: string) =>
     `Create a compelling image prompt for ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px a blog featured image based on this topic:\n\n${topic.slice(0, 1500)}${
@@ -145,21 +158,24 @@ export const AI_CONFIG = Object.freeze({
   /** Alternate env name supported by @google/genai SDK. */
   ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
-  /** Default + primary fallback — Gemini 3.5 Flash on Google AI Studio. */
-  DEFAULT_MODEL: "gemini-3.5-flash",
+  /** Default + primary fallback — Gemini 3.8 Flash on Google AI Studio. */
+  DEFAULT_MODEL: "gemini-3.8-flash",
   /**
    * Tried in order when the selected model returns 429/503/404.
-   * Always prefer gemini-3.5-flash first.
+   * Always prefer gemini-3.8-flash first.
    */
-  MODEL_FALLBACKS: ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"] as readonly string[],
+  MODEL_FALLBACKS: ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"] as readonly string[],
+  /** Primary model for generating images (Gemini multimodal image generation). */
+  IMAGE_MODEL: "gemini-2.5-flash-image",
   /**
-   * Image model candidates (Studio). Imagen is often unavailable to new free keys;
-   * Gemini native image may hit quota — SVG cover is last resort in generateImage.
+   * Fallback image models tried in sequence when primary is unavailable or rate limited.
    */
   IMAGE_MODEL_FALLBACKS: [
-    "gemini-3-pro-image-preview",
-    "imagen-4.0-generate-001",
     "imagen-4.0-fast-generate-001",
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-lite-image",
+    "gemini-3-pro-image-preview",
+    "gemini-3-pro-image",
   ] as readonly string[],
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
@@ -191,9 +207,6 @@ export const AI_CONFIG = Object.freeze({
   DEVTO_REACH_TAGS_CACHE_MS: 60 * 60 * 1000,
   DEVTO_API_USER_AGENT: "SyncApp/1.0",
   DEVTO_TAG_NAME_PATTERN: /^[a-z0-9][a-z0-9-]{0,29}$/,
-  /** SVG cover fallback copy when image models are unavailable. */
-  COVER_SVG_FALLBACK_TITLE: "Generated cover image",
-  COVER_SVG_BADGE: "FEATURED COVER",
   /** Structured posts: enough creativity, stable JSON. */
   TEMPERATURE_POST: 0.55,
   /** Inline edits: stay close to source text. */
@@ -201,8 +214,6 @@ export const AI_CONFIG = Object.freeze({
   TOP_P: 0.95,
   /** 0 = disable Flash thinking so maxOutputTokens go to visible JSON/text, not reasoning. */
   FLASH_THINKING_BUDGET: 0,
-  /** Legacy Imagen id (often 404 for new Studio keys). Prefer IMAGE_MODEL_FALLBACKS. */
-  IMAGEN_MODEL: "imagen-4.0-generate-001",
   /** Keep low — retries × slow 503s previously exceeded the client AI timeout. */
   RETRY_ATTEMPTS: 2,
   RETRY_BASE_DELAY_MS: 400,
@@ -241,3 +252,14 @@ export const AI_RESPONSE_SCHEMA = {
   },
   required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
 };
+
+/**
+ * System instructions per model role. Centralising here keeps aiService.ts clean
+ * and makes it easy to iterate on behavioural guidelines without touching service logic.
+ */
+export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({
+  /** General-purpose base model used for internal helper calls. */
+  BASE: "You are a helpful AI assistant. Respond clearly and concisely. Do not produce harmful, illegal, or deceptive content.",
+} as const);
+
+

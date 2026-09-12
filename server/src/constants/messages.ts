@@ -96,7 +96,7 @@ export const ERROR_MESSAGES = {
   GEMINI_API_KEY_INVALID:
     "GEMINI_API_KEY is invalid or revoked. Create a new key at Google AI Studio, update server/.env.dev (or Vercel env), and restart / Redeploy.",
   AI_MODEL_NOT_FOUND:
-    "The selected AI model was not found or is not available with your API key. Try gemini-3.5-flash.",
+    "The selected AI model was not found or is not available with your API key. Try gemini-3.8-flash.",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_PARSE_FAILED: "AI returned invalid JSON. Please try again with a different model or keyword.",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",

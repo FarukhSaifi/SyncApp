@@ -42,8 +42,7 @@ Create a Vercel project with **Root Directory** = `server`.
 | `ENCRYPTION_IV` | Yes | 16-byte hex |
 | `CORS_ORIGIN` | Yes | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
 | `GEMINI_API_KEY` | **Yes (AI)** | Key from [Google AI Studio](https://aistudio.google.com/apikey) — required for all AI routes |
-| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.5-flash` (default + primary fallback) |
-| `GEMINI_IMAGE_MODEL` | Optional | e.g. `gemini-2.5-flash-image` when image quota is available |
+| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.8-flash` (default + primary fallback) |
 | `GOOGLE_CLOUD_PROJECT` | Optional (GCS) | Only for cover image uploads to Cloud Storage |
 | `GOOGLE_CREDENTIALS_JSON` | Optional (GCS) | Service account JSON on Vercel for Storage |
 | `GCS_BUCKET_NAME` | Optional | Overrides default bucket |
@@ -98,8 +97,7 @@ ENCRYPTION_KEY=
 ENCRYPTION_IV=
 CORS_ORIGIN=https://sync-app-client.vercel.app
 GEMINI_API_KEY=          # REQUIRED — paste working Studio key, then Redeploy
-GOOGLE_AI_MODEL=gemini-3.5-flash
-# GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
+GOOGLE_AI_MODEL=gemini-3.8-flash
 # Optional GCS only:
 # GOOGLE_CLOUD_PROJECT=
 # GOOGLE_CREDENTIALS_JSON=
@@ -144,7 +142,7 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
   3. **Redeploy** after adding env vars — Vercel does not inject new vars into running deployments until redeploy.
   4. **Health response `database.error`** — After redeploy, `GET /health` includes the connection error message when DB fails (e.g. auth, timeout, IP block).
 - **CORS errors** — `CORS_ORIGIN` on the **server** project must include your client URL exactly (scheme + host, no trailing slash).
-- **AI errors / `GEMINI_API_KEY is required`** — Key is missing on Vercel (local `.env` is not used there). Set `GEMINI_API_KEY` + `GOOGLE_AI_MODEL=gemini-3.5-flash` on **sync-app-server** for Production **and** Preview, then **Redeploy**. Or from `server/`: `npx vercel login` → `npm run env:sync` (`.env.prod` → Production+Preview, `.env.dev` → Development). Confirm `/health` → `ai.configured: true`. See [AI_SETUP.md](./AI_SETUP.md).
+- **AI errors / `GEMINI_API_KEY is required`** — Key is missing on Vercel (local `.env` is not used there). Set `GEMINI_API_KEY` + `GOOGLE_AI_MODEL=gemini-3.8-flash` on **sync-app-server** for Production **and** Preview, then **Redeploy**. Or from `server/`: `npx vercel login` → `npm run env:sync` (`.env.prod` → Production+Preview, `.env.dev` → Development). Confirm `/health` → `ai.configured: true`. See [AI_SETUP.md](./AI_SETUP.md).
 - **Preview deploy `Missing MONGODB_URI`** — Preview uses the same vars as Production from `.env.prod` via `npm run env:sync`. Redeploy preview after sync.
 - **`FUNCTION_INVOCATION_FAILED` / `ERR_REQUIRE_ESM` (uuid)** — Production must not use ESM-only `uuid@14` with `@vercel/node` CJS. SyncApp uses `crypto.randomUUID()` instead. Redeploy after pulling this fix.
 - **Client hits wrong API** — rebuild client after changing `NEXT_PUBLIC_API_BACKEND_URL`.

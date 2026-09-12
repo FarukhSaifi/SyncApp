@@ -125,42 +125,66 @@ async function uploadToGCSBucket(
   mimetype: string,
   bucketName: string,
 ): Promise<string> {
+  const filename = buildStoredObjectName(originalname, mimetype, true);
+  const isFirebase = bucketName.endsWith("firebasestorage.app");
+
+  try {
+    const storage = getStorageClient();
+    const authClient = await storage.authClient.getClient();
+    const tokenRes = await authClient.getAccessToken();
+    const token = tokenRes?.token;
+
+    if (token) {
+      // Clean raw binary upload via Google Cloud Storage JSON API (preserves exact image bytes)
+      const uploadUrl = `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=media&name=${encodeURIComponent(filename)}`;
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": mimetype,
+        },
+        body: new Uint8Array(fileBuffer),
+      });
+
+      if (res.ok) {
+        const publicUrl = isFirebase
+          ? `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filename)}?alt=media`
+          : `${DEFAULT_VALUES.GCS_PUBLIC_URL_BASE}/${bucketName}/${filename}`;
+
+        logger.info(`File successfully uploaded to GCS/Firebase Storage: ${filename}`);
+        return publicUrl;
+      }
+      logger.warn(`GCS raw media upload failed with status ${res.status}`);
+    }
+  } catch (err) {
+    logger.warn(`Raw GCS upload attempt failed: ${(err as Error).message}`);
+  }
+
+  // Fallback to standard @google-cloud/storage stream upload
   const storage = getStorageClient();
   const bucket = storage.bucket(bucketName);
-
-  const filename = buildStoredObjectName(originalname, mimetype, true);
   const blob = bucket.file(filename);
 
   return new Promise((resolve, reject) => {
-    const writeOptions: CreateWriteStreamOptions = {
+    const blobStream = blob.createWriteStream({
       resumable: false,
-      contentType: mimetype,
+      metadata: { contentType: mimetype },
       validation: false,
-    };
-
-    const blobStream = blob.createWriteStream(writeOptions);
+    });
 
     blobStream.on("error", (err: Error) => {
       reject(new AppError(`Upload failed: ${err.message}`, HTTP_STATUS.INTERNAL_SERVER_ERROR));
     });
 
     blobStream.on("finish", async () => {
-      const isFirebase = bucketName.endsWith("firebasestorage.app");
       const publicUrl = isFirebase
         ? `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filename)}?alt=media`
         : `${DEFAULT_VALUES.GCS_PUBLIC_URL_BASE}/${bucketName}/${filename}`;
 
       try {
         await blob.makePublic();
-        logger.debug(`Successfully set GCS/Firebase Storage object public: ${filename}`);
-      } catch (err) {
-        if (!isFirebase) {
-          logger.warn(
-            `Could not make GCS blob public (this is normal if Uniform Bucket-Level Access is ` +
-              `enabled. Ensure 'allUsers' has 'Storage Object Viewer' role on your bucket): ` +
-              `${(err as Error).message}`,
-          );
-        }
+      } catch {
+        // Ignored if uniform bucket-level access is enabled
       }
       resolve(publicUrl);
     });

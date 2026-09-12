@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import {
   FiChevronDown,
   FiClock,
+  FiCopy,
   FiDownload,
   FiGlobe,
   FiImage,
@@ -83,6 +84,7 @@ const EditorSidebarRight = ({
   setAiImagePrompt,
   aiLoading,
   generatedImageDataUrl,
+  generatedImageUrl = null,
   generatedImageSource = null,
   uploadingCover,
   linkedinPost = null,
@@ -96,6 +98,8 @@ const EditorSidebarRight = ({
   onGenerateImage,
   onUseAsFeaturedImage,
   onUploadAndAttach,
+  onCopyImageUrl,
+  onDownloadImage,
 }: EditorSidebarRightProps) => {
   const [publishDropdownOpen, setPublishDropdownOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -448,11 +452,7 @@ const EditorSidebarRight = ({
                     </div>
                   </div>
                   <p className="text-[11px] text-center text-muted-foreground italic">
-                    {generatedImageDataUrl
-                      ? generatedImageSource === "svg_fallback"
-                        ? EDITOR_UI.IMAGE_SVG_FALLBACK_CAPTION
-                        : EDITOR_UI.IMAGE_GENERATED_CAPTION
-                      : EDITOR_UI.IMAGE_CURRENT_CAPTION}
+                    {generatedImageDataUrl ? EDITOR_UI.IMAGE_GENERATED_CAPTION : EDITOR_UI.IMAGE_CURRENT_CAPTION}
                   </p>
                 </div>
               ) : (
@@ -471,41 +471,49 @@ const EditorSidebarRight = ({
               )}
             </div>
 
-            {/* CTA action block */}
+            {/* Minimal, elegant action block */}
             {generatedImageDataUrl && !aiLoading && (
-              <div className="mt-4 pt-3 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="mt-4 pt-3 border-t border-border/40 flex flex-col sm:flex-row items-center gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primary"
                   size="sm"
                   onClick={() => {
                     onUseAsFeaturedImage();
                     setIsImageModalOpen(false);
                   }}
-                  className="w-full justify-center text-xs py-2"
+                  className="w-full sm:flex-1 justify-center text-xs py-2 shadow-sm"
                 >
-                  {EDITOR_UI.APPLY_LOCALLY}
+                  <FiImage className="h-3.5 w-3.5 mr-1.5" />
+                  Use as Cover
                 </Button>
-                {postId ? (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={async () => {
-                      await onUploadAndAttach();
-                      setIsImageModalOpen(false);
-                    }}
-                    disabled={uploadingCover}
-                    className="w-full justify-center text-xs py-2"
-                  >
-                    <FiUpload className="h-3.5 w-3.5 mr-1.5" />
-                    {uploadingCover ? EDITOR_UI.UPLOADING : EDITOR_UI.UPLOAD_AND_SAVE}
-                  </Button>
-                ) : (
-                  <div className="col-span-1 sm:col-span-2 text-center text-[10px] text-amber-500 bg-amber-500/10 px-2 py-1.5 rounded-md border border-amber-500/20">
-                    {EDITOR_UI.SAVE_DRAFT_FIRST_HINT}
-                  </div>
-                )}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {onCopyImageUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={onCopyImageUrl}
+                      className="flex-1 sm:flex-none justify-center text-xs py-2"
+                      title={generatedImageUrl ? "Copy public cloud URL" : "Copy image data"}
+                    >
+                      <FiCopy className="h-3.5 w-3.5 mr-1.5" />
+                      Copy Link
+                    </Button>
+                  )}
+                  {onDownloadImage && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={onDownloadImage}
+                      className="flex-1 sm:flex-none justify-center text-xs py-2"
+                    >
+                      <FiDownload className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>

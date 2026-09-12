@@ -231,6 +231,9 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onGenerateImage={ai.handleGenerateImage}
         onUseAsFeaturedImage={ai.handleUseAsFeaturedImage}
         onUploadAndAttach={ai.handleUploadAndAttach}
+        generatedImageUrl={ai.generatedImageUrl}
+        onCopyImageUrl={ai.handleCopyImageUrl}
+        onDownloadImage={ai.handleDownloadImage}
       />
 
       <EditorStatusBar

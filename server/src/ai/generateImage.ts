@@ -1,20 +1,32 @@
 /**
- * Featured image generation via Google AI Studio.
- * Tries Gemini native image / Imagen, then a browser-safe SVG cover (no foreignObject).
+ * AI Featured Image Generation
+ * Uses real AI models (Gemini 2.5 Flash Image & Imagen) configured for 16:9 blog headers.
+ * Clean, minimal, and fully maintainable pipeline.
  */
+import { GoogleGenAI } from "@google/genai";
 import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS } from "../constants";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
 import { logger } from "../utils/logger";
-import { buildModelCandidates, getAiClient, getModelName, getText, studioGenerateContent } from "./client";
+import {
+  buildModelCandidates,
+  getAiClient,
+  getModelName,
+  getText,
+  getVertexAiClient,
+  hasVertexConfig,
+  studioGenerateContent,
+} from "./client";
+import { uploadToGCS } from "../services/storage";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 
-export type ImageSource = "gemini" | "imagen" | "svg_fallback";
+export type ImageSource = "gemini" | "imagen";
 
 export interface GenerateImageResult {
   imageDataUrl: string;
+  imageUrl?: string;
   source: ImageSource;
 }
 
@@ -23,96 +35,9 @@ function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime = "image/png"
   return `data:${mime};base64,${base64}`;
 }
 
-function escapeSvgText(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function hashString(value: string): number {
-  return [...value].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 2166136261);
-}
-
-/** Word-wrap for native SVG <text> (foreignObject does not render inside <img src>). */
-function wrapSvgLines(text: string, maxChars: number, maxLines: number): string[] {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [];
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > maxChars && current) {
-      lines.push(current);
-      current = word;
-      if (lines.length >= maxLines) {
-        current = "";
-        break;
-      }
-    } else {
-      current = next;
-    }
-  }
-  if (current && lines.length < maxLines) lines.push(current);
-  if (lines.length === maxLines) {
-    const used = lines.join(" ").length;
-    if (words.join(" ").length > used && lines[maxLines - 1].length > 4) {
-      lines[maxLines - 1] = `${lines[maxLines - 1].slice(0, -1)}…`;
-    }
-  }
-  return lines;
-}
-
-/**
- * Browser-safe SVG cover — only native SVG elements so it renders as <img data-url>.
- */
-function buildFallbackSvgCover(topic: string, imagePrompt: string): string {
-  const width = AI_POST_LIMITS.COVER_WIDTH;
-  const height = AI_POST_LIMITS.COVER_HEIGHT;
-  const fallbackTitle = AI_CONFIG.COVER_SVG_FALLBACK_TITLE;
-  const titleLines = wrapSvgLines(topic.trim().slice(0, 90) || fallbackTitle, 28, 3).map(escapeSvgText);
-  const subtitleLines = wrapSvgLines(imagePrompt.trim().slice(0, 120), 52, 2).map(escapeSvgText);
-  const hue = hashString(topic) % 360;
-  const hue2 = (hue + 52) % 360;
-  const hue3 = (hue + 122) % 360;
-  const aria = escapeSvgText(topic.trim().slice(0, 90) || fallbackTitle);
-  const badge = escapeSvgText(AI_CONFIG.COVER_SVG_BADGE);
-
-  const titleTspans = titleLines.map((line, i) => `<tspan x="72" dy="${i === 0 ? 0 : 54}">${line}</tspan>`).join("");
-  const subTspans = subtitleLines.map((line, i) => `<tspan x="72" dy="${i === 0 ? 0 : 24}">${line}</tspan>`).join("");
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${aria}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="hsl(${hue}, 76%, 22%)"/>
-      <stop offset="52%" stop-color="hsl(${hue2}, 72%, 30%)"/>
-      <stop offset="100%" stop-color="hsl(${hue3}, 80%, 18%)"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="72%" cy="20%" r="68%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.42)"/>
-      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-    </radialGradient>
-    <filter id="blur"><feGaussianBlur stdDeviation="32"/></filter>
-  </defs>
-  <rect width="${width}" height="${height}" fill="url(#bg)"/>
-  <circle cx="760" cy="88" r="180" fill="url(#glow)"/>
-  <circle cx="140" cy="360" r="140" fill="hsl(${hue3}, 90%, 62%)" opacity="0.25" filter="url(#blur)"/>
-  <path d="M0 312 C160 250 260 398 430 314 S720 210 1000 300 V420 H0 Z" fill="rgba(255,255,255,0.11)"/>
-  <g fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2">
-    <path d="M720 96h96v96h-96z"/>
-    <path d="M742 144h52M768 118v52"/>
-    <circle cx="852" cy="154" r="44"/>
-  </g>
-  <text x="72" y="78" fill="rgba(255,255,255,0.7)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="3">${badge}</text>
-  <text x="72" y="160" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="44" font-weight="800">${titleTspans}</text>
-  <text x="72" y="340" fill="rgba(255,255,255,0.78)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16">${subTspans}</text>
-</svg>`;
-
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
-}
-
-function extractInlineImage(result: {
-  candidates?: Array<{ content?: { parts?: Array<Record<string, unknown>> } }>;
-  data?: unknown;
-}): string | null {
-  const parts = result.candidates?.[0]?.content?.parts || [];
+function extractInlineImage(result: Record<string, unknown>): string | null {
+  const candidates = result.candidates as Array<{ content?: { parts?: Array<Record<string, unknown>> } }> | undefined;
+  const parts = candidates?.[0]?.content?.parts || [];
   for (const part of parts) {
     const inline = (part.inlineData || part.inline_data) as
       | { data?: string; mimeType?: string; mime_type?: string }
@@ -124,20 +49,38 @@ function extractInlineImage(result: {
   return null;
 }
 
-async function generateImagePromptFromTopic(topic: string, additionalPrompt?: string): Promise<string> {
-  if (!topic || typeof topic !== "string" || !topic.trim()) {
-    throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
+/**
+ * Persist generated image to cloud storage in background so it has a permanent public URL.
+ */
+async function persistImage(dataUrl: string, topic: string): Promise<string | undefined> {
+  try {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return undefined;
+    const mimetype = match[1];
+    const buffer = Buffer.from(match[2], "base64");
+    const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 35);
+    const ext = mimetype.split("/")[1]?.replace("+xml", "") || "png";
+    const filename = `ai-cover-${slug}-${Date.now()}.${ext}`;
+    return await uploadToGCS(buffer, filename, mimetype, false);
+  } catch (err) {
+    logger.warn(`Storage persistence skipped: ${(err as Error).message}`);
+    return undefined;
   }
+}
 
+/**
+ * Generate an image prompt optimized for high-CTR blog featured headers.
+ */
+async function generatePrompt(topic: string, userInstruction?: string): Promise<string> {
   const candidates = buildModelCandidates(getModelName());
-  let lastError: unknown;
+  let lastErr: unknown;
 
-  for (const modelName of candidates) {
+  for (const model of candidates) {
     try {
       const result = await withRetry(() =>
         studioGenerateContent({
-          model: modelName,
-          contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), additionalPrompt),
+          model,
+          contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), userInstruction),
           systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
           maxOutputTokens: AI_CONFIG.MAX_IMAGE_PROMPT_TOKENS,
           temperature: AI_CONFIG.TEMPERATURE_EDIT,
@@ -145,76 +88,95 @@ async function generateImagePromptFromTopic(topic: string, additionalPrompt?: st
       );
       return getText(result);
     } catch (err) {
-      lastError = err;
-      if (!isFallbackWorthyError(err)) {
-        return normalizeAiError(err as Error & { status?: number; details?: unknown }, ERROR_MESSAGES.AI_IMAGE_FAILED);
-      }
+      lastErr = err;
+      if (!isFallbackWorthyError(err)) break;
     }
   }
 
   return normalizeAiError(
-    (lastError as Error & { status?: number; details?: unknown }) || new Error(ERROR_MESSAGES.AI_IMAGE_FAILED),
+    (lastErr as Error & { status?: number }) || new Error(ERROR_MESSAGES.AI_IMAGE_FAILED),
     ERROR_MESSAGES.AI_IMAGE_FAILED,
   );
 }
 
-function imageModelCandidates(): string[] {
-  const fromEnv = process.env.GEMINI_IMAGE_MODEL?.trim();
-  return [
-    ...new Set(
-      [fromEnv, ...AI_CONFIG.IMAGE_MODEL_FALLBACKS].filter(
-        (m): m is string => typeof m === "string" && m.length > 0 && !m.startsWith("imagen"),
-      ),
-    ),
-  ];
-}
-
-async function tryGeminiNativeImage(prompt: string): Promise<string | null> {
-  const ai = getAiClient();
-
-  for (const model of imageModelCandidates()) {
-    try {
-      const result = await withRetry(
-        () =>
-          ai.models.generateContent({
-            model,
-            contents: `Create a high-CTR 16:9 (1000×420) blog featured image. No watermarks, no UI chrome. ${prompt}`,
-            config: {
-              responseModalities: ["TEXT", "IMAGE"],
-              temperature: 0.8,
-            },
-          } as never),
-        { attempts: 1 },
-      );
-      const dataUrl = extractInlineImage(result as never);
-      if (dataUrl) {
-        logger.info(`AI image: Gemini native success (${model})`);
-        return dataUrl;
-      }
-      logger.warn(`AI image: ${model} returned no inline image parts`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.warn(`AI image: ${model} failed — ${msg.slice(0, 180)}`);
+/**
+ * Try generating an image with a GoogleGenAI client (Vertex or Studio) and Gemini multimodal model.
+ */
+async function tryGeminiModel(
+  client: GoogleGenAI,
+  model: string,
+  prompt: string,
+  providerLabel: string,
+): Promise<string | null> {
+  const formattedPrompt = `Create a high-CTR 16:9 (${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}) blog featured image. Clean, modern developer aesthetic, no watermarks, no UI chrome. ${prompt}`;
+  try {
+    const res = await withRetry(
+      () =>
+        client.models.generateContent({
+          model,
+          contents: formattedPrompt,
+          config: { responseModalities: ["TEXT", "IMAGE"], temperature: 0.8 },
+        }),
+      { attempts: 1 },
+    );
+    const dataUrl = extractInlineImage(res as unknown as Record<string, unknown>);
+    if (dataUrl) {
+      logger.info(`AI image generated via ${providerLabel} (${model})`);
+      return dataUrl;
     }
+  } catch (err) {
+    logger.warn(`${providerLabel} (${model}) failed: ${(err as Error).message.slice(0, 150)}`);
   }
   return null;
 }
 
+/**
+ * Try generating image via Google Cloud Vertex AI (billed GCP quota).
+ */
+async function tryVertex(prompt: string): Promise<string | null> {
+  if (!hasVertexConfig()) return null;
+  const client = getVertexAiClient();
+  if (!client) return null;
+
+  const models = [AI_CONFIG.IMAGE_MODEL, "gemini-2.5-flash-image"];
+  for (const model of models) {
+    const result = await tryGeminiModel(client, model, prompt, "Vertex AI");
+    if (result) return result;
+  }
+  return null;
+}
+
+/**
+ * Try generating image via Google AI Studio Gemini multimodal models.
+ */
+async function tryStudioGemini(prompt: string): Promise<string | null> {
+  const ai = getAiClient();
+  const models = [
+    AI_CONFIG.IMAGE_MODEL,
+    ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => !m.startsWith("imagen")),
+  ];
+
+  for (const model of models) {
+    const result = await tryGeminiModel(ai, model, prompt, "AI Studio Gemini");
+    if (result) return result;
+  }
+  return null;
+}
+
+/**
+ * Try generating image via Imagen models (16:9 aspect ratio).
+ */
 async function tryImagen(prompt: string): Promise<string | null> {
   const ai = getAiClient();
   const models = [
-    ...new Set(
-      [
-        process.env.IMAGEN_MODEL?.trim(),
-        AI_CONFIG.IMAGEN_MODEL,
-        ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => m.startsWith("imagen")),
-      ].filter(Boolean) as string[],
-    ),
+    "imagen-4.0-fast-generate-001",
+    "imagen-3.0-generate-002",
+    ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => m.startsWith("imagen")),
   ];
 
   for (const model of models) {
     try {
-      const response = await withRetry(
+      const res = await withRetry(
         () =>
           ai.models.generateImages({
             model,
@@ -223,39 +185,56 @@ async function tryImagen(prompt: string): Promise<string | null> {
           }),
         { attempts: 1 },
       );
-      const img = response?.generatedImages?.[0]?.image;
+      const img = res?.generatedImages?.[0]?.image;
       if (img?.imageBytes) {
-        logger.info(`AI image: Imagen success (${model})`);
+        logger.info(`AI image generated via Imagen (${model})`);
         return toBase64DataUrl(img.imageBytes, img.mimeType || "image/png");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.warn(`AI image: ${model} failed — ${msg.slice(0, 180)}`);
+      logger.warn(`Imagen (${model}) failed: ${(err as Error).message.slice(0, 150)}`);
     }
   }
   return null;
 }
 
 /**
- * Generate a featured image: prompt via text model, then Gemini image / Imagen / SVG fallback.
+ * Main entry point: generate a 16:9 featured blog image from topic.
  */
-export async function generateImageFromTopic(topic: string, additionalPrompt?: string): Promise<GenerateImageResult> {
-  const imagePrompt =
-    additionalPrompt && additionalPrompt.trim()
-      ? additionalPrompt.trim()
-      : await generateImagePromptFromTopic(topic, additionalPrompt);
-
-  if (!imagePrompt?.trim()) {
-    throw new AppError(ERROR_MESSAGES.AI_IMAGE_FAILED, HTTP_STATUS.BAD_GATEWAY);
+export async function generateImageFromTopic(
+  topic: string,
+  additionalPrompt?: string,
+): Promise<GenerateImageResult> {
+  if (!topic || typeof topic !== "string" || !topic.trim()) {
+    throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const prompt = imagePrompt.trim();
-  const native = await tryGeminiNativeImage(prompt);
-  if (native) return { imageDataUrl: native, source: "gemini" };
+  const prompt = (
+    additionalPrompt?.trim() || (await generatePrompt(topic, additionalPrompt))
+  ).trim();
 
-  const imagen = await tryImagen(prompt);
-  if (imagen) return { imageDataUrl: imagen, source: "imagen" };
+  // 1. Vertex AI (Primary with Google Cloud billing)
+  const vertexData = await tryVertex(prompt);
+  if (vertexData) {
+    const publicUrl = await persistImage(vertexData, topic);
+    return { imageDataUrl: vertexData, imageUrl: publicUrl, source: "gemini" };
+  }
 
-  logger.warn("AI image: using SVG cover fallback (image models unavailable or quota exceeded)");
-  return { imageDataUrl: buildFallbackSvgCover(topic, prompt), source: "svg_fallback" };
+  // 2. Google AI Studio (Multimodal Gemini)
+  const studioData = await tryStudioGemini(prompt);
+  if (studioData) {
+    const publicUrl = await persistImage(studioData, topic);
+    return { imageDataUrl: studioData, imageUrl: publicUrl, source: "gemini" };
+  }
+
+  // 3. Google AI Studio (Imagen)
+  const imagenData = await tryImagen(prompt);
+  if (imagenData) {
+    const publicUrl = await persistImage(imagenData, topic);
+    return { imageDataUrl: imagenData, imageUrl: publicUrl, source: "imagen" };
+  }
+
+  throw new AppError(
+    `${ERROR_MESSAGES.AI_IMAGE_FAILED} — AI image models are temporarily unavailable or rate limited. Please retry shortly.`,
+    HTTP_STATUS.SERVICE_UNAVAILABLE,
+  );
 }

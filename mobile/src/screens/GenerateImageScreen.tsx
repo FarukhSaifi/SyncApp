@@ -11,7 +11,6 @@ import { useThemeColors } from "@/src/contexts/ThemeContext";
 import { toast } from "@/src/hooks/useToast";
 import { apiClient } from "@/src/services/apiClient";
 import { setPendingCoverUri } from "@/src/utils/editorCoverPending";
-import { isPlaceholderImageDataUrl } from "@/src/utils/imageDataUrl";
 
 interface GenerateImageScreenProps {
   defaultTopic?: string;
@@ -44,11 +43,7 @@ export default function GenerateImageScreen({ defaultTopic = "" }: GenerateImage
       const uri = res.data?.imageDataUrl;
       if (res.success && uri) {
         setPreviewUri(uri);
-        if (isPlaceholderImageDataUrl(uri)) {
-          toast.info(TOAST.IMAGE_PLACEHOLDER);
-        } else {
-          toast.success(TOAST.IMAGE_GENERATED);
-        }
+        toast.success(TOAST.IMAGE_GENERATED);
       } else {
         toast.error(res.error ?? ERRORS.AI_IMAGE_FAILED);
       }

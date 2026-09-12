@@ -26,6 +26,12 @@ export function normalizeAiError(err: Error & { status?: number; details?: unkno
 
   const is429 = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("Resource exhausted");
   if (is429) {
+    if (msg.includes("prepayment credits are depleted") || msg.includes("prepay")) {
+      throw new AppError(
+        "Google AI Studio prepayment credits are depleted. Please top up your billing at https://ai.studio/projects or switch to a free-tier key.",
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+      );
+    }
     throw new AppError(ERROR_MESSAGES.AI_RATE_LIMITED, HTTP_STATUS.TOO_MANY_REQUESTS);
   }
 

@@ -190,9 +190,10 @@ export interface SchedulePostModalProps {
 export interface AiContentModel {
   id: string;
   label: string;
+  description?: string;
 }
 
-export type AiImageSource = "gemini" | "imagen" | "svg_fallback";
+export type AiImageSource = "gemini" | "imagen";
 
 export interface GeneratePostModalProps {
   isOpen: boolean;
@@ -269,6 +270,7 @@ export interface EditorSidebarRightProps {
   setAiImagePrompt: (v: string) => void;
   aiLoading: string;
   generatedImageDataUrl: string | null;
+  generatedImageUrl?: string | null;
   generatedImageSource?: AiImageSource | null;
   uploadingCover: boolean;
   linkedinPost: string | null;
@@ -282,6 +284,8 @@ export interface EditorSidebarRightProps {
   onGenerateImage: () => void;
   onUseAsFeaturedImage: () => void;
   onUploadAndAttach: () => void;
+  onCopyImageUrl?: () => void;
+  onDownloadImage?: () => void;
   connectedPlatforms: string[];
 }
 
