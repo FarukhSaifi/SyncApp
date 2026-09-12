@@ -4,7 +4,7 @@ import type { GCSCredentials } from "../types";
 
 import { logger } from "../utils/logger";
 
-import { Storage, type CreateWriteStreamOptions, type StorageOptions } from "@google-cloud/storage";
+import { Storage, type StorageOptions } from "@google-cloud/storage";
 import fs from "fs";
 import path from "path";
 import { config } from "../config";

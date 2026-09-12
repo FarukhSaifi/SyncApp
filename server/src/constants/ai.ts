@@ -40,11 +40,7 @@ export const AI_CONTENT_MODELS = Object.freeze([
 
 export type AiContentModelId = (typeof AI_CONTENT_MODELS)[number]["id"];
 
-const ALLOWED_CONTENT_MODEL_IDS = new Set<string>([
-  ...AI_CONTENT_MODELS.map((m) => m.id),
-  "gemini-3.8-flash",
-  "gemini-3.5-flash-lite",
-]);
+const ALLOWED_CONTENT_MODEL_IDS = new Set<string>(AI_CONTENT_MODELS.map((m) => m.id));
 
 export function isAllowedContentModel(model: string): boolean {
   return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());

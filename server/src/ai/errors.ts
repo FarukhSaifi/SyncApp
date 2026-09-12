@@ -13,7 +13,6 @@ export function normalizeAiError(err: Error & { status?: number; details?: unkno
     msg.includes("401") ||
     msg.includes("API_KEY_INVALID") ||
     msg.includes("API key not valid") ||
-    msg.includes("API_KEY_INVALID") ||
     /invalid.*api.?key/i.test(msg);
   if (is401) {
     throw new AppError(ERROR_MESSAGES.GEMINI_API_KEY_INVALID, HTTP_STATUS.UNAUTHORIZED);
@@ -49,7 +48,3 @@ export function isFallbackWorthyError(err: unknown): boolean {
   return /404|NOT_FOUND|not found|429|RESOURCE_EXHAUSTED|Resource exhausted|503|UNAVAILABLE|high demand|currently experiencing/i.test(msg);
 }
 
-/** @deprecated Use isFallbackWorthyError */
-export function isModelUnavailableError(err: unknown): boolean {
-  return isFallbackWorthyError(err);
-}
