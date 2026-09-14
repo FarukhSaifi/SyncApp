@@ -2,4 +2,26 @@ export const PLATFORMS = Object.freeze({
   MEDIUM: "medium",
   DEVTO: "devto",
   WORDPRESS: "wordpress",
+  LINKEDIN: "linkedin",
 } as const);
+
+export type PlatformSlug = (typeof PLATFORMS)[keyof typeof PLATFORMS];
+
+/** Human-readable display names for platforms. */
+export const PLATFORM_DISPLAY_NAMES: Record<PlatformSlug, string> = Object.freeze({
+  [PLATFORMS.MEDIUM]: "Medium",
+  [PLATFORMS.DEVTO]: "DEV.to",
+  [PLATFORMS.WORDPRESS]: "WordPress",
+  [PLATFORMS.LINKEDIN]: "LinkedIn",
+});
+
+export const OPTIMIZATION_TARGETS = Object.freeze({
+  DEVTO: "devto",
+  LINKEDIN: "linkedin",
+} as const);
+
+export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTIMIZATION_TARGETS];
+
+export const VALID_OPTIMIZATION_TARGETS = Object.freeze(Object.values(OPTIMIZATION_TARGETS)) as OptimizationTarget[];
+
+export const DEFAULT_OPTIMIZATION_TARGETS: OptimizationTarget[] = [OPTIMIZATION_TARGETS.DEVTO];

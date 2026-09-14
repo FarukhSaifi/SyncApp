@@ -28,6 +28,17 @@ export function PostCard({ post, onPress, onDelete }: PostCardProps) {
   const updatedAt = post.updated_at || post.updatedAt;
   const tags = post.tags ?? [];
 
+  const publishedPlatforms = useMemo(() => {
+    if (!post.platform_status) return [];
+    const entries: { platform: string; label: string }[] = [];
+    if (post.platform_status.medium?.published) entries.push({ platform: "medium", label: LABELS.MEDIUM });
+    if (post.platform_status.devto?.published) entries.push({ platform: "devto", label: LABELS.DEVTO });
+    if (post.platform_status.wordpress?.published)
+      entries.push({ platform: "wordpress", label: LABELS.WORDPRESS_SHORT });
+    if (post.platform_status.linkedin?.published) entries.push({ platform: "linkedin", label: LABELS.LINKEDIN });
+    return entries;
+  }, [post.platform_status]);
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={styles.header}>
@@ -38,6 +49,16 @@ export function PostCard({ post, onPress, onDelete }: PostCardProps) {
           <Text style={[styles.badgeText, { color: badgeStyle.color }]}>{statusConfig.label}</Text>
         </View>
       </View>
+
+      {publishedPlatforms.length > 0 && (
+        <View style={styles.platformsRow}>
+          {publishedPlatforms.map((p) => (
+            <View key={p.platform} style={styles.platformPill}>
+              <Text style={styles.platformText}>{p.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
@@ -98,6 +119,14 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     title: { flex: 1, fontSize: 17, fontWeight: "600", color: colors.foreground },
     badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.FULL },
     badgeText: { fontSize: 11, fontWeight: "600" },
+    platformsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+    platformPill: {
+      backgroundColor: `${colors.positive}20`,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: RADIUS.FULL,
+    },
+    platformText: { fontSize: 11, color: colors.positive, fontWeight: "600" },
     tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
     tagPill: {
       backgroundColor: `${colors.primary}26`,

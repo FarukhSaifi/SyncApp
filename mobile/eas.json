@@ -10,24 +10,45 @@
       "ios": {
         "simulator": true,
         "image": "latest"
-      }
-    },
-    "development-device": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "simulator": false,
-        "image": "latest"
+      },
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
+        "EXPO_PUBLIC_API_BASE_URL": "https://sync-app-server.vercel.app/api",
+        "IOS_DEPLOYMENT_TARGET": "26.0"
       }
     },
     "preview": {
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "ios": {
         "simulator": false,
         "image": "latest"
       },
-      "android": {
-        "buildType": "apk"
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
+        "EXPO_PUBLIC_API_BASE_URL": "https://sync-app-server.vercel.app/api",
+        "IOS_BUNDLE_IDENTIFIER": "com.farukh.syncapp",
+        "ANDROID_PACKAGE": "com.farukh.syncapp",
+        "IOS_DEPLOYMENT_TARGET": "26.0"
+      }
+    },
+    "preview-simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      },
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
+        "EXPO_PUBLIC_API_BASE_URL": "https://sync-app-server.vercel.app/api",
+        "IOS_BUNDLE_IDENTIFIER": "com.farukh.syncapp",
+        "ANDROID_PACKAGE": "com.farukh.syncapp",
+        "IOS_DEPLOYMENT_TARGET": "26.0"
       }
     },
     "production": {
@@ -39,6 +60,14 @@
       },
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
+        "EXPO_PUBLIC_API_BASE_URL": "https://sync-app-server.vercel.app/api",
+        "IOS_BUNDLE_IDENTIFIER": "com.farukh.syncapp",
+        "ANDROID_PACKAGE": "com.farukh.syncapp",
+        "IOS_DEPLOYMENT_TARGET": "26.0"
       }
     }
   },

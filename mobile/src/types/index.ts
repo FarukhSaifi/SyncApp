@@ -17,11 +17,15 @@ export interface Post {
   cover_image?: string;
   canonical_url?: string;
   scheduled_for?: string;
+  author?: User | string;
   platform_status?: {
     medium?: PlatformStatus;
     devto?: PlatformStatus;
     wordpress?: PlatformStatus;
+    linkedin?: PlatformStatus;
   };
+  linkedin_post?: string;
+  linkedin_read_more_url?: string;
   createdAt?: string;
   updatedAt?: string;
   created_at?: string;
@@ -95,6 +99,7 @@ export interface AnalyticsStats {
     medium: number;
     devto: number;
     wordpress: number;
+    linkedin: number;
   };
   history: Array<{ date: string; posts: number; published: number }>;
 }
@@ -105,4 +110,50 @@ export interface RequestOptions {
   body?: unknown;
   params?: Record<string, unknown>;
   timeout?: number;
+}
+
+export interface EditorForm {
+  title: string;
+  content_markdown: string;
+  meta_description: string;
+  status: string;
+  cover_image: string;
+  canonical_url: string;
+  scheduled_for: string;
+  tags: string[];
+  linkedin_post?: string;
+  linkedin_read_more_url?: string;
+}
+
+export type EditorMode = "write" | "channels" | "details";
+
+export type EditorReadinessTone = "ready" | "attention" | "neutral";
+
+export interface EditorReadinessItem {
+  id: string;
+  label: string;
+  detail: string;
+  tone: EditorReadinessTone;
+  mode: EditorMode;
+}
+
+export interface EditorReadiness {
+  items: EditorReadinessItem[];
+  completed: number;
+  total: number;
+  ready: boolean;
+}
+
+export interface GeneratedPostData {
+  title: string;
+  meta_description: string;
+  tags: string[];
+  content: string;
+  linkedin_post?: string;
+  read_more_url?: string;
+  linkedin_missing_canonical?: boolean;
+}
+
+export interface EditorScreenProps {
+  postId?: string;
 }

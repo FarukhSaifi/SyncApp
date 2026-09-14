@@ -1,17 +1,13 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { APP_IDENTITY, BRAND_COLORS, EAS_PROJECT_ID: DEFAULT_EAS_PROJECT_ID } = require("./config/app.js");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { IOS_BUILD, iosBuildPropertiesPlugin } = require("./config/ios.js");
+import { APP_IDENTITY, BRAND_COLORS, EAS_PROJECT_ID as DEFAULT_EAS_PROJECT_ID } from "./config/app.ts";
+import { IOS_BUILD, iosBuildPropertiesPlugin } from "./config/ios.ts";
 
-const BUNDLE_ID = process.env.IOS_BUNDLE_IDENTIFIER;
+
+const BUNDLE_ID = process.env.IOS_BUNDLE_IDENTIFIER || "com.farukh.syncapp";
+const ANDROID_PKG = process.env.ANDROID_PACKAGE || BUNDLE_ID;
 const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? DEFAULT_EAS_PROJECT_ID;
 const IS_PRODUCTION_BUILD = process.env.EAS_BUILD_PROFILE === "production";
-
-if (!BUNDLE_ID && process.env.NODE_ENV !== "test") {
-  console.warn("[app.config] IOS_BUNDLE_IDENTIFIER is unset — set it in mobile/.env (see .env.example).");
-}
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -22,12 +18,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/images/icon.png",
   scheme: APP_IDENTITY.SCHEME,
   userInterfaceStyle: "automatic",
-  splash: {
-    image: "./assets/images/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: BRAND_COLORS.SPLASH_BACKGROUND,
-  },
-  newArchEnabled: true,
+  ...({
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: BRAND_COLORS.SPLASH_BACKGROUND,
+    },
+  } as Partial<ExpoConfig>),
+  ...({ newArchEnabled: true } as Partial<ExpoConfig>),
   ios: {
     supportsTablet: IOS_BUILD.SUPPORTS_TABLET,
     bundleIdentifier: BUNDLE_ID,
@@ -43,7 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: process.env.ANDROID_PACKAGE ?? BUNDLE_ID,
+    package: ANDROID_PKG,
     adaptiveIcon: {
       backgroundColor: BRAND_COLORS.SPLASH_BACKGROUND,
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -66,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
   },
   extra: {
-    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://sync-app-server.vercel.app/api",
     eas: {
       projectId: EAS_PROJECT_ID,
     },

@@ -1,6 +1,14 @@
 import { API_BASE, HTTP_METHODS } from "@/src/constants/api";
 import { APP_CONFIG } from "@/src/constants/config";
-import type { AnalyticsStats, ApiResponse, ListResponse, Post, RequestOptions, User } from "@/src/types";
+import type {
+  AnalyticsStats,
+  ApiResponse,
+  GeneratedPostData,
+  ListResponse,
+  Post,
+  RequestOptions,
+  User,
+} from "@/src/types";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
 
@@ -115,6 +123,18 @@ class ApiClient {
     return this.request(`${API_BASE}/credentials/${platform}`, { method: HTTP_METHODS.PUT, body });
   }
 
+  deleteCredential(platform: string): Promise<ApiResponse<unknown>> {
+    return this.request(`${API_BASE}/credentials/${platform}`, { method: HTTP_METHODS.DELETE });
+  }
+
+  getLinkedInOAuthStart(): Promise<ApiResponse<{ url: string }>> {
+    return this.request(`${API_BASE}/linkedin/oauth/start`);
+  }
+
+  getLinkedInOAuthStatus(): Promise<ApiResponse<{ configured: boolean; redirectUri: string; scopes: string }>> {
+    return this.request(`${API_BASE}/linkedin/oauth/status`);
+  }
+
   publish(platform: string, postId: string): Promise<ApiResponse<unknown>> {
     return this.request(`${API_BASE}/publish/${platform}`, {
       method: HTTP_METHODS.POST,
@@ -133,20 +153,62 @@ class ApiClient {
     return this.request(`${API_BASE}/analytics/stats`);
   }
 
-  aiGenerate(
-    keyword: string,
-  ): Promise<ApiResponse<{ title: string; meta_description: string; tags: string[]; content: string }>> {
+  aiGenerate(keyword: string, model?: string, targetPlatforms?: string[]): Promise<ApiResponse<GeneratedPostData>> {
     return this.request(`${API_BASE}/ai/generate`, {
       method: HTTP_METHODS.POST,
-      body: { keyword },
+      body: {
+        keyword,
+        ...(model && { model }),
+        ...(targetPlatforms && { targetPlatforms }),
+      },
       timeout: APP_CONFIG.API_AI_TIMEOUT,
     });
   }
 
-  aiGenerateImage(topic: string, additionalPrompt?: string): Promise<ApiResponse<{ imageDataUrl: string }>> {
+  aiGenerateLinkedInSummary(
+    title: string,
+    content: string,
+    readMoreUrl?: string,
+    model?: string,
+  ): Promise<
+    ApiResponse<{
+      linkedin_post: string;
+      read_more_url?: string;
+      linkedin_missing_canonical?: boolean;
+    }>
+  > {
+    return this.request(`${API_BASE}/ai/linkedin-summary`, {
+      method: HTTP_METHODS.POST,
+      body: {
+        title,
+        content,
+        ...(readMoreUrl && { readMoreUrl }),
+        ...(model && { model }),
+      },
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
+  aiGetTrendingTopics(): Promise<
+    ApiResponse<{
+      topics: Array<{ topic: string; category?: string }>;
+      source?: string;
+    }>
+  > {
+    return this.request(`${API_BASE}/ai/trending-topics`, {
+      method: HTTP_METHODS.GET,
+      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    });
+  }
+
+  aiGenerateImage(
+    topic: string,
+    additionalPrompt?: string,
+    model?: string,
+  ): Promise<ApiResponse<{ imageDataUrl?: string; imageUrl?: string; source?: string }>> {
     return this.request(`${API_BASE}/ai/generate-image`, {
       method: HTTP_METHODS.POST,
-      body: { topic, additionalPrompt },
+      body: { topic, additionalPrompt, ...(model && { model }) },
       timeout: APP_CONFIG.API_AI_IMAGE_TIMEOUT,
     });
   }

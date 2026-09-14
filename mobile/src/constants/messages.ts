@@ -33,6 +33,14 @@ export const LABELS = Object.freeze({
   DEVTO: "Dev.to",
   WORDPRESS: "WordPress",
   WORDPRESS_SHORT: "WP",
+  LINKEDIN: "LinkedIn",
+  LINKEDIN_SUMMARY: "LinkedIn Summary",
+  GENERATE_LINKEDIN_SUMMARY: "Generate LinkedIn Summary",
+  COPY_LINKEDIN_POST: "Copy LinkedIn Post",
+  LINKEDIN_POST: "LinkedIn Post",
+  LINKEDIN_READ_MORE_URL: "LinkedIn Read More URL",
+  CONNECT_LINKEDIN: "Connect LinkedIn",
+  DISCONNECT: "Disconnect",
   API_KEY: "API Key",
   SITE_URL: "Site URL",
   DEVTO_USERNAME: "Dev.to Username",
@@ -132,6 +140,7 @@ export const DESCRIPTIONS = Object.freeze({
   MEDIUM_SETUP: "Generate an integration token from Medium settings and paste it below.",
   DEVTO_SETUP: "Create an API key in Dev.to account settings and enter your username.",
   WORDPRESS_SETUP: "Install a JWT auth plugin and use your site URL plus application password or JWT token.",
+  LINKEDIN_SETUP: "Connect your LinkedIn account via OAuth or access token in Settings.",
 });
 
 export const PLACEHOLDERS = Object.freeze({
@@ -155,6 +164,10 @@ export const TOAST = Object.freeze({
   COVER_IMAGE_SET: "Cover image set",
   CONTENT_UPDATED: "Content updated",
   PUBLISHED_ALL: "Published to all platforms",
+  LINKEDIN_SUMMARY_READY: "LinkedIn summary ready",
+  LINKEDIN_COPIED: "LinkedIn post copied",
+  LINKEDIN_DISCONNECTED: "LinkedIn disconnected",
+  LINKEDIN_CONNECTED: "LinkedIn connected",
 });
 
 export const ERRORS = Object.freeze({

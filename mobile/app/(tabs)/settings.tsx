@@ -8,14 +8,14 @@ import { Input } from "@/src/components/Input";
 import { PasswordInput } from "@/src/components/PasswordInput";
 import { ScreenIntro } from "@/src/components/ScreenIntro";
 import { APP_CONFIG, DESCRIPTIONS, ERRORS, EXTERNAL_LINKS, LABELS, TOAST } from "@/src/constants";
-import { IOS26, RADIUS } from "@/src/constants/designTokens";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
 import { PLATFORMS } from "@/src/constants/platforms";
 import { useThemeColors } from "@/src/contexts/ThemeContext";
 import { useTabBarInset } from "@/src/hooks/useTabBarInset";
 import { toast } from "@/src/hooks/useToast";
 import { apiClient } from "@/src/services/apiClient";
 
-type PlatformKey = "medium" | "devto" | "wordpress";
+type PlatformKey = "medium" | "devto" | "wordpress" | "linkedin";
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
@@ -31,33 +31,40 @@ export default function SettingsScreen() {
     medium: false,
     devto: false,
     wordpress: false,
+    linkedin: false,
   });
   const [savedFlash, setSavedFlash] = useState<Record<PlatformKey, boolean>>({
     medium: false,
     devto: false,
     wordpress: false,
+    linkedin: false,
   });
   const [saving, setSaving] = useState<PlatformKey | null>(null);
   const [showKeys, setShowKeys] = useState<Record<PlatformKey, boolean>>({
     medium: false,
     devto: false,
     wordpress: false,
+    linkedin: false,
   });
 
   useEffect(() => {
     void (async () => {
       try {
-        const [m, d, w] = await Promise.all([
+        const [m, d, w, l] = await Promise.all([
           apiClient.getCredential(PLATFORMS.MEDIUM),
           apiClient.getCredential(PLATFORMS.DEVTO),
           apiClient.getCredential(PLATFORMS.WORDPRESS),
+          apiClient.getCredential(PLATFORMS.LINKEDIN),
         ]);
         if (m.success && m.data) {
           setMediumKey((m.data as { api_key?: string }).api_key ?? "");
           setConnected((c) => ({ ...c, medium: true }));
         }
         if (d.success && d.data) {
-          const cred = d.data as { api_key?: string; platform_config?: { devto_username?: string } };
+          const cred = d.data as {
+            api_key?: string;
+            platform_config?: { devto_username?: string };
+          };
           setDevtoKey(cred.api_key ?? "");
           setDevtoUser(cred.platform_config?.devto_username ?? "");
           setConnected((c) => ({ ...c, devto: true }));
@@ -67,6 +74,9 @@ export default function SettingsScreen() {
           setWpKey(cred.api_key ?? "");
           setWpUrl(cred.site_url ?? "");
           setConnected((c) => ({ ...c, wordpress: true }));
+        }
+        if (l.success && l.data) {
+          setConnected((c) => ({ ...c, linkedin: true }));
         }
       } catch {
         /* credentials may not exist yet */
@@ -102,6 +112,39 @@ export default function SettingsScreen() {
       await Linking.openURL(url);
     } catch {
       toast.error(ERRORS.OPEN_LINK_FAILED);
+    }
+  };
+
+  const connectLinkedIn = async () => {
+    setSaving("linkedin");
+    try {
+      const res = await apiClient.getLinkedInOAuthStart();
+      if (res.success && res.data?.url) {
+        await openLink(res.data.url);
+      } else {
+        toast.error(res.error ?? ERRORS.OPEN_LINK_FAILED);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const disconnectLinkedIn = async () => {
+    setSaving("linkedin");
+    try {
+      const res = await apiClient.deleteCredential(PLATFORMS.LINKEDIN);
+      if (res.success) {
+        setConnected((c) => ({ ...c, linkedin: false }));
+        toast.success(TOAST.LINKEDIN_DISCONNECTED);
+      } else {
+        toast.error(res.error ?? ERRORS.SAVE_FAILED);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -160,7 +203,10 @@ export default function SettingsScreen() {
           <Button
             title={LABELS.SAVE_CREDENTIALS}
             onPress={() =>
-              save("devto", PLATFORMS.DEVTO, { api_key: devtoKey, platform_config: { devto_username: devtoUser } })
+              save("devto", PLATFORMS.DEVTO, {
+                api_key: devtoKey,
+                platform_config: { devto_username: devtoUser },
+              })
             }
             loading={saving === "devto"}
           />
@@ -186,9 +232,35 @@ export default function SettingsScreen() {
           />
           <Button
             title={LABELS.SAVE_CREDENTIALS}
-            onPress={() => save("wordpress", PLATFORMS.WORDPRESS, { api_key: wpKey, site_url: wpUrl })}
+            onPress={() =>
+              save("wordpress", PLATFORMS.WORDPRESS, {
+                api_key: wpKey,
+                site_url: wpUrl,
+              })
+            }
             loading={saving === "wordpress"}
           />
+        </PlatformCard>
+
+        <PlatformCard
+          title={LABELS.LINKEDIN}
+          description={DESCRIPTIONS.LINKEDIN_SETUP}
+          connected={connected.linkedin}
+          saved={savedFlash.linkedin}
+          onOpenDoc={() => void openLink(EXTERNAL_LINKS.LINKEDIN_DEVELOPER)}
+          styles={styles}
+          colors={colors}
+        >
+          {connected.linkedin ? (
+            <Button
+              title={LABELS.DISCONNECT}
+              variant={BUTTON_VARIANTS.OUTLINE}
+              onPress={disconnectLinkedIn}
+              loading={saving === "linkedin"}
+            />
+          ) : (
+            <Button title={LABELS.CONNECT_LINKEDIN} onPress={connectLinkedIn} loading={saving === "linkedin"} />
+          )}
         </PlatformCard>
 
         <Text style={styles.section}>{LABELS.HELP_SUPPORT}</Text>
@@ -207,6 +279,11 @@ export default function SettingsScreen() {
             <HelpLink
               label="WordPress JWT plugin"
               onPress={() => void openLink(EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN)}
+              colors={colors}
+            />
+            <HelpLink
+              label="LinkedIn developers"
+              onPress={() => void openLink(EXTERNAL_LINKS.LINKEDIN_DEVELOPER)}
               colors={colors}
             />
           </CardContent>
@@ -299,7 +376,15 @@ function HelpLink({
   colors: ReturnType<typeof useThemeColors>;
 }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10 }}>
+    <Pressable
+      onPress={onPress}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingVertical: 10,
+      }}
+    >
       <Ionicons name="link-outline" size={18} color={colors.primary} />
       <Text style={{ color: colors.foreground, fontSize: 15 }}>{label}</Text>
     </Pressable>
@@ -312,12 +397,31 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
     scroll: { flex: 1 },
     content: { padding: IOS26.SCREEN_PADDING, paddingBottom: tabBarInset },
     sectionCard: { marginBottom: IOS26.GROUPED_GAP },
-    platformHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+    platformHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
     platform: { fontSize: 18, fontWeight: "700", color: colors.foreground },
-    platformDesc: { fontSize: 14, lineHeight: 20, color: colors.mutedForeground, marginBottom: 10 },
-    statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.FULL },
+    platformDesc: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.mutedForeground,
+      marginBottom: 10,
+    },
+    statusPill: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: RADIUS.FULL,
+    },
     statusText: { fontSize: 11, fontWeight: "600" },
-    docLink: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 },
+    docLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginBottom: 12,
+    },
     docLinkText: { color: colors.primary, fontSize: 14, fontWeight: "500" },
     section: {
       fontSize: 13,

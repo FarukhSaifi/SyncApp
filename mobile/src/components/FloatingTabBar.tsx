@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomTabBarHeightCallbackContext } from "@react-navigation/bottom-tabs";
 import { router } from "expo-router";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -140,15 +139,7 @@ function NewPostFab({ label, onPress }: { label: string; onPress: () => void }) 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const onHeightChange = useContext(BottomTabBarHeightCallbackContext);
   const containerStyles = useMemo(() => createContainerStyles(colors, insets.bottom), [colors, insets.bottom]);
-
-  const handleWrapperLayout = useCallback(
-    (height: number) => {
-      onHeightChange?.(height);
-    },
-    [onHeightChange],
-  );
 
   const dropRef = useRef<View>(null);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
@@ -224,11 +215,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   };
 
   return (
-    <View
-      style={containerStyles.wrapper}
-      pointerEvents="box-none"
-      onLayout={(e) => handleWrapperLayout(e.nativeEvent.layout.height)}
-    >
+    <View style={containerStyles.wrapper} pointerEvents="box-none">
       <View style={containerStyles.dropOuter}>
         <View ref={dropRef} style={containerStyles.drop} collapsable={false}>
           <TabBarGlass />

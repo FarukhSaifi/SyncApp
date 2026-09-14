@@ -2,23 +2,15 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EDITOR_CONFIG } from "@/src/constants/editor";
-import { ERRORS, TOAST, publishedToPlatform } from "@/src/constants/messages";
-import { PLATFORMS } from "@/src/constants/platforms";
+import { ERRORS, publishedToPlatform, TOAST } from "@/src/constants/messages";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@/src/constants/platforms";
 import { POST_STATUS } from "@/src/constants/postStatus";
 import { editorRoute } from "@/src/constants/routes";
 import { toast } from "@/src/hooks/useToast";
 import { apiClient } from "@/src/services/apiClient";
+import type { EditorForm, EditorReadiness } from "@/src/types";
 
-export interface EditorForm {
-  title: string;
-  content_markdown: string;
-  meta_description: string;
-  status: string;
-  cover_image: string;
-  canonical_url: string;
-  scheduled_for: string;
-  tags: string[];
-}
+export type { EditorForm };
 
 const INITIAL: EditorForm = {
   title: "",
@@ -29,6 +21,8 @@ const INITIAL: EditorForm = {
   canonical_url: "",
   scheduled_for: "",
   tags: [],
+  linkedin_post: "",
+  linkedin_read_more_url: "",
 };
 
 export function useEditorState(postId?: string) {
@@ -38,7 +32,49 @@ export function useEditorState(postId?: string) {
   const [publishing, setPublishing] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [savedId, setSavedId] = useState<string | undefined>(postId);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<PlatformSlug[]>([]);
+  const [loadingPlatforms, setLoadingPlatforms] = useState(true);
   const dirtyRef = useRef(false);
+
+  const reloadConnectedPlatforms = useCallback(async () => {
+    try {
+      setLoadingPlatforms(true);
+      const res = await apiClient.getCredentials();
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const active = res.data
+          .filter(
+            (c: unknown): c is { platform_name: string; is_active?: boolean } =>
+              typeof c === "object" && c !== null && "platform_name" in c,
+          )
+          .filter((c) => c.is_active !== false)
+          .map((c) => c.platform_name as PlatformSlug)
+          .filter((slug) => (Object.values(PLATFORMS) as readonly string[]).includes(slug));
+        setConnectedPlatforms(active);
+        return;
+      }
+
+      // Fallback check per platform in parallel
+      const slugs = Object.values(PLATFORMS) as PlatformSlug[];
+      const checked = await Promise.allSettled(
+        slugs.map(async (slug) => {
+          const single = await apiClient.getCredential(slug);
+          return single.success && single.data ? slug : null;
+        }),
+      );
+      const activeSlugs = checked
+        .filter((r): r is PromiseFulfilledResult<PlatformSlug | null> => r.status === "fulfilled" && r.value !== null)
+        .map((r) => r.value as PlatformSlug);
+      setConnectedPlatforms(activeSlugs);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingPlatforms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadConnectedPlatforms();
+  }, [reloadConnectedPlatforms]);
 
   useEffect(() => {
     if (!postId) return;
@@ -56,6 +92,8 @@ export function useEditorState(postId?: string) {
             canonical_url: p.canonical_url ?? "",
             scheduled_for: p.scheduled_for ?? "",
             tags: p.tags ?? [],
+            linkedin_post: p.linkedin_post ?? "",
+            linkedin_read_more_url: p.linkedin_read_more_url ?? "",
           });
         }
       } catch (e) {
@@ -81,6 +119,8 @@ export function useEditorState(postId?: string) {
       canonical_url: form.canonical_url || undefined,
       scheduled_for: form.scheduled_for || null,
       tags: form.tags,
+      linkedin_post: form.linkedin_post || undefined,
+      linkedin_read_more_url: form.linkedin_read_more_url || undefined,
     }),
     [form],
   );
@@ -132,9 +172,17 @@ export function useEditorState(postId?: string) {
   }, [savedId, form.title, form.content_markdown, handleSave]);
 
   const publish = useCallback(
-    async (platform: string) => {
-      const post = await handleSave();
-      const id = post?._id || post?.id || savedId;
+    async (platform: string, savedPostId?: string) => {
+      const slug = platform as PlatformSlug;
+      if (!connectedPlatforms.includes(slug)) {
+        toast.error(`Please connect your ${PLATFORM_DISPLAY_NAMES[slug] || platform} account in Settings first.`);
+        return;
+      }
+      let id = savedPostId;
+      if (!id) {
+        const post = await handleSave();
+        id = post?._id || post?.id || savedId;
+      }
       if (!id) return;
       setPublishing(true);
       try {
@@ -150,27 +198,37 @@ export function useEditorState(postId?: string) {
         setPublishing(false);
       }
     },
-    [handleSave, savedId],
+    [handleSave, savedId, connectedPlatforms],
   );
 
-  const publishAll = useCallback(async () => {
-    const post = await handleSave();
-    const id = post?._id || post?.id || savedId;
-    if (!id) return;
-    setPublishing(true);
-    try {
-      const res = await apiClient.publishAll(id);
-      if (res.success) {
-        toast.success(res.message ?? TOAST.PUBLISHED_ALL);
-      } else {
-        toast.error(res.error ?? ERRORS.PUBLISH_FAILED);
+  const publishAll = useCallback(
+    async (savedPostId?: string) => {
+      if (connectedPlatforms.length === 0) {
+        toast.error("No platforms connected. Please connect platforms in Settings first.");
+        return;
       }
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setPublishing(false);
-    }
-  }, [handleSave, savedId]);
+      let id = savedPostId;
+      if (!id) {
+        const post = await handleSave();
+        id = post?._id || post?.id || savedId;
+      }
+      if (!id) return;
+      setPublishing(true);
+      try {
+        const res = await apiClient.publishAll(id);
+        if (res.success) {
+          toast.success(res.message ?? TOAST.PUBLISHED_ALL);
+        } else {
+          toast.error(res.error ?? ERRORS.PUBLISH_FAILED);
+        }
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        setPublishing(false);
+      }
+    },
+    [handleSave, savedId, connectedPlatforms],
+  );
 
   const generatePost = useCallback(async (keyword: string) => {
     if (!keyword.trim()) return;
@@ -184,6 +242,8 @@ export function useEditorState(postId?: string) {
           meta_description: res.data!.meta_description || prev.meta_description,
           content_markdown: res.data!.content || prev.content_markdown,
           tags: res.data!.tags?.length ? res.data!.tags : prev.tags,
+          linkedin_post: res.data!.linkedin_post || prev.linkedin_post,
+          linkedin_read_more_url: res.data!.read_more_url || prev.linkedin_read_more_url,
         }));
         dirtyRef.current = true;
         toast.success(TOAST.AI_DRAFT_GENERATED);
@@ -196,6 +256,33 @@ export function useEditorState(postId?: string) {
       setAiLoading(false);
     }
   }, []);
+
+  const generateLinkedInSummary = useCallback(async () => {
+    if (!form.title.trim() && !form.content_markdown.trim()) return;
+    setAiLoading(true);
+    try {
+      const res = await apiClient.aiGenerateLinkedInSummary(
+        form.title,
+        form.content_markdown,
+        form.linkedin_read_more_url || form.canonical_url,
+      );
+      if (res.success && res.data) {
+        setForm((prev) => ({
+          ...prev,
+          linkedin_post: res.data!.linkedin_post,
+          linkedin_read_more_url: res.data!.read_more_url || prev.linkedin_read_more_url,
+        }));
+        dirtyRef.current = true;
+        toast.success(TOAST.LINKEDIN_SUMMARY_READY);
+      } else {
+        toast.error(res.error ?? ERRORS.AI_GENERATION_FAILED);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [form.title, form.content_markdown, form.linkedin_read_more_url, form.canonical_url]);
 
   const generateImage = useCallback(
     async (topic: string) => {
@@ -238,6 +325,58 @@ export function useEditorState(postId?: string) {
     [form.content_markdown, updateField],
   );
 
+  const readiness: EditorReadiness = {
+    items: [
+      {
+        id: "title",
+        label: "Title",
+        detail: form.title.trim() ? "Ready to review" : "Add a clear headline",
+        tone: form.title.trim() ? "ready" : "attention",
+        mode: "write",
+      },
+      {
+        id: "content",
+        label: "Story",
+        detail: form.content_markdown.trim() ? "Draft has content" : "Write the main content",
+        tone: form.content_markdown.trim() ? "ready" : "attention",
+        mode: "write",
+      },
+      {
+        id: "cover",
+        label: "Cover image",
+        detail: form.cover_image ? "Image selected" : "Optional, but improves previews",
+        tone: form.cover_image ? "ready" : "neutral",
+        mode: "write",
+      },
+      {
+        id: "channels",
+        label: "Channels",
+        detail:
+          connectedPlatforms.length > 0
+            ? `${connectedPlatforms.length} ${connectedPlatforms.length === 1 ? "platform" : "platforms"} connected`
+            : "No platforms connected in Settings",
+        tone: connectedPlatforms.length > 0 ? "ready" : "attention",
+        mode: "channels",
+      },
+      {
+        id: "details",
+        label: "Publishing details",
+        detail: form.scheduled_for ? "Scheduled delivery set" : "Publish when ready",
+        tone: form.scheduled_for ? "ready" : "neutral",
+        mode: "details",
+      },
+    ],
+    completed: [
+      form.title.trim(),
+      form.content_markdown.trim(),
+      form.cover_image,
+      connectedPlatforms.length > 0,
+      true,
+    ].filter(Boolean).length,
+    total: 5,
+    ready: Boolean(form.title.trim() && form.content_markdown.trim() && connectedPlatforms.length > 0),
+  };
+
   return {
     form,
     loading,
@@ -250,8 +389,13 @@ export function useEditorState(postId?: string) {
     publish,
     publishAll,
     generatePost,
+    generateLinkedInSummary,
     generateImage,
     aiEdit,
+    readiness,
     platforms: PLATFORMS,
+    connectedPlatforms,
+    loadingPlatforms,
+    reloadConnectedPlatforms,
   };
 }

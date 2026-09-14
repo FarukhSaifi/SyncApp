@@ -53,7 +53,12 @@ export function IconHeaderButton({ accessibilityLabel, onPress, children, style 
         </View>
         {pressed ? (
           <View
-            style={[styles.pressOverlay, { backgroundColor: `${colors.primary}${HEADER_ICON_BUTTON.PRESS_OVERLAY_ALPHA}` }]}
+            style={[
+              styles.pressOverlay,
+              {
+                backgroundColor: `${colors.primary}${HEADER_ICON_BUTTON.PRESS_OVERLAY_ALPHA}`,
+              },
+            ]}
             pointerEvents="none"
           />
         ) : null}
@@ -62,7 +67,9 @@ export function IconHeaderButton({ accessibilityLabel, onPress, children, style 
             style={[
               styles.fallbackBorder,
               pressed && { borderColor: colors.primary },
-              { borderColor: `${colors.border}${HEADER_ICON_BUTTON.FALLBACK_BORDER_ALPHA}` },
+              {
+                borderColor: `${colors.border}${HEADER_ICON_BUTTON.FALLBACK_BORDER_ALPHA}`,
+              },
             ]}
             pointerEvents="none"
           />
@@ -82,7 +89,10 @@ const createStyles = () =>
       ...Platform.select({
         ios: {
           shadowColor: HEADER_ICON_BUTTON.SHADOW.COLOR,
-          shadowOffset: { width: 0, height: HEADER_ICON_BUTTON.SHADOW.OFFSET_Y },
+          shadowOffset: {
+            width: 0,
+            height: HEADER_ICON_BUTTON.SHADOW.OFFSET_Y,
+          },
           shadowOpacity: HEADER_ICON_BUTTON.SHADOW.OPACITY,
           shadowRadius: HEADER_ICON_BUTTON.SHADOW.RADIUS,
         },
@@ -97,18 +107,18 @@ const createStyles = () =>
       overflow: "hidden",
     },
     iconLayer: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: "center",
       justifyContent: "center",
       zIndex: HEADER_ICON_BUTTON.Z_INDEX.ICON,
     },
     pressOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: RADIUS.FULL,
       zIndex: HEADER_ICON_BUTTON.Z_INDEX.OVERLAY,
     },
     fallbackBorder: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: RADIUS.FULL,
       borderWidth: StyleSheet.hairlineWidth,
       zIndex: HEADER_ICON_BUTTON.Z_INDEX.BORDER,

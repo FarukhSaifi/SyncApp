@@ -47,16 +47,47 @@ export default function AnalyticsScreen() {
 
   const chartWidth = Dimensions.get("window").width - ANALYTICS_CHART.WIDTH_PADDING;
   const activePlatforms = Object.values(data.platformStats).filter((v) => v > 0).length;
-  const postsLine = data.history.map((h) => ({ value: h.posts, label: h.date.slice(5) }));
-  const publishedLine = data.history.map((h) => ({ value: h.published, label: h.date.slice(5) }));
+  const postsLine = data.history.map((h) => ({
+    value: h.posts,
+    label: h.date.slice(5),
+  }));
+  const publishedLine = data.history.map((h) => ({
+    value: h.published,
+    label: h.date.slice(5),
+  }));
   const pieData = [
-    { value: data.summary.totalDrafts, color: ANALYTICS_COLORS[2], text: LABELS.DRAFTS },
-    { value: data.summary.totalPublished, color: colors.positive, text: LABELS.PUBLISHED },
+    {
+      value: data.summary.totalDrafts,
+      color: ANALYTICS_COLORS[2],
+      text: LABELS.DRAFTS,
+    },
+    {
+      value: data.summary.totalPublished,
+      color: colors.positive,
+      text: LABELS.PUBLISHED,
+    },
   ].filter((d) => d.value > 0);
   const barData = [
-    { value: data.platformStats.medium, label: LABELS.MEDIUM, frontColor: colors.primary },
-    { value: data.platformStats.devto, label: LABELS.DEVTO, frontColor: ANALYTICS_COLORS[0] },
-    { value: data.platformStats.wordpress, label: LABELS.WORDPRESS_SHORT, frontColor: ANALYTICS_COLORS[2] },
+    {
+      value: data.platformStats.medium,
+      label: LABELS.MEDIUM,
+      frontColor: colors.primary,
+    },
+    {
+      value: data.platformStats.devto,
+      label: LABELS.DEVTO,
+      frontColor: ANALYTICS_COLORS[0],
+    },
+    {
+      value: data.platformStats.wordpress,
+      label: LABELS.WORDPRESS_SHORT,
+      frontColor: ANALYTICS_COLORS[2],
+    },
+    {
+      value: data.platformStats.linkedin ?? 0,
+      label: LABELS.LINKEDIN,
+      frontColor: ANALYTICS_COLORS[1],
+    },
   ];
 
   return (
@@ -111,7 +142,13 @@ export default function AnalyticsScreen() {
               innerRadius={52}
               innerCircleColor={colors.card}
               centerLabelComponent={() => (
-                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: colors.foreground,
+                  }}
+                >
                   {data.summary.totalPosts}
                 </Text>
               )}
@@ -156,7 +193,14 @@ function StatCard({
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
+      <View
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: color,
+        }}
+      />
       <Text style={{ fontSize: 12, color: "#888" }}>{label}</Text>
     </View>
   );
@@ -167,7 +211,11 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
     shell: { flex: 1, backgroundColor: colors.groupedBackground },
     scroll: { flex: 1 },
     content: { padding: IOS26.SCREEN_PADDING, paddingBottom: tabBarInset },
-    row: { flexDirection: "row", gap: IOS26.GROUPED_GAP, marginBottom: IOS26.GROUPED_GAP },
+    row: {
+      flexDirection: "row",
+      gap: IOS26.GROUPED_GAP,
+      marginBottom: IOS26.GROUPED_GAP,
+    },
     statCard: {
       flex: 1,
       backgroundColor: colors.card,
@@ -176,10 +224,30 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    chartCard: { paddingVertical: 12, overflow: "hidden", alignItems: "center" },
-    legend: { flexDirection: "row", gap: 16, marginBottom: 8, alignSelf: "flex-start", paddingHorizontal: 8 },
-    cardLabel: { fontSize: 12, color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.3 },
-    cardValue: { fontSize: 28, fontWeight: "700", color: colors.foreground, marginTop: 4 },
+    chartCard: {
+      paddingVertical: 12,
+      overflow: "hidden",
+      alignItems: "center",
+    },
+    legend: {
+      flexDirection: "row",
+      gap: 16,
+      marginBottom: 8,
+      alignSelf: "flex-start",
+      paddingHorizontal: 8,
+    },
+    cardLabel: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+      textTransform: "uppercase",
+      letterSpacing: 0.3,
+    },
+    cardValue: {
+      fontSize: 28,
+      fontWeight: "700",
+      color: colors.foreground,
+      marginTop: 4,
+    },
     section: {
       fontSize: 13,
       fontWeight: "600",
@@ -189,6 +257,16 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
       textTransform: "uppercase",
       letterSpacing: 0.4,
     },
-    empty: { padding: 24, textAlign: "center", color: colors.mutedForeground, fontSize: 16 },
-    emptyChart: { padding: 16, textAlign: "center", color: colors.mutedForeground, fontSize: 14 },
+    empty: {
+      padding: 24,
+      textAlign: "center",
+      color: colors.mutedForeground,
+      fontSize: 16,
+    },
+    emptyChart: {
+      padding: 16,
+      textAlign: "center",
+      color: colors.mutedForeground,
+      fontSize: 14,
+    },
   });

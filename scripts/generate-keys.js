@@ -10,20 +10,16 @@ const crypto = require("crypto");
 console.log("🔐 SyncApp Encryption Key Generator");
 console.log("=====================================\n");
 
-// Generate a random 32-byte (256-bit) encryption key
+// Generate a random 32-byte (256-bit) encryption key (64 hex characters)
 const encryptionKey = crypto.randomBytes(32).toString("hex");
-// Generate a random 16-byte (128-bit) initialization vector
-const encryptionIV = crypto.randomBytes(16).toString("hex");
 
-console.log("✅ Generated secure encryption keys:\n");
+console.log("✅ Generated secure encryption key for AES-256-GCM:\n");
 
 console.log("ENCRYPTION_KEY=" + encryptionKey);
-console.log("ENCRYPTION_IV=" + encryptionIV);
 
-console.log("\n📝 Add these to your .env file:");
+console.log("\n📝 Add this to your .env file:");
 console.log("--------------------------------");
 console.log(`ENCRYPTION_KEY=${encryptionKey}`);
-console.log(`ENCRYPTION_IV=${encryptionIV}`);
 
 console.log("\n⚠️  Important Security Notes:");
 console.log("- Keep these keys secret and secure");
