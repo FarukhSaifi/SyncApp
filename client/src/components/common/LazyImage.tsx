@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import type { LazyImageProps } from "@types";
+import Image from "next/image";
 
 import Skeleton from "@components/common/Skeleton";
 

@@ -1,6 +1,9 @@
 import React from "react";
+
 import type { Editor } from "@tiptap/react";
+
 import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES, PILL_SIZES } from "@constants/designTokens";
+
 import type { PostData, UserData } from "./models";
 
 export type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];

@@ -29,10 +29,7 @@ jobs:
           node-version: "lts/*"
 
       - name: Install workspace dependencies
-        run: npm run install:client && npm run install:server
-
-      - name: Install dependencies
-        run: true
+        run: npm install --workspaces --include=dev
 
       - name: Run lint
         working-directory: client
@@ -53,7 +50,7 @@ jobs:
           node-version: "lts/*"
 
       - name: Install dependencies
-        run: npm run install:client && npm run install:server
+        run: npm install --workspaces --include=dev
 
       - name: Build client
         working-directory: client

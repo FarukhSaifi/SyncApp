@@ -4,8 +4,9 @@
  */
 import { useEffect, useState } from "react";
 
-import { EDITOR_DEBOUNCE_MS, READING_SPEED_WPM } from "@constants/editor";
 import type { WordCountStats } from "@types";
+
+import { EDITOR_DEBOUNCE_MS, READING_SPEED_WPM } from "@constants/editor";
 
 import { useDebounce } from "./useDebounce";
 

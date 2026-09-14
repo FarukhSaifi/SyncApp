@@ -1,6 +1,7 @@
 import React from "react";
-import type { Pagination } from "./api";
+
 import type { PostsStats } from "./analytics";
+import type { Pagination } from "./api";
 import type { Post, User } from "./models";
 
 /**
