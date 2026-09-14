@@ -2,20 +2,24 @@ import { ERROR_MESSAGES, PLATFORMS } from "../constants";
 import { NotFoundError, ValidationError } from "../middleware/errorHandler";
 import Credential from "../models/Credential";
 import { cache, cacheKeys } from "../utils/cache";
-import { decrypt, encrypt } from "../utils/encryption";
+import { decryptCredential, encryptCredential } from "../utils/encryption";
 import { createLogger } from "../utils/logger";
 import { toObjectId } from "../utils/objectId";
 
 const logger = createLogger("CREDENTIALS");
 
 function decryptApiKey(credential: Record<string, unknown>) {
-  if (!credential.api_key) return;
+  const raw = (credential.encrypted_payload || credential.api_key) as string | undefined;
+  if (!raw) return;
 
   try {
-    credential.api_key = decrypt(credential.api_key as string);
+    const decrypted = decryptCredential(raw);
+    credential.api_key = decrypted;
+    credential.encrypted_payload = decrypted;
   } catch (error) {
     logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error as Error);
     credential.api_key = "";
+    credential.encrypted_payload = "";
   }
 }
 
@@ -104,12 +108,13 @@ export async function upsertCredential(
     throw new ValidationError(ERROR_MESSAGES.WORDPRESS_SITE_URL_REQUIRED);
   }
 
-  const encryptedApiKey = encrypt(api_key);
+  const encryptedApiKey = encryptCredential(api_key);
   const author = toObjectId(userId);
 
   const updateData: Record<string, unknown> = {
     author,
     api_key: encryptedApiKey,
+    encrypted_payload: encryptedApiKey,
     is_active: true,
   };
 

@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { STORAGE_KEYS, THEME_VALUES } from "@constants";
-
-interface ThemeContextValue {
-  theme: string;
-  setTheme: (theme: string) => void;
-  toggleTheme: () => void;
-}
+import type { ThemeContextValue } from "@types";
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: THEME_VALUES.LIGHT,

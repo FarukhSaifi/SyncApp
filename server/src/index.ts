@@ -4,6 +4,7 @@ import type { Application, Request, Response } from "express";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import compression from "compression";
 import path from "path";
 
 import { config } from "./config";
@@ -17,8 +18,9 @@ import { logger, requestLogger } from "./utils/logger";
 const app: Application = express();
 const PORT = config.port;
 
-// Security middleware
+// Security & Performance middleware
 app.use(helmet());
+app.use(compression());
 
 // Rate limiting (from config)
 const limiter = rateLimit({

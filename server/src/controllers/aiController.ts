@@ -12,10 +12,22 @@ import {
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError, asyncHandler } from "../middleware/errorHandler";
 import * as aiService from "../services/aiService";
+import type {
+  GenerateEditRequestBody,
+  GenerateImageRequestBody,
+  GenerateLinkedInSummaryRequestBody,
+  GeneratePostRequestBody,
+} from "../types";
 
 function isRefreshQuery(value: unknown): boolean {
   const raw = String(value || "");
   return raw === "1" || raw === "true";
+}
+
+function validateRequestedModel(model?: string): void {
+  if (model !== undefined && model !== null && model !== "" && !isAllowedContentModel(model)) {
+    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
+  }
 }
 
 export const getCapabilities = asyncHandler(async (_req: Request, res: Response) => {
@@ -34,15 +46,9 @@ export const getDevtoReachTags = asyncHandler(async (req: Request, res: Response
 });
 
 export const postGenerate = asyncHandler(async (req: Request, res: Response) => {
-  const { keyword, model, targetPlatforms } = req.body as {
-    keyword: string;
-    model?: string;
-    targetPlatforms?: string[];
-  };
+  const { keyword, model, targetPlatforms } = req.body as GeneratePostRequestBody;
 
-  if (model !== undefined && model !== null && model !== "" && !isAllowedContentModel(model)) {
-    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
-  }
+  validateRequestedModel(model);
 
   if (
     targetPlatforms !== undefined &&
@@ -62,28 +68,21 @@ export const postGenerate = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const postGenerateImage = asyncHandler(async (req: Request, res: Response) => {
-  const { topic, additionalPrompt } = req.body as { topic: string; additionalPrompt?: string };
+  const { topic, additionalPrompt } = req.body as GenerateImageRequestBody;
   const result = await aiService.generateImageFromTopic(topic, additionalPrompt);
   res.status(HTTP_STATUS.OK).json({ success: true, data: result });
 });
 
 export const postEdit = asyncHandler(async (req: Request, res: Response) => {
-  const { action, text } = req.body as { action: string; text: string };
+  const { action, text } = req.body as GenerateEditRequestBody;
   const editedText = await aiService.generateEdit(action, text);
   res.status(HTTP_STATUS.OK).json({ success: true, data: { result: editedText } });
 });
 
 export const postGenerateLinkedInSummary = asyncHandler(async (req: Request, res: Response) => {
-  const { title, content, model, readMoreUrl } = req.body as {
-    title?: string;
-    content?: string;
-    model?: string;
-    readMoreUrl?: string;
-  };
+  const { title, content, model, readMoreUrl } = req.body as GenerateLinkedInSummaryRequestBody;
 
-  if (model !== undefined && model !== null && model !== "" && !isAllowedContentModel(model)) {
-    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
-  }
+  validateRequestedModel(model);
 
   const result = await aiService.generateLinkedInSummary({
     title,

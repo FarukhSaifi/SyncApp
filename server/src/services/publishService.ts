@@ -26,7 +26,7 @@ import type {
   ScheduledPublishPostResult,
 } from "../types";
 import { cache, cacheKeys } from "../utils/cache";
-import { decrypt } from "../utils/encryption";
+import { decryptCredential } from "../utils/encryption";
 import { finalizeLinkedInPost } from "../utils/linkedinPost";
 import { logger } from "../utils/logger";
 import { scheduledPublishDueFilter } from "../utils/scheduleUtils";
@@ -215,7 +215,7 @@ export async function publishToMedium(
     return { updates: existingPlatformUpdates(post, PLATFORMS.MEDIUM), action: "skip" };
   }
 
-  const apiKey = decrypt(credential.api_key);
+  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
   if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_MEDIUM_API_KEY);
 
   const userResponse = await axios.get(API_URLS.MEDIUM.ME_ENDPOINT, {
@@ -259,7 +259,7 @@ export async function publishToDevto(
   post: IPostDocument,
   credential: ICredentialDocument,
 ): Promise<PlatformPublishResult> {
-  const apiKey = decrypt(credential.api_key);
+  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
   if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_DEVTO_API_KEY);
 
   const article = buildDevtoArticlePayload(post);
@@ -298,7 +298,7 @@ export async function publishToWordpress(
   post: IPostDocument,
   credential: ICredentialDocument,
 ): Promise<PlatformPublishResult> {
-  const apiKey = decrypt(credential.api_key);
+  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
   if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_WORDPRESS_API_KEY);
 
   const siteUrl =

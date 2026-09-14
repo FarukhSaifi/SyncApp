@@ -16,15 +16,13 @@
 
    ```bash
    npm install
-   ```
-
-2. **Generate encryption keys (if needed):**
+   ```21. **Generate encryption keys (if needed):**
 
    ```bash
    node ../scripts/generate-keys.js
    ```
 
-   Copy the output keys for the next step.
+   Copy the output key for the next step.
 
 3. **Configure environment variables:**
 
@@ -45,9 +43,11 @@
    # JWT Secret (required)
    JWT_SECRET=your_secure_random_string_here
 
-   # Encryption Keys (required)
-   ENCRYPTION_KEY=your_generated_encryption_key
-   ENCRYPTION_IV=your_generated_iv_key
+   # Encryption Key (required - 64 hex characters)
+   ENCRYPTION_KEY=your_generated_64_hex_char_key
+
+   # Google Cloud Storage Bucket (required for uploads)
+   GCS_BUCKET_NAME=your_gcs_bucket_name
 
    # CORS (optional - defaults to http://localhost:3000)
    CORS_ORIGIN=http://localhost:3000
@@ -91,8 +91,8 @@
 | --- | --- | --- |
 | `MONGODB_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/syncapp` |
 | `JWT_SECRET` | Secret for JWT tokens (min 32 chars) | `your_random_secure_string` |
-| `ENCRYPTION_KEY` | 32-byte hex string for credential encryption | `hex_string_32_bytes` |
-| `ENCRYPTION_IV` | 16-byte hex string for encryption IV | `hex_string_16_bytes` |
+| `ENCRYPTION_KEY` | 32-byte hex string (64 hex characters) for AES-256-GCM credential encryption | `64_character_hex_string` |
+| `GCS_BUCKET_NAME` | Cloud Storage bucket name for post cover images | `my-syncapp-bucket` |
 
 ### Optional Environment Variables
 
@@ -107,19 +107,20 @@
 | `GEMINI_API_KEY` | Google AI Studio API key ([get one free](https://aistudio.google.com/apikey)) — required for AI routes | _(not set)_ |
 | `GOOGLE_AI_MODEL` | Gemini content model | `gemini-3.8-flash` |
 | `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for SEO posts | `true` |
-| `GOOGLE_CLOUD_PROJECT` | GCP project ID (optional — GCS cover uploads only) | _(not set)_ |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID (optional — GCS cover uploads) | _(not set)_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local GCS) | _(not set)_ |
 | `GOOGLE_CREDENTIALS_JSON` | Raw service account JSON (Vercel GCS) | _(not set)_ |
 
 ## 🏗️ Tech Stack
 
 - **Node.js** - Runtime
-- **Express** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **JWT** - Authentication
-- **bcryptjs** - Password hashing
-- **Axios** - HTTP client for external APIs
+- **Express** - Web framework (Express 5)
+- **TypeScript & Zod** - Strict typing & schema validation
+- **MongoDB** - Database (Mongoose ODM)
+- **JWT & bcryptjs** - Authentication & password hashing
+- **Google AI Studio (`@google/genai`)** - Generative AI integration
+- **Google Cloud Storage** - V4 Presigned Direct PUT URLs for image uploads
+- **Axios** - HTTP client for platform APIs for external APIs
 
 ## 📁 Project Structure
 
@@ -206,9 +207,9 @@ server/
 - `POST /api/publish/wordpress` - Publish to WordPress
 - `POST /api/publish/all` - Publish to all platforms
 
-### Export
+### Upload (auth required)
 
-- `GET /api/mdx/:id` - Export post as MDX
+- `POST /api/upload/presigned-url` - Generate V4 Presigned Direct PUT URL for uploading post cover images directly from browser to GCS
 
 ### AI (auth required) — Google AI Studio
 
@@ -229,11 +230,11 @@ Requires `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/ap
 
 - **Password Hashing**: bcryptjs with salt rounds
 - **JWT Tokens**: Secure authentication with expiration
-- **Credential Encryption**: AES-256-CBC encryption for stored platform credentials
+- **Credential Encryption**: AES-256-GCM authenticated encryption for stored platform credentials (random 12-byte IV & auth tag per record)
 - **CORS Protection**: Configurable origin restrictions
 - **Rate Limiting**: Prevent abuse (100 requests per 15 minutes)
 - **Helmet.js**: Security headers
-- **Input Validation**: Request body checks in controllers / middleware
+- **Input Validation**: Strict Zod schema validation middleware (`validateBody`)
 
 ## 🚀 Deployment
 
@@ -265,10 +266,9 @@ Vercel supports serverless functions for Express apps. The server is configured 
    MONGODB_URI=...
    JWT_SECRET=...
    ENCRYPTION_KEY=...
-   ENCRYPTION_IV=...
+   GCS_BUCKET_NAME=...
    CORS_ORIGIN=https://your-frontend.vercel.app
    GOOGLE_CLOUD_PROJECT=...
-   GOOGLE_CLOUD_LOCATION=us-central1
    GOOGLE_CREDENTIALS_JSON={"type":"service_account",...}
    ```
 

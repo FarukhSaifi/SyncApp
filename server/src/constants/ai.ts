@@ -148,6 +148,14 @@ Rules:
   TRENDING_TOPICS_USER: `Search for what developers are researching and talking about right now (web, cloud, AI tooling, TypeScript/React/Next.js, databases, DevOps). Return 6 high-reach blog topic phrases and 8 Google SEO keywords as JSON.`,
 };
 
+export const AI_SEED_TOPIC_CATEGORIES = Object.freeze([
+  ["ai agents software engineering", "generative ai developer tools", "model context protocol"],
+  ["react 19 patterns", "nextjs app router architecture", "typescript performance optimization"],
+  ["cloud native platform engineering", "kubernetes devops trends", "zero trust devsecops"],
+  ["microservices system design", "database performance tuning", "rust backend development"],
+  ["developer productivity tools", "open source github trending", "software architecture patterns"],
+] as const);
+
 export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
   ENV_GEMINI_API_KEY: "GEMINI_API_KEY",
@@ -181,6 +189,8 @@ export const AI_CONFIG = Object.freeze({
   MAX_EDIT_TOKENS: 4096,
   /** LinkedIn teaser only — short plain text. */
   MAX_LINKEDIN_SUMMARY_TOKENS: 2048,
+  /** Max source article characters to inspect when summarizing for LinkedIn. */
+  MAX_LINKEDIN_ARTICLE_CHARS: 8000,
   MAX_IMAGE_PROMPT_TOKENS: 512,
   /** Trending topics + keywords: short JSON list. */
   MAX_TRENDING_TOPICS_TOKENS: 768,
@@ -213,6 +223,7 @@ export const AI_CONFIG = Object.freeze({
   /** Keep low — retries × slow 503s previously exceeded the client AI timeout. */
   RETRY_ATTEMPTS: 2,
   RETRY_BASE_DELAY_MS: 400,
+  RETRY_JITTER_MAX_MS: 200,
 } as const);
 
 /** Resolve request model or fall back to env default. */

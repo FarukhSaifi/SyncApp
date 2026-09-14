@@ -1,12 +1,13 @@
-import mongoose, { Document, Model, Schema } from "mongoose";
+import mongoose, { Document, Model, Schema, type Types } from "mongoose";
 import { PLATFORMS, VALID_PLATFORMS } from "../constants";
 import { CREDENTIAL_INDEXES } from "../constants/indexes";
 import type { ICredential } from "../types/index";
 
 export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author" | "token_expires_at"> {
-  author: mongoose.Types.ObjectId;
+  author: Types.ObjectId;
   platform_name: string;
-  api_key: string;
+  encrypted_payload: string; // Packed as IV:TAG:CIPHERTEXT
+  api_key: string;           // Backward-compatible alias
   site_url?: string;
   is_active: boolean;
   refresh_token?: string;
@@ -29,6 +30,7 @@ const credentialSchema = new Schema<ICredentialDocument>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Author is required"],
+      index: true,
     },
     platform_name: {
       type: String,
@@ -37,13 +39,22 @@ const credentialSchema = new Schema<ICredentialDocument>(
       lowercase: true,
       enum: VALID_PLATFORMS,
     },
+    encrypted_payload: {
+      type: String,
+      required: function (this: ICredentialDocument): boolean {
+        return !this.api_key;
+      },
+    },
     api_key: {
       type: String,
-      required: [true, "API key is required"],
+      required: function (this: ICredentialDocument): boolean {
+        return !this.encrypted_payload;
+      },
     },
     site_url: {
       type: String,
       trim: true,
+      default: null,
       required: function (this: ICredentialDocument): boolean {
         return this.platform_name === PLATFORMS.WORDPRESS;
       },
@@ -72,7 +83,17 @@ const credentialSchema = new Schema<ICredentialDocument>(
   },
 );
 
-credentialSchema.index(CREDENTIAL_INDEXES.AUTHOR_PLATFORM_UNIQUE, { unique: true });
+// Synchronize encrypted_payload and api_key before validation
+credentialSchema.pre("validate", function (this: ICredentialDocument) {
+  if (this.encrypted_payload && !this.api_key) {
+    this.api_key = this.encrypted_payload;
+  } else if (this.api_key && !this.encrypted_payload) {
+    this.encrypted_payload = this.api_key;
+  }
+});
+
+// Compound unique index ensuring one credential per platform per author
+credentialSchema.index({ author: 1, platform_name: 1 }, { unique: true });
 credentialSchema.index(CREDENTIAL_INDEXES.AUTHOR_ACTIVE);
 
 credentialSchema.virtual("created_at").get(function (this: ICredentialDocument) {
@@ -83,6 +104,9 @@ credentialSchema.virtual("updated_at").get(function (this: ICredentialDocument) 
   return this.updatedAt;
 });
 
-const Credential: Model<ICredentialDocument> = mongoose.model<ICredentialDocument>("Credential", credentialSchema);
+export const Credential: Model<ICredentialDocument> = mongoose.model<ICredentialDocument>(
+  "Credential",
+  credentialSchema,
+);
 
 export default Credential;

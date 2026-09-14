@@ -3,6 +3,12 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ERROR_MESSAGES, FIELDS, HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
 import User from "../models/User";
+import type {
+  ChangePasswordRequestBody,
+  LoginRequestBody,
+  RegisterRequestBody,
+  UpdateProfileRequestBody,
+} from "../types";
 import { authenticateToken, generateToken } from "../utils/auth";
 import { createLogger } from "../utils/logger";
 
@@ -12,13 +18,7 @@ const logger = createLogger("AUTH");
 // User registration
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { username, email, password, firstName, lastName } = req.body as {
-      username: string;
-      email: string;
-      password: string;
-      firstName?: string;
-      lastName?: string;
-    };
+    const { username, email, password, firstName, lastName } = req.body as RegisterRequestBody;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
@@ -73,7 +73,7 @@ router.post("/register", async (req: Request, res: Response) => {
 // User login
 router.post("/login", async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as { email: string; password: string };
+    const { email, password } = req.body as LoginRequestBody;
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -153,12 +153,7 @@ router.get("/me", authenticateToken, async (req: Request, res: Response) => {
 // Update user profile
 router.put("/me", authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, bio, avatar } = req.body as {
-      firstName?: string;
-      lastName?: string;
-      bio?: string;
-      avatar?: string;
-    };
+    const { firstName, lastName, bio, avatar } = req.body as UpdateProfileRequestBody;
 
     const user = await User.findById(req.userId);
     if (!user) {
@@ -194,7 +189,7 @@ router.put("/me", authenticateToken, async (req: Request, res: Response) => {
 // Change password
 router.put("/change-password", authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
+    const { currentPassword, newPassword } = req.body as ChangePasswordRequestBody;
 
     const user = await User.findById(req.userId);
     if (!user) {

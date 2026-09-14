@@ -10,6 +10,14 @@ export const PLATFORMS = Object.freeze({
 
 export type PlatformSlug = (typeof PLATFORMS)[keyof typeof PLATFORMS];
 
+/** Human-readable display names for platforms. */
+export const PLATFORM_DISPLAY_NAMES: Record<PlatformSlug, string> = Object.freeze({
+  [PLATFORMS.MEDIUM]: "Medium",
+  [PLATFORMS.DEVTO]: "DEV.to",
+  [PLATFORMS.WORDPRESS]: "WordPress",
+  [PLATFORMS.LINKEDIN]: "LinkedIn",
+});
+
 /** AI optimization targets (LinkedIn summary + Read more; publish uses same summary). */
 export const OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",

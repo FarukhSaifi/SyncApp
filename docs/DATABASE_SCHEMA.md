@@ -29,6 +29,7 @@ erDiagram
         ObjectId _id PK
         ObjectId author FK
         string platform_name
+        string encrypted_payload
         string api_key
         boolean is_active
     }
@@ -60,7 +61,7 @@ erDiagram
 | `platform_status`        | Object                               | Per-platform publish state       |
 | `tags`                   | String[]                             |                                  |
 | `meta_description`       | String                               | Max 160 chars                    |
-| `cover_image`            | String                               | GCS public URL                   |
+| `cover_image`            | String                               | Direct GCS / Firebase public URL |
 | `canonical_url`          | String                               | SEO                              |
 | `linkedin_post`          | String                               | Short LinkedIn teaser text       |
 | `linkedin_read_more_url` | String                               | Public article URL for Read more |
@@ -72,22 +73,25 @@ erDiagram
 
 ## Credential
 
-| Field              | Type     | Notes                                                  |
-| ------------------ | -------- | ------------------------------------------------------ |
-| `author`           | ObjectId | Ref `User`                                             |
-| `platform_name`    | Enum     | `medium`, `devto`, `wordpress`, `linkedin`, `hashnode` |
-| `api_key`          | String   | Encrypted at rest (access token for LinkedIn)          |
-| `refresh_token`    | String   | Encrypted; LinkedIn OAuth refresh token                |
-| `token_expires_at` | Date     | LinkedIn access token expiry                           |
-| `site_url`         | String   | Required for WordPress                                 |
-| `is_active`        | Boolean  | Only active creds used for publish/cron                |
-| `platform_config`  | Object   | e.g. `devto_username`, `linkedin_person_urn`           |
+| Field               | Type     | Notes                                                       |
+| ------------------- | -------- | ----------------------------------------------------------- |
+| `author`            | ObjectId | Ref `User`                                                  |
+| `platform_name`     | Enum     | `medium`, `devto`, `wordpress`, `linkedin`                  |
+| `encrypted_payload` | String   | Authenticated AES-256-GCM packed as `IV:TAG:CIPHERTEXT`     |
+| `api_key`           | String   | Synchronized backward-compatible alias for `encrypted_payload` |
+| `refresh_token`     | String   | Encrypted; LinkedIn OAuth refresh token                     |
+| `token_expires_at`  | Date     | LinkedIn access token expiry                                |
+| `site_url`          | String   | Required for WordPress                                      |
+| `is_active`         | Boolean  | Only active creds used for publish/cron                     |
+| `platform_config`   | Object   | e.g. `devto_username`, `linkedin_person_urn`                |
 
-**Indexes:** Unique `{ author, platform_name }`, `{ author, is_active }`
+**Indexes:** Unique compound `{ author: 1, platform_name: 1 }`, `{ author: 1, is_active: 1 }`
 
-## Security
+## Security & Cryptography
 
-- API keys encrypted with AES-256-CBC before persistence ([`server/src/utils/encryption.ts`](../server/src/utils/encryption.ts)).
-- Decryption occurs only in memory during publish operations.
+- Platform credentials and access tokens are encrypted at rest using **authenticated AES-256-GCM** ([`server/src/utils/encryption.ts`](../server/src/utils/encryption.ts)).
+- Packed payload format: `${ivHex}:${authTagHex}:${ciphertextHex}` using a 12-byte random IV per record.
+- Decryption verifies the 16-byte authentication tag in memory during publish operations.
+- Backwards compatibility automatically supports legacy unauthenticated tokens during migration.
 
 See also [SYSTEM_FLOWS.md](./SYSTEM_FLOWS.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).

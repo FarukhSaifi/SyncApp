@@ -1,17 +1,9 @@
 import { useCallback, useMemo } from "react";
 
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, TOAST_TITLES } from "@constants";
+import type { WithToastOptions } from "@types";
 
 import { useToaster } from "@components/common/Toaster";
-
-interface WithToastOptions {
-  loading?: string;
-  success?: string;
-  error?: string;
-  loadingMessage?: string;
-  successMessage?: string;
-  errorMessage?: string;
-}
 
 /**
  * Enhanced toast hook with common app-specific toast patterns.

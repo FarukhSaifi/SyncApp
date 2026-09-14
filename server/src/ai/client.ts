@@ -8,21 +8,12 @@ import { AI_CONFIG, AI_SAFETY_SETTINGS, resolveContentModel } from "../constants
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
-import { loadGoogleServiceAccountCredentials } from "../utils/googleCredentials";
+import type { AiCapabilities, AiProvider, StudioGenerateOptions } from "../types";
+
+export type { AiCapabilities, AiProvider, StudioGenerateOptions };
 
 let cachedClient: GoogleGenAI | null = null;
 let cachedKey = "";
-
-export type AiProvider = "studio" | "none";
-
-export interface AiCapabilities {
-  textAi: boolean;
-  /** True when a Studio key is present; generates images via Gemini multimodal & Imagen models. */
-  imageAi: boolean;
-  provider: AiProvider;
-  defaultModel: string;
-  studioUrl: string;
-}
 
 export function resolveGeminiApiKey(): string {
   return (
@@ -40,43 +31,13 @@ export function hasStudioKey(): boolean {
 /** Capability snapshot for UI and health messaging. */
 export function getAiCapabilities(): AiCapabilities {
   const ready = hasStudioKey();
-  const imageReady = ready || hasVertexConfig();
   return {
     textAi: ready,
-    imageAi: imageReady,
+    imageAi: ready,
     provider: ready ? "studio" : "none",
     defaultModel: resolveContentModel(),
     studioUrl: AI_CONFIG.GEMINI_API_KEY_URL,
   };
-}
-
-let cachedVertexClient: GoogleGenAI | null = null;
-
-export function hasVertexConfig(): boolean {
-  return Boolean(
-    config.googleCloudProject &&
-    (config.googleApplicationCredentials ||
-      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-      process.env.GOOGLE_CREDENTIALS_JSON)
-  );
-}
-
-export function getVertexAiClient(): GoogleGenAI | null {
-  if (!hasVertexConfig()) return null;
-  if (cachedVertexClient) return cachedVertexClient;
-
-  const creds = loadGoogleServiceAccountCredentials();
-  const keyFile = !process.env.GOOGLE_CREDENTIALS_JSON
-    ? config.googleApplicationCredentials || process.env.GOOGLE_APPLICATION_CREDENTIALS
-    : undefined;
-
-  cachedVertexClient = new GoogleGenAI({
-    vertexai: true,
-    project: config.googleCloudProject,
-    location: process.env.GOOGLE_CLOUD_LOCATION || "us-central1",
-    googleAuthOptions: creds ? { credentials: creds as unknown as Record<string, unknown> } : (keyFile ? { keyFile } : undefined),
-  });
-  return cachedVertexClient;
 }
 
 /** Single Studio client for text and image generation. */
@@ -113,19 +74,6 @@ export function getText(result: GenerateContentResponse): string {
   return text.trim();
 }
 
-export type StudioGenerateOptions = {
-  model: string;
-  contents: string;
-  systemInstruction?: string;
-  maxOutputTokens: number;
-  /** Lower = more deterministic JSON; higher = more creative prose. */
-  temperature?: number;
-  topP?: number;
-  responseMimeType?: string;
-  responseSchema?: GenerateContentConfig["responseSchema"];
-  tools?: GenerateContentConfig["tools"];
-};
-
 /**
  * Studio-tuned generation config:
  * - thinkingBudget 0 on Flash so maxOutputTokens go to visible JSON/text
@@ -144,9 +92,11 @@ export function buildGeminiConfig(modelName: string, overrides: GenerateContentC
   return generationConfig;
 }
 
-/** One Studio generateContent call with consistent Studio settings. */
+/**
+ * Unified generation call:
+ * Executes generation requests using Google AI Studio via GEMINI_API_KEY.
+ */
 export async function studioGenerateContent(options: StudioGenerateOptions): Promise<GenerateContentResponse> {
-  const ai = getAiClient();
   const {
     model,
     contents,
@@ -159,17 +109,20 @@ export async function studioGenerateContent(options: StudioGenerateOptions): Pro
     tools,
   } = options;
 
+  const generationConfig = buildGeminiConfig(model, {
+    systemInstruction,
+    maxOutputTokens,
+    temperature,
+    topP,
+    ...(responseMimeType ? { responseMimeType } : {}),
+    ...(responseSchema ? { responseSchema } : {}),
+    ...(tools ? { tools } : {}),
+  });
+
+  const ai = getAiClient();
   return ai.models.generateContent({
     model,
     contents,
-    config: buildGeminiConfig(model, {
-      systemInstruction,
-      maxOutputTokens,
-      temperature,
-      topP,
-      ...(responseMimeType ? { responseMimeType } : {}),
-      ...(responseSchema ? { responseSchema } : {}),
-      ...(tools ? { tools } : {}),
-    }),
+    config: generationConfig,
   });
 }

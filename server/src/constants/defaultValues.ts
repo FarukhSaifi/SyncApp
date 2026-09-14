@@ -46,6 +46,9 @@ export const DEFAULT_VALUES = Object.freeze({
   // Google Cloud Storage
   GCS_UPLOAD_PREFIX: "uploads/",
   GCS_PUBLIC_URL_BASE: "https://storage.googleapis.com",
+  PRESIGNED_URL_EXPIRY_MS: 15 * 60 * 1000, // 15 minutes
+  STORAGE_SLUG_MAX_LENGTH: 35,
+  STORAGE_SAFE_BASENAME_MAX_LENGTH: 100,
 
   // File MIME mapping to safe extensions
   MIME_TO_EXTENSION: {

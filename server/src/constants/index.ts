@@ -9,6 +9,7 @@ export {
   AI_PROMPTS,
   AI_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
+  AI_SEED_TOPIC_CATEGORIES,
   isAllowedContentModel,
   resolveContentModel,
 } from "./ai";

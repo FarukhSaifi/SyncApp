@@ -1,19 +1,21 @@
 import { Router } from "express";
-import multer from "multer";
-import { uploadImage } from "../controllers/upload";
+
+import { getPresignedUrl } from "../controllers/upload";
+import { validateBody } from "../middleware/validation";
+import { presignedUrlRequestSchema } from "../schemas";
 import { authenticateToken } from "../utils/auth";
 
 const router: Router = Router();
 
-// Configure multer to use memory storage since Vercel is serverless
-// and we upload directly from memory to GCS
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-});
-
-router.post("/", authenticateToken, upload.single("image"), uploadImage);
+/**
+ * POST /api/upload/presigned-url
+ * Returns a cryptographically signed V4 PUT URL targeting Firebase/GCS bucket.
+ */
+router.post(
+  "/presigned-url",
+  authenticateToken,
+  validateBody(presignedUrlRequestSchema),
+  getPresignedUrl,
+);
 
 export default router;

@@ -9,9 +9,12 @@ import { API_URLS, ERROR_MESSAGES, HTTP, PLATFORMS } from "../constants";
 import { ValidationError } from "../middleware/errorHandler";
 import Credential from "../models/Credential";
 import { cache, cacheKeys } from "../utils/cache";
-import { decrypt, encrypt } from "../utils/encryption";
+import { decryptCredential, encryptCredential } from "../utils/encryption";
 import { createLogger } from "../utils/logger";
 import { toObjectId } from "../utils/objectId";
+import type { LinkedInAccessContext } from "../types";
+
+export type { LinkedInAccessContext };
 
 const logger = createLogger("LINKEDIN_OAUTH");
 
@@ -140,9 +143,11 @@ export async function upsertLinkedInCredential(userId: string, tokens: TokenResp
     .add(tokens.expires_in || 0, "second")
     .toDate();
 
+  const encryptedAccessToken = encryptCredential(tokens.access_token);
   const updateData: Record<string, unknown> = {
     author,
-    api_key: encrypt(tokens.access_token),
+    api_key: encryptedAccessToken,
+    encrypted_payload: encryptedAccessToken,
     is_active: true,
     token_expires_at: expiresAt,
     platform_config: {
@@ -151,7 +156,7 @@ export async function upsertLinkedInCredential(userId: string, tokens: TokenResp
   };
 
   if (tokens.refresh_token) {
-    updateData.refresh_token = encrypt(tokens.refresh_token);
+    updateData.refresh_token = encryptCredential(tokens.refresh_token);
   }
 
   const credential = await Credential.findOneAndUpdate({ author, platform_name: PLATFORMS.LINKEDIN }, updateData, {
@@ -179,11 +184,6 @@ export async function completeLinkedInOAuth(code: string, state: string): Promis
   return userId;
 }
 
-export type LinkedInAccessContext = {
-  accessToken: string;
-  personUrn: string;
-};
-
 /**
  * Decrypt LinkedIn access token, refreshing when near expiry.
  */
@@ -200,7 +200,7 @@ export async function resolveLinkedInAccess(credential: {
     throw new Error(ERROR_MESSAGES.LINKEDIN_PERSON_URN_MISSING);
   }
 
-  let accessToken = decrypt(credential.api_key);
+  let accessToken = decryptCredential(credential.api_key);
   if (!accessToken) {
     throw new Error(ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN);
   }
@@ -210,7 +210,7 @@ export async function resolveLinkedInAccess(credential: {
 
   if (needsRefresh && credential.refresh_token) {
     try {
-      const refreshToken = decrypt(credential.refresh_token);
+      const refreshToken = decryptCredential(credential.refresh_token);
       if (refreshToken) {
         const tokens = await refreshAccessToken(refreshToken);
         accessToken = tokens.access_token;

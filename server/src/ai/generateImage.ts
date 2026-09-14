@@ -1,34 +1,26 @@
 /**
  * AI Featured Image Generation
  * Uses real AI models (Gemini 2.5 Flash Image & Imagen) configured for 16:9 blog headers.
- * Clean, minimal, and fully maintainable pipeline.
+ * Powered by Google AI Studio via GEMINI_API_KEY.
  */
-import { GoogleGenAI } from "@google/genai";
-import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS } from "../constants";
+import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, DEFAULT_VALUES } from "../constants";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
+import { uploadToGCS } from "../services/storage";
+import type { GenerateImageResult, ImageSource } from "../types";
 import { logger } from "../utils/logger";
 import {
   buildModelCandidates,
   getAiClient,
   getModelName,
   getText,
-  getVertexAiClient,
-  hasVertexConfig,
   studioGenerateContent,
 } from "./client";
-import { uploadToGCS } from "../services/storage";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 
-export type ImageSource = "gemini" | "imagen";
-
-export interface GenerateImageResult {
-  imageDataUrl: string;
-  imageUrl?: string;
-  source: ImageSource;
-}
+export type { GenerateImageResult, ImageSource };
 
 function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime = "image/png"): string {
   const base64 = typeof bytes === "string" ? bytes : Buffer.from(bytes).toString("base64");
@@ -58,7 +50,10 @@ async function persistImage(dataUrl: string, topic: string): Promise<string | un
     if (!match) return undefined;
     const mimetype = match[1];
     const buffer = Buffer.from(match[2], "base64");
-    const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 35);
+    const slug = topic
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, DEFAULT_VALUES.STORAGE_SLUG_MAX_LENGTH);
     const ext = mimetype.split("/")[1]?.replace("+xml", "") || "png";
     const filename = `ai-cover-${slug}-${Date.now()}.${ext}`;
     return await uploadToGCS(buffer, filename, mimetype, false);
@@ -100,19 +95,19 @@ async function generatePrompt(topic: string, userInstruction?: string): Promise<
 }
 
 /**
- * Try generating an image with a GoogleGenAI client (Vertex or Studio) and Gemini multimodal model.
+ * Try generating an image with Google AI Studio and Gemini multimodal model.
  */
 async function tryGeminiModel(
-  client: GoogleGenAI,
   model: string,
   prompt: string,
   providerLabel: string,
 ): Promise<string | null> {
   const formattedPrompt = `Create a high-CTR 16:9 (${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}) blog featured image. Clean, modern developer aesthetic, no watermarks, no UI chrome. ${prompt}`;
   try {
+    const ai = getAiClient();
     const res = await withRetry(
       () =>
-        client.models.generateContent({
+        ai.models.generateContent({
           model,
           contents: formattedPrompt,
           config: { responseModalities: ["TEXT", "IMAGE"], temperature: 0.8 },
@@ -131,33 +126,16 @@ async function tryGeminiModel(
 }
 
 /**
- * Try generating image via Google Cloud Vertex AI (billed GCP quota).
- */
-async function tryVertex(prompt: string): Promise<string | null> {
-  if (!hasVertexConfig()) return null;
-  const client = getVertexAiClient();
-  if (!client) return null;
-
-  const models = [AI_CONFIG.IMAGE_MODEL, "gemini-2.5-flash-image"];
-  for (const model of models) {
-    const result = await tryGeminiModel(client, model, prompt, "Vertex AI");
-    if (result) return result;
-  }
-  return null;
-}
-
-/**
  * Try generating image via Google AI Studio Gemini multimodal models.
  */
 async function tryStudioGemini(prompt: string): Promise<string | null> {
-  const ai = getAiClient();
   const models = [
     AI_CONFIG.IMAGE_MODEL,
     ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => !m.startsWith("imagen")),
   ];
 
   for (const model of models) {
-    const result = await tryGeminiModel(ai, model, prompt, "AI Studio Gemini");
+    const result = await tryGeminiModel(model, prompt, "AI Studio Gemini");
     if (result) return result;
   }
   return null;
@@ -212,21 +190,14 @@ export async function generateImageFromTopic(
     additionalPrompt?.trim() || (await generatePrompt(topic, additionalPrompt))
   ).trim();
 
-  // 1. Vertex AI (Primary with Google Cloud billing)
-  const vertexData = await tryVertex(prompt);
-  if (vertexData) {
-    const publicUrl = await persistImage(vertexData, topic);
-    return { imageDataUrl: vertexData, imageUrl: publicUrl, source: "gemini" };
-  }
-
-  // 2. Google AI Studio (Multimodal Gemini)
+  // 1. Google AI Studio (Multimodal Gemini)
   const studioData = await tryStudioGemini(prompt);
   if (studioData) {
     const publicUrl = await persistImage(studioData, topic);
     return { imageDataUrl: studioData, imageUrl: publicUrl, source: "gemini" };
   }
 
-  // 3. Google AI Studio (Imagen)
+  // 2. Google AI Studio (Imagen)
   const imagenData = await tryImagen(prompt);
   if (imagenData) {
     const publicUrl = await persistImage(imagenData, topic);

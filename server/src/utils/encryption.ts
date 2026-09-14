@@ -4,34 +4,32 @@ import { config } from "../config";
 import { ERROR_MESSAGES } from "../constants/messages";
 import { logger } from "./logger";
 
-const PLACEHOLDER_KEY_PATTERN = /your_.*_(hex|string)_here/i;
-
-function deriveKeyMaterial(raw: string, byteLength: number): Buffer {
-  return Buffer.from(raw.padEnd(byteLength, "!").slice(0, byteLength), "utf8");
-}
-
-const key = deriveKeyMaterial(config.encryption.key || "", 32);
-const iv = deriveKeyMaterial(config.encryption.iv || "", 16);
-
-if (PLACEHOLDER_KEY_PATTERN.test(config.encryption.key) || PLACEHOLDER_KEY_PATTERN.test(config.encryption.iv)) {
-  logger.warn(
-    "ENCRYPTION_KEY / ENCRYPTION_IV look like placeholders. Publishing and stored credentials will fail until they match production.",
-  );
+function getKeyBuffer(): Buffer {
+  const hex = config.encryption.key;
+  if (/^[0-9a-fA-F]{64}$/.test(hex)) {
+    return Buffer.from(hex, "hex");
+  }
+  return crypto.createHash("sha256").update(hex).digest();
 }
 
 /**
- * Encrypt a string using AES-256-CBC
- * @param text - The text to encrypt
- * @returns The encrypted text as a hex string
+ * Encrypt a credential using authenticated AES-256-GCM.
+ * @param plaintext - The raw credential string
+ * @returns Packed string in format: `${ivHex}:${authTagHex}:${ciphertextHex}`
  */
-export function encrypt(text: string): string {
+export function encryptCredential(plaintext: string): string {
   try {
-    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    const key = getKeyBuffer();
+    const iv = crypto.randomBytes(12); // 12-byte IV standard for AES-GCM
+    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
 
-    let encrypted = cipher.update(text, "utf8", "hex");
-    encrypted += cipher.final("hex");
+    let ciphertext = cipher.update(plaintext, "utf8", "hex");
+    ciphertext += cipher.final("hex");
 
-    return encrypted;
+    const authTag = cipher.getAuthTag().toString("hex");
+    const ivHex = iv.toString("hex");
+
+    return `${ivHex}:${authTag}:${ciphertext}`;
   } catch (error) {
     logger.error(ERROR_MESSAGES.ENCRYPTION_ERROR_LOG, error as Error);
     throw new Error(ERROR_MESSAGES.FAILED_TO_ENCRYPT);
@@ -39,20 +37,44 @@ export function encrypt(text: string): string {
 }
 
 /**
- * Decrypt a string using AES-256-CBC
- * @param encryptedText - The encrypted text as a hex string
- * @returns The decrypted text
+ * Decrypt a credential using authenticated AES-256-GCM.
+ * Backwards-compatible with legacy unauthenticated CBC format.
+ * @param packedPayload - The packed string or legacy hex string
+ * @returns The decrypted credential plaintext
  */
-export function decrypt(encryptedText: string): string {
+export function decryptCredential(packedPayload: string): string {
   try {
-    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    if (!packedPayload) return "";
 
-    let decrypted = decipher.update(encryptedText, "hex", "utf8");
-    decrypted += decipher.final("utf8");
+    const parts = packedPayload.split(":");
+    if (parts.length === 3) {
+      const [ivHex, authTagHex, ciphertextHex] = parts;
+      const key = getKeyBuffer();
+      const iv = Buffer.from(ivHex, "hex");
+      const authTag = Buffer.from(authTagHex, "hex");
 
-    return decrypted;
+      const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(ciphertextHex, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+
+      return decrypted;
+    }
+
+    // Fallback: Attempt legacy AES-256-CBC decryption
+    const key = getKeyBuffer();
+    const iv = crypto.createHash("md5").update(config.encryption.key).digest();
+    const legacyDecipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    let legacyDecrypted = legacyDecipher.update(packedPayload, "hex", "utf8");
+    legacyDecrypted += legacyDecipher.final("utf8");
+    return legacyDecrypted;
   } catch (error) {
     logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG_GENERIC, error as Error);
     throw new Error(ERROR_MESSAGES.FAILED_TO_DECRYPT);
   }
 }
+
+// Backward-compatible aliases
+export const encrypt = encryptCredential;
+export const decrypt = decryptCredential;

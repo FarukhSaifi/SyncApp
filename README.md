@@ -25,17 +25,19 @@
 
 **Backend (`server/`)**
 
-- Node.js 22+, Express 5, TypeScript
-- MongoDB Atlas + Mongoose
+- Node.js 22+, Express 5, TypeScript, Zod schema validation
+- MongoDB Atlas + Mongoose ODM
 - JWT auth, bcrypt password hashing
+- AES-256-GCM authenticated encryption for platform credentials
 - Google AI Studio (`GEMINI_API_KEY`, default `gemini-3.8-flash`) for AI features
-- Google Cloud Storage for image uploads
+- Google Cloud Storage Direct V4 Presigned PUT URLs for image uploads
 - Axios for external platform APIs
 
-**Infrastructure**
+**Infrastructure & Tooling**
 
+- Turborepo monorepo orchestration (`client`, `server`, `mobile`)
 - MongoDB Atlas
-- Vercel (frontend + backend serverless)
+- Vercel (frontend + backend serverless functions)
 - Vercel Cron — daily scheduled publishing (`0 0 * * *`, 12:00 AM UTC)
 - Resend (scheduled publish email) + Slack webhooks (optional)
 
@@ -97,8 +99,8 @@ npm run install:all
 cd server
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
-node ../scripts/generate-keys.js   # copy ENCRYPTION_KEY + IV into .env.dev
-# Edit .env.dev — MONGODB_URI, JWT_SECRET, etc.
+node ../scripts/generate-keys.js   # copy ENCRYPTION_KEY (64 hex chars) into .env.dev
+# Edit .env.dev — MONGODB_URI, JWT_SECRET, GCS_BUCKET_NAME, etc.
 npm run db:setup
 npm run dev
 ```
@@ -204,7 +206,7 @@ Dashboard → Analytics: total posts, publish rate, per-platform counts, 30-day 
 | **Credentials** | `GET/PUT/DELETE /api/credentials/:platform` (DELETE disconnects a platform) |
 | **AI** | `POST /api/ai/generate`, `generate-image`, `edit` |
 | **Analytics** | `GET /api/analytics/stats` |
-| **Upload** | `POST /api/upload` (multipart image → GCS) |
+| **Upload** | `POST /api/upload/presigned-url` (V4 Presigned PUT URL for direct GCS upload) |
 | **MDX** | `GET /api/mdx/:id` |
 | **Cron** | `GET /api/cron/publish-scheduled` (Bearer `CRON_SECRET`) |
 | **Health** | `GET /health` — returns 200 when DB connected, **503** when disconnected |
@@ -260,13 +262,13 @@ Key server variables:
 ```bash
 MONGODB_URI=...
 JWT_SECRET=...
-ENCRYPTION_KEY=...          # scripts/generate-keys.js
-ENCRYPTION_IV=...
+ENCRYPTION_KEY=...          # scripts/generate-keys.js (64 hex characters)
+GCS_BUCKET_NAME=...         # Cloud Storage bucket name
 CORS_ORIGIN=https://your-frontend.vercel.app
 CANONICAL_BASE_URL=https://yourblog.com/blog   # DEV.to canonical fallback
 GEMINI_API_KEY=...           # Google AI Studio — required for AI routes
 GOOGLE_AI_MODEL=gemini-3.8-flash
-GOOGLE_CREDENTIALS_JSON=...  # Optional: GCS cover uploads only
+GOOGLE_CREDENTIALS_JSON=...  # Service account JSON for GCS presigned URLs
 CRON_SECRET=...              # Vercel Cron auth (Bearer token)
 RESEND_API_KEY=...           # Scheduled publish emails (optional)
 NOTIFICATION_FROM_EMAIL=...  # Verified Resend sender
@@ -306,7 +308,8 @@ See [docs/VERCEL_ENV.md](./docs/VERCEL_ENV.md) and [server/README.md](./server/R
 
 - bcrypt password hashing
 - JWT with expiration
-- AES-256-CBC encrypted platform API keys
+- AES-256-GCM authenticated encryption for platform credentials (random 12-byte IV + auth tag per record)
+- Zod schema validation middleware (`validateBody`) across API routes
 - Helmet security headers + CORS allowlist
 - Rate limiting on `/api` (configurable)
 - Serverless-safe MongoDB connection with pre-route `ensureDb` middleware
@@ -377,9 +380,9 @@ Returns **503** when MongoDB is unreachable (includes `database.error`).
 | **Rich text / Markdown editor** (TipTap) | ✅ | Live preview, toolbar, keyboard shortcuts |
 | **JWT authentication & protected routes** | ✅ | Register, login, profile, change password |
 | **Role-based access** (user / admin) | ✅ | Admin user management screen |
-| **Encrypted platform credentials** | ✅ | AES-256-CBC; connect/disconnect Medium, DEV.to, WordPress in Settings |
+| **Encrypted platform credentials** | ✅ | AES-256-GCM; connect/disconnect Medium, DEV.to, WordPress in Settings |
 | **Smart publish menu** | ✅ | Editor shows only connected platforms; publish-all uses active credentials |
-| **Cover image upload** | ✅ | Base64 or file upload → Google Cloud Storage |
+| **Cover image upload** | ✅ | Direct-to-GCS via V4 Presigned PUT URLs (zero server memory proxying) |
 | **Canonical URLs & SEO metadata** | ✅ | Meta description, slug, canonical URL; DEV.to validates URL + max 4 tags |
 | **SEO scorecard** (editor sidebar) | ✅ | Real-time scoring from title, meta, tags, content |
 | **AI writing assistant** | ✅ | Full post generation, inline edit, featured image (Google AI Studio) |

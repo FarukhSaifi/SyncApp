@@ -18,6 +18,9 @@ export const INITIAL_EDITOR_FORM = Object.freeze({
 /** Autosave interval (ms). Drafts are saved automatically when dirty. */
 export const AUTOSAVE_INTERVAL_MS = 60000;
 
+/** Typing debounce duration (ms) for word count and live calculations. */
+export const EDITOR_DEBOUNCE_MS = 300;
+
 /** Average reading speed used for "X min read" calculation. */
 export const READING_SPEED_WPM = 238;
 

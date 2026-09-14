@@ -6,13 +6,32 @@ import { buildSecurityHeaders, getApiOrigin } from "./config/security";
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingRoot: path.join(__dirname, ".."),
+  turbopack: {
+    root: path.join(__dirname, ".."),
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   compress: true,
   productionBrowserSourceMaps: false,
   compiler: {
     removeConsole: isProd ? { exclude: ["error", "warn"] } : false,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      }
+    ],
   },
   experimental: {
     optimizePackageImports: [

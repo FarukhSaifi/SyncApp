@@ -1,7 +1,8 @@
 /**
- * AI Service — stable import path for controllers.
- * Implementation lives in server/src/ai/.
+ * AI Service — stable import path for controllers and services.
+ * Powered by Google AI Studio (@google/genai).
  */
+export { getAiClient } from "../ai/client";
 export {
   generateEdit,
   generateImageFromTopic,

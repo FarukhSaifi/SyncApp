@@ -4,15 +4,10 @@
  */
 import { useEffect, useState } from "react";
 
-import { READING_SPEED_WPM } from "@constants/editor";
+import { EDITOR_DEBOUNCE_MS, READING_SPEED_WPM } from "@constants/editor";
+import type { WordCountStats } from "@types";
 
 import { useDebounce } from "./useDebounce";
-
-interface WordCountStats {
-  words: number;
-  characters: number;
-  readingTimeMinutes: number;
-}
 
 /** Strip HTML tags from content */
 function stripHtml(html: string): string {
@@ -25,7 +20,7 @@ function stripHtml(html: string): string {
 }
 
 export function useWordCount(content: string): WordCountStats {
-  const debouncedContent = useDebounce(content, 300);
+  const debouncedContent = useDebounce(content, EDITOR_DEBOUNCE_MS);
   const [stats, setStats] = useState<WordCountStats>({
     words: 0,
     characters: 0,

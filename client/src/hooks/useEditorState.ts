@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { EditorFormData, Post } from "@types";
+import type { EditorFormData, Post, PublishFormOverrides, UseEditorStateOptions } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { toStorageMarkdown } from "@utils/contentUtils";
 import { devError, devLog } from "@utils/logger";
@@ -15,7 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
 import { EDITOR_UI, INFO_MESSAGES, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
-import { PLATFORMS } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { ROUTES } from "@constants/routes";
 import { SEO_THRESHOLDS } from "@constants/seo";
@@ -41,19 +41,8 @@ function resolveCanonicalUrl(existing?: string | null, slug?: string | null): st
   return current || built || "";
 }
 
-interface UseEditorStateOptions {
-  onPostCreate: (post: Post) => void;
-  onPostUpdate: (post: Post) => void;
-}
-
-type PublishFormOverrides = Partial<Pick<EditorFormData, "linkedin_post" | "linkedin_read_more_url">>;
-
 function platformDisplayName(platform: string): string {
-  if (platform === PLATFORMS.LINKEDIN) return SYNC_LABEL.PLATFORM_LINKEDIN;
-  if (platform === PLATFORMS.DEVTO) return SYNC_LABEL.PLATFORM_DEVTO;
-  if (platform === PLATFORMS.MEDIUM) return SYNC_LABEL.PLATFORM_MEDIUM;
-  if (platform === PLATFORMS.WORDPRESS) return SYNC_LABEL.PLATFORM_WORDPRESS;
-  return platform;
+  return PLATFORM_DISPLAY_NAMES[platform as PlatformSlug] || platform;
 }
 
 export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOptions) {

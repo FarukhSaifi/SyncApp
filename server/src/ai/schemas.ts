@@ -54,10 +54,9 @@ function tryParseObject(raw: string): Record<string, unknown> {
   throw new Error("unparseable");
 }
 
-export type ParseGeneratePostOptions = {
-  /** When true, require/normalize linkedin_post and attach read_more_url. */
-  includeLinkedIn?: boolean;
-};
+import type { ParseGeneratePostOptions } from "../types";
+
+export type { ParseGeneratePostOptions };
 
 /** Parse model JSON into GeneratePostResult; fail hard if title/content missing. */
 export function parseGeneratePostResponse(rawText: string, options: ParseGeneratePostOptions = {}): GeneratePostResult {
@@ -84,12 +83,11 @@ export function parseGeneratePostResponse(rawText: string, options: ParseGenerat
       const aiSlug = typeof parsed.canonical_url === "string" ? parsed.canonical_url : "";
       const readMoreUrl = buildReadMoreUrl(result.title || title, aiSlug);
       const linkedinRaw = typeof parsed.linkedin_post === "string" ? parsed.linkedin_post.trim() : "";
+      const rawPost =
+        linkedinRaw ||
+        `${title}\n\n${result.meta_description || "Check out this in-depth guide covering key takeaways, architecture, and practical implementations."}\n\nRead more below 👇`;
 
-      if (!linkedinRaw) {
-        throw new AppError(ERROR_MESSAGES.AI_PARSE_FAILED, HTTP_STATUS.BAD_GATEWAY);
-      }
-
-      result.linkedin_post = finalizeLinkedInPost(linkedinRaw, readMoreUrl);
+      result.linkedin_post = finalizeLinkedInPost(rawPost, readMoreUrl);
       result.read_more_url = readMoreUrl;
       result.linkedin_missing_canonical = !readMoreUrl;
     }

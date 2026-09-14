@@ -10,7 +10,9 @@ import { buildModelCandidates, getModelName, getText, studioGenerateContent } fr
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 
-const MAX_ARTICLE_CHARS = 8000;
+import type { GenerateLinkedInSummaryInput, GenerateLinkedInSummaryResult } from "../types";
+
+export type { GenerateLinkedInSummaryInput, GenerateLinkedInSummaryResult };
 
 function stripToPlainText(raw: string): string {
   return raw
@@ -21,20 +23,6 @@ function stripToPlainText(raw: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
-
-export type GenerateLinkedInSummaryInput = {
-  title?: string;
-  content?: string;
-  model?: string;
-  /** Preferred public article URL for Read more. */
-  readMoreUrl?: string;
-};
-
-export type GenerateLinkedInSummaryResult = {
-  linkedin_post: string;
-  read_more_url?: string;
-  linkedin_missing_canonical?: boolean;
-};
 
 export async function generateLinkedInSummary(
   input: GenerateLinkedInSummaryInput,
@@ -52,7 +40,7 @@ export async function generateLinkedInSummary(
     throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const excerpt = excerptSource.slice(0, MAX_ARTICLE_CHARS);
+  const excerpt = excerptSource.slice(0, AI_CONFIG.MAX_LINKEDIN_ARTICLE_CHARS);
   const displayTitle = title || excerpt.slice(0, 80);
   const candidates = buildModelCandidates(getModelName(input.model));
   let lastError: unknown;

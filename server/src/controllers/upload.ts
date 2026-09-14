@@ -1,25 +1,25 @@
-import { NextFunction, Request, Response } from "express";
-import { ERROR_MESSAGES, HTTP_STATUS } from "../constants";
-import { AppError } from "../middleware/errorHandler";
-import { uploadToGCS } from "../services/storage";
+import type { NextFunction, Request, Response } from "express";
+
+import { HTTP_STATUS } from "../constants/httpStatus";
+import { generatePresignedUploadUrl } from "../services/storage";
+import type { PresignedUrlRequest } from "../types";
 import { logger } from "../utils/logger";
 
-export async function uploadImage(req: Request, res: Response, next: NextFunction) {
+/**
+ * Generates a signed V4 PUT URL for client-side direct upload to GCS/Firebase Storage.
+ * Bypasses Vercel's 4.5MB serverless payload limit.
+ */
+export async function getPresignedUrl(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.file) {
-      throw new AppError(ERROR_MESSAGES.UPLOAD_NO_FILE, HTTP_STATUS.BAD_REQUEST);
-    }
+    const { filename, contentType } = req.body as PresignedUrlRequest;
 
-    logger.debug("Processing image upload to GCS:", { filename: req.file.originalname });
+    logger.debug("Generating presigned upload URL:", { filename, contentType });
 
-    // GCS requires the buffer, original name, and mimetype
-    const url = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype, true);
-
-    logger.debug("Image uploaded successfully:", { url });
+    const result = await generatePresignedUploadUrl(filename, contentType);
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      data: { url },
+      data: result,
     });
   } catch (error) {
     next(error);

@@ -38,51 +38,47 @@ Create a Vercel project with **Root Directory** = `server`.
 | --- | --- | --- |
 | `MONGODB_URI` | Yes | MongoDB Atlas connection string |
 | `JWT_SECRET` | Yes | Min 32 characters |
-| `ENCRYPTION_KEY` | Yes | 32-byte hex (`node scripts/generate-keys.js`) |
-| `ENCRYPTION_IV` | Yes | 16-byte hex |
+| `ENCRYPTION_KEY` | Yes | 64-character hex string (32 bytes) for AES-256-GCM |
 | `CORS_ORIGIN` | Yes | Frontend URL(s), comma-separated, e.g. `https://sync-app-client.vercel.app` |
-| `GEMINI_API_KEY` | **Yes (AI)** | Key from [Google AI Studio](https://aistudio.google.com/apikey) — required for all AI routes |
-| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.8-flash` (default + primary fallback) |
-| `GOOGLE_CLOUD_PROJECT` | Optional (GCS) | Only for cover image uploads to Cloud Storage |
-| `GOOGLE_CREDENTIALS_JSON` | Optional (GCS) | Service account JSON on Vercel for Storage |
-| `GCS_BUCKET_NAME` | Optional | Overrides default bucket |
+| `GCS_BUCKET_NAME` | Yes | GCS/Firebase Storage bucket (e.g. `neon-mote-465908-i1.firebasestorage.app`) |
+| `GEMINI_API_KEY` | **Yes (AI)** | Key from [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GOOGLE_CREDENTIALS_JSON` | Required for Uploads | Service account JSON string on Vercel for signing GCS Presigned URLs |
+| `GOOGLE_AI_MODEL` | Recommended | `gemini-3.8-flash` (default) |
 | `CANONICAL_BASE_URL` | Optional | **Public blog only** (LinkedIn Read more + post canonicals), e.g. `https://www.farukh.me/blog` |
-| `CRON_SECRET` | Optional | If using cron routes |
-| `RESEND_API_KEY` | For email | [Resend](https://resend.com) API key — scheduled publish author emails |
-| `NOTIFICATION_FROM_EMAIL` | For email | Verified sender, e.g. `SyncApp <noreply@farukh.me>` (not a Gmail address) |
-| `NOTIFICATION_CC_EMAIL` | Optional | Always CC’d on publish emails; default `farook1x95@gmail.com` (plus author) |
-| `SLACK_WEBHOOK_URL` | Optional | Slack webhook for scheduled publish notifications |
-| `SITE_URL` | Optional | **SyncApp client** for login/editor, notification “open post” links, LinkedIn OAuth return (e.g. `https://sync-app-client.vercel.app`) |
+| `CRON_SECRET` | Optional | Bearer secret if triggering cron routes |
+| `RESEND_API_KEY` | For email | [Resend](https://resend.com) API key |
+| `NOTIFICATION_FROM_EMAIL` | For email | Verified sender address |
+| `NOTIFICATION_CC_EMAIL` | Optional | Default `farook1x95@gmail.com` |
+| `SLACK_WEBHOOK_URL` | Optional | Slack webhook for publish alerts |
+| `SITE_URL` | Optional | SyncApp client URL for OAuth returns and deep links |
 | `LINKEDIN_CLIENT_ID` | For LinkedIn | LinkedIn Developer app Client ID |
 | `LINKEDIN_CLIENT_SECRET` | For LinkedIn | LinkedIn Developer app Client Secret |
-| `LINKEDIN_REDIRECT_URI` | For LinkedIn | Must match app callback, e.g. `https://sync-app-server.vercel.app/api/linkedin/oauth/callback` |
-| `RATE_LIMIT_WINDOW_MS` | Optional | Default `900000` |
-| `RATE_LIMIT_MAX_REQUESTS` | Optional | Default `100` |
+| `LINKEDIN_REDIRECT_URI` | For LinkedIn | e.g. `https://sync-app-server.vercel.app/api/linkedin/oauth/callback` |
 
-**Do not set on Vercel (use alternatives)**
-
-| Variable                         | Why                                                                           |
-| -------------------------------- | ----------------------------------------------------------------------------- |
-| `GOOGLE_APPLICATION_CREDENTIALS` | File paths do not exist on serverless — use `GOOGLE_CREDENTIALS_JSON` instead |
-| `PORT`                           | Vercel assigns the port                                                       |
-| `NODE_ENV`                       | Vercel sets `production` for Production deployments                           |
-
-**Set automatically by Vercel (do not add)**
-
-- `VERCEL`, `VERCEL_ENV`, `VERCEL_URL`, etc.
+**No longer required on Vercel:**
+- `ENCRYPTION_IV` — Authenticated AES-256-GCM generates a random 12-byte IV per record.
 
 ---
 
-## Client project (Root Directory: `client`)
+## Direct-to-GCS Presigned Upload CORS Setup
 
-Create a separate Vercel project with **Root Directory** = `client`.
+Because the client browser uploads files directly to Google Cloud Storage / Firebase Storage via HTTP `PUT`, the bucket must have CORS configured.
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_BACKEND_URL` | Yes | Server URL, e.g. `https://sync-app-server.vercel.app` (no trailing `/api`) |
-| `NEXT_PUBLIC_CANONICAL_BASE_URL` | Optional | e.g. `https://www.farukh.me/blog` |
-
-Next.js inlines `NEXT_PUBLIC_*` at **build time** — redeploy the client after changing these.
+Create a `cors.json` file:
+```json
+[
+  {
+    "origin": ["https://sync-app-client.vercel.app", "http://localhost:3000"],
+    "method": ["PUT", "GET", "HEAD"],
+    "responseHeader": ["Content-Type", "x-goog-resumable"],
+    "maxAgeSeconds": 3600
+  }
+]
+```
+Apply it via Google Cloud CLI:
+```bash
+gcloud storage buckets update gs://YOUR_BUCKET_NAME --cors-file=cors.json
+```
 
 ---
 
@@ -94,13 +90,11 @@ Next.js inlines `NEXT_PUBLIC_*` at **build time** — redeploy the client after 
 MONGODB_URI=
 JWT_SECRET=
 ENCRYPTION_KEY=
-ENCRYPTION_IV=
 CORS_ORIGIN=https://sync-app-client.vercel.app
-GEMINI_API_KEY=          # REQUIRED — paste working Studio key, then Redeploy
+GCS_BUCKET_NAME=your-bucket.firebasestorage.app
+GEMINI_API_KEY=
+GOOGLE_CREDENTIALS_JSON=
 GOOGLE_AI_MODEL=gemini-3.8-flash
-# Optional GCS only:
-# GOOGLE_CLOUD_PROJECT=
-# GOOGLE_CREDENTIALS_JSON=
 RESEND_API_KEY=
 NOTIFICATION_FROM_EMAIL=SyncApp <noreply@farukh.me>
 NOTIFICATION_CC_EMAIL=farook1x95@gmail.com

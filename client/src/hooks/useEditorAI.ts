@@ -5,7 +5,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { AiContentModel, AiImageSource, GeneratedPostData } from "@types";
+import type {
+  AiContentModel,
+  AiImageSource,
+  GeneratedPostData,
+  UseEditorAIOptions,
+  UseEditorAIReturn,
+} from "@types";
 import {
   persistAiModel,
   persistOptimizationTargets,
@@ -67,51 +73,6 @@ function parseAIResponse(raw: GeneratedPostData): GeneratedPostData {
   }
 
   return raw;
-}
-
-interface UseEditorAIOptions {
-  postId?: string;
-  /** Preferred public article URL for LinkedIn Read more (post canonical). */
-  preferredReadMoreUrl?: string;
-  /** Current editor title + body for LinkedIn-only summary generation. */
-  getArticleContext: () => { title: string; content: string };
-  onDraftGenerated: (data: GeneratedPostData) => void;
-  onLinkedInSummaryGenerated: (data: {
-    linkedin_post: string;
-    read_more_url?: string;
-    linkedin_missing_canonical?: boolean;
-  }) => void;
-  onCoverImageSet: (url: string) => void;
-}
-
-interface UseEditorAIReturn {
-  aiKeyword: string;
-  setAiKeyword: (v: string) => void;
-  aiModel: string;
-  setAiModel: (v: string) => void;
-  aiModels: AiContentModel[];
-  targetPlatforms: string[];
-  setTargetPlatforms: (platforms: string[]) => void;
-  aiImagePrompt: string;
-  setAiImagePrompt: (v: string) => void;
-  aiLoading: string;
-  generatedImageDataUrl: string | null;
-  generatedImageUrl: string | null;
-  generatedImageSource: AiImageSource | null;
-  uploadingCover: boolean;
-  linkedinPost: string | null;
-  linkedinReadMoreUrl: string | null;
-  linkedinMissingCanonical: boolean;
-  handleGeneratePost: () => Promise<void>;
-  handleGenerateLinkedInSummary: () => Promise<void>;
-  handleGenerateImage: () => Promise<void>;
-  handleUseAsFeaturedImage: () => void;
-  handleUploadAndAttach: () => Promise<void>;
-  handleCopyLinkedInPost: () => Promise<void>;
-  handleCopyImageUrl: () => Promise<void>;
-  handleDownloadImage: () => void;
-  hydrateLinkedInPost: (post: string | null, missingCanonical?: boolean) => void;
-  clearLinkedInPost: () => void;
 }
 
 export function useEditorAI({

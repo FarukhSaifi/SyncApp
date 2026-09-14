@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    "expo-router",
+    "expo-build-properties",
+    "expo-secure-store",
+    "expo-status-bar"
+  ]
+}

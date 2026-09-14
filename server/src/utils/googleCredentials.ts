@@ -5,7 +5,9 @@ import { config } from "../config";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { AppError } from "../middleware/errorHandler";
 
-export type GoogleServiceAccount = Record<string, unknown> & { project_id?: string };
+import type { GoogleServiceAccount } from "../types";
+
+export type { GoogleServiceAccount };
 
 /** Resolve a credentials file path (server cwd, then repo root fallback). */
 export function resolveGoogleCredentialsPath(credentialsPath: string): string {
@@ -36,7 +38,7 @@ export function loadGoogleServiceAccountCredentials(): GoogleServiceAccount | nu
     return parseCredentialsJson(jsonRaw, "GOOGLE_CREDENTIALS_JSON");
   }
 
-  const credentialsPath = config.googleApplicationCredentials?.trim();
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
   if (!credentialsPath) return null;
 
   const resolvedPath = resolveGoogleCredentialsPath(credentialsPath);

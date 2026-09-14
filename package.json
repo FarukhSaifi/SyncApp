@@ -3,33 +3,42 @@
   "version": "2.0.0",
   "description": "Blog syndication application for publishing to multiple platforms",
   "private": true,
+  "packageManager": "npm@11.13.0",
+  "engines": {
+    "node": ">=20.19.4"
+  },
+  "workspaces": [
+    "client",
+    "server",
+    "mobile"
+  ],
   "scripts": {
-    "install:client": "cd client && npm install",
-    "install:server": "cd server && npm install",
-    "install:mobile": "cd mobile && npm install",
-    "install:all": "npm run install:client && npm run install:server && npm run install:mobile",
-    "dev:mobile": "cd mobile && npx expo start",
+    "dev:mobile": "turbo run dev --filter=mobile",
     "ios:device": "cd mobile && npm run ios:device",
     "build:ios": "cd mobile && npm run build:ios",
     "build:ios:submit": "cd mobile && npm run build:ios:submit",
     "submit:ios": "cd mobile && npm run submit:ios",
-    "setup:ios:production": "cd mobile && npm run setup:ios:production",
     "eas:init": "cd mobile && npx eas init",
     "eas:whoami": "cd mobile && npx eas whoami",
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "env:pull": "npm run env:pull:server && npm run env:pull:client",
     "env:pull:server": "cd server && vercel env pull .env.prod --environment=production",
     "env:pull:client": "cd client && vercel env pull .env.production --environment=production",
-    "check": "npm run check:client && npm run check:server",
-    "check:client": "cd client && npm run lint && npm run typecheck",
-    "check:server": "cd server && npm run typecheck && npm run build",
-    "audit:client": "cd client && npm audit --audit-level=high",
-    "audit:server": "cd server && npm audit --audit-level=high",
-    "audit:all": "npm run audit:client && npm run audit:server"
+    "check": "turbo run typecheck lint",
+    "audit:all": "npm audit --audit-level=high --workspaces"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "turbo": "^2.10.12"
+  },
+  "dependencies": {
+    "babel-preset-expo": "^57.0.11",
+    "expo-blur": "^57.0.3",
+    "expo-build-properties": "^57.0.17",
+    "expo-router": "^57.0.21",
+    "expo-secure-store": "^57.0.4",
+    "expo-status-bar": "^57.0.1"
   }
 }

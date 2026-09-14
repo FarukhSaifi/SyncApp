@@ -45,6 +45,6 @@ export function normalizeAiError(err: Error & { status?: number; details?: unkno
 /** True when we should try the next model (quota or temporary overload). */
 export function isFallbackWorthyError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return /404|NOT_FOUND|not found|429|RESOURCE_EXHAUSTED|Resource exhausted|503|UNAVAILABLE|high demand|currently experiencing/i.test(msg);
+  return /404|NOT_FOUND|not found|429|RESOURCE_EXHAUSTED|Resource exhausted|prepayment|prepay|depleted|503|UNAVAILABLE|high demand|currently experiencing/i.test(msg);
 }
 

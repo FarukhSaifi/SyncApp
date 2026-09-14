@@ -1,6 +1,8 @@
 import { DEFAULT_VALUES } from "../constants/defaultValues";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import type { GCSCredentials } from "../types";
+import type { GCSCredentials, PresignedUploadResponse } from "../types";
+
+export type { PresignedUploadResponse };
 
 import { logger } from "../utils/logger";
 
@@ -220,3 +222,42 @@ export async function uploadToGCS(
 
   return uploadToGCSBucket(fileBuffer, originalname, mimetype, bucketName);
 }
+
+/**
+ * Generates a signed V4 PUT URL targeting Firebase/GCS bucket for direct client upload.
+ * Valid for 15 minutes.
+ */
+export async function generatePresignedUploadUrl(
+  filename: string,
+  mimetype: string,
+  customBucket?: string,
+): Promise<PresignedUploadResponse> {
+  const bucketName = customBucket || config.gcpBucketName || process.env.GCS_BUCKET_NAME;
+  if (!bucketName) {
+    throw new AppError(
+      "Google Cloud Storage bucket name is not configured (GCS_BUCKET_NAME).",
+      HTTP_STATUS.SERVICE_UNAVAILABLE,
+    );
+  }
+
+  const storage = getStorageClient();
+  const bucket = storage.bucket(bucketName);
+  const objectKey = buildStoredObjectName(filename, mimetype, true);
+  const file = bucket.file(objectKey);
+
+  const [presignedUrl] = await file.getSignedUrl({
+    version: "v4",
+    action: "write",
+    expires: Date.now() + DEFAULT_VALUES.PRESIGNED_URL_EXPIRY_MS,
+    contentType: mimetype,
+  });
+
+  const isFirebase = bucketName.endsWith("firebasestorage.app");
+  const publicUrl = isFirebase
+    ? `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(objectKey)}?alt=media`
+    : `${DEFAULT_VALUES.GCS_PUBLIC_URL_BASE}/${bucketName}/${objectKey}`;
+
+  logger.info(`Generated presigned upload URL for: ${objectKey}`);
+  return { presignedUrl, publicUrl, key: objectKey };
+}
+

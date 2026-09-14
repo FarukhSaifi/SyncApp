@@ -323,18 +323,42 @@ class ApiClient {
     });
   }
 
-  uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
-    const formData = new FormData();
-    formData.append("image", file);
-    return this.request(`${API_PATHS.UPLOAD}`, {
-      method: HTTP_METHODS.POST,
-      body: formData,
-      headers: {
-        // Axios will automatically set the correct Content-Type for FormData
-        // but we ensure it doesn't default to application/json
+  async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
+    // Step 1: Request a cryptographically signed V4 PUT URL targeting Firebase/GCS bucket
+    const presignedRes = await this.request<ApiResponse<{ presignedUrl: string; publicUrl: string; key: string }>>(
+      `${API_PATHS.UPLOAD}/presigned-url`,
+      {
+        method: HTTP_METHODS.POST,
+        body: {
+          filename: file.name,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+        },
       },
-      timeout: APP_CONFIG.API_COVER_UPLOAD_TIMEOUT, // use same generous timeout
+    );
+
+    if (!presignedRes.success || !presignedRes.data?.presignedUrl) {
+      throw new Error(presignedRes.error || "Failed to obtain presigned upload URL");
+    }
+
+    // Step 2: Directly execute PUT against Google Cloud Storage
+    const uploadRes = await fetch(presignedRes.data.presignedUrl, {
+      method: HTTP_METHODS.PUT,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+      body: file,
     });
+
+    if (!uploadRes.ok) {
+      throw new Error(`Direct cloud storage upload failed with HTTP status ${uploadRes.status}`);
+    }
+
+    // Step 3: Return the resolved public CDN URL
+    return {
+      success: true,
+      data: { url: presignedRes.data.publicUrl },
+    };
   }
 
   // Users (Admin only)

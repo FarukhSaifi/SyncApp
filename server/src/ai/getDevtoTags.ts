@@ -8,19 +8,11 @@ import { ERROR_MESSAGES } from "../constants/messages";
 import { AppError } from "../middleware/errorHandler";
 import { logger } from "../utils/logger";
 
-export interface DevtoReachTagsResult {
-  tags: string[];
-  source: "devto";
-  cached: boolean;
-  updatedAt: string;
-}
+import type { DevtoCacheEntry, DevtoReachTagsResult } from "../types";
 
-type CacheEntry = {
-  tags: string[];
-  expiresAt: number;
-};
+export type { DevtoReachTagsResult };
 
-let cache: CacheEntry | null = null;
+let cache: DevtoCacheEntry | null = null;
 
 type DevtoTagRow = {
   name?: unknown;
