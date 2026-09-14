@@ -78,7 +78,7 @@ jobs:
 
   eas-build:
     name: EAS mobile build
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -97,5 +97,7 @@ jobs:
       - name: Run EAS build
         working-directory: mobile
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli@latest build --platform "${{ inputs.platform }}" --profile "${{ inputs.profile }}" --non-interactive
+          EXPO_TOKEN: ${{ secrets.EXPO_TRIGGER }}
+          EAS_PLATFORM: ${{ inputs.platform || 'ios' }}
+          EAS_PROFILE: ${{ inputs.profile || 'preview' }}
+        run: npx eas-cli@latest build --platform "$EAS_PLATFORM" --profile "$EAS_PROFILE" --non-interactive
