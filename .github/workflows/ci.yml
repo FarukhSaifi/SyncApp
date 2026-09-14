@@ -47,6 +47,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "lts/*"
+          package-manager-cache: false
 
       - name: Install workspace dependencies
         run: npm install --workspaces --include=dev
@@ -68,6 +69,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "lts/*"
+          package-manager-cache: false
 
       - name: Install dependencies
         run: npm install --workspaces --include=dev
@@ -90,6 +92,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "lts/*"
+          package-manager-cache: false
 
       - name: Install workspace dependencies
         run: npm install --workspaces --include=dev
