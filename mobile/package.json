@@ -2,7 +2,6 @@
   "name": "mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "packageManager": "npm@11.13.0",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
