@@ -6,6 +6,12 @@
   "engines": {
     "node": ">=24.21.0"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "^11.13.0"
+    }
+  },
   "workspaces": [
     "client",
     "server",
