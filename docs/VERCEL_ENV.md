@@ -68,13 +68,13 @@ Create a Vercel project with **Root Directory** = `server`.
 
 Because the client browser uploads files directly to Google Cloud Storage / Firebase Storage via HTTP `PUT`, the bucket must have CORS configured.
 
-Create a `cors.json` file:
+Create a `cors.json` file (`x-goog-content-length-range` is required so browser preflight allows the signed V4 PUT headers):
 ```json
 [
   {
-    "origin": ["https://your-frontend.example.com", "http://localhost:3000"],
-    "method": ["PUT", "GET", "HEAD"],
-    "responseHeader": ["Content-Type", "x-goog-resumable"],
+    "origin": ["https://your-frontend.example.com", "http://localhost:3000", "http://127.0.0.1:3000"],
+    "method": ["PUT", "GET", "HEAD", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Content-Length", "x-goog-resumable", "x-goog-content-length-range", "x-goog-meta-*"],
     "maxAgeSeconds": 3600
   }
 ]
@@ -83,6 +83,8 @@ Apply it via Google Cloud CLI:
 ```bash
 gcloud storage buckets update gs://YOUR_BUCKET_NAME --cors-file=cors.json
 ```
+
+For SyncApp’s default bucket (`syncapp-ai-covers`), origins should include local dev and the client production host (e.g. `https://sync-app-client.vercel.app`).
 
 ---
 

@@ -5,7 +5,11 @@
       "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["dist/**", "src/**", "node_modules/@vercel/node/**"],
+        "includeFiles": [
+          "dist/**",
+          "src/**",
+          "node_modules/@vercel/node/**"
+        ],
         "maxDuration": 300
       }
     }

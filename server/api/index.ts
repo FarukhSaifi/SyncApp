@@ -22,8 +22,10 @@ function createBootstrapErrorApp(error: unknown): Application {
 
 let app: Application;
 try {
+  // Prefer compiled output (path aliases rewritten by tsc-alias in vercel-build).
+  // Requiring ../src leaves @ai/* etc. unresolved on @vercel/node → 503.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  app = require("../src/index").default as Application;
+  app = require("../dist/src/index").default as Application;
 } catch (error) {
   app = createBootstrapErrorApp(error);
 }
