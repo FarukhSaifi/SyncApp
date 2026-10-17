@@ -4,7 +4,6 @@
  */
 import https from "node:https";
 
-
 import { AI_CONFIG, AI_PROVIDERS, AI_SEED_TOPIC_CATEGORIES } from "@constants";
 import { AppError } from "@middleware/errorHandler";
 import type { ParsedTrending, TrendingCacheEntry, TrendingTopicsResult, TrendingTopicsSource } from "@types";
@@ -137,9 +136,7 @@ async function getLiveDeveloperSearchContext(): Promise<string> {
 async function fetchTrendingFromModel(): Promise<ParsedTrending> {
   const liveSearchContext = await getLiveDeveloperSearchContext();
   const providerLabel =
-    resolveAiProvider() === AI_PROVIDERS.VERTEX
-      ? AI_CONFIG.PROVIDER_LABEL_VERTEX
-      : AI_CONFIG["PROVIDER_LABEL_STUDIO"];
+    resolveAiProvider() === AI_PROVIDERS.VERTEX ? AI_CONFIG.PROVIDER_LABEL_VERTEX : AI_CONFIG["PROVIDER_LABEL_STUDIO"];
 
   const systemInstruction = `You are an elite developer trends researcher and SEO strategist.
 ${liveSearchContext}Using Google Search grounding and current developer search behavior, identify the top 6 trending blog topics and top 8 primary Google search keywords right now.

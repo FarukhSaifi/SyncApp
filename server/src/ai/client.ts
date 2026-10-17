@@ -35,11 +35,7 @@ export function resolveGeminiApiKey(): string {
 }
 
 export function resolveGoogleCloudProject(): string {
-  return (
-    config.googleCloudProject?.trim() ||
-    process.env[AI_CONFIG.ENV_GOOGLE_CLOUD_PROJECT]?.trim() ||
-    ""
-  );
+  return config.googleCloudProject?.trim() || process.env[AI_CONFIG.ENV_GOOGLE_CLOUD_PROJECT]?.trim() || "";
 }
 
 export function resolveGoogleCloudLocation(): string {
