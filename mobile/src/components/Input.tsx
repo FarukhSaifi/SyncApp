@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
 
-import { INPUT_SIZES, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { INPUT_SIZES, RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 export interface InputProps extends TextInputProps {
   label?: string;

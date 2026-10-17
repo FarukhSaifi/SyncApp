@@ -4,11 +4,14 @@
  * Production: no sensitive data (redacted keys, no stacks, safe request meta).
  */
 
+import { config } from "@config";
+import type { ILogger } from "@types";
 import dayjs from "dayjs";
 import type { NextFunction, Request, Response } from "express";
-import { config } from "../config";
-import { DEFAULT_VALUES } from "../constants/defaultValues";
-import { REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "../constants/logging";
+
+import { DEFAULT_VALUES } from "@constants/defaultValues";
+import { REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "@constants/logging";
+
 
 const LOG_LEVELS = {
   ERROR: "ERROR",
@@ -33,7 +36,9 @@ function safeStringify(obj: unknown): string {
     obj,
     (_key, value) => {
       if (typeof value === "object" && value !== null) {
-        if (seen.has(value)) return "[Circular]";
+        if (seen.has(value)) {
+          return "[Circular]";
+        }
         seen.add(value);
       }
       return value;
@@ -60,7 +65,9 @@ function serializeErrorForLog(error: Error, includeStack: boolean): Record<strin
 
   if (axiosError.isAxiosError) {
     serialized.isAxiosError = true;
-    if (axiosError.code) serialized.code = axiosError.code;
+    if (axiosError.code) {
+      serialized.code = axiosError.code;
+    }
     if (axiosError.response) {
       serialized.responseStatus = axiosError.response.status;
       serialized.responseStatusText = axiosError.response.statusText;
@@ -72,10 +79,16 @@ function serializeErrorForLog(error: Error, includeStack: boolean): Record<strin
 }
 
 function redactSensitive(obj: unknown, seen = new WeakSet<object>()): unknown {
-  if (obj === null || typeof obj !== "object") return obj;
-  if (seen.has(obj as object)) return "[Circular]";
+  if (obj === null || typeof obj !== "object") {
+    return obj;
+  }
+  if (seen.has(obj as object)) {
+    return "[Circular]";
+  }
   seen.add(obj as object);
-  if (Array.isArray(obj)) return obj.map((item) => redactSensitive(item, seen));
+  if (Array.isArray(obj)) {
+    return obj.map((item) => redactSensitive(item, seen));
+  }
 
   const out = Object.create(null) as Record<string, unknown>;
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
@@ -103,8 +116,6 @@ function redactSensitive(obj: unknown, seen = new WeakSet<object>()): unknown {
   return out;
 }
 
-import { ILogger } from "../types";
-
 class Logger implements ILogger {
   private context: string;
   private isDevelopment: boolean;
@@ -122,10 +133,15 @@ class Logger implements ILogger {
   formatMessage(level: LogLevel, message: string, meta: Record<string, unknown> = {}): string {
     const timestamp = dayjs().toISOString();
     let color = COLORS.RESET;
-    if (level === "ERROR") color = COLORS.ERROR;
-    else if (level === "WARN") color = COLORS.WARN;
-    else if (level === "INFO") color = COLORS.INFO;
-    else if (level === "DEBUG") color = COLORS.DEBUG;
+    if (level === "ERROR") {
+      color = COLORS.ERROR;
+    } else if (level === "WARN") {
+      color = COLORS.WARN;
+    } else if (level === "INFO") {
+      color = COLORS.INFO;
+    } else if (level === "DEBUG") {
+      color = COLORS.DEBUG;
+    }
     const reset = COLORS.RESET;
 
     const base = `${color}[${timestamp}] [${level}] [${this.context}]${reset} ${message}`;

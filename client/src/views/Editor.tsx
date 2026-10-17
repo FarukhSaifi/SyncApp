@@ -75,12 +75,14 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   });
   const wordStats = useWordCount(state.formData.content_markdown);
 
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState<boolean>(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState<boolean>(false);
 
   // Hydrate LinkedIn panel from persisted post fields once load completes.
   useEffect(() => {
-    if (state.initialLoading) return;
+    if (state.initialLoading) {
+      return;
+    }
     const saved = String(state.formData.linkedin_post || "").trim();
     if (saved) {
       ai.hydrateLinkedInPost(saved, false);
@@ -93,7 +95,9 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   useEffect(() => {
     const currentPost = String(state.formData.linkedin_post || "");
     const currentReadMore = String(state.formData.linkedin_read_more_url || "");
-    if (!preferredReadMoreUrl || !currentPost.trim()) return;
+    if (!preferredReadMoreUrl || !currentPost.trim()) {
+      return;
+    }
     const next = applyLinkedInReadMoreUrl(currentPost, preferredReadMoreUrl);
     if (next !== currentPost || currentReadMore !== preferredReadMoreUrl) {
       setFormData((prev) => ({
@@ -128,7 +132,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     [state],
   );
 
-  const linkedinConnected = state.connectedPlatforms.includes(PLATFORMS.LINKEDIN);
+  const linkedinConnected = state.connectedPlatforms.includes(PLATFORMS["LINKEDIN"]);
   const formLinkedInPost = String(state.formData.linkedin_post || "").trim() || null;
   const formLinkedInReadMore = String(state.formData.linkedin_read_more_url || "").trim() || null;
   const displayLinkedInPost = ai.linkedinPost || formLinkedInPost;
@@ -161,15 +165,18 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         }}
       />
 
-      {(leftSidebarOpen || rightSidebarOpen) && <div className="editor-drawer-backdrop" onClick={closeSidebars} />}
-
+      {/* Both sidebars use MUI temporary Drawer on mobile; each owns its own Modal backdrop. */}
       <EditorSidebarLeft
         isOpen={leftSidebarOpen}
+        onClose={() => setLeftSidebarOpen(false)}
         formData={state.formData}
         tagList={state.tagList}
         tagInput={state.tagInput}
         setTagInput={state.setTagInput}
         onInputChange={state.handleInputChange}
+        onCoverImageChange={(url) => {
+          setFormData((prev) => ({ ...prev, cover_image: url }));
+        }}
         onAddTag={state.handleAddTag}
         onRemoveTag={state.handleRemoveTag}
         onTagKeyDown={state.handleTagKeyDown}
@@ -190,6 +197,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
 
       <EditorSidebarRight
         isOpen={rightSidebarOpen}
+        onClose={() => setRightSidebarOpen(false)}
         postId={state.id}
         status={state.formData.status}
         publishing={state.publishing}
@@ -225,7 +233,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
           }
           void ai.handleCopyLinkedInPost();
         }}
-        onPublishLinkedInPost={() => void state.handlePublishToPlatform(PLATFORMS.LINKEDIN, linkedinPublishOverrides)}
+        onPublishLinkedInPost={() => void state.handlePublishToPlatform(PLATFORMS["LINKEDIN"], linkedinPublishOverrides)}
         onGenerateLinkedInSummary={() => void ai.handleGenerateLinkedInSummary()}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}

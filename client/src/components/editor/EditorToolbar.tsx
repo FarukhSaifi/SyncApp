@@ -1,13 +1,11 @@
 "use client";
+
 import type { EditorToolbarProps } from "@types";
 import { FiArrowLeft, FiEdit2, FiEye, FiSave, FiSend, FiSettings } from "react-icons/fi";
 
-import { BUTTON_LABELS, SYNC_LABEL } from "@constants/messages";
+import { BUTTON_LABELS, EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 
 import Button from "@components/common/Button";
-
-
-
 
 const EditorToolbar = ({
   isEditing,
@@ -23,39 +21,43 @@ const EditorToolbar = ({
 }: EditorToolbarProps) => {
   return (
     <div className="editor-toolbar flex items-center justify-between px-4 py-2 border-b border-border bg-card">
-      {/* Left: Back + title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted"
-          aria-label="Back to dashboard"
+          aria-label={BUTTON_LABELS["BACK_TO_DASHBOARD_ARIA"]}
         >
           <FiArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">{BUTTON_LABELS.BACK_TO_DASHBOARD}</span>
+          <span className="hidden sm:inline">{BUTTON_LABELS["BACK_TO_DASHBOARD"]}</span>
         </button>
 
         <div className="hidden sm:block h-5 w-px bg-border" />
 
         <span className="hidden sm:inline text-sm font-medium text-foreground">
-          {isEditing ? SYNC_LABEL.EDIT_POST : SYNC_LABEL.NEW_POST}
+          {isEditing ? SYNC_LABEL["EDIT_POST"] : SYNC_LABEL["NEW_POST"]}
         </span>
       </div>
 
-      {/* Center: Edit/Preview toggle */}
       <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
         <button
-          onClick={() => activeTab !== "edit" && onTogglePreview()}
+          onClick={() => {
+            if (activeTab !== "edit") {
+              onTogglePreview();
+            }
+          }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-            activeTab === "edit"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+            activeTab === "edit" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <FiEdit2 className="h-3.5 w-3.5" />
-          {SYNC_LABEL.TAB_EDIT}
+          {SYNC_LABEL["TAB_EDIT"]}
         </button>
         <button
-          onClick={() => activeTab !== "preview" && onTogglePreview()}
+          onClick={() => {
+            if (activeTab !== "preview") {
+              onTogglePreview();
+            }
+          }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
             activeTab === "preview"
               ? "bg-card text-foreground shadow-sm"
@@ -63,48 +65,42 @@ const EditorToolbar = ({
           }`}
         >
           <FiEye className="h-3.5 w-3.5" />
-          {SYNC_LABEL.TAB_PREVIEW}
+          {SYNC_LABEL["TAB_PREVIEW"]}
         </button>
       </div>
 
-      {/* Right: Word count + Save */}
       <div className="flex items-center gap-3">
-        {wordCount > 0 && (
+        {wordCount > 0 ? (
           <span className="hidden md:inline text-xs text-muted-foreground tabular-nums">
-            {wordCount.toLocaleString()} words
+            {EDITOR_UI["WORD_COUNT_LABEL"](wordCount.toLocaleString())}
           </span>
-        )}
+        ) : null}
 
-        {/* Mobile sidebar toggles */}
         <button
+          type="button"
           onClick={onToggleLeftSidebar}
-          className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          aria-label="Toggle post settings"
-          title="Post settings"
+          className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={EDITOR_UI["TOGGLE_POST_SETTINGS"]}
+          title={EDITOR_UI["POST_SETTINGS_DRAWER_TITLE"]}
         >
-          <FiSettings className="h-4 w-4" />
+          <FiSettings className="h-5 w-5" />
         </button>
 
         <button
+          type="button"
           onClick={onToggleRightSidebar}
-          className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          aria-label="Toggle publish panel"
-          title="Publish & AI"
+          className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={EDITOR_UI["TOGGLE_PUBLISH_AI"]}
+          title={EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}
         >
-          <FiSend className="h-4 w-4" />
+          <FiSend className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-2">
-          {isDirty && <span className="unsaved-dot" title="Unsaved changes" />}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onSave}
-            disabled={loading}
-            className="flex items-center gap-1.5"
-          >
+          {isDirty ? <span className="unsaved-dot" title={EDITOR_UI["UNSAVED_CHANGES_TITLE"]} /> : null}
+          <Button variant="primary" size="sm" onClick={onSave} disabled={loading} className="flex items-center gap-1.5">
             <FiSave className="h-3.5 w-3.5" />
-            {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.SAVE_POST}
+            {loading ? SYNC_LABEL["SAVING"] : SYNC_LABEL["SAVE_POST"]}
           </Button>
         </div>
       </div>

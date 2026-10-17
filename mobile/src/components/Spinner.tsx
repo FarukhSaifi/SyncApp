@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { LOADING_UI } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { LOADING_UI } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 type SpinnerSize = "sm" | "md" | "lg";
 

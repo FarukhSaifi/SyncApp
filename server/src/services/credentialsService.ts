@@ -1,46 +1,80 @@
-import { ERROR_MESSAGES, PLATFORMS } from "../constants";
-import { NotFoundError, ValidationError } from "../middleware/errorHandler";
-import Credential from "../models/Credential";
-import { cache, cacheKeys } from "../utils/cache";
-import { decryptCredential, encryptCredential } from "../utils/encryption";
-import { createLogger } from "../utils/logger";
-import { toObjectId } from "../utils/objectId";
+import { DEFAULT_VALUES, ERROR_MESSAGES, PLATFORMS } from "@constants";
+import { NotFoundError, ValidationError } from "@middleware/errorHandler";
+import Credential from "@models/Credential";
+import { cache, cacheKeys } from "@utils/cache";
+import { decryptCredential, encryptCredential } from "@utils/encryption";
+import { createLogger } from "@utils/logger";
+import { toObjectId } from "@utils/objectId";
 
 const logger = createLogger("CREDENTIALS");
 
-function decryptApiKey(credential: Record<string, unknown>) {
-  const raw = (credential.encrypted_payload || credential.api_key) as string | undefined;
-  if (!raw) return;
-
-  try {
-    const decrypted = decryptCredential(raw);
-    credential.api_key = decrypted;
-    credential.encrypted_payload = decrypted;
-  } catch (error) {
-    logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG, error as Error);
-    credential.api_key = "";
-    credential.encrypted_payload = "";
-  }
+function maskApiKey(plaintext: string): { api_key_last4: string; api_key_masked: string } {
+  const trimmed = plaintext.trim();
+  const visible = DEFAULT_VALUES["CREDENTIAL_API_KEY_VISIBLE_CHARS"];
+  const last4 = trimmed.length >= visible ? trimmed.slice(-visible) : trimmed;
+  return {
+    api_key_last4: last4,
+    api_key_masked: last4 ? `${DEFAULT_VALUES["CREDENTIAL_API_KEY_MASK_PREFIX"]}${last4}` : "",
+  };
 }
 
-/** Never expose LinkedIn OAuth tokens to the client. */
-function sanitizeCredentialForClient(credential: Record<string, unknown>) {
-  if (credential.platform_name !== PLATFORMS.LINKEDIN) return credential;
+/**
+ * Shape returned to clients: never include full decrypted platform API keys.
+ * LinkedIn OAuth tokens stay stripped (person URN only).
+ */
+function sanitizeCredentialForClient(credential: Record<string, unknown>): Record<string, unknown> {
+  const platformName = credential.platform_name;
 
-  delete credential.api_key;
-  delete credential.refresh_token;
-  if (credential.platform_config && typeof credential.platform_config === "object") {
-    const cfg = { ...(credential.platform_config as Record<string, unknown>) };
-    // Keep person URN so Settings can show connected; no secrets.
-    credential.platform_config = {
-      linkedin_person_urn: cfg.linkedin_person_urn,
-    };
+  if (platformName === PLATFORMS["LINKEDIN"]) {
+    delete credential.api_key;
+    delete credential.encrypted_payload;
+    delete credential.refresh_token;
+    let personUrn: unknown;
+    if (credential.platform_config && typeof credential.platform_config === "object") {
+      const cfg = { ...(credential.platform_config as Record<string, unknown>) };
+      personUrn = cfg.linkedin_person_urn;
+      credential.platform_config = {
+        linkedin_person_urn: personUrn,
+      };
+    }
+    credential.configured = Boolean(personUrn) || Boolean(credential.is_active);
+    return credential;
   }
+
+  const encrypted = (credential.encrypted_payload || credential.api_key) as string | undefined;
+  delete credential.api_key;
+  delete credential.encrypted_payload;
+  delete credential.refresh_token;
+
+  let configured = Boolean(encrypted);
+  let decryptFailed = false;
+
+  if (encrypted) {
+    try {
+      const decrypted = decryptCredential(encrypted);
+      if (decrypted) {
+        Object.assign(credential, maskApiKey(decrypted));
+        configured = true;
+      } else {
+        configured = false;
+      }
+    } catch (error) {
+      logger.error(ERROR_MESSAGES["DECRYPTION_ERROR_LOG"], error as Error);
+      decryptFailed = true;
+      configured = true;
+    }
+  }
+
+  credential.configured = configured;
+  if (decryptFailed) {
+    credential.decrypt_failed = true;
+  }
+
   return credential;
 }
 
 /**
- * Get all credentials for a user (with decrypted API keys for settings display)
+ * Get all credentials for a user (masked keys only — never full decrypted secrets).
  */
 export async function getAllCredentials(userId: string) {
   const cacheKey = cacheKeys.credentials.list(userId);
@@ -52,20 +86,16 @@ export async function getAllCredentials(userId: string) {
   const credentials = (await Credential.find({ author: userId }).lean()) as unknown as Record<string, unknown>[];
 
   for (const credential of credentials) {
-    if (credential.platform_name === PLATFORMS.LINKEDIN) {
-      sanitizeCredentialForClient(credential);
-    } else {
-      decryptApiKey(credential);
-    }
+    sanitizeCredentialForClient(credential);
   }
 
-  cache.set(cacheKey, credentials, 300000);
+  cache.set(cacheKey, credentials, DEFAULT_VALUES["CACHE_TTL_DEFAULT_MS"]);
 
   return credentials;
 }
 
 /**
- * Get credential by platform for a user (with decrypted API key)
+ * Get credential by platform for a user (masked — never full decrypted API key).
  */
 export async function getCredentialByPlatform(userId: string, platformName: string) {
   const credential = (await Credential.findOne({
@@ -77,13 +107,7 @@ export async function getCredentialByPlatform(userId: string, platformName: stri
     return null;
   }
 
-  if (credential.platform_name === PLATFORMS.LINKEDIN) {
-    return sanitizeCredentialForClient(credential);
-  }
-
-  decryptApiKey(credential);
-
-  return credential;
+  return sanitizeCredentialForClient(credential);
 }
 
 /**
@@ -97,15 +121,15 @@ export async function upsertCredential(
   const { api_key, site_url, platform_config } = data;
 
   if (!api_key) {
-    throw new ValidationError(ERROR_MESSAGES.API_KEY_REQUIRED);
+    throw new ValidationError(ERROR_MESSAGES["API_KEY_REQUIRED"]);
   }
 
-  if (platformName === PLATFORMS.LINKEDIN) {
-    throw new ValidationError("Connect LinkedIn via OAuth in Settings (API key paste is not supported for LinkedIn).");
+  if (platformName === PLATFORMS["LINKEDIN"]) {
+    throw new ValidationError(ERROR_MESSAGES["LINKEDIN_API_KEY_PASTE_UNSUPPORTED"]);
   }
 
-  if (platformName === PLATFORMS.WORDPRESS && !site_url) {
-    throw new ValidationError(ERROR_MESSAGES.WORDPRESS_SITE_URL_REQUIRED);
+  if (platformName === PLATFORMS["WORDPRESS"] && !site_url) {
+    throw new ValidationError(ERROR_MESSAGES["WORDPRESS_SITE_URL_REQUIRED"]);
   }
 
   const encryptedApiKey = encryptCredential(api_key);
@@ -128,16 +152,14 @@ export async function upsertCredential(
 
   const credential = (await Credential.findOneAndUpdate({ author, platform_name: platformName }, updateData, {
     upsert: true,
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   }).lean()) as unknown as Record<string, unknown>;
 
   cache.delete(cacheKeys.credentials.single(userId, platformName));
   cache.delete(cacheKeys.credentials.list(userId));
 
-  delete credential.api_key;
-
-  return credential;
+  return sanitizeCredentialForClient(credential);
 }
 
 /**
@@ -150,7 +172,7 @@ export async function deleteCredential(userId: string, platformName: string) {
   });
 
   if (!result) {
-    throw new NotFoundError(ERROR_MESSAGES.CREDENTIAL_NOT_FOUND);
+    throw new NotFoundError(ERROR_MESSAGES["CREDENTIAL_NOT_FOUND"]);
   }
 
   cache.delete(cacheKeys.credentials.single(userId, platformName));

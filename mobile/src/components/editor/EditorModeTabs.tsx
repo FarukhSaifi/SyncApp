@@ -2,9 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorMode } from "@/src/types";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { EditorMode } from "@types";
 
 interface EditorModeTabsProps {
   mode: EditorMode;

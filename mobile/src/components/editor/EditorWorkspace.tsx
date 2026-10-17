@@ -2,22 +2,23 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { ChannelsTab } from "@/src/components/editor/ChannelsTab";
-import { DetailsTab } from "@/src/components/editor/DetailsTab";
-import { EditorHeader } from "@/src/components/editor/EditorHeader";
-import { EditorModeTabs } from "@/src/components/editor/EditorModeTabs";
-import { ReviewPublishSheet } from "@/src/components/editor/ReviewPublishSheet";
-import { WriteTab } from "@/src/components/editor/WriteTab";
-import { ROUTES } from "@/src/constants";
-import { BUTTON_VARIANTS, IOS26 } from "@/src/constants/designTokens";
-import { ERRORS } from "@/src/constants/messages";
-import type { PlatformSlug } from "@/src/constants/platforms";
-import { POST_STATUS } from "@/src/constants/postStatus";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
-import type { EditorForm, EditorMode, EditorReadiness, Post } from "@/src/types";
+import { Button } from "@components/Button";
+import { ChannelsTab } from "@components/editor/ChannelsTab";
+import { DetailsTab } from "@components/editor/DetailsTab";
+import { EditorHeader } from "@components/editor/EditorHeader";
+import { EditorModeTabs } from "@components/editor/EditorModeTabs";
+import { ReviewPublishSheet } from "@components/editor/ReviewPublishSheet";
+import { WriteTab } from "@components/editor/WriteTab";
+import { ROUTES } from "@constants";
+import { BUTTON_VARIANTS } from "@constants/designTokens";
+import { ERRORS } from "@constants/messages";
+import type { OptimizationTarget, PlatformSlug } from "@constants/platforms";
+import { POST_STATUS } from "@constants/postStatus";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { useResponsiveLayout } from "@hooks/useResponsiveLayout";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
+import type { EditorForm, EditorMode, EditorReadiness, Post } from "@types";
 
 export interface EditorWorkspaceProps {
   form: EditorForm;
@@ -29,13 +30,18 @@ export interface EditorWorkspaceProps {
   handleSave: (forceStatus?: string) => Promise<Post | null>;
   publish: (platform: string, savedPostId?: string) => Promise<void>;
   publishAll: (savedPostId?: string) => Promise<void>;
+  unpublish: (platform: string) => Promise<void>;
   generatePost: (keyword: string) => Promise<void>;
   generateLinkedInSummary: () => Promise<void>;
+  uploadCoverFromUri: (uri: string, filename: string, mimeType: string) => Promise<string | null>;
   aiEdit: (action: string) => Promise<void>;
   openGenerateImage: () => void;
-  platforms: typeof import("@/src/constants/platforms").PLATFORMS;
+  platforms: typeof import("@constants/platforms").PLATFORMS;
   connectedPlatforms: PlatformSlug[];
   loadingPlatforms?: boolean;
+  platformStatus?: Post["platform_status"];
+  aiTargetPlatforms: OptimizationTarget[];
+  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
 }
 
 export function EditorWorkspace({
@@ -48,15 +54,24 @@ export function EditorWorkspace({
   handleSave,
   publish,
   publishAll,
+  unpublish,
   generatePost,
   generateLinkedInSummary,
+  uploadCoverFromUri,
   openGenerateImage,
   platforms,
   connectedPlatforms,
   loadingPlatforms = false,
+  platformStatus,
+  aiTargetPlatforms,
+  toggleAiTargetPlatform,
 }: EditorWorkspaceProps) {
   const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const layout = useResponsiveLayout();
+  const styles = useMemo(
+    () => createStyles(colors, layout.isCompact, layout.horizontalPadding),
+    [colors, layout.isCompact, layout.horizontalPadding],
+  );
   const router = useRouter();
 
   const [mode, setMode] = useState<EditorMode>("write");
@@ -139,9 +154,12 @@ export function EditorWorkspace({
             form={form}
             updateField={updateField}
             openGenerateImage={openGenerateImage}
+            uploadCoverFromUri={uploadCoverFromUri}
             aiEdit={handleAiEditWithPreview}
             generatePost={generatePost}
             aiLoading={aiLoading}
+            aiTargetPlatforms={aiTargetPlatforms}
+            toggleAiTargetPlatform={toggleAiTargetPlatform}
           />
         ) : null}
 
@@ -156,6 +174,9 @@ export function EditorWorkspace({
             updateField={updateField}
             generateLinkedInSummary={generateLinkedInSummary}
             aiLoading={aiLoading}
+            platformStatus={platformStatus}
+            unpublish={unpublish}
+            publishing={publishing}
           />
         ) : null}
 
@@ -204,7 +225,11 @@ export function EditorWorkspace({
   );
 }
 
-const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
+const createStyles = (
+  colors: ReturnType<typeof useThemeColors>,
+  isCompact: boolean,
+  horizontalPadding: number,
+) =>
   StyleSheet.create({
     shell: {
       flex: 1,
@@ -214,12 +239,12 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       flex: 1,
     },
     scrollContent: {
-      paddingHorizontal: IOS26.SCREEN_PADDING,
+      paddingHorizontal: horizontalPadding,
       paddingBottom: 24,
     },
     bottomBar: {
-      flexDirection: "row",
-      paddingHorizontal: 16,
+      flexDirection: isCompact ? "column" : "row",
+      paddingHorizontal: horizontalPadding,
       paddingTop: 12,
       paddingBottom: 28,
       backgroundColor: colors.card,
@@ -228,9 +253,9 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       gap: 12,
     },
     saveBtn: {
-      flex: 1,
+      flex: isCompact ? undefined : 1,
     },
     publishBtn: {
-      flex: 1.5,
+      flex: isCompact ? undefined : 1.5,
     },
   });

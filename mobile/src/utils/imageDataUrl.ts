@@ -1,4 +1,4 @@
-import { EDITOR_CONFIG } from "@/src/constants/editor";
+import { EDITOR_CONFIG } from "@constants/editor";
 
 /** React Native Image does not render SVG data URLs; use react-native-svg instead. */
 export function isSvgDataUrl(uri: string): boolean {

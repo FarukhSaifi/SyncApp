@@ -31,4 +31,11 @@ export const HTTP = Object.freeze({
 
   // HTTP methods
   METHODS: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  METHOD: {
+    GET: "GET",
+    POST: "POST",
+    PUT: "PUT",
+    DELETE: "DELETE",
+    OPTIONS: "OPTIONS",
+  },
 } as const);

@@ -1,11 +1,11 @@
-import type { Request, Response } from "express";
-import { ERROR_MESSAGES, PLATFORM_CONFIG, PLATFORMS, POST_STATUS, SUCCESS_MESSAGES } from "../constants";
-import { asyncHandler, ForbiddenError, NotFoundError, ValidationError } from "../middleware/errorHandler";
-import type { ICredentialDocument } from "../models/Credential";
-import Credential from "../models/Credential";
-import type { IPostDocument } from "../models/Post";
-import Post from "../models/Post";
-import { unpublishFromPlatform } from "../services/platformService";
+
+import { ERROR_MESSAGES, PLATFORM_CONFIG, PLATFORMS, POST_STATUS, SUCCESS_MESSAGES } from "@constants";
+import { asyncHandler, ForbiddenError, NotFoundError, ValidationError } from "@middleware/errorHandler";
+import type { ICredentialDocument } from "@models/Credential";
+import Credential from "@models/Credential";
+import type { IPostDocument } from "@models/Post";
+import Post from "@models/Post";
+import { unpublishFromPlatform } from "@services/platformService";
 import {
   performPublishToAll,
   platformSuccessMessage,
@@ -13,9 +13,9 @@ import {
   publishToLinkedin,
   publishToMedium,
   publishToWordpress,
-} from "../services/publishService";
-
-import { PlatformConfigWithFn } from "../types";
+} from "@services/publishService";
+import type { IPlatformStatus, PlatformConfigWithFn } from "@types";
+import type { Request, Response } from "express";
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, PlatformConfigWithFn> = {
   [PLATFORMS.MEDIUM]: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
@@ -45,27 +45,63 @@ async function ensurePost(postId: string | undefined, userId: string): Promise<I
 }
 
 function getPlatformConfig(platformName: string) {
-  if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG.medium;
-  if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG.devto;
-  if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG.wordpress;
-  if (platformName === PLATFORMS.LINKEDIN) return PLATFORM_CONFIG.linkedin;
+  if (platformName === PLATFORMS.MEDIUM) {
+    return PLATFORM_CONFIG.medium;
+  }
+  if (platformName === PLATFORMS.DEVTO) {
+    return PLATFORM_CONFIG.devto;
+  }
+  if (platformName === PLATFORMS.WORDPRESS) {
+    return PLATFORM_CONFIG.wordpress;
+  }
+  if (platformName === PLATFORMS.LINKEDIN) {
+    return PLATFORM_CONFIG.linkedin;
+  }
   return undefined;
 }
 
 function getPlatformConfigWithFn(platformName: string) {
-  if (platformName === PLATFORMS.MEDIUM) return PLATFORM_CONFIG_WITH_FUNCTIONS.medium;
-  if (platformName === PLATFORMS.DEVTO) return PLATFORM_CONFIG_WITH_FUNCTIONS.devto;
-  if (platformName === PLATFORMS.WORDPRESS) return PLATFORM_CONFIG_WITH_FUNCTIONS.wordpress;
-  if (platformName === PLATFORMS.LINKEDIN) return PLATFORM_CONFIG_WITH_FUNCTIONS.linkedin;
+  if (platformName === PLATFORMS.MEDIUM) {
+    return PLATFORM_CONFIG_WITH_FUNCTIONS.medium;
+  }
+  if (platformName === PLATFORMS.DEVTO) {
+    return PLATFORM_CONFIG_WITH_FUNCTIONS.devto;
+  }
+  if (platformName === PLATFORMS.WORDPRESS) {
+    return PLATFORM_CONFIG_WITH_FUNCTIONS.wordpress;
+  }
+  if (platformName === PLATFORMS.LINKEDIN) {
+    return PLATFORM_CONFIG_WITH_FUNCTIONS.linkedin;
+  }
   return undefined;
 }
 
-function getPlatformStatusField(platformStatus: any, platformName: string) {
-  if (!platformStatus) return undefined;
-  if (platformName === PLATFORMS.MEDIUM) return platformStatus.medium;
-  if (platformName === PLATFORMS.DEVTO) return platformStatus.devto;
-  if (platformName === PLATFORMS.WORDPRESS) return platformStatus.wordpress;
-  if (platformName === PLATFORMS.LINKEDIN) return platformStatus.linkedin;
+type PostPlatformStatus = {
+  medium?: IPlatformStatus;
+  devto?: IPlatformStatus;
+  wordpress?: IPlatformStatus;
+  linkedin?: IPlatformStatus;
+};
+
+function getPlatformStatusField(
+  platformStatus: PostPlatformStatus | null | undefined,
+  platformName: string,
+): IPlatformStatus | undefined {
+  if (!platformStatus) {
+    return undefined;
+  }
+  if (platformName === PLATFORMS.MEDIUM) {
+    return platformStatus.medium;
+  }
+  if (platformName === PLATFORMS.DEVTO) {
+    return platformStatus.devto;
+  }
+  if (platformName === PLATFORMS.WORDPRESS) {
+    return platformStatus.wordpress;
+  }
+  if (platformName === PLATFORMS.LINKEDIN) {
+    return platformStatus.linkedin;
+  }
   return undefined;
 }
 
@@ -101,10 +137,12 @@ function publishToPlatform(platformName: string) {
     const updatedPost = await Post.findByIdAndUpdate(
       post._id,
       { status: POST_STATUS.PUBLISHED, ...updates },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
 
-    if (!updatedPost) throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
+    if (!updatedPost) {
+      throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
+    }
 
     const platformStatus = getPlatformStatusField(updatedPost.platform_status, platformName);
 
@@ -195,7 +233,9 @@ export const unpublishPlatform = asyncHandler(async (req: Request, res: Response
 
   const updatedPost = await unpublishFromPlatform(postId, platform);
 
-  if (!updatedPost) throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
+  if (!updatedPost) {
+    throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
+  }
 
   res.json({
     success: true,

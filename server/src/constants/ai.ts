@@ -1,5 +1,5 @@
 /**
- * AI (Google AI Studio) constants: prompts, config keys and safety settings.
+ * AI (Vertex AI primary / Google AI Studio fallback) constants: prompts, config, safety.
  */
 import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
 
@@ -7,8 +7,15 @@ import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
 export const AI_POST_LIMITS = Object.freeze({
   TITLE_MAX: 60,
   META_DESC_MAX: 150,
-  /** DEV.to API allows max 4 tags per article. */
+  /**
+   * Default article tag count (DEV.to hard max). Prefer PLATFORM_TAG_LIMITS +
+   * resolveArticleTagLimit() when targets are known.
+   */
   TAG_COUNT: 4,
+  /** LinkedIn hashtag sweet spot upper bound (3–5; use 5 for best reach). */
+  LINKEDIN_HASHTAG_COUNT: 5,
+  LINKEDIN_HASHTAG_MIN: 3,
+  LINKEDIN_HASHTAG_MAX: 5,
   COVER_WIDTH: 1000,
   COVER_HEIGHT: 420,
   /** Editorial guidance for the model; value density matters more than word count. */
@@ -46,23 +53,35 @@ export function isAllowedContentModel(model: string): boolean {
   return ALLOWED_CONTENT_MODEL_IDS.has(model.trim());
 }
 
-const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL)
-- **Sound Human:** Write conversationally, as if explaining a concept to a respected colleague over coffee.
-- **Avoid AI Clichés:** NEVER use phrases like "In today's fast-paced digital world," "Delve into," "Demystify," "Unleash the power of," "Buckle up," or "In conclusion." 
-- **Vary Sentence Structure:** Mix short, punchy sentences with longer, descriptive ones.
-- **Formatting:** Use short paragraphs (max 3 sentences). Use bold text for emphasis.
+const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL — anti AI-detection)
+- **Sound human:** Write like a senior engineer explaining to a peer — conversational, opinionated where useful, never corporate-brochure tone.
+- **Vary sentence rhythm:** Mix short punchy lines with longer explanatory ones. Do not produce a steady march of same-length sentences.
+- **Vary paragraph length:** Alternate 1-sentence beats with 2–4 sentence paragraphs. Uniform "three neat sentences every time" reads as generated.
+- **Personal-touch phrasing:** Use light first-person or lived-experience cues when natural ("I've seen this bite teams in production", "Here's the pattern that stuck for us"). Do not invent fake credentials or employers.
+- **Natural transitions:** Connect ideas with specific bridges ("That works until traffic spikes", "The catch shows up in the edge case below") — not stock glue ("Furthermore", "Moreover", "In addition", "Additionally").
+- **Concrete examples:** Prefer named tools, versions, error messages, file paths, or short realistic snippets over abstract advice. One real example beats three generic claims.
+- **Lists sparingly:** Use bullets/numbers only when the reader truly needs a checklist or ordered steps. Do not turn every section into a list. Prefer prose + one code block when that is clearer.
+- **Avoid AI clichés:** NEVER use "In today's fast-paced digital world", "Delve into", "Demystify", "Unleash the power of", "Buckle up", "In conclusion", "It's worth noting", "Let's dive in", "At the end of the day", "In this article, we will explore", or similar filler openers/closers.
+- **Formatting:** Bold sparingly for genuine emphasis. No emoji walls in the article body.
+
+### Anti-spam & search quality (CRITICAL)
+- **No keyword stuffing:** Mentions of the primary topic and LSI terms must read like natural speech. Never repeat the same phrase in every heading, opening sentence, or meta fields.
+- **Natural keyword density:** Place the main topic clearly in the title, intro, and where it earns its keep — not in every paragraph for rank chasing.
+- **No hidden / deceptive text:** No invisible HTML, white-on-white text, zero-size spans, cloaking, or content meant only for crawlers.
+- **No doorway-page patterns:** Do not write thin pages that only exist to funnel searches to another URL. Deliver a complete answer on this page; use one honest canonical slug, not a swarm of near-duplicate angles.
+- **No spammy CTAs:** Avoid aggressive affiliate-style pitches, fake urgency, or link-farm language. Soft, relevant next steps only.
+- **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch.
 
 ### SEO & Platform Optimization (E-E-A-T)
-- **Search Intent:** Answer the user's implicit questions immediately. Provide actionable, practical advice, not just theory.
-- **Structure:** Use a compelling hook in the introduction. Include a logical hierarchy with clear headings (##, ###).
-- **Rich Elements:** Use Markdown effectively. Include > blockquotes for important callouts, bulleted/numbered lists for scannability, and relevant code snippets or structured examples where applicable.
-- **Keywords:** Naturally weave in primary and LSI (Latent Semantic Indexing) keywords without keyword stuffing.
+- **Search Intent:** Answer the reader's real question early. Prefer actionable, practical advice over theory dumps.
+- **Structure:** Open with a concrete hook (problem, surprising fact, or sharp claim). Use a clear ## / ### hierarchy that mirrors how a human would outline the topic.
+- **Rich Elements:** Use Markdown where it helps — > blockquotes for one sharp callout, code fences for working examples. Lists only when scannability genuinely improves understanding.
 
 CONCISENESS (quality over word count)
 - No minimum word count. Length scales to topic complexity (${AI_POST_LIMITS.SOFT_WORD_GUIDANCE}).
 - Stop the moment the reader's problem is fully solved. Do not stretch a solvable topic to hit an arbitrary length.
-- Never repeat points, restate the intro, or add generic transitions.
-- Ban filler patterns: "In conclusion", "It's worth noting", "Let's dive in", recap paragraphs, duplicated explanations.
+- Never repeat points, restate the intro, or pad with generic transitions.
+- Ban filler patterns and recap paragraphs / duplicated explanations.
 - Prefer dense code + short explanation over long prose.
 - A 900-word post with working code outranks a 2,000-word post filled with repetitive AI fluff.
 
@@ -91,7 +110,8 @@ ${FULL_POST_SYSTEM_BODY}`,
   FULL_POST_USER: (keyword: string) =>
     `Write one high-quality technical article about: "${keyword}".
 Follow the system rules and platform optimization blocks exactly.
-Prefer actionable depth and working examples over length. No fluff, no SEO spam.`,
+Prefer actionable depth and concrete working examples over length.
+Sound naturally human (varied rhythm, personal touch, no AI clichés). No fluff, no keyword stuffing, no spam patterns.`,
 
   // Image from topic – Optimized for high-CTR blog headers
   IMAGE_FROM_TOPIC_SYSTEM: `You are a prompt engineer specializing in high-CTR blog featured images generator in comic book style of size ${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}px. Given a blog topic, output a single short image prompt (1-2 sentences, under 80 words). The image should be visually striking, conceptual, modern, and highly relatable to the tech/developer community. Use a consistent, high-quality style (e.g., vibrant 3D illustration, cinematic minimalism, or modern flat vector art). Output ONLY the prompt.`,
@@ -102,8 +122,9 @@ Prefer actionable depth and working examples over length. No fluff, no SEO spam.
     }`,
 
   // Inline Editor Tools (proofread, comment, add paragraph, adjust, etc.)
-  EDITOR_TOOL_SYSTEM: `You are an expert AI Markdown editor assistant built into a rich text editor. Your job is to take the user's action and the selected context, and return ONLY the edited or generated markdown text. 
-Maintain a conversational, humanized tone. Avoid robotic transitions or corporate jargon.
+  EDITOR_TOOL_SYSTEM: `You are an expert AI Markdown editor assistant built into a rich text editor. Your job is to take the user's action and the selected context, and return ONLY the edited or generated markdown text.
+Maintain a conversational, humanized tone: vary sentence rhythm, prefer concrete wording, and avoid robotic transitions or corporate jargon.
+Do not introduce AI clichés ("In conclusion", "Let's dive in", "It's worth noting"), keyword stuffing, or spammy CTA language.
 Do not include conversational filler (like "Here is the revised text:"). Do not wrap it in markdown block quotes or extra markdown code blocks unless the text itself requires it. Return exactly what should be injected back into the editor.`,
 
   EDITOR_TOOL_USER: (action: string, context: string) =>
@@ -156,31 +177,126 @@ export const AI_SEED_TOPIC_CATEGORIES = Object.freeze([
   ["developer productivity tools", "open source github trending", "software architecture patterns"],
 ] as const);
 
+/** Active AI backend labels returned by capabilities / health. */
+export const AI_PROVIDERS = Object.freeze({
+  VERTEX: "vertex",
+  STUDIO: "studio",
+  NONE: "none",
+} as const);
+
+/** Image generation source labels in API responses. */
+export const AI_IMAGE_SOURCES = Object.freeze({
+  GEMINI: "gemini",
+  /** Retained for older clients; SyncApp no longer produces Imagen results. */
+  IMAGEN: "imagen",
+} as const);
+
 export const AI_CONFIG = Object.freeze({
   ENV_GOOGLE_AI_MODEL: "GOOGLE_AI_MODEL",
   ENV_GEMINI_API_KEY: "GEMINI_API_KEY",
   /** Alternate env name supported by @google/genai SDK. */
   ENV_GOOGLE_API_KEY: "GOOGLE_API_KEY",
+  ENV_GOOGLE_CLOUD_PROJECT: "GOOGLE_CLOUD_PROJECT",
+  ENV_GOOGLE_CLOUD_LOCATION: "GOOGLE_CLOUD_LOCATION",
+  ENV_GOOGLE_CREDENTIALS_JSON: "GOOGLE_CREDENTIALS_JSON",
+  ENV_GOOGLE_APPLICATION_CREDENTIALS: "GOOGLE_APPLICATION_CREDENTIALS",
+  ENV_GCS_BUCKET_NAME: "GCS_BUCKET_NAME",
+  ENV_GOOGLE_CLOUD_BUCKET: "GOOGLE_CLOUD_BUCKET",
+  /**
+   * Optional override for the SA used to sign V4 upload URLs when ADC is
+   * `authorized_user` (no private_key). Defaults to VERTEX_SA_EMAIL.
+   */
+  ENV_GCS_SIGNING_SERVICE_ACCOUNT: "GCS_SIGNING_SERVICE_ACCOUNT",
+  /** Scope required for GCS + IAM Credentials signBlob / impersonation. */
+  GCS_CLOUD_PLATFORM_SCOPE: "https://www.googleapis.com/auth/cloud-platform",
+  /** Impersonated access-token lifetime (seconds) for ADC → SA signing. */
+  GCS_IMPERSONATION_LIFETIME_SEC: 3600,
+  /** Default GCP project for Vertex AI + GCS. */
+  DEFAULT_PROJECT: "syncapp-ai",
+  /**
+   * Vertex AI location. Gemini 3.x publisher models are available on `global`;
+   * older Flash (e.g. gemini-2.5-flash) also works on `us-central1`.
+   */
+  DEFAULT_LOCATION: "global",
+  /** Regional fallback location for models not published on `global`. */
+  REGIONAL_LOCATION: "us-central1",
+  /**
+   * Default GCS bucket for cover uploads when `GCS_BUCKET_NAME` is unset.
+   * Created in project `syncapp-ai` (us-central1). Prefer setting `GCS_BUCKET_NAME` explicitly.
+   */
+  DEFAULT_GCS_BUCKET_NAME: "syncapp-ai-covers",
+  /** Legacy Firebase Storage default-bucket suffix (only if that bucket was provisioned). */
+  GCS_BUCKET_SUFFIX: ".firebasestorage.app",
   GEMINI_API_KEY_URL: "https://aistudio.google.com/apikey",
-  /** Default + primary fallback — Gemini 3.8 Flash on Google AI Studio. */
+  VERTEX_AI_CONSOLE_URL: "https://console.cloud.google.com/vertex-ai?project=syncapp-ai",
+  VERTEX_AI_API_ENABLE_URL:
+    "https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com&project=syncapp-ai",
+  /** Org policy that blocks downloading SA JSON keys (common on Google Workspace orgs). */
+  ORG_POLICY_DISABLE_SA_KEY_CREATION: "constraints/iam.disableServiceAccountKeyCreation",
+  VERTEX_SA_EMAIL: "syncapp-vertex-ai@syncapp-ai.iam.gserviceaccount.com",
+  /** Default + primary fallback — Gemini 3.8 Flash (Vertex AI / Studio short model id). */
   DEFAULT_MODEL: "gemini-3.8-flash",
   /**
    * Tried in order when the selected model returns 429/503/404.
-   * Always prefer gemini-3.8-flash first.
+   * Always prefer gemini-3.8-flash first; include 2.5 Flash for regional Vertex availability.
    */
-  MODEL_FALLBACKS: ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"] as readonly string[],
-  /** Primary model for generating images (Gemini multimodal image generation). */
-  IMAGE_MODEL: "gemini-2.5-flash-image",
+  MODEL_FALLBACKS: [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
+  ] as readonly string[],
+  CLIENT_CACHE_AUTH_SA: "sa",
+  CLIENT_CACHE_AUTH_ADC: "adc",
   /**
-   * Fallback image models tried in sequence when primary is unavailable or rate limited.
+   * Primary Gemini image model on Vertex AI (not Imagen — Imagen endpoints deprecated on Vertex
+   * as of 2026-06-30; migrate to Gemini image models).
+   */
+  IMAGE_MODEL: "gemini-3.1-flash-image",
+  /**
+   * Fallback Gemini image models when primary is unavailable or rate limited.
+   * No Imagen IDs — use Gemini multimodal image generation only.
    */
   IMAGE_MODEL_FALLBACKS: [
-    "imagen-4.0-fast-generate-001",
-    "gemini-3.1-flash-image",
+    "gemini-2.5-flash-image",
     "gemini-3.1-flash-lite-image",
-    "gemini-3-pro-image-preview",
     "gemini-3-pro-image",
+    "gemini-3-pro-image-preview",
   ] as readonly string[],
+  /** Reject deprecated Imagen model ids if they appear in config lists. */
+  IMAGEN_MODEL_PREFIX: "imagen",
+  IMAGE_MIME_PNG: "image/png",
+  RESPONSE_MIME_JSON: "application/json",
+  RESPONSE_MODALITY_TEXT: "TEXT",
+  RESPONSE_MODALITY_IMAGE: "IMAGE",
+  /** Cover image generation creativity (Gemini multimodal). */
+  TEMPERATURE_IMAGE: 0.8,
+  /** Single attempt — fall through to next model candidate quickly. */
+  SINGLE_ATTEMPT: 1,
+  /** @deprecated Prefer SINGLE_ATTEMPT */
+  IMAGE_GEN_RETRY_ATTEMPTS: 1,
+  IMAGE_ERROR_LOG_MAX_CHARS: 150,
+  SA_EMAIL_CACHE_HINT_LEN: 12,
+  STUDIO_KEY_CACHE_HINT_LEN: 8,
+  CLIENT_CACHE_PREFIX_VERTEX: "vertex",
+  CLIENT_CACHE_PREFIX_STUDIO: "studio",
+  SA_CACHE_FALLBACK_HINT: "sa",
+  CREDENTIAL_FIELD_CLIENT_EMAIL: "client_email",
+  CREDENTIAL_FIELD_PRIVATE_KEY: "private_key",
+  CREDENTIAL_FIELD_PROJECT_ID: "project_id",
+  CREDENTIAL_FIELD_TYPE: "type",
+  CREDENTIAL_TYPE_SERVICE_ACCOUNT: "service_account",
+  CREDENTIAL_TYPE_AUTHORIZED_USER: "authorized_user",
+  ADC_CACHE_HINT: "adc",
+  PROVIDER_LABEL_VERTEX: "Vertex AI",
+  PROVIDER_LABEL_STUDIO: "AI Studio",
+  PROVIDER_LABEL_VERTEX_GEMINI: "Vertex Gemini",
+  PROVIDER_LABEL_STUDIO_GEMINI: "AI Studio Gemini",
+  LOG_CLIENT_VERTEX: "AI client: Vertex AI (project=",
+  LOG_CLIENT_STUDIO: "AI client: Google AI Studio (GEMINI_API_KEY)",
+  LOG_CLIENT_LOCATION_SEP: ", location=",
+  LOG_CLIENT_VERTEX_CLOSE: ")",
   /**
    * Output token caps (maxOutputTokens). On Gemini 2.5+/3.x Flash, internal "thinking"
    * tokens count toward this budget — see FLASH_THINKING_BUDGET.
@@ -194,8 +310,13 @@ export const AI_CONFIG = Object.freeze({
   MAX_IMAGE_PROMPT_TOKENS: 512,
   /** Trending topics + keywords: short JSON list. */
   MAX_TRENDING_TOPICS_TOKENS: 768,
-  /** Cache live trending topics to limit Search grounding calls. */
-  TRENDING_TOPICS_CACHE_MS: 15 * 60 * 1000,
+  /** Trending topics generation temperature. */
+  TEMPERATURE_TRENDING: 0.7,
+  /**
+   * In-memory TTL for live trending topics + keywords.
+   * Keep short so Refresh / reopen stay near real-time; use `?refresh=1` to bypass.
+   */
+  TRENDING_TOPICS_CACHE_MS: 30 * 1000,
   TRENDING_TOPICS_COUNT: 6,
   GOOGLE_KEYWORDS_COUNT: 8,
   /** Parsed topic phrase length bounds. */
@@ -224,12 +345,51 @@ export const AI_CONFIG = Object.freeze({
   RETRY_ATTEMPTS: 2,
   RETRY_BASE_DELAY_MS: 400,
   RETRY_JITTER_MAX_MS: 200,
+  /** Single attempt (trending grounding, image model try, Pro models). */
+  RETRY_ATTEMPTS_ONCE: 1,
+  /** Pro models: one shot then fall back (avoid burning retries on 429). */
+  PRO_MODEL_RETRY_ATTEMPTS: 1,
+  PRO_MODEL_NAME_PATTERN: /pro/i,
+  FLASH_MODEL_NAME_PATTERN: /flash/i,
+  /** Error / status substrings used when normalizing Google GenAI failures. */
+  ERR_UNAUTHENTICATED: "UNAUTHENTICATED",
+  ERR_PERMISSION_DENIED: "PERMISSION_DENIED",
+  ERR_DEFAULT_CREDENTIALS: "Could not load the default credentials",
+  ERR_INVALID_GRANT: "invalid_grant",
+  ERR_INVALID_RAPT: "invalid_rapt",
+  ERR_HTTP_403: "403",
+  ERR_HTTP_401: "401",
+  ERR_API_KEY_INVALID: "API_KEY_INVALID",
+  ERR_API_KEY_NOT_VALID: "API key not valid",
+  ERR_HTTP_404: "404",
+  ERR_NOT_FOUND: "NOT_FOUND",
+  ERR_MODELS_PATH: "models/",
+  ERR_PUBLISHER_MODEL: "Publisher Model",
+  ERR_PUBLISHERS_GOOGLE: "publishers/google",
+  ERR_HTTP_429: "429",
+  ERR_RESOURCE_EXHAUSTED: "RESOURCE_EXHAUSTED",
+  ERR_RESOURCE_EXHAUSTED_MSG: "Resource exhausted",
+  ERR_HTTP_503: "503",
+  ERR_UNAVAILABLE: "UNAVAILABLE",
+  ERR_HIGH_DEMAND: "high demand",
+  ERR_CURRENTLY_EXPERIENCING: "currently experiencing",
+  ERR_PREPAYMENT_CREDITS: "prepayment credits are depleted",
+  ERR_PREPAY: "prepay",
+  ERR_CODE_402_JSON: '"code":402',
+  ERR_VERTEX_AUTH_HINT_PATTERN: /vertex|aiplatform|iam|permission/i,
+  ERR_API_KEY_PATTERN: /invalid.*api.?key/i,
+  ERR_FALLBACK_WORTHY_PATTERN:
+    /404|NOT_FOUND|not found|429|RESOURCE_EXHAUSTED|Resource exhausted|503|UNAVAILABLE|high demand|currently experiencing/i,
+  ERR_RATE_LIMIT_PATTERN: /429|RESOURCE_EXHAUSTED|Resource exhausted/i,
+  ERR_CODE_402_PATTERN: /"code"\s*:\s*402/,
 } as const);
 
 /** Resolve request model or fall back to env default. */
 export function resolveContentModel(requested?: string): string {
   const trimmed = requested?.trim();
-  if (trimmed && isAllowedContentModel(trimmed)) return trimmed;
+  if (trimmed && isAllowedContentModel(trimmed)) {
+    return trimmed;
+  }
   return process.env[AI_CONFIG.ENV_GOOGLE_AI_MODEL] || AI_CONFIG.DEFAULT_MODEL;
 }
 
@@ -268,5 +428,3 @@ export const AI_SYSTEM_INSTRUCTIONS = Object.freeze({
   /** General-purpose base model used for internal helper calls. */
   BASE: "You are a helpful AI assistant. Respond clearly and concisely. Do not produce harmful, illegal, or deceptive content.",
 } as const);
-
-

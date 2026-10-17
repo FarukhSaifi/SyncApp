@@ -3,8 +3,8 @@
  * Optimizes frequently accessed data
  */
 
-import { DEFAULT_VALUES } from "../constants";
-import type { CacheEntry } from "../types";
+import { DEFAULT_VALUES } from "@constants";
+import type { CacheEntry } from "@types";
 
 export class Cache<T = unknown> {
   private cache: Map<string, CacheEntry<T>>;

@@ -1,6 +1,6 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { IOS26 } from "@/src/constants/designTokens";
+import { IOS26 } from "@constants/designTokens";
 
 /** Bottom padding so scroll content clears the floating drop tab bar (+ FAB overhang). */
 export function useTabBarInset(extra = IOS26.TAB_BAR_CONTENT_EXTRA): number {

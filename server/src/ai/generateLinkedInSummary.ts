@@ -1,16 +1,18 @@
 /**
  * Generate a short LinkedIn-native teaser from an existing article (title + body).
  */
-import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, isAllowedContentModel } from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import { buildReadMoreUrl, finalizeLinkedInPost } from "../utils/linkedinPost";
-import { buildModelCandidates, getModelName, getText, studioGenerateContent } from "./client";
+
+import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, isAllowedContentModel } from "@constants";
+import { AppError } from "@middleware/errorHandler";
+import type { GenerateLinkedInSummaryInput, GenerateLinkedInSummaryResult } from "@types";
+import { buildReadMoreUrl, finalizeLinkedInPost } from "@utils/linkedinPost";
+
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+
+import { buildModelCandidates, generateAiContent, getModelName, getText } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
-
-import type { GenerateLinkedInSummaryInput, GenerateLinkedInSummaryResult } from "../types";
 
 export type { GenerateLinkedInSummaryInput, GenerateLinkedInSummaryResult };
 
@@ -19,7 +21,7 @@ function stripToPlainText(raw: string): string {
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/[#>*_`~\-]+/g, " ")
+    .replace(/[#>*_`~-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -33,14 +35,14 @@ export async function generateLinkedInSummary(
   const excerptSource = [title, plain].filter(Boolean).join(". ");
 
   if (!excerptSource || excerptSource.length < 20) {
-    throw new AppError(ERROR_MESSAGES.AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED, HTTP_STATUS.BAD_REQUEST);
+    throw new AppError(ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED"], HTTP_STATUS["BAD_REQUEST"]);
   }
 
   if (input.model && !isAllowedContentModel(input.model)) {
-    throw new AppError(ERROR_MESSAGES.AI_INVALID_MODEL, HTTP_STATUS.BAD_REQUEST);
+    throw new AppError(ERROR_MESSAGES["AI_INVALID_MODEL"], HTTP_STATUS["BAD_REQUEST"]);
   }
 
-  const excerpt = excerptSource.slice(0, AI_CONFIG.MAX_LINKEDIN_ARTICLE_CHARS);
+  const excerpt = excerptSource.slice(0, AI_CONFIG["MAX_LINKEDIN_ARTICLE_CHARS"]);
   const displayTitle = title || excerpt.slice(0, 80);
   const candidates = buildModelCandidates(getModelName(input.model));
   let lastError: unknown;
@@ -49,22 +51,24 @@ export async function generateLinkedInSummary(
   for (const modelName of candidates) {
     try {
       const result = await withRetry(() =>
-        studioGenerateContent({
+        generateAiContent({
           model: modelName,
-          contents: AI_PROMPTS.LINKEDIN_SUMMARY_USER(displayTitle, excerpt),
-          systemInstruction: AI_PROMPTS.LINKEDIN_SUMMARY_SYSTEM,
-          maxOutputTokens: AI_CONFIG.MAX_LINKEDIN_SUMMARY_TOKENS,
-          temperature: AI_CONFIG.TEMPERATURE_POST,
+          contents: AI_PROMPTS["LINKEDIN_SUMMARY_USER"](displayTitle, excerpt),
+          systemInstruction: AI_PROMPTS["LINKEDIN_SUMMARY_SYSTEM"],
+          maxOutputTokens: AI_CONFIG["MAX_LINKEDIN_SUMMARY_TOKENS"],
+          temperature: AI_CONFIG["TEMPERATURE_POST"],
         }),
       );
       rawPost = getText(result).trim();
-      if (rawPost) break;
+      if (rawPost) {
+        break;
+      }
     } catch (err) {
       lastError = err;
       if (!isFallbackWorthyError(err)) {
         return normalizeAiError(
           err as Error & { status?: number; details?: unknown },
-          ERROR_MESSAGES.AI_LINKEDIN_SUMMARY_FAILED,
+          ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_FAILED"],
         );
       }
     }
@@ -73,8 +77,8 @@ export async function generateLinkedInSummary(
   if (!rawPost) {
     return normalizeAiError(
       (lastError as Error & { status?: number; details?: unknown }) ||
-        new Error(ERROR_MESSAGES.AI_LINKEDIN_SUMMARY_FAILED),
-      ERROR_MESSAGES.AI_LINKEDIN_SUMMARY_FAILED,
+        new Error(ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_FAILED"]),
+      ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_FAILED"],
     );
   }
 
@@ -91,7 +95,7 @@ export async function generateLinkedInSummary(
 
   // Soft length nudge — model guidance is primary; do not hard-fail short teasers.
   if (linkedin_post.length < AI_POST_LIMITS.LINKEDIN_POST_MIN_CHARS / 2) {
-    throw new AppError(ERROR_MESSAGES.AI_LINKEDIN_SUMMARY_FAILED, HTTP_STATUS.BAD_GATEWAY);
+    throw new AppError(ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_FAILED"], HTTP_STATUS["BAD_GATEWAY"]);
   }
 
   return {

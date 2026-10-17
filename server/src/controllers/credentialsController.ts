@@ -1,6 +1,7 @@
+
+import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "@constants";
+import * as service from "@services/credentialsService";
 import type { Request, Response } from "express";
-import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
-import * as service from "../services/credentialsService";
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {

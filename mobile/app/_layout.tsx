@@ -1,17 +1,20 @@
-import { HeaderActionSlot } from "@/src/components/AppHeaderActions";
-import { AppToast } from "@/src/components/AppToast";
-import { IconHeaderButton } from "@/src/components/IconHeaderButton";
-import { LoadingScreen } from "@/src/components/LoadingScreen";
-import { LABELS, ROUTES } from "@/src/constants";
-import { HEADER_ICON_BUTTON } from "@/src/constants/designTokens";
-import { stackHeaderOptions } from "@/src/constants/layout";
-import { AuthProvider, useAuth } from "@/src/contexts/AuthContext";
-import { ThemeProvider, useTheme } from "@/src/contexts/ThemeContext";
+import "react-native-gesture-handler";
+
+import { HeaderActionSlot } from "@components/AppHeaderActions";
+import { AppToast } from "@components/AppToast";
+import { IconHeaderButton } from "@components/IconHeaderButton";
+import { LoadingScreen } from "@components/LoadingScreen";
+import { LABELS, ROUTES } from "@constants";
+import { HEADER_ICON_BUTTON } from "@constants/designTokens";
+import { stackHeaderOptions } from "@constants/layout";
+import { AuthProvider, useAuth } from "@contexts/AuthContext";
+import { ThemeProvider, useTheme } from "@contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function RootNavigator() {
   const { isAuthenticated, loading } = useAuth();
@@ -69,11 +72,15 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RootNavigator />
-        <AppToast />
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView>
+      <View style={{ flex: 1 }}>
+        <ThemeProvider>
+          <AuthProvider>
+            <RootNavigator />
+            <AppToast />
+          </AuthProvider>
+        </ThemeProvider>
+      </View>
+    </GestureHandlerRootView>
   );
 }

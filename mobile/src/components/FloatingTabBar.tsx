@@ -1,36 +1,34 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { TabBarGlass } from "@/src/components/TabBarGlass";
-import { LABELS, ROUTES } from "@/src/constants";
-import { IOS26, RADIUS, TAB_BAR } from "@/src/constants/designTokens";
-import { TAB_ICONS } from "@/src/constants/navigation";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { TabBarGlass } from "@components/TabBarGlass";
+import { LABELS, ROUTES } from "@constants";
+import { IOS26, RADIUS, TAB_BAR } from "@constants/designTokens";
+import { TAB_ICONS } from "@constants/navigation";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type {
+  FloatingTabBarProps,
+  NativeView,
+  NewPostFabProps,
+  TabItemProps,
+  TabLayout,
+  TabRoute,
+} from "@types";
 
-type TabRoute = { key: string; name: string; params?: object };
-type TabLayout = { x: number; width: number };
-
-export type FloatingTabBarProps = {
-  state: { index: number; routes: TabRoute[] };
-  descriptors: Record<string, { options: { title?: string; tabBarLabel?: unknown } }>;
-  navigation: {
-    emit: (event: { type: "tabPress"; target: string; canPreventDefault?: boolean }) => { defaultPrevented: boolean };
-    navigate: (name: string, params?: object) => void;
-  };
-};
-
-const TAB_SPRING = TAB_BAR.SPRING;
-const SLIDE_SPRING = TAB_BAR.SLIDE_SPRING;
-const ICON_SIZE = TAB_BAR.ICON_SIZE;
-const FAB_SIZE = TAB_BAR.FAB_SIZE;
-const FAB_LIFT = TAB_BAR.FAB_LIFT;
+const TAB_SPRING = TAB_BAR["SPRING"];
+const SLIDE_SPRING = TAB_BAR["SLIDE_SPRING"];
+const ICON_SIZE = TAB_BAR["ICON_SIZE"];
+const FAB_SIZE = TAB_BAR["FAB_SIZE"];
+const FAB_LIFT = TAB_BAR["FAB_LIFT"];
 
 function tabLabel(options: { title?: string; tabBarLabel?: unknown }, routeName: string): string {
-  if (typeof options.tabBarLabel === "string") return options.tabBarLabel;
+  if (typeof options.tabBarLabel === "string") {
+    return options.tabBarLabel;
+  }
   return options.title ?? routeName;
 }
 
@@ -44,27 +42,21 @@ function TabItem({
   dropRef,
   tabKey,
   onMeasured,
-}: {
-  focused: boolean;
-  iconName: keyof typeof Ionicons.glyphMap;
-  tint: string;
-  muted: string;
-  onPress: () => void;
-  label: string;
-  dropRef: RefObject<View | null>;
-  tabKey: string;
-  onMeasured: (key: string, layout: TabLayout) => void;
-}) {
+}: TabItemProps) {
   const scale = useSharedValue(1);
-  const slotRef = useRef<View>(null);
+  const slotRef = useRef<NativeView>(null);
 
   const measureInDrop = useCallback(() => {
     const drop = dropRef.current;
     const slot = slotRef.current;
-    if (!drop || !slot) return;
+    if (!drop || !slot) {
+      return;
+    }
     slot.measureLayout(
       drop,
-      (x, _y, width) => onMeasured(tabKey, { x, width }),
+      (x: number, _y: number, width: number) => {
+        onMeasured(tabKey, { x, width });
+      },
       () => undefined,
     );
   }, [dropRef, tabKey, onMeasured]);
@@ -78,7 +70,7 @@ function TabItem({
       <Pressable
         onPress={onPress}
         onPressIn={() => {
-          scale.value = withSpring(0.92, TAB_SPRING);
+          scale.value = withSpring(TAB_BAR["PRESS_SCALE_TAB"], TAB_SPRING);
         }}
         onPressOut={() => {
           scale.value = withSpring(1, TAB_SPRING);
@@ -102,7 +94,7 @@ function TabItem({
   );
 }
 
-function NewPostFab({ label, onPress }: { label: string; onPress: () => void }) {
+function NewPostFab({ label, onPress }: NewPostFabProps) {
   const scale = useSharedValue(1);
   const colors = useThemeColors();
 
@@ -115,7 +107,7 @@ function NewPostFab({ label, onPress }: { label: string; onPress: () => void }) 
       <Pressable
         onPress={onPress}
         onPressIn={() => {
-          scale.value = withSpring(0.94, TAB_SPRING);
+          scale.value = withSpring(TAB_BAR["PRESS_SCALE_FAB"], TAB_SPRING);
         }}
         onPressOut={() => {
           scale.value = withSpring(1, TAB_SPRING);
@@ -125,7 +117,7 @@ function NewPostFab({ label, onPress }: { label: string; onPress: () => void }) 
         accessibilityLabel={label}
       >
         <Animated.View style={[tabStyles.fabCircle, { backgroundColor: colors.primary }, circleStyle]}>
-          <Ionicons name="add" size={28} color={colors.primaryForeground} />
+          <Ionicons name="add" size={TAB_BAR["FAB_ICON_SIZE"]} color={colors.primaryForeground} />
         </Animated.View>
       </Pressable>
       <Text style={[tabStyles.fabLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
@@ -141,33 +133,39 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const insets = useSafeAreaInsets();
   const containerStyles = useMemo(() => createContainerStyles(colors, insets.bottom), [colors, insets.bottom]);
 
-  const dropRef = useRef<View>(null);
+  const dropRef = useRef<NativeView>(null);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
 
-  const tabRoutes = state.routes.filter((r) => r.name !== "new-post");
+  const tabRoutes = state.routes.filter((r) => r.name !== TAB_BAR["NEW_POST_ROUTE"]);
   const splitAt = Math.ceil(tabRoutes.length / 2);
   const leftRoutes = tabRoutes.slice(0, splitAt);
   const rightRoutes = tabRoutes.slice(splitAt);
 
   const activeRoute = state.routes[state.index];
-  const showSlide = activeRoute != null && activeRoute.name !== "new-post";
+  const showSlide = activeRoute != null && activeRoute.name !== TAB_BAR["NEW_POST_ROUTE"];
 
   const indicatorX = useSharedValue(0);
   const indicatorW = useSharedValue(0);
 
   const onMeasured = useCallback((key: string, layout: TabLayout) => {
     setTabLayouts((prev) => {
-      if (prev[key]?.x === layout.x && prev[key]?.width === layout.width) return prev;
+      if (prev[key]?.x === layout.x && prev[key]?.width === layout.width) {
+        return prev;
+      }
       return { ...prev, [key]: layout };
     });
   }, []);
 
   useEffect(() => {
-    if (!showSlide || !activeRoute) return;
+    if (!showSlide || !activeRoute) {
+      return;
+    }
     const layout = tabLayouts[activeRoute.key];
-    if (!layout) return;
-    const pad = 6;
-    indicatorW.value = withSpring(Math.max(layout.width - pad * 2, 36), SLIDE_SPRING);
+    if (!layout) {
+      return;
+    }
+    const pad = TAB_BAR["SLIDE_PAD"];
+    indicatorW.value = withSpring(Math.max(layout.width - pad * 2, TAB_BAR["SLIDE_MIN_WIDTH"]), SLIDE_SPRING);
     indicatorX.value = withSpring(layout.x + pad, SLIDE_SPRING);
   }, [activeRoute, showSlide, tabLayouts, indicatorX, indicatorW]);
 
@@ -224,7 +222,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             style={[tabStyles.slidePill, { backgroundColor: `${colors.primary}20` }, slideStyle]}
           />
           <View style={tabStyles.sideGroup}>{leftRoutes.map(renderTab)}</View>
-          <NewPostFab label={LABELS.TAB_NEW} onPress={() => router.push(ROUTES.EDITOR_NEW)} />
+          <NewPostFab label={LABELS["TAB_NEW"]} onPress={() => router.push(ROUTES["EDITOR_NEW"])} />
           <View style={tabStyles.sideGroup}>{rightRoutes.map(renderTab)}</View>
         </View>
       </View>
@@ -235,8 +233,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 const barRowStyle = {
   flexDirection: "row" as const,
   alignItems: "flex-end" as const,
-  height: IOS26.TAB_BAR_FLOATING_HEIGHT,
-  borderRadius: IOS26.TAB_BAR_DROP_RADIUS,
+  height: IOS26["TAB_BAR_FLOATING_HEIGHT"],
+  borderRadius: IOS26["TAB_BAR_DROP_RADIUS"],
   borderWidth: StyleSheet.hairlineWidth,
   paddingHorizontal: 4,
   backgroundColor: "transparent" as const,
@@ -280,7 +278,7 @@ const tabStyles = StyleSheet.create({
   fabCircle: {
     width: FAB_SIZE,
     height: FAB_SIZE,
-    borderRadius: RADIUS.FULL,
+    borderRadius: RADIUS["FULL"],
     alignItems: "center",
     justifyContent: "center",
     marginTop: -FAB_LIFT,
@@ -304,7 +302,7 @@ const tabStyles = StyleSheet.create({
     position: "absolute",
     top: 8,
     bottom: 8,
-    borderRadius: RADIUS.FULL,
+    borderRadius: RADIUS["FULL"],
     zIndex: 1,
   },
 });
@@ -316,11 +314,11 @@ const createContainerStyles = (colors: ReturnType<typeof useThemeColors>, bottom
       left: 0,
       right: 0,
       bottom: 0,
-      paddingHorizontal: IOS26.TAB_BAR_HORIZONTAL_INSET,
-      paddingBottom: bottomInset + IOS26.TAB_BAR_BOTTOM_GAP,
+      paddingHorizontal: IOS26["TAB_BAR_HORIZONTAL_INSET"],
+      paddingBottom: bottomInset + IOS26["TAB_BAR_BOTTOM_GAP"],
     },
     dropOuter: {
-      borderRadius: IOS26.TAB_BAR_DROP_RADIUS,
+      borderRadius: IOS26["TAB_BAR_DROP_RADIUS"],
       overflow: "visible",
       ...Platform.select({
         ios: {

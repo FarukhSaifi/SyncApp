@@ -21,6 +21,7 @@ export interface AppConfig {
   rateLimit: RateLimitConfig;
   encryption: EncryptionConfig;
   googleCloudProject: string;
+  googleCloudLocation: string;
   googleAiModel: string;
   geminiApiKey: string;
   gcpBucketName: string;
@@ -35,4 +36,6 @@ export interface AppConfig {
   linkedinClientId: string;
   linkedinClientSecret: string;
   linkedinRedirectUri: string;
+  /** Numeric GA4 property id for Data API reports (empty = website analytics disabled). */
+  googleAnalyticsPropertyId: string;
 }

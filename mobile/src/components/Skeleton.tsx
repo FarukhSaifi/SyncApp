@@ -2,8 +2,8 @@ import { useEffect, useMemo } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface SkeletonProps {
   width?: number | `${number}%`;

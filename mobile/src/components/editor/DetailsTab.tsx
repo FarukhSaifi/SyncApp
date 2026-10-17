@@ -3,11 +3,11 @@ import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Card } from "@/src/components/Card";
-import { Input } from "@/src/components/Input";
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorForm } from "@/src/types";
+import { Card } from "@components/Card";
+import { Input } from "@components/Input";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { EditorForm } from "@types";
 
 interface DetailsTabProps {
   form: EditorForm;

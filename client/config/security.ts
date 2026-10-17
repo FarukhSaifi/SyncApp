@@ -1,5 +1,6 @@
 /** Build-time security header helpers for next.config.ts */
 
+// Relative path required: next.config.ts loads this via Node transpile (no tsconfig paths).
 import { resolveApiOrigin, resolveSiteOrigin } from "../src/constants/env";
 
 export function getApiOrigin(): string {

@@ -2,10 +2,17 @@
 
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
-import type { GeneratePostModalProps } from "@types";
+import type {
+  AiReachTagsSource,
+  AiTopicsSource,
+  GeneratePostModalProps,
+  SuggestionErrorProps,
+} from "@types";
 import { apiClient } from "@utils/apiClient";
+import { formatDateTime } from "@utils/dateUtils";
 import { FiCheck, FiChevronDown, FiHash, FiRefreshCw, FiSearch, FiTrendingUp, FiZap } from "react-icons/fi";
 
+import { AI_SUGGESTION_SOURCES, EDITOR_KEYS } from "@constants/editor";
 import { EDITOR_UI } from "@constants/messages";
 import { OPTIMIZATION_TARGETS } from "@constants/platforms";
 
@@ -36,7 +43,7 @@ function platformCheckboxClass(checked: boolean): string {
     : `${base} border-border bg-background hover:border-primary/40 hover:bg-muted/40`;
 }
 
-function SuggestionError({ message }: { message: string }) {
+function SuggestionError({ message }: SuggestionErrorProps) {
   return (
     <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-[11px] text-destructive">
       {message}
@@ -63,13 +70,15 @@ export default function GeneratePostModal({
 
   const [topics, setTopics] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [topicsSource, setTopicsSource] = useState<"google_search" | null>(null);
-  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [topicsSource, setTopicsSource] = useState<AiTopicsSource | null>(null);
+  const [topicsCached, setTopicsCached] = useState<boolean>(false);
+  const [topicsUpdatedAt, setTopicsUpdatedAt] = useState<string | null>(null);
+  const [topicsLoading, setTopicsLoading] = useState<boolean>(false);
   const [topicsError, setTopicsError] = useState<string | null>(null);
 
   const [reachTags, setReachTags] = useState<string[]>([]);
-  const [reachTagsSource, setReachTagsSource] = useState<"devto" | null>(null);
-  const [reachTagsLoading, setReachTagsLoading] = useState(false);
+  const [reachTagsSource, setReachTagsSource] = useState<AiReachTagsSource | null>(null);
+  const [reachTagsLoading, setReachTagsLoading] = useState<boolean>(false);
   const [reachTagsError, setReachTagsError] = useState<string | null>(null);
 
   async function loadTrendingTopics(refresh: boolean) {
@@ -80,23 +89,29 @@ export default function GeneratePostModal({
       const nextTopics = res.data?.topics;
       const nextKeywords = res.data?.keywords;
       if (
-        res.data?.source !== "google_search" ||
+        res.data?.source !== AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"] ||
         !Array.isArray(nextTopics) ||
         nextTopics.length === 0 ||
         !Array.isArray(nextKeywords) ||
         nextKeywords.length === 0
       ) {
-        throw new Error("Live Google topics unavailable");
+        throw new Error(EDITOR_UI["TRENDING_TOPICS_UNAVAILABLE"]);
       }
 
       setTopics(nextTopics);
       setKeywords(nextKeywords);
-      setTopicsSource("google_search");
-    } catch {
+      setTopicsSource(AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"]);
+      setTopicsCached(Boolean(res.data?.cached));
+      setTopicsUpdatedAt(typeof res.data?.updatedAt === "string" ? res.data.updatedAt : null);
+    } catch (err) {
       setTopics([]);
       setKeywords([]);
       setTopicsSource(null);
-      setTopicsError(EDITOR_UI.TRENDING_TOPICS_ERROR);
+      setTopicsCached(false);
+      setTopicsUpdatedAt(null);
+      // Prefer the API message (e.g. depleted AI Studio credits) over a generic hint.
+      const apiMessage = err instanceof Error ? err.message.trim() : "";
+      setTopicsError(apiMessage || EDITOR_UI["TRENDING_TOPICS_ERROR"]);
     } finally {
       setTopicsLoading(false);
     }
@@ -108,15 +123,15 @@ export default function GeneratePostModal({
     try {
       const res = await apiClient.aiDevtoTags(refresh);
       const nextTags = res.data?.tags;
-      if (res.data?.source !== "devto" || !Array.isArray(nextTags) || nextTags.length === 0) {
-        throw new Error("Live DEV.to tags unavailable");
+      if (res.data?.source !== AI_SUGGESTION_SOURCES["DEVTO"] || !Array.isArray(nextTags) || nextTags.length === 0) {
+        throw new Error(EDITOR_UI["REACH_TAGS_UNAVAILABLE"]);
       }
       setReachTags(nextTags);
-      setReachTagsSource("devto");
+      setReachTagsSource(AI_SUGGESTION_SOURCES["DEVTO"]);
     } catch {
       setReachTags([]);
       setReachTagsSource(null);
-      setReachTagsError(EDITOR_UI.REACH_TAGS_ERROR);
+      setReachTagsError(EDITOR_UI["REACH_TAGS_ERROR"]);
     } finally {
       setReachTagsLoading(false);
     }
@@ -128,7 +143,9 @@ export default function GeneratePostModal({
   });
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     onOpenLoadSuggestions();
   }, [isOpen]);
 
@@ -142,13 +159,10 @@ export default function GeneratePostModal({
     [keywords, trimmedKeyword],
   );
 
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeModel = useMemo(
-    () => models.find((m) => m.id === selectedModel) || models[0],
-    [models, selectedModel],
-  );
+  const activeModel = useMemo(() => models.find((m) => m.id === selectedModel) || models[0], [models, selectedModel]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -157,7 +171,7 @@ export default function GeneratePostModal({
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === EDITOR_KEYS["ESCAPE"]) {
         setIsModelDropdownOpen(false);
       }
     };
@@ -181,7 +195,9 @@ export default function GeneratePostModal({
   };
 
   const handleGenerate = () => {
-    if (!canGenerate) return;
+    if (!canGenerate) {
+      return;
+    }
     onGenerate();
   };
 
@@ -189,15 +205,15 @@ export default function GeneratePostModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={EDITOR_UI.GENERATE_POST_MODAL_TITLE}
-      description={EDITOR_UI.GENERATE_POST_MODAL_DESC}
+      title={EDITOR_UI["GENERATE_POST_MODAL_TITLE"]}
+      description={EDITOR_UI["GENERATE_POST_MODAL_DESC"]}
       size="lg"
       closeOnOverlayClick={!isGenerating}
       closeOnEscape={!isGenerating}
       footer={
         <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isGenerating}>
-            {EDITOR_UI.GENERATE_POST_CANCEL}
+            {EDITOR_UI["GENERATE_POST_CANCEL"]}
           </Button>
           <Button
             type="button"
@@ -208,7 +224,7 @@ export default function GeneratePostModal({
             className="min-w-[140px] justify-center"
           >
             <FiZap className="h-3.5 w-3.5 mr-1.5" />
-            {isGenerating ? EDITOR_UI.GENERATING_POST : EDITOR_UI.GENERATE_POST_CONFIRM}
+            {isGenerating ? EDITOR_UI["GENERATING_POST"] : EDITOR_UI["GENERATE_POST_CONFIRM"]}
           </Button>
         </div>
       }
@@ -220,7 +236,7 @@ export default function GeneratePostModal({
               htmlFor="generate-post-model"
               className="block text-xs font-semibold uppercase tracking-wider text-foreground"
             >
-              {EDITOR_UI.GENERATE_POST_MODEL_LABEL}
+              {EDITOR_UI["GENERATE_POST_MODEL_LABEL"]}
             </label>
             <div className="relative" ref={modelDropdownRef}>
               <button
@@ -237,9 +253,7 @@ export default function GeneratePostModal({
                     {activeModel?.label || selectedModel}
                   </div>
                   {activeModel?.description && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {activeModel.description}
-                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{activeModel.description}</div>
                   )}
                 </div>
                 <FiChevronDown
@@ -252,8 +266,8 @@ export default function GeneratePostModal({
               {isModelDropdownOpen && (
                 <div
                   role="listbox"
-                  aria-label="Select AI Model"
-                  className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-2xl border border-border/80 bg-popover dark:bg-[#1e1f20] p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
+                  aria-label={EDITOR_UI["SELECT_AI_MODEL_ARIA"]}
+                  className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-2xl border border-border/80 bg-popover p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
                 >
                   <div className="space-y-1">
                     {models.map((model) => {
@@ -270,24 +284,22 @@ export default function GeneratePostModal({
                           }}
                           className={`group flex w-full items-center gap-2.5 rounded-2xl px-3 py-2 text-left transition-all ${
                             isSelected
-                              ? "border border-neutral-300 dark:border-neutral-500 bg-neutral-100/60 dark:bg-neutral-800/40 text-foreground shadow-sm"
-                              : "border border-transparent hover:border-neutral-300/60 dark:hover:border-neutral-600/60 hover:bg-neutral-100/40 dark:hover:bg-neutral-800/30 text-foreground/90"
+                              ? "border border-border bg-muted/60 text-foreground shadow-sm"
+                              : "border border-transparent hover:border-border/60 hover:bg-muted/40 text-foreground/90"
                           }`}
                         >
                           <div className="flex h-4 w-4 items-center justify-center shrink-0">
-                            {isSelected ? (
-                              <FiCheck className="h-4 w-4 text-foreground dark:text-neutral-100" />
-                            ) : null}
+                            {isSelected ? <FiCheck className="h-4 w-4 text-foreground" /> : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium leading-tight text-foreground dark:text-neutral-100">
+                            <div className="text-sm font-medium leading-tight text-foreground">
                               {model.label}
                             </div>
-                            {model.description && (
-                              <div className="text-xs text-muted-foreground dark:text-neutral-400 mt-0.5">
+                            {model.description ? (
+                              <div className="text-xs text-muted-foreground mt-0.5">
                                 {model.description}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </button>
                       );
@@ -300,52 +312,54 @@ export default function GeneratePostModal({
 
           <div className="space-y-1.5">
             <span className="block text-xs font-semibold uppercase tracking-wider text-foreground">
-              {EDITOR_UI.GENERATE_POST_TARGETS_LABEL}
+              {EDITOR_UI["GENERATE_POST_TARGETS_LABEL"]}
             </span>
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.GENERATE_POST_TARGETS_HINT}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["GENERATE_POST_TARGETS_HINT"]}</p>
             <div className="flex flex-wrap gap-2 pt-1">
-              <label className={platformCheckboxClass(targetPlatforms.includes(OPTIMIZATION_TARGETS.DEVTO))}>
+              <label className={platformCheckboxClass(targetPlatforms.includes(OPTIMIZATION_TARGETS["DEVTO"]))}>
                 <input
                   type="checkbox"
                   className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40"
-                  checked={targetPlatforms.includes(OPTIMIZATION_TARGETS.DEVTO)}
-                  onChange={() => toggleTarget(OPTIMIZATION_TARGETS.DEVTO)}
+                  checked={targetPlatforms.includes(OPTIMIZATION_TARGETS["DEVTO"])}
+                  onChange={() => toggleTarget(OPTIMIZATION_TARGETS["DEVTO"])}
                   disabled={isGenerating}
                 />
-                {EDITOR_UI.GENERATE_POST_TARGET_DEVTO}
+                {EDITOR_UI["GENERATE_POST_TARGET_DEVTO"]}
               </label>
-              <label className={platformCheckboxClass(targetPlatforms.includes(OPTIMIZATION_TARGETS.LINKEDIN))}>
+              <label className={platformCheckboxClass(targetPlatforms.includes(OPTIMIZATION_TARGETS["LINKEDIN"]))}>
                 <input
                   type="checkbox"
                   className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40"
-                  checked={targetPlatforms.includes(OPTIMIZATION_TARGETS.LINKEDIN)}
-                  onChange={() => toggleTarget(OPTIMIZATION_TARGETS.LINKEDIN)}
+                  checked={targetPlatforms.includes(OPTIMIZATION_TARGETS["LINKEDIN"])}
+                  onChange={() => toggleTarget(OPTIMIZATION_TARGETS["LINKEDIN"])}
                   disabled={isGenerating}
                 />
-                {EDITOR_UI.GENERATE_POST_TARGET_LINKEDIN}
+                {EDITOR_UI["GENERATE_POST_TARGET_LINKEDIN"]}
               </label>
             </div>
-            {!hasTargets && <p className="text-[11px] text-destructive">{EDITOR_UI.GENERATE_POST_TARGETS_REQUIRED}</p>}
+            {!hasTargets && <p className="text-[11px] text-destructive">{EDITOR_UI["GENERATE_POST_TARGETS_REQUIRED"]}</p>}
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold uppercase tracking-wider text-foreground">
-            {EDITOR_UI.GENERATE_POST_KEYWORD_LABEL}
+            {EDITOR_UI["GENERATE_POST_KEYWORD_LABEL"]}
           </label>
           <Input
             value={keyword}
             onChange={(e) => onKeywordChange(e.target.value)}
-            placeholder={EDITOR_UI.GENERATE_POST_KEYWORD_PLACEHOLDER}
+            placeholder={EDITOR_UI["GENERATE_POST_KEYWORD_PLACEHOLDER"]}
             className="text-sm"
             size="sm"
             disabled={isGenerating}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && canGenerate) handleGenerate();
+              if (e.key === EDITOR_KEYS["ENTER"] && canGenerate) {
+                handleGenerate();
+              }
             }}
           />
           {!trimmedKeyword && (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.GENERATE_POST_KEYWORD_REQUIRED}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["GENERATE_POST_KEYWORD_REQUIRED"]}</p>
           )}
           {selectedTopic && (
             <p className="text-[11px] text-primary">
@@ -365,12 +379,12 @@ export default function GeneratePostModal({
           <div className="flex items-start justify-between gap-2">
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                {EDITOR_UI.TRENDING_TOPICS_TITLE}
+                {EDITOR_UI["TRENDING_TOPICS_TITLE"]}
               </h3>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {topicsSource === "google_search"
-                  ? EDITOR_UI.TRENDING_TOPICS_LIVE_HINT
-                  : EDITOR_UI.TRENDING_TOPICS_HINT}
+                {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"]
+                  ? EDITOR_UI["TRENDING_TOPICS_LIVE_HINT"]
+                  : EDITOR_UI["TRENDING_TOPICS_HINT"]}
               </p>
             </div>
             <Button
@@ -387,20 +401,25 @@ export default function GeneratePostModal({
               <FiRefreshCw
                 className={`h-3.5 w-3.5 mr-1.5 ${topicsLoading || reachTagsLoading ? "animate-spin" : ""}`}
               />
-              {EDITOR_UI.TRENDING_TOPICS_REFRESH}
+              {EDITOR_UI["TRENDING_TOPICS_REFRESH"]}
             </Button>
           </div>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {topicsSource === "google_search"
-              ? EDITOR_UI.TRENDING_TOPICS_SOURCE_LIVE
-              : EDITOR_UI.TRENDING_TOPICS_PENDING}
+            {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"]
+              ? topicsCached
+                ? EDITOR_UI["TRENDING_TOPICS_SOURCE_CACHED"]
+                : EDITOR_UI["TRENDING_TOPICS_SOURCE_LIVE"]
+              : EDITOR_UI["TRENDING_TOPICS_PENDING"]}
+            {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"] && topicsUpdatedAt
+              ? ` · ${EDITOR_UI["TRENDING_TOPICS_UPDATED_PREFIX"]} ${formatDateTime(topicsUpdatedAt)}`
+              : ""}
           </p>
           {topicsError ? (
             <SuggestionError message={topicsError} />
           ) : topicsLoading && topics.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.TRENDING_TOPICS_LOADING}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["TRENDING_TOPICS_LOADING"]}</p>
           ) : topics.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.TRENDING_TOPICS_EMPTY}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["TRENDING_TOPICS_EMPTY"]}</p>
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {topics.map((topic) => {
@@ -429,18 +448,18 @@ export default function GeneratePostModal({
           <div>
             <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground">
               <FiSearch className="h-3.5 w-3.5 text-primary" />
-              {EDITOR_UI.GOOGLE_KEYWORDS_TITLE}
+              {EDITOR_UI["GOOGLE_KEYWORDS_TITLE"]}
             </h3>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {topicsSource === "google_search" ? EDITOR_UI.GOOGLE_KEYWORDS_LIVE_HINT : EDITOR_UI.GOOGLE_KEYWORDS_HINT}
+              {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"] ? EDITOR_UI["GOOGLE_KEYWORDS_LIVE_HINT"] : EDITOR_UI["GOOGLE_KEYWORDS_HINT"]}
             </p>
           </div>
           {topicsError ? (
             <SuggestionError message={topicsError} />
           ) : topicsLoading && keywords.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.TRENDING_TOPICS_LOADING}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["TRENDING_TOPICS_LOADING"]}</p>
           ) : keywords.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.GOOGLE_KEYWORDS_EMPTY}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["GOOGLE_KEYWORDS_EMPTY"]}</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {keywords.map((kw) => {
@@ -466,21 +485,21 @@ export default function GeneratePostModal({
           <div>
             <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground">
               <FiHash className="h-3.5 w-3.5 text-primary" />
-              {EDITOR_UI.REACH_TAGS_TITLE}
+              {EDITOR_UI["REACH_TAGS_TITLE"]}
             </h3>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {reachTagsSource === "devto" ? EDITOR_UI.REACH_TAGS_LIVE_HINT : EDITOR_UI.REACH_TAGS_HINT}
+              {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"] ? EDITOR_UI["REACH_TAGS_LIVE_HINT"] : EDITOR_UI["REACH_TAGS_HINT"]}
             </p>
           </div>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {reachTagsSource === "devto" ? EDITOR_UI.REACH_TAGS_SOURCE_LIVE : EDITOR_UI.REACH_TAGS_PENDING}
+            {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"] ? EDITOR_UI["REACH_TAGS_SOURCE_LIVE"] : EDITOR_UI["REACH_TAGS_PENDING"]}
           </p>
           {reachTagsError ? (
             <SuggestionError message={reachTagsError} />
           ) : reachTagsLoading && reachTags.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.REACH_TAGS_LOADING}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["REACH_TAGS_LOADING"]}</p>
           ) : reachTags.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">{EDITOR_UI.REACH_TAGS_EMPTY}</p>
+            <p className="text-[11px] text-muted-foreground">{EDITOR_UI["REACH_TAGS_EMPTY"]}</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {reachTags.map((tag) => (

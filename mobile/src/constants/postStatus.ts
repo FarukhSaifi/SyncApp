@@ -1,4 +1,4 @@
-import { LABELS } from "@/src/constants/messages";
+import { LABELS } from "@constants/messages";
 
 export const POST_STATUS = Object.freeze({
   DRAFT: "draft",
@@ -22,7 +22,7 @@ export function getStatusLabel(status: string): string {
   return cfg?.label ?? status;
 }
 
-export function getStatusBadgeStyle(colors: import("@/src/constants/palette").ThemeColors, tone: StatusTone) {
+export function getStatusBadgeStyle(colors: import("@constants/palette").ThemeColors, tone: StatusTone) {
   switch (tone) {
     case "positive":
       return { backgroundColor: `${colors.positive}26`, color: colors.positive };

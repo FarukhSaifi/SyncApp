@@ -4,6 +4,7 @@
     "module": "commonjs",
     "lib": [
       "ES2020",
+      "ES2022.Error",
       "DOM"
     ],
     "outDir": "./dist",
@@ -18,7 +19,68 @@
     "declarationMap": true,
     "sourceMap": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@src/*": [
+        "src/*"
+      ],
+      "@ai": [
+        "src/ai"
+      ],
+      "@ai/*": [
+        "src/ai/*"
+      ],
+      "@config": [
+        "src/config"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@constants": [
+        "src/constants"
+      ],
+      "@constants/*": [
+        "src/constants/*"
+      ],
+      "@controllers/*": [
+        "src/controllers/*"
+      ],
+      "@database/*": [
+        "src/database/*"
+      ],
+      "@middleware/*": [
+        "src/middleware/*"
+      ],
+      "@models/*": [
+        "src/models/*"
+      ],
+      "@routes": [
+        "src/routes"
+      ],
+      "@routes/*": [
+        "src/routes/*"
+      ],
+      "@schemas": [
+        "src/schemas"
+      ],
+      "@schemas/*": [
+        "src/schemas/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@types": [
+        "src/types"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@validations/*": [
+        "src/validations/*"
+      ]
+    }
   },
   "include": [
     "src/**/*",

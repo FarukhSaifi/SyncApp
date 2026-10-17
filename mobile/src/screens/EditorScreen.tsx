@@ -2,14 +2,14 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { View } from "react-native";
 
-import { EditorWorkspace } from "@/src/components/editor/EditorWorkspace";
-import { EditorSkeleton } from "@/src/components/skeletons/EditorSkeleton";
-import { ROUTES, TOAST } from "@/src/constants";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { useEditorState } from "@/src/hooks/useEditorState";
-import { toast } from "@/src/hooks/useToast";
-import type { EditorScreenProps } from "@/src/types";
-import { consumePendingCoverUri } from "@/src/utils/editorCoverPending";
+import { EditorWorkspace } from "@components/editor/EditorWorkspace";
+import { EditorSkeleton } from "@components/skeletons/EditorSkeleton";
+import { ROUTES, TOAST } from "@constants";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { useEditorState } from "@hooks/useEditorState";
+import { toast } from "@hooks/useToast";
+import type { EditorScreenProps } from "@types";
+import { consumePendingCoverUri } from "@utils/editorCoverPending";
 
 export default function EditorScreen({ postId }: EditorScreenProps) {
   const colors = useThemeColors();
@@ -24,14 +24,19 @@ export default function EditorScreen({ postId }: EditorScreenProps) {
     handleSave,
     publish,
     publishAll,
+    unpublish,
     generatePost,
     generateLinkedInSummary,
+    uploadCoverFromUri,
     aiEdit,
     readiness,
     platforms,
     connectedPlatforms,
     loadingPlatforms,
     reloadConnectedPlatforms,
+    platformStatus,
+    aiTargetPlatforms,
+    toggleAiTargetPlatform,
   } = useEditorState(postId);
 
   useFocusEffect(
@@ -71,13 +76,18 @@ export default function EditorScreen({ postId }: EditorScreenProps) {
       handleSave={handleSave}
       publish={publish}
       publishAll={publishAll}
+      unpublish={unpublish}
       generatePost={generatePost}
       generateLinkedInSummary={generateLinkedInSummary}
+      uploadCoverFromUri={uploadCoverFromUri}
       aiEdit={aiEdit}
       openGenerateImage={openGenerateImage}
       platforms={platforms}
       connectedPlatforms={connectedPlatforms}
       loadingPlatforms={loadingPlatforms}
+      platformStatus={platformStatus}
+      aiTargetPlatforms={aiTargetPlatforms}
+      toggleAiTargetPlatform={toggleAiTargetPlatform}
     />
   );
 }

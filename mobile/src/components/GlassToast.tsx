@@ -3,11 +3,11 @@ import { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ToastConfigParams } from "react-native-toast-message";
 
-import { GlassSurface } from "@/src/components/GlassSurface";
-import { APP_CONFIG } from "@/src/constants/config";
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { isLiquidGlassAvailable } from "@/src/utils/nativeGlass";
+import { GlassSurface } from "@components/GlassSurface";
+import { APP_CONFIG } from "@constants/config";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { isLiquidGlassAvailable } from "@utils/nativeGlass";
 
 export type GlassToastVariant = "success" | "error" | "info";
 

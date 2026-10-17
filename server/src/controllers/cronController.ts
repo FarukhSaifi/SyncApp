@@ -1,9 +1,30 @@
+
+import { config } from "@config";
+import { ERROR_MESSAGES, HTTP } from "@constants";
+import { asyncHandler, UnauthorizedError } from "@middleware/errorHandler";
+import { syncDevtoEngagementForAllUsers } from "@services/devtoEngagementService";
+import { publishScheduledPosts } from "@services/publishService";
+import { logger } from "@utils/logger";
 import type { Request, Response } from "express";
-import { config } from "../config";
-import { CRON_SCHEDULE } from "../constants/notifications";
-import { asyncHandler, UnauthorizedError } from "../middleware/errorHandler";
-import { publishScheduledPosts } from "../services/publishService";
-import { logger } from "../utils/logger";
+
+import { CRON_SCHEDULE } from "@constants/notifications";
+
+/**
+ * Fail-closed cron auth: empty CRON_SECRET never skips checks.
+ * Production requires a non-empty secret (also enforced at config load).
+ */
+function assertCronAuth(req: Request): void {
+  const cronSecret = (process.env.CRON_SECRET || config.cronSecret || "").trim();
+  const authHeader = typeof req.headers.authorization === "string" ? req.headers.authorization : "";
+
+  if (!cronSecret) {
+    throw new UnauthorizedError(ERROR_MESSAGES["CRON_AUTH_INVALID"]);
+  }
+
+  if (authHeader !== `${HTTP["AUTH_SCHEMES"]["BEARER"]} ${cronSecret}`) {
+    throw new UnauthorizedError(ERROR_MESSAGES["CRON_AUTH_INVALID"]);
+  }
+}
 
 /**
  * @operationId publishScheduledPosts
@@ -11,12 +32,7 @@ import { logger } from "../utils/logger";
  * Auth: Bearer CRON_SECRET
  */
 export const handleScheduledPublish = asyncHandler(async (req: Request, res: Response) => {
-  const authHeader = req.headers.authorization;
-  const cronSecret = process.env.CRON_SECRET || config.cronSecret;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    throw new UnauthorizedError("Invalid or missing CRON_SECRET");
-  }
+  assertCronAuth(req);
 
   const result = await publishScheduledPosts();
 
@@ -42,5 +58,29 @@ export const handleScheduledPublish = asyncHandler(async (req: Request, res: Res
       cronSchedule: CRON_SCHEDULE,
       results: result.results,
     },
+  });
+});
+
+/**
+ * @operationId syncDevtoEngagement
+ * Vercel Cron — refresh DEV.to view/reaction snapshots for all connected users.
+ * Auth: Bearer CRON_SECRET
+ */
+export const handleSyncDevtoEngagement = asyncHandler(async (req: Request, res: Response) => {
+  assertCronAuth(req);
+
+  const result = await syncDevtoEngagementForAllUsers();
+
+  logger.info("DEV.to engagement cron completed", {
+    usersProcessed: result.usersProcessed,
+    articlesSynced: result.articlesSynced,
+    errorCount: result.userErrors.length,
+  });
+
+  res.json({
+    success: true,
+    operationId: "syncDevtoEngagement",
+    message: `Synced DEV.to engagement for ${result.usersProcessed} users (${result.articlesSynced} articles)`,
+    data: result,
   });
 });

@@ -1,11 +1,11 @@
 import { router } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-import { ERRORS, LABELS, ROUTES, TOAST } from "@/src/constants";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient, setUnauthorizedHandler } from "@/src/services/apiClient";
-import { clearToken, getToken, setToken } from "@/src/services/tokenStorage";
-import type { AuthContextValue, AuthResult, User } from "@/src/types";
+import { ERRORS, LABELS, ROUTES, TOAST } from "@constants";
+import { toast } from "@hooks/useToast";
+import { apiClient, setUnauthorizedHandler } from "@services/apiClient";
+import { clearToken, getToken, setToken } from "@services/tokenStorage";
+import type { AuthContextValue, AuthResult, User } from "@types";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 

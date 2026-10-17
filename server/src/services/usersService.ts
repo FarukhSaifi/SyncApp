@@ -1,12 +1,14 @@
+
+import { ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES, resolveTempPassword } from "@constants";
+import Credential from "@models/Credential";
+import Post from "@models/Post";
+import User from "@models/User";
+import type { CreateUserData, GetUsersParams } from "@types";
+import { cache, cacheKeys } from "@utils/cache";
+import { toObjectId } from "@utils/objectId";
 import mongoose from "mongoose";
-import { DEFAULT_PASSWORDS, ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES } from "../constants";
-import { USER_ROLES, VALID_USER_ROLES } from "../constants/userRoles";
-import Credential from "../models/Credential";
-import Post from "../models/Post";
-import User from "../models/User";
-import type { CreateUserData, GetUsersParams } from "../types/index";
-import { cache, cacheKeys } from "../utils/cache";
-import { toObjectId } from "../utils/objectId";
+
+import { USER_ROLES, VALID_USER_ROLES } from "@constants/userRoles";
 
 /**
  * Get all users with pagination and filtering
@@ -77,7 +79,7 @@ export async function updateUser(userId: string, updateData: Record<string, unkn
     throw new Error(ERROR_MESSAGES.INVALID_ROLE);
   }
 
-  const user = await User.findByIdAndUpdate(userId, updateFields, { new: true, runValidators: true }).select(
+  const user = await User.findByIdAndUpdate(userId, updateFields, { returnDocument: "after", runValidators: true }).select(
     FIELDS.USER_FIELDS.SELECT_WITHOUT_PASSWORD,
   );
 
@@ -109,7 +111,7 @@ export async function createUser(userData: CreateUserData) {
   const user = new User({
     username,
     email,
-    password: password || DEFAULT_PASSWORDS.TEMP_PASSWORD,
+    password: password || resolveTempPassword(),
     firstName,
     lastName,
     bio,

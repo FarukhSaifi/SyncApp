@@ -1,7 +1,12 @@
 /**
  * Platform publishing, scheduling, and outcome types.
  */
-import type { ScheduledPublishOutcome } from "../constants/notifications";
+
+import type { ICredentialDocument } from "@models/Credential";
+import type { IPostDocument } from "@models/Post";
+
+import type { ScheduledPublishOutcome } from "@constants/notifications";
+
 import type { NotificationResult } from "./common";
 
 export type PlatformPublishAction = "create" | "update" | "skip";
@@ -11,7 +16,7 @@ export interface PlatformPublishResult {
   action: PlatformPublishAction;
 }
 
-export type PublishFn = (post: any, credential: any) => Promise<PlatformPublishResult>;
+export type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<PlatformPublishResult>;
 
 export interface PlatformConfigWithFn {
   name: string;

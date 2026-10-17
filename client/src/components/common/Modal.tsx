@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
 
-import { MODAL_SIZE_CLASSES } from "@constants";
+import { KEYBOARD_KEYS, MODAL_BODY_OVERFLOW, MODAL_SIZE_CLASSES } from "@constants";
 import type { ModalProps } from "@types";
 import { FiX } from "react-icons/fi";
+
+import { BUTTON_LABELS } from "@constants/messages";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./Card";
 
@@ -28,39 +30,43 @@ const Modal = ({
   description,
   children,
   footer,
-  size = "md",
+  size = MODAL_BODY_OVERFLOW["DEFAULT_SIZE"],
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showCloseButton = true,
   className = "",
 }: ModalProps) => {
-  // Handle Escape key
   useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
+    if (!isOpen || !closeOnEscape) {
+      return;
+    }
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === KEYBOARD_KEYS["ESCAPE"]) {
         onClose();
       }
     };
 
     document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen, closeOnEscape, onClose]);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = MODAL_BODY_OVERFLOW["HIDDEN"];
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = MODAL_BODY_OVERFLOW["UNSET"];
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = MODAL_BODY_OVERFLOW["UNSET"];
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
@@ -68,38 +74,40 @@ const Modal = ({
     }
   };
 
-  const activeSize = Object.prototype.hasOwnProperty.call(MODAL_SIZE_CLASSES, size) ? size : "md";
+  const activeSize = Object.prototype.hasOwnProperty.call(MODAL_SIZE_CLASSES, size)
+    ? size
+    : MODAL_BODY_OVERFLOW["DEFAULT_SIZE"];
   const sizeClass = MODAL_SIZE_CLASSES[activeSize];
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-[1400] flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={handleOverlayClick}
     >
-      <Card className={`w-full ${sizeClass} mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto ${className}`}>
+      <Card className={`mx-auto my-4 max-h-[min(90vh,100%)] w-full overflow-y-auto sm:my-8 ${sizeClass} ${className}`}>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
               <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
-              {description && <CardDescription className="mt-1">{description}</CardDescription>}
+              {description ? <CardDescription className="mt-1">{description}</CardDescription> : null}
             </div>
-            {showCloseButton && (
+            {showCloseButton ? (
               <button
+                type="button"
                 onClick={onClose}
-                className="ml-4 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                aria-label="Close modal"
+                className="ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={BUTTON_LABELS["CLOSE_MODAL_ARIA"]}
               >
                 <FiX className="h-5 w-5" />
               </button>
-            )}
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className={footer ? "space-y-4" : ""}>{children}</CardContent>
-        {footer && <div className="px-6 pb-6 pt-0 border-t">{footer}</div>}
+        {footer ? <div className="px-6 pb-6 pt-0 border-t">{footer}</div> : null}
       </Card>
     </div>
   );
 };
 
 export default Modal;
-

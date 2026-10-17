@@ -52,6 +52,8 @@ export const TOAST_TITLES = Object.freeze({
   IMAGE_UPLOADED: "Image uploaded",
   LINKEDIN_COPIED: "LinkedIn post copied",
   LINKEDIN_SUMMARY_GENERATED: "LinkedIn summary ready",
+  COPIED: "Copied",
+  DOWNLOADED: "Downloaded",
   // Validation
   VALIDATION_ERROR: "Validation Error",
   // Network
@@ -92,6 +94,8 @@ const createSuccessMessages = () => {
       "Image model quota hit — branded SVG cover ready. Retry later or enable AI Studio billing for real images.",
     AI_FEATURED_IMAGE_SET: "You can save the post to keep it.",
     AI_COVER_ATTACHED: "Cover image attached to this post.",
+    AI_IMAGE_URL_COPIED: "Image URL copied to clipboard",
+    AI_IMAGE_DOWNLOADED: "Image downloaded to your device",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
@@ -172,6 +176,10 @@ export const ERROR_MESSAGES = Object.freeze({
   // Uploads
   FAILED_TO_UPLOAD_IMAGE: "Failed to upload image",
   FAILED_TO_UPLOAD_DROPPED_IMAGE: "Failed to upload dropped image",
+  FAILED_TO_OBTAIN_PRESIGNED_URL: "Failed to obtain presigned upload URL",
+  DIRECT_CLOUD_UPLOAD_FAILED: (status: number) =>
+    `Direct cloud storage upload failed with HTTP status ${status}`,
+  DOWNLOAD_BROWSER_ONLY: "Download is only supported in the browser",
   // AI
   FAILED_TO_GENERATE_POST: "Failed to generate post",
   FAILED_TO_GENERATE_IMAGE: "Failed to generate image",
@@ -180,6 +188,8 @@ export const ERROR_MESSAGES = Object.freeze({
     "Add a title and article content in the editor first, then generate a LinkedIn summary.",
   FAILED_TO_UPLOAD_COVER: "Upload failed",
   FAILED_TO_COPY_LINKEDIN: "Could not copy LinkedIn post to clipboard",
+  FAILED_TO_COPY_IMAGE_URL: "Failed to copy image URL to clipboard",
+  FAILED_TO_DOWNLOAD_IMAGE: "Failed to download image",
   AI_LINKEDIN_MISSING_CANONICAL:
     "LinkedIn summary is ready, but no blog base URL is set — add CANONICAL_BASE_URL / NEXT_PUBLIC_CANONICAL_BASE_URL for a Read more link.",
 } as const);
@@ -351,6 +361,8 @@ export const PLACEHOLDERS = Object.freeze({
   TAGS: "webdev, programming, javascript, react...",
   COVER_IMAGE: "https://example.com/image.jpg",
   PLACEHOLDER_COVER_IMAGE: "https://example.com/image.jpg",
+  CANONICAL_URL: "https://yourblog.com/post-slug",
+  PLACEHOLDER_CANONICAL_URL: "https://yourblog.com/post-slug",
   // Settings
   MEDIUM_TOKEN: "Enter your Medium integration token...",
   PLACEHOLDER_MEDIUM_TOKEN: "Enter your Medium integration token...",
@@ -382,6 +394,8 @@ export const BUTTON_LABELS = Object.freeze({
   REFRESH: "Refresh",
   // Navigation
   BACK_TO_DASHBOARD: "Back to Dashboard",
+  BACK_TO_DASHBOARD_ARIA: "Back to dashboard",
+  CLOSE_MODAL_ARIA: "Close modal",
   PREVIOUS: "Previous",
   NEXT: "Next",
   // User Management
@@ -804,6 +818,31 @@ export const EDITOR_UI = Object.freeze({
   CREATING_MASTERPIECE: "Creating Masterpiece...",
   GENERATE_AI_IMAGE: "Generate AI Image",
 
+  /** Featured / cover image (left sidebar + mobile drawer) */
+  COVER_UPLOAD_DROPZONE_TITLE: "Upload featured image",
+  COVER_UPLOAD_DROPZONE_HINT: "Click or drop an image here (JPEG, PNG, WebP, GIF).",
+  COVER_UPLOAD_BROWSE: "Choose image",
+  COVER_UPLOAD_CHANGE: "Replace image",
+  COVER_UPLOAD_REMOVE: "Remove",
+  COVER_UPLOAD_OR_URL: "Or paste an image URL",
+  COVER_UPLOAD_INVALID_TYPE: "Please choose an image file.",
+  COVER_UPLOAD_TOO_LARGE: "Image must be 50MB or smaller.",
+  COVER_UPLOADING: "Uploading cover\u2026",
+  COVER_UPLOAD_SUCCESS: "Featured image uploaded",
+  COVER_PREVIEW_ALT: "Featured image preview",
+  COVER_PREVIEW_CACHED_ALT: "Featured image preview (cached)",
+  COVER_REMOVE_ARIA: "Remove featured image",
+
+  /** Mobile temporary drawer for Post Settings (left panel) */
+  POST_SETTINGS_DRAWER_TITLE: "Post Settings",
+  CLOSE_POST_SETTINGS_DRAWER: "Close post settings panel",
+  TOGGLE_POST_SETTINGS: "Toggle post settings",
+
+  /** Mobile temporary drawer for Publish + AI (right panel) */
+  PUBLISH_AI_DRAWER_TITLE: "Publish & AI",
+  CLOSE_PUBLISH_AI_DRAWER: "Close publish and AI panel",
+  TOGGLE_PUBLISH_AI: "Toggle publish panel",
+
   // AI Image modal header
   AI_IMAGE_MODAL_TITLE: "AI Cover Image Generator",
   AI_IMAGE_MODAL_DESC: "Create stunning, high-resolution featured cover images for your blog posts using Gemini AI.",
@@ -838,6 +877,12 @@ export const EDITOR_UI = Object.freeze({
 
   // Modal – action buttons
   APPLY_LOCALLY: "Apply Locally",
+  USE_AS_COVER: "Use as Cover",
+  COPY_IMAGE_LINK: "Copy Link",
+  DOWNLOAD_IMAGE: "Download",
+  COPY_IMAGE_URL_TITLE: "Copy public cloud URL",
+  COPY_IMAGE_DATA_TITLE: "Copy image data",
+  AI_IMAGE_SOURCE_BADGE: (source: string) => `AI · ${source}`,
   UPLOADING: "Uploading\u2026",
   UPLOAD_AND_SAVE: "Upload & Save",
 
@@ -849,10 +894,13 @@ export const EDITOR_UI = Object.freeze({
   TRENDING_TOPICS_HINT: "Click a topic to use it, or type your own.",
   TRENDING_TOPICS_LIVE_HINT: "Real-time topics via Google Search grounding (AI Studio).",
   TRENDING_TOPICS_ERROR: "Could not load live Google topics and keywords. Check the AI key/quota, then try Refresh.",
+  TRENDING_TOPICS_UNAVAILABLE: "Live Google topics unavailable",
   TRENDING_TOPICS_EMPTY: "No live topics loaded yet. Click Refresh to try again.",
   TRENDING_TOPICS_LOADING: "Fetching real-time topics\u2026",
   TRENDING_TOPICS_REFRESH: "Refresh",
   TRENDING_TOPICS_SOURCE_LIVE: "Live · Google Search",
+  TRENDING_TOPICS_SOURCE_CACHED: "Cached · Google Search",
+  TRENDING_TOPICS_UPDATED_PREFIX: "Updated",
   TRENDING_TOPICS_PENDING: "Waiting for Google Search",
   GOOGLE_KEYWORDS_TITLE: "Google SEO keywords",
   GOOGLE_KEYWORDS_HINT: "Click a keyword to use it as your primary search term for the draft.",
@@ -879,11 +927,16 @@ export const EDITOR_UI = Object.freeze({
   REACH_TAGS_LOADING: "Fetching DEV.to tags\u2026",
   REACH_TAGS_EMPTY: "No DEV.to tags loaded yet. Click Refresh to try again.",
   REACH_TAGS_ERROR: "Could not load high-reach tags from DEV.to. Try Refresh.",
+  REACH_TAGS_UNAVAILABLE: "Live DEV.to tags unavailable",
   REACH_TAGS_SOURCE_LIVE: "Live · DEV.to",
   REACH_TAGS_PENDING: "Waiting for DEV.to",
   GENERATE_POST_CANCEL: "Cancel",
   GENERATE_POST_CONFIRM: "Generate draft",
   GENERATE_POST_KEYWORD_REQUIRED: "Enter a topic or pick one below",
+  SELECT_AI_MODEL_ARIA: "Select AI Model",
+  REMOVE_TAG_ARIA: (tag: string) => `Remove ${tag}`,
+  WORD_COUNT_LABEL: (count: string) => `${count} words`,
+  UNSAVED_CHANGES_TITLE: "Unsaved changes",
 
   // LinkedIn teaser panel
   LINKEDIN_POST_TITLE: "LinkedIn summary",

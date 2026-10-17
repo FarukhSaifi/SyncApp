@@ -1,20 +1,20 @@
 import { useMemo } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Switch, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Input } from "@/src/components/Input";
-import { Modal } from "@/src/components/Modal";
-import { PasswordInput } from "@/src/components/PasswordInput";
-import { ScreenIntro } from "@/src/components/ScreenIntro";
-import { UserCard } from "@/src/components/UserCard";
-import { UserListSkeleton } from "@/src/components/skeletons/UserCardSkeleton";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { USER_ROLE_OPTIONS, USER_VERIFIED_FILTER } from "@/src/constants/userRoles";
-import { useAuth } from "@/src/contexts/AuthContext";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { useTabBarInset } from "@/src/hooks/useTabBarInset";
-import { useUsers } from "@/src/hooks/useUsers";
+import { Button } from "@components/Button";
+import { Input } from "@components/Input";
+import { Modal } from "@components/Modal";
+import { PasswordInput } from "@components/PasswordInput";
+import { ScreenIntro } from "@components/ScreenIntro";
+import { UserCard } from "@components/UserCard";
+import { UserListSkeleton } from "@components/skeletons/UserCardSkeleton";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { USER_ROLE_OPTIONS, USER_VERIFIED_FILTER } from "@constants/userRoles";
+import { useAuth } from "@contexts/AuthContext";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { useTabBarInset } from "@hooks/useTabBarInset";
+import { useUsers } from "@hooks/useUsers";
 
 const VERIFIED_FILTERS = [
   { value: USER_VERIFIED_FILTER.ALL, label: LABELS.FILTER_ALL },

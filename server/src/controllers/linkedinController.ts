@@ -1,14 +1,15 @@
-import type { Request, Response } from "express";
-import { API_URLS, ERROR_MESSAGES } from "../constants";
-import { asyncHandler, ValidationError } from "../middleware/errorHandler";
+
+import { API_URLS, ERROR_MESSAGES } from "@constants";
+import { asyncHandler, ValidationError } from "@middleware/errorHandler";
 import {
   buildLinkedInAuthorizeUrl,
   completeLinkedInOAuth,
   getLinkedInRedirectUri,
   isLinkedInOAuthConfigured,
   settingsRedirectUrl,
-} from "../services/linkedinOAuthService";
-import { createLogger } from "../utils/logger";
+} from "@services/linkedinOAuthService";
+import { createLogger } from "@utils/logger";
+import type { Request, Response } from "express";
 
 const logger = createLogger("LINKEDIN");
 

@@ -10,6 +10,17 @@ export interface AiContentModel {
 
 export type AiImageSource = "gemini" | "imagen";
 
+/** Active AI job key while a sidebar/modal generation is in flight. */
+export type AiLoadingKey = "" | "post" | "image" | "linkedin";
+
+/** Suggestion feed source identifiers from AI trending / tags APIs. */
+export type AiTopicsSource = "google_search";
+export type AiReachTagsSource = "devto";
+
+export interface SuggestionErrorProps {
+  message: string;
+}
+
 export interface GeneratedPostData {
   title: string;
   meta_description: string;
@@ -59,7 +70,7 @@ export interface UseEditorAIReturn {
   setTargetPlatforms: (platforms: string[]) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
-  aiLoading: string;
+  aiLoading: AiLoadingKey;
   generatedImageDataUrl: string | null;
   generatedImageUrl: string | null;
   generatedImageSource: AiImageSource | null;

@@ -1,7 +1,9 @@
+import { PLATFORMS, VALID_PLATFORMS } from "@constants";
+import type { ICredential } from "@types";
 import mongoose, { Document, Model, Schema, type Types } from "mongoose";
-import { PLATFORMS, VALID_PLATFORMS } from "../constants";
-import { CREDENTIAL_INDEXES } from "../constants/indexes";
-import type { ICredential } from "../types/index";
+
+import { CREDENTIAL_INDEXES } from "@constants/indexes";
+
 
 export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author" | "token_expires_at"> {
   author: Types.ObjectId;

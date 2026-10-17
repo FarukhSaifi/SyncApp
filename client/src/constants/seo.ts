@@ -15,6 +15,22 @@ export const SEO_THRESHOLDS = Object.freeze({
   TAG_COUNT_MAX: 4,
   SCORE_MAX: 100,
   SCORE_WITHOUT_CONTENT_DIVISOR: 80,
+  /** Left-sidebar SEO ring: good / mid / weak score ratios */
+  RING_GOOD_RATIO: 0.7,
+  RING_MID_RATIO: 0.4,
+} as const);
+
+/** Circular SEO score indicator geometry (left sidebar). */
+export const SEO_RING = Object.freeze({
+  RADIUS: 18,
+  SIZE: 48,
+  CENTER: 24,
+  STROKE_WIDTH: 3,
+  COLOR_GOOD: "hsl(142, 71%, 45%)",
+  COLOR_MID: "hsl(25, 95%, 53%)",
+  COLOR_WEAK: "hsl(0, 84%, 60%)",
+  TRACK_STROKE: "hsl(var(--border))",
+  SKELETON_CHECK_COUNT: 5,
 } as const);
 
 /** High-reach DEV.to tags for SEO scorecard — at least one improves feed placement */

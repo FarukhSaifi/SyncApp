@@ -2,7 +2,10 @@
  * LinkedIn teaser helpers — rewrite Read more URL when post canonical is known.
  */
 
+import { appendUtmParams } from "@utils/utm";
+
 import { CANONICAL_BASE_URL } from "@constants/api";
+import { UTM_SOURCES } from "@constants/utm";
 
 const READ_MORE_PREFIX = "Read more:";
 
@@ -12,7 +15,9 @@ const HASHTAG_LINE = /^(?:\s*#[\w-]+\s*)+$/;
 /** Last path segment of a URL or path (post slug). */
 export function extractSlugFromUrlOrPath(value: string): string {
   const raw = (value || "").trim();
-  if (!raw) return "";
+  if (!raw) {
+    return "";
+  }
   try {
     if (/^https?:\/\//i.test(raw)) {
       const path = new URL(raw).pathname.replace(/^\/+|\/+$/g, "");
@@ -31,7 +36,7 @@ export function extractSlugFromUrlOrPath(value: string): string {
 
 /**
  * Prefer the public blog base (`NEXT_PUBLIC_CANONICAL_BASE_URL`) + slug so LinkedIn
- * never links to the SyncApp editor host.
+ * never links to the SyncApp editor host. Appends LinkedIn UTM params for GA4.
  */
 export function resolveLinkedInReadMoreUrl(canonicalUrl?: string | null, slugHint?: string | null): string | undefined {
   const base = (CANONICAL_BASE_URL || "").trim().replace(/\/$/, "");
@@ -39,11 +44,11 @@ export function resolveLinkedInReadMoreUrl(canonicalUrl?: string | null, slugHin
   const slug = (slugHint || "").trim() || extractSlugFromUrlOrPath(existing);
 
   if (base && slug) {
-    return `${base}/${slug}`;
+    return appendUtmParams(`${base}/${slug}`, { source: UTM_SOURCES["LINKEDIN"], content: slug });
   }
 
   if (existing.startsWith("http")) {
-    return existing;
+    return appendUtmParams(existing, { source: UTM_SOURCES["LINKEDIN"], content: slug || undefined });
   }
 
   return undefined;
@@ -86,7 +91,9 @@ export function insertReadMoreBeforeHashtags(body: string, readMoreLine: string)
 /** Replace or insert the Read more line (before hashtags) with the preferred public article URL. */
 export function applyLinkedInReadMoreUrl(linkedinPost: string, preferredUrl?: string | null): string {
   const text = (linkedinPost || "").trim();
-  if (!text) return "";
+  if (!text) {
+    return "";
+  }
 
   const without = text.replace(new RegExp(`\\n*${READ_MORE_PREFIX}\\s*\\S+`, "gi"), "").trim();
   const url = (preferredUrl || "").trim();
@@ -94,7 +101,8 @@ export function applyLinkedInReadMoreUrl(linkedinPost: string, preferredUrl?: st
     return without;
   }
 
-  return insertReadMoreBeforeHashtags(without, `${READ_MORE_PREFIX} ${url}`);
+  const withUtm = appendUtmParams(url, { source: UTM_SOURCES["LINKEDIN"] });
+  return insertReadMoreBeforeHashtags(without, `${READ_MORE_PREFIX} ${withUtm}`);
 }
 
 export function extractLinkedInReadMoreUrl(linkedinPost: string): string | null {

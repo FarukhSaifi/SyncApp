@@ -36,14 +36,12 @@
     "audit:all": "npm audit --audit-level=high --workspaces"
   },
   "devDependencies": {
-    "turbo": "^2.10.12"
+    "turbo": "^2.11.9"
   },
-  "dependencies": {
-    "babel-preset-expo": "^57.0.11",
-    "expo-blur": "^57.0.3",
-    "expo-build-properties": "^57.0.17",
-    "expo-router": "^57.0.21",
-    "expo-secure-store": "^57.0.4",
-    "expo-status-bar": "^57.0.1"
+  "overrides": {
+    "react-native-screens": "4.26.2",
+    "expo-router": {
+      "react-native-screens": "4.26.2"
+    }
   }
 }

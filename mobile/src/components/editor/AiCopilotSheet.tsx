@@ -2,10 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Spinner } from "@/src/components/Spinner";
-import { BUTTON_VARIANTS, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Button } from "@components/Button";
+import { Spinner } from "@components/Spinner";
+import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { OPTIMIZATION_TARGETS, type OptimizationTarget } from "@constants/platforms";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface AiCopilotSheetProps {
   visible: boolean;
@@ -16,6 +18,8 @@ interface AiCopilotSheetProps {
   onAiEdit: (action: string) => Promise<string | void>;
   onGeneratePost: (topic: string) => Promise<void>;
   aiLoading: boolean;
+  aiTargetPlatforms: OptimizationTarget[];
+  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
 }
 
 const AI_PRESETS = [
@@ -36,6 +40,8 @@ export function AiCopilotSheet({
   onAiEdit,
   onGeneratePost,
   aiLoading,
+  aiTargetPlatforms,
+  toggleAiTargetPlatform,
 }: AiCopilotSheetProps) {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -181,6 +187,33 @@ export function AiCopilotSheet({
                 {/* 3. Full Story Generation */}
                 <View style={styles.divider} />
                 <Text style={styles.sectionLabel}>GENERATE FULL DRAFT FROM TOPIC</Text>
+                <Text style={styles.optimizeLabel}>{LABELS.OPTIMIZE_FOR}</Text>
+                <View style={styles.optimizeRow}>
+                  {(
+                    [
+                      { target: OPTIMIZATION_TARGETS.DEVTO, label: LABELS.OPTIMIZE_DEVTO },
+                      { target: OPTIMIZATION_TARGETS.LINKEDIN, label: LABELS.OPTIMIZE_LINKEDIN },
+                    ] as const
+                  ).map(({ target, label }) => {
+                    const selected = aiTargetPlatforms.includes(target);
+                    return (
+                      <Pressable
+                        key={target}
+                        onPress={() => toggleAiTargetPlatform(target)}
+                        style={[styles.optimizeChip, selected && styles.optimizeChipActive]}
+                      >
+                        <Ionicons
+                          name={selected ? "checkbox" : "square-outline"}
+                          size={18}
+                          color={selected ? colors.primary : colors.mutedForeground}
+                        />
+                        <Text style={[styles.optimizeChipText, selected && styles.optimizeChipTextActive]}>
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
                 <View style={styles.inputWrapper}>
                   <TextInput
                     style={styles.customInput}
@@ -331,6 +364,41 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       height: 1,
       backgroundColor: colors.border,
       marginVertical: 18,
+    },
+    optimizeLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.mutedForeground,
+      marginBottom: 8,
+    },
+    optimizeRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 12,
+    },
+    optimizeChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      minHeight: 40,
+      paddingHorizontal: 12,
+      borderRadius: RADIUS.MD,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    optimizeChipActive: {
+      borderColor: colors.primary,
+      backgroundColor: `${colors.primary}18`,
+    },
+    optimizeChipText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.mutedForeground,
+    },
+    optimizeChipTextActive: {
+      color: colors.foreground,
     },
     reviewSurface: {
       backgroundColor: colors.background,

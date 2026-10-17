@@ -2,24 +2,29 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 
-import { PostCard } from "@/src/components/PostCard";
-import { PostListSkeleton } from "@/src/components/skeletons/PostCardSkeleton";
-import { ERRORS, LABELS, TOAST, editorRoute } from "@/src/constants";
-import { IOS26, LAYOUT, RADIUS } from "@/src/constants/designTokens";
-import { FILTER_STATUS_ALL, POST_STATUS, getStatusLabel } from "@/src/constants/postStatus";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { usePosts } from "@/src/hooks/usePosts";
-import { useTabBarInset } from "@/src/hooks/useTabBarInset";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
-import type { Post } from "@/src/types";
+import { PostCard } from "@components/PostCard";
+import { PostListSkeleton } from "@components/skeletons/PostCardSkeleton";
+import { ERRORS, LABELS, TOAST, editorRoute } from "@constants";
+import { IOS26, LAYOUT, RADIUS } from "@constants/designTokens";
+import { FILTER_STATUS_ALL, POST_STATUS, getStatusLabel } from "@constants/postStatus";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { usePosts } from "@hooks/usePosts";
+import { useResponsiveLayout } from "@hooks/useResponsiveLayout";
+import { useTabBarInset } from "@hooks/useTabBarInset";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
+import type { Post } from "@types";
 
 const FILTERS = [FILTER_STATUS_ALL, POST_STATUS.DRAFT, POST_STATUS.PUBLISHED] as const;
 
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const tabBarInset = useTabBarInset();
-  const styles = useMemo(() => createStyles(colors, tabBarInset), [colors, tabBarInset]);
+  const layout = useResponsiveLayout();
+  const styles = useMemo(
+    () => createStyles(colors, tabBarInset, layout.horizontalPadding),
+    [colors, tabBarInset, layout.horizontalPadding],
+  );
   const { posts, loading, error, fetchPosts, removePost } = usePosts();
   const [filter, setFilter] = useState<string>(FILTER_STATUS_ALL);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,15 +136,19 @@ function SkeletonChipRow({ colors }: { colors: ReturnType<typeof useThemeColors>
   );
 }
 
-const createStyles = (colors: ReturnType<typeof useThemeColors>, _tabBarInset: number) =>
+const createStyles = (
+  colors: ReturnType<typeof useThemeColors>,
+  _tabBarInset: number,
+  horizontalPadding: number,
+) =>
   StyleSheet.create({
     shell: { flex: 1, backgroundColor: colors.groupedBackground },
     container: {
       flex: 1,
-      paddingHorizontal: IOS26.SCREEN_PADDING,
+      paddingHorizontal: horizontalPadding,
       paddingTop: IOS26.SCREEN_PADDING,
     },
-    filters: { flexDirection: "row", gap: 8, marginBottom: 12 },
+    filters: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
     listArea: { flex: 1 },
     chip: {
       paddingHorizontal: 14,

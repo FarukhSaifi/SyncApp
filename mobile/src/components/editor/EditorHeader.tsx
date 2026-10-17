@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorReadiness } from "@/src/types";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { EditorReadiness } from "@types";
 
 interface EditorHeaderProps {
   title: string;

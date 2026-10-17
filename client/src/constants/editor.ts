@@ -7,7 +7,7 @@ export const INITIAL_EDITOR_FORM = Object.freeze({
   title: "",
   content_markdown: "",
   meta_description: "",
-  status: POST_STATUS.DRAFT,
+  status: POST_STATUS["DRAFT"],
   cover_image: "",
   canonical_url: "",
   scheduled_for: "",
@@ -40,4 +40,57 @@ export const PUBLISH_SECTIONS = Object.freeze({
   PLATFORMS: "Platforms",
   AI_ASSISTANT: "AI Assistant",
   EXPORT: "Export",
+} as const);
+
+/**
+ * Editor layout breakpoints / drawer sizing.
+ * Matches `editor.css` desktop grid (≥1024px) vs mobile drawers.
+ */
+export const EDITOR_LAYOUT = Object.freeze({
+  /** Matches Tailwind `lg` / editor.css `@media (max-width: 1023px)` inverse */
+  DESKTOP_MEDIA_QUERY: "(min-width: 1024px)",
+  /** Temporary left (post settings) drawer width on sm+ (xs uses full viewport) */
+  LEFT_DRAWER_WIDTH_PX: 360,
+  /** Temporary right (Publish & AI) drawer width on sm+ (xs uses full viewport) */
+  RIGHT_DRAWER_WIDTH_PX: 360,
+} as const);
+
+/**
+ * Featured / cover image file upload constraints.
+ * Must stay aligned with server `presignedUrlRequestSchema` (raster images only, max 6MB).
+ */
+export const COVER_UPLOAD = Object.freeze({
+  ACCEPT: "image/jpeg,image/png,image/gif,image/webp",
+  ACCEPT_MIME_PREFIX: "image/",
+  MAX_BYTES: 6 * 1024 * 1024,
+  INPUT_ID: "editor-featured-cover-upload",
+  /** sessionStorage key prefix for base64 cover preview cache */
+  PREVIEW_SESSION_PREFIX: "cover_preview_",
+} as const);
+
+/** In-flight AI job keys used by useEditorAI / publish sidebar. */
+export const AI_LOADING = Object.freeze({
+  IDLE: "",
+  POST: "post",
+  IMAGE: "image",
+  LINKEDIN: "linkedin",
+} as const);
+
+/** API suggestion-source identifiers for Generate Post modal. */
+export const AI_SUGGESTION_SOURCES = Object.freeze({
+  GOOGLE_SEARCH: "google_search",
+  DEVTO: "devto",
+} as const);
+
+/** Keyboard keys used in editor UI handlers. */
+export const EDITOR_KEYS = Object.freeze({
+  ENTER: "Enter",
+  ESCAPE: "Escape",
+  SPACE: " ",
+} as const);
+
+/** AI-generated cover download filename parts. */
+export const AI_COVER_DOWNLOAD = Object.freeze({
+  PREFIX: "cover-",
+  EXT: ".png",
 } as const);

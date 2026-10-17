@@ -2,9 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
 
-import { STORAGE_KEYS } from "@/src/constants/config";
-import { darkColors, lightColors, type ThemeColors } from "@/src/constants/palette";
-import { THEME_VALUES } from "@/src/constants/theme";
+import { STORAGE_KEYS } from "@constants/config";
+import { darkColors, lightColors, type ThemeColors } from "@constants/palette";
+import { THEME_VALUES } from "@constants/theme";
 
 interface ThemeContextValue {
   colors: ThemeColors;

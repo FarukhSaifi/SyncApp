@@ -2,8 +2,9 @@
  * Central API route registration. Mounts all feature routes under /api.
  * Route paths from constants/routes.ts.
  */
+import { ROUTES } from "@constants";
 import { Router } from "express";
-import { ROUTES } from "../constants";
+
 import aiRoutes from "./ai";
 import analyticsRoutes from "./analytics";
 import authRoutes from "./auth";
@@ -15,6 +16,7 @@ import postsRoutes from "./posts";
 import publishRoutes from "./publish";
 import uploadRoutes from "./upload";
 import usersRoutes from "./users";
+
 
 const router: Router = Router();
 

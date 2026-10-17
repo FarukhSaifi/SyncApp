@@ -1,14 +1,20 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { EDITOR_CONFIG } from "@/src/constants/editor";
-import { ERRORS, publishedToPlatform, TOAST } from "@/src/constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@/src/constants/platforms";
-import { POST_STATUS } from "@/src/constants/postStatus";
-import { editorRoute } from "@/src/constants/routes";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
-import type { EditorForm, EditorReadiness } from "@/src/types";
+import { EDITOR_CONFIG } from "@constants/editor";
+import { ERRORS, publishedToPlatform, TOAST } from "@constants/messages";
+import {
+  DEFAULT_OPTIMIZATION_TARGETS,
+  PLATFORM_DISPLAY_NAMES,
+  PLATFORMS,
+  type OptimizationTarget,
+  type PlatformSlug,
+} from "@constants/platforms";
+import { POST_STATUS } from "@constants/postStatus";
+import { editorRoute } from "@constants/routes";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
+import type { EditorForm, EditorReadiness, PlatformStatus, Post } from "@types";
 
 export type { EditorForm };
 
@@ -34,6 +40,10 @@ export function useEditorState(postId?: string) {
   const [savedId, setSavedId] = useState<string | undefined>(postId);
   const [connectedPlatforms, setConnectedPlatforms] = useState<PlatformSlug[]>([]);
   const [loadingPlatforms, setLoadingPlatforms] = useState(true);
+  const [platformStatus, setPlatformStatus] = useState<Post["platform_status"]>({});
+  const [aiTargetPlatforms, setAiTargetPlatforms] = useState<OptimizationTarget[]>([
+    ...DEFAULT_OPTIMIZATION_TARGETS,
+  ]);
   const dirtyRef = useRef(false);
 
   const reloadConnectedPlatforms = useCallback(async () => {
@@ -95,6 +105,7 @@ export function useEditorState(postId?: string) {
             linkedin_post: p.linkedin_post ?? "",
             linkedin_read_more_url: p.linkedin_read_more_url ?? "",
           });
+          setPlatformStatus(p.platform_status ?? {});
         }
       } catch (e) {
         toast.error((e as Error).message);
@@ -125,6 +136,19 @@ export function useEditorState(postId?: string) {
     [form],
   );
 
+  const persistCoverIfNeeded = useCallback(async (postId: string, cover: string) => {
+    if (!cover.startsWith("data:")) return cover;
+    try {
+      const coverRes = await apiClient.uploadPostCover(postId, cover);
+      if (coverRes.success && coverRes.data?.url) {
+        return coverRes.data.url;
+      }
+    } catch {
+      /* keep data URL locally; publish may still use server cover endpoint */
+    }
+    return cover;
+  }, []);
+
   const handleSave = useCallback(
     async (forceStatus?: string) => {
       if (!form.title.trim() || !form.content_markdown.trim()) {
@@ -145,6 +169,17 @@ export function useEditorState(postId?: string) {
           if (res.data.status) {
             setForm((prev) => ({ ...prev, status: res.data!.status }));
           }
+          if (res.data.platform_status) {
+            setPlatformStatus(res.data.platform_status);
+          }
+          const persistId = newId || id;
+          if (persistId && form.cover_image.startsWith("data:")) {
+            const publicUrl = await persistCoverIfNeeded(persistId, form.cover_image);
+            if (publicUrl !== form.cover_image) {
+              setForm((prev) => ({ ...prev, cover_image: publicUrl }));
+              await apiClient.updatePost(persistId, { cover_image: publicUrl });
+            }
+          }
           dirtyRef.current = false;
           toast.success(TOAST.SAVED);
           return res.data;
@@ -158,7 +193,7 @@ export function useEditorState(postId?: string) {
         setSaving(false);
       }
     },
-    [form, savedId, buildPayload],
+    [form, savedId, buildPayload, persistCoverIfNeeded],
   );
 
   useEffect(() => {
@@ -230,32 +265,95 @@ export function useEditorState(postId?: string) {
     [handleSave, savedId, connectedPlatforms],
   );
 
-  const generatePost = useCallback(async (keyword: string) => {
-    if (!keyword.trim()) return;
-    setAiLoading(true);
-    try {
-      const res = await apiClient.aiGenerate(keyword.trim());
-      if (res.success && res.data) {
-        setForm((prev) => ({
-          ...prev,
-          title: res.data!.title || prev.title,
-          meta_description: res.data!.meta_description || prev.meta_description,
-          content_markdown: res.data!.content || prev.content_markdown,
-          tags: res.data!.tags?.length ? res.data!.tags : prev.tags,
-          linkedin_post: res.data!.linkedin_post || prev.linkedin_post,
-          linkedin_read_more_url: res.data!.read_more_url || prev.linkedin_read_more_url,
-        }));
-        dirtyRef.current = true;
-        toast.success(TOAST.AI_DRAFT_GENERATED);
-      } else {
-        toast.error(res.error ?? ERRORS.AI_GENERATION_FAILED);
+  const toggleAiTargetPlatform = useCallback((target: OptimizationTarget) => {
+    setAiTargetPlatforms((prev) => {
+      if (prev.includes(target)) {
+        const next = prev.filter((t) => t !== target);
+        return next.length > 0 ? next : prev;
       }
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setAiLoading(false);
-    }
+      return [...prev, target];
+    });
   }, []);
+
+  const generatePost = useCallback(
+    async (keyword: string) => {
+      if (!keyword.trim()) return;
+      setAiLoading(true);
+      try {
+        const res = await apiClient.aiGenerate(keyword.trim(), undefined, aiTargetPlatforms);
+        if (res.success && res.data) {
+          setForm((prev) => ({
+            ...prev,
+            title: res.data!.title || prev.title,
+            meta_description: res.data!.meta_description || prev.meta_description,
+            content_markdown: res.data!.content || prev.content_markdown,
+            tags: res.data!.tags?.length ? res.data!.tags : prev.tags,
+            linkedin_post: res.data!.linkedin_post || prev.linkedin_post,
+            linkedin_read_more_url: res.data!.read_more_url || prev.linkedin_read_more_url,
+          }));
+          dirtyRef.current = true;
+          toast.success(TOAST.AI_DRAFT_GENERATED);
+        } else {
+          toast.error(res.error ?? ERRORS.AI_GENERATION_FAILED);
+        }
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [aiTargetPlatforms],
+  );
+
+  const unpublish = useCallback(
+    async (platform: string) => {
+      const id = savedId;
+      if (!id) {
+        toast.error(ERRORS.UNPUBLISH_FAILED);
+        return;
+      }
+      setPublishing(true);
+      try {
+        const res = await apiClient.unpublishFromPlatform(platform, id);
+        if (res.success) {
+          setPlatformStatus((prev) => ({
+            ...(prev ?? {}),
+            [platform as PlatformSlug]: { published: false } satisfies PlatformStatus,
+          }));
+          toast.success(TOAST.UNPUBLISHED);
+        } else {
+          toast.error(res.error ?? ERRORS.UNPUBLISH_FAILED);
+        }
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        setPublishing(false);
+      }
+    },
+    [savedId],
+  );
+
+  const uploadCoverFromUri = useCallback(
+    async (uri: string, filename: string, mimeType: string) => {
+      setAiLoading(true);
+      try {
+        const res = await apiClient.uploadImage(uri, filename, mimeType);
+        if (res.success && res.data?.url) {
+          updateField("cover_image", res.data.url);
+          toast.success(TOAST.COVER_UPLOADED);
+          return res.data.url;
+        }
+        toast.error(res.error ?? ERRORS.COVER_UPLOAD_FAILED);
+        return null;
+      } catch (e) {
+        toast.error((e as Error).message);
+        return null;
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [updateField],
+  );
 
   const generateLinkedInSummary = useCallback(async () => {
     if (!form.title.trim() && !form.content_markdown.trim()) return;
@@ -388,14 +486,19 @@ export function useEditorState(postId?: string) {
     handleSave,
     publish,
     publishAll,
+    unpublish,
     generatePost,
     generateLinkedInSummary,
     generateImage,
+    uploadCoverFromUri,
     aiEdit,
     readiness,
     platforms: PLATFORMS,
     connectedPlatforms,
     loadingPlatforms,
     reloadConnectedPlatforms,
+    platformStatus,
+    aiTargetPlatforms,
+    toggleAiTargetPlatform,
   };
 }

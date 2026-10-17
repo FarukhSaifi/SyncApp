@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ImageDataUrlPreview } from "@/src/components/ImageDataUrlPreview";
-import { Skeleton } from "@/src/components/Skeleton";
-import { LABELS } from "@/src/constants";
-import { LAYOUT, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { isSvgDataUrl } from "@/src/utils/imageDataUrl";
+import { ImageDataUrlPreview } from "@components/ImageDataUrlPreview";
+import { Skeleton } from "@components/Skeleton";
+import { LABELS } from "@constants";
+import { LAYOUT, RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { isSvgDataUrl } from "@utils/imageDataUrl";
 
 interface CoverImagePreviewProps {
   uri: string;

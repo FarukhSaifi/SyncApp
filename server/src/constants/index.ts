@@ -5,18 +5,34 @@ import { DEFAULT_VALUES } from "./defaultValues";
 
 export {
   AI_CONFIG,
+  AI_IMAGE_SOURCES,
   AI_POST_LIMITS,
   AI_PROMPTS,
+  AI_PROVIDERS,
   AI_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
   AI_SEED_TOPIC_CATEGORIES,
   isAllowedContentModel,
   resolveContentModel,
 } from "./ai";
+export {
+  ANALYTICS_ENV,
+  ANALYTICS_PLATFORMS,
+  ANALYTICS_SYNC,
+  GA4_SOURCE_CHANNEL_MAP,
+} from "./analytics";
+export type { AnalyticsPlatform, Ga4TrafficChannelId } from "./analytics";
 export { API_URLS } from "./api";
 export { DATABASE } from "./database";
-export { DEFAULT_PASSWORDS } from "./defaultPasswords";
-export { DEFAULT_VALUES } from "./defaultValues";
+export { DEFAULT_PASSWORDS, resolveTempPassword } from "./defaultPasswords";
+export {
+  DEFAULT_VALUES,
+  buildFirebaseStoragePublicUrl,
+  buildGcsJsonApiMediaUploadUrl,
+  buildGcsPublicObjectUrl,
+  extensionForMime,
+} from "./defaultValues";
+export type { UploadImageMime } from "./defaultValues";
 export { FIELDS } from "./fields";
 export { HEALTH } from "./health";
 export { HTTP } from "./http";
@@ -25,15 +41,27 @@ export { DB_LOG, REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "./logging";
 export { MDX_CONFIG } from "./mdx";
 export { ERROR_MESSAGES, SUCCESS_MESSAGES } from "./messages";
 export { PLATFORM_CONFIG } from "./platformConfig";
+export { PLATFORM_TAG_LIMITS } from "./platformTags";
+export type { PlatformTagLimitKey } from "./platformTags";
 export {
   AI_OPTIMIZATION_TARGETS,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
+  includesDevtoTarget,
   includesLinkedInTarget,
   isValidOptimizationTargets,
+  resolveArticleTagLimit,
+  resolveLinkedInHashtagLimit,
   resolveOptimizationTargets,
 } from "./platformOptimization";
 export type { OptimizationTarget } from "./platformOptimization";
+export {
+  UTM_CAMPAIGNS,
+  UTM_MEDIUMS,
+  UTM_PARAM_KEYS,
+  UTM_SOURCES,
+} from "./utm";
+export type { UtmBuildOptions, UtmMedium, UtmSource } from "./utm";
 export { ROUTES } from "./routes";
 export { USER_ROLE_LABELS, USER_ROLES, VALID_USER_ROLES } from "./userRoles";
 export type { UserRole } from "./userRoles";

@@ -89,8 +89,14 @@ export const TAB_BAR = Object.freeze({
   ICON_SIZE: 26,
   FAB_SIZE: 60,
   FAB_LIFT: 22,
+  FAB_ICON_SIZE: 28,
   SPRING: { damping: 18, stiffness: 420 },
   SLIDE_SPRING: { damping: 22, stiffness: 320, mass: 0.85 },
+  PRESS_SCALE_TAB: 0.92,
+  PRESS_SCALE_FAB: 0.94,
+  SLIDE_PAD: 6,
+  SLIDE_MIN_WIDTH: 36,
+  NEW_POST_ROUTE: "new-post",
 } as const);
 
 /** Shared layout dimensions */
@@ -113,6 +119,16 @@ export const ANALYTICS_CHART = Object.freeze({
   BAR_HEIGHT: 160,
   BAR_WIDTH: 40,
   SPACING: 28,
+} as const);
+
+/** Phone / layout breakpoints (logical pixels) */
+export const RESPONSIVE = Object.freeze({
+  /** Below this width: tighter padding, stacked action rows, smaller charts */
+  COMPACT_MAX_WIDTH: 390,
+  TALL_MIN_HEIGHT: 800,
+  CONTENT_MAX_WIDTH: 560,
+  PADDING_COMPACT: 12,
+  PADDING_DEFAULT: 16,
 } as const);
 
 export const TYPOGRAPHY = Object.freeze({

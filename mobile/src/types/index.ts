@@ -1,3 +1,5 @@
+export * from "./navigation";
+
 export interface PlatformStatus {
   published: boolean;
   post_id?: string;
@@ -88,6 +90,12 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
 }
 
+export interface AnalyticsDailyActivity {
+  date: string;
+  posts: number;
+  published: number;
+}
+
 export interface AnalyticsStats {
   summary: {
     totalPosts: number;
@@ -101,8 +109,74 @@ export interface AnalyticsStats {
     wordpress: number;
     linkedin: number;
   };
-  history: Array<{ date: string; posts: number; published: number }>;
+  history: AnalyticsDailyActivity[];
 }
+
+export type AnalyticsDateRange = {
+  start: string;
+  end: string;
+  presetDays: number | null;
+};
+
+export interface EngagementPostRow {
+  postId: string;
+  title: string;
+  slug?: string;
+  remotePostId: string;
+  url: string;
+  views: number;
+  reactions: number;
+  comments: number;
+  asOf: string;
+  fetchedAt: string;
+}
+
+export interface DevtoEngagementSummary {
+  platform: "devto";
+  totalViews: number;
+  totalReactions: number;
+  totalComments: number;
+  articleCount: number;
+  lastSyncedAt: string | null;
+  posts: EngagementPostRow[];
+}
+
+export interface DevtoEngagementSyncResult {
+  synced: number;
+  skipped: number;
+  errors: Array<{ postId: string; error: string }>;
+  summary: DevtoEngagementSummary;
+}
+
+export type Ga4TrafficSourceRow = {
+  id: string;
+  source: string;
+  medium: string;
+  sessions: number;
+  pageviews: number;
+};
+
+export type Ga4TopPageRow = {
+  path: string;
+  pageviews: number;
+  sessions: number;
+};
+
+export type Ga4WebsiteAnalytics = {
+  configured: boolean;
+  setupRequired: boolean;
+  message: string | null;
+  propertyIdSet: boolean;
+  credentialsAvailable: boolean;
+  dateRange: { startDate: string; endDate: string };
+  totals: {
+    sessions: number;
+    pageviews: number;
+    activeUsers: number;
+  };
+  sources: Ga4TrafficSourceRow[];
+  topPages: Ga4TopPageRow[];
+};
 
 export interface RequestOptions {
   method?: string;

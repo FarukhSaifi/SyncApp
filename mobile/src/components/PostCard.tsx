@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { APP_CONFIG } from "@/src/constants/config";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { POST_STATUS, STATUS_CONFIG, getStatusBadgeStyle, type StatusTone } from "@/src/constants/postStatus";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { Post } from "@/src/types";
-import { formatDateTime } from "@/src/utils/dateUtils";
+import { Button } from "@components/Button";
+import { APP_CONFIG } from "@constants/config";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { POST_STATUS, STATUS_CONFIG, getStatusBadgeStyle, type StatusTone } from "@constants/postStatus";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { Post } from "@types";
+import { formatDateTime } from "@utils/dateUtils";
 
 interface PostCardProps {
   post: Post;

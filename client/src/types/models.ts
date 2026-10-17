@@ -72,7 +72,12 @@ export interface Credential {
   _id: string;
   platform: string;
   user: string;
+  /** @deprecated Full keys are never returned; use api_key_masked / configured. */
   api_key?: string;
+  api_key_masked?: string;
+  api_key_last4?: string;
+  configured?: boolean;
+  decrypt_failed?: boolean;
   site_url?: string;
   platform_config?: Record<string, unknown>;
 }

@@ -1,9 +1,9 @@
-import { Router } from "express";
-import * as controller from "../controllers/credentialsController";
-import { authenticateToken } from "../utils/auth";
 
-import { validateBody } from "../middleware/validation";
-import { upsertCredentialSchema } from "../schemas";
+import * as controller from "@controllers/credentialsController";
+import { validateBody } from "@middleware/validation";
+import { upsertCredentialSchema } from "@schemas";
+import { authenticateToken } from "@utils/auth";
+import { Router } from "express";
 
 const router: Router = Router();
 

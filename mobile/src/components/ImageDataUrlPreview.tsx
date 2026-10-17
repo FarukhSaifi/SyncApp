@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { Image, StyleSheet, Text, View, type ImageStyle, type StyleProp } from "react-native";
 import { SvgXml } from "react-native-svg";
 
-import { Skeleton } from "@/src/components/Skeleton";
-import { LABELS } from "@/src/constants";
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { decodeSvgXmlFromDataUrl, isSvgDataUrl } from "@/src/utils/imageDataUrl";
+import { Skeleton } from "@components/Skeleton";
+import { LABELS } from "@constants";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { decodeSvgXmlFromDataUrl, isSvgDataUrl } from "@utils/imageDataUrl";
 
 interface ImageDataUrlPreviewProps {
   uri: string;

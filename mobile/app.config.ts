@@ -58,6 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-secure-store",
     ...(IS_PRODUCTION_BUILD ? [] : ["expo-dev-client"]),
+    // enableSceneSupport (config/ios.ts) adopts UIScene lifecycle for iOS 27 / Xcode 27.
     iosBuildPropertiesPlugin(),
   ],
   experiments: {

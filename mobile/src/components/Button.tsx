@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
 
-import { Spinner } from "@/src/components/Spinner";
-import { BUTTON_SIZES, BUTTON_VARIANTS, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Spinner } from "@components/Spinner";
+import { BUTTON_SIZES, BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS] | "danger";
 type ButtonSize = (typeof BUTTON_SIZES)[keyof typeof BUTTON_SIZES];

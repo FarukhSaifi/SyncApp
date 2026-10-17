@@ -1,6 +1,6 @@
-import Post from '../models/Post';
-import { NotFoundError } from '../middleware/errorHandler';
-import { ERROR_MESSAGES, FIELDS } from '../constants';
+import { ERROR_MESSAGES, FIELDS } from '@constants';
+import { NotFoundError } from '@middleware/errorHandler';
+import Post from '@models/Post';
 
 /**
  * Unpublish/remove post from a specific platform
@@ -19,7 +19,7 @@ export async function unpublishFromPlatform(postId: string, platformName: string
     [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(platformName)]: null,
   };
 
-  const updatedPost = await Post.findByIdAndUpdate(postId, updateData, { new: true, runValidators: true })
+  const updatedPost = await Post.findByIdAndUpdate(postId, updateData, { returnDocument: "after", runValidators: true })
     .populate(FIELDS.COMMON_FIELDS.AUTHOR, FIELDS.USER_FIELDS.SELECT_PUBLIC)
     .lean();
 

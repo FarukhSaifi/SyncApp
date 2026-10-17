@@ -67,3 +67,25 @@ export const MODAL_SIZE_CLASSES = Object.freeze({
   "3xl": "max-w-3xl",
   "4xl": "max-w-4xl",
 } as const);
+
+/** Modal / overlay body scroll lock values */
+export const MODAL_BODY_OVERFLOW = Object.freeze({
+  HIDDEN: "hidden",
+  UNSET: "unset",
+  DEFAULT_SIZE: "md",
+} as const);
+
+/** Shared keyboard key names for UI handlers. */
+export const KEYBOARD_KEYS = Object.freeze({
+  ESCAPE: "Escape",
+  ENTER: "Enter",
+  SPACE: " ",
+} as const);
+
+/** next/image defaults for LazyImage */
+export const LAZY_IMAGE = Object.freeze({
+  DEFAULT_ALT: "Image",
+  DATA_URI_PREFIX: "data:",
+  SIZES: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+  SKELETON_CLASS: "absolute inset-0",
+} as const);

@@ -1,12 +1,12 @@
+
+
+import { config } from "@config";
+import { DATABASE } from "@constants";
+import { createLogger } from "@utils/logger";
 import mongoose from "mongoose";
-import { loadAppEnv } from "../config/loadEnv";
 
-loadAppEnv();
+import { DB_LOG } from "@constants/logging";
 
-import { config } from "../config";
-import { DATABASE } from "../constants";
-import { DB_LOG } from "../constants/logging";
-import { createLogger } from "../utils/logger";
 import connectDB from "./connection";
 
 const logger = createLogger("DB-SETUP");

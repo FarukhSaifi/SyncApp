@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
 import type {
-  AiContentModel,
   AiImageSource,
+  AiLoadingKey,
   GeneratedPostData,
   UseEditorAIOptions,
   UseEditorAIReturn,
@@ -19,9 +19,11 @@ import {
   readStoredOptimizationTargets,
 } from "@utils/aiPreferences";
 import { apiClient } from "@utils/apiClient";
+import { writeCoverPreviewCache } from "@utils/coverPreviewCache";
 import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl } from "@utils/linkedinPost";
 
 import { AI_CONTENT_MODELS, resolveStoredContentModel } from "@constants/ai";
+import { AI_COVER_DOWNLOAD, AI_LOADING } from "@constants/editor";
 import { SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 
 function tryParseJSON(raw: string): Record<string, unknown> | null {
@@ -84,22 +86,24 @@ export function useEditorAI({
   onCoverImageSet,
 }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
-  const [aiKeyword, setAiKeyword] = useState("");
-  const [aiModel, setAiModel] = useState(() => readStoredAiModel());
+  const [aiKeyword, setAiKeyword] = useState<string>("");
+  const [aiModel, setAiModel] = useState<string>(() => readStoredAiModel());
   const [targetPlatforms, setTargetPlatforms] = useState<string[]>(() => readStoredOptimizationTargets());
-  const [aiImagePrompt, setAiImagePrompt] = useState("");
-  const [aiLoading, setAiLoading] = useState("");
+  const [aiImagePrompt, setAiImagePrompt] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState<AiLoadingKey>(AI_LOADING["IDLE"]);
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState<string | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [generatedImageSource, setGeneratedImageSource] = useState<AiImageSource | null>(null);
-  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState<boolean>(false);
   const [linkedinPost, setLinkedinPost] = useState<string | null>(null);
-  const [linkedinMissingCanonical, setLinkedinMissingCanonical] = useState(false);
+  const [linkedinMissingCanonical, setLinkedinMissingCanonical] = useState<boolean>(false);
 
   const linkedinReadMoreUrl = linkedinPost ? extractLinkedInReadMoreUrl(linkedinPost) : null;
 
   useEffect(() => {
-    if (!linkedinPost || !preferredReadMoreUrl) return;
+    if (!linkedinPost || !preferredReadMoreUrl) {
+      return;
+    }
     const next = applyLinkedInReadMoreUrl(linkedinPost, preferredReadMoreUrl);
     if (next !== linkedinPost) {
       setLinkedinPost(next);
@@ -137,14 +141,14 @@ export function useEditorAI({
   const handleGeneratePost = useCallback(async () => {
     const keyword = aiKeyword.trim();
     if (!keyword) {
-      toast.validationError(SYNC_LABEL.AI_KEYWORD_REQUIRED);
+      toast.validationError(SYNC_LABEL["AI_KEYWORD_REQUIRED"]);
       return;
     }
     if (targetPlatforms.length === 0) {
-      toast.validationError(SYNC_LABEL.AI_TARGETS_REQUIRED);
+      toast.validationError(SYNC_LABEL["AI_TARGETS_REQUIRED"]);
       return;
     }
-    setAiLoading("post");
+    setAiLoading(AI_LOADING["POST"]);
     try {
       const response = await apiClient.aiGenerate(keyword, {
         model: aiModel,
@@ -153,7 +157,7 @@ export function useEditorAI({
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
         if (!data.content) {
-          toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
+          toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_GENERATE_POST"]);
           return;
         }
 
@@ -175,17 +179,17 @@ export function useEditorAI({
         }
 
         onDraftGenerated(withPreferredUrl);
-        toast.success(TOAST_TITLES.POST_GENERATED, SYNC_LABEL.AI_POST_GENERATED);
+        toast.success(TOAST_TITLES["POST_GENERATED"], SYNC_LABEL["AI_POST_GENERATED"]);
         if (withPreferredUrl.linkedin_post && withPreferredUrl.linkedin_missing_canonical) {
-          toast.warning(TOAST_TITLES.WARNING, SYNC_LABEL.AI_LINKEDIN_MISSING_CANONICAL);
+          toast.warning(TOAST_TITLES["WARNING"], SYNC_LABEL["AI_LINKEDIN_MISSING_CANONICAL"]);
         }
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_POST);
+        toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_GENERATE_POST"]);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_POST);
+      toast.apiError((error as Error).message || SYNC_LABEL["FAILED_TO_GENERATE_POST"]);
     } finally {
-      setAiLoading("");
+      setAiLoading(AI_LOADING["IDLE"]);
     }
   }, [aiKeyword, aiModel, clearLinkedInPost, onDraftGenerated, preferredReadMoreUrl, targetPlatforms, toast]);
 
@@ -194,10 +198,10 @@ export function useEditorAI({
     const titleTrim = title.trim();
     const contentTrim = content.trim();
     if (!titleTrim && !contentTrim) {
-      toast.validationError(SYNC_LABEL.AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED);
+      toast.validationError(SYNC_LABEL["AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED"]);
       return;
     }
-    setAiLoading("linkedin");
+    setAiLoading(AI_LOADING["LINKEDIN"]);
     try {
       const response = await apiClient.aiGenerateLinkedInSummary({
         title: titleTrim,
@@ -223,27 +227,27 @@ export function useEditorAI({
           read_more_url: readMore,
           linkedin_missing_canonical: missingCanonical,
         });
-        toast.success(TOAST_TITLES.LINKEDIN_SUMMARY_GENERATED, SYNC_LABEL.AI_LINKEDIN_SUMMARY_GENERATED);
+        toast.success(TOAST_TITLES["LINKEDIN_SUMMARY_GENERATED"], SYNC_LABEL["AI_LINKEDIN_SUMMARY_GENERATED"]);
         if (missingCanonical) {
-          toast.warning(TOAST_TITLES.WARNING, SYNC_LABEL.AI_LINKEDIN_MISSING_CANONICAL);
+          toast.warning(TOAST_TITLES["WARNING"], SYNC_LABEL["AI_LINKEDIN_MISSING_CANONICAL"]);
         }
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_LINKEDIN_SUMMARY);
+        toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_GENERATE_LINKEDIN_SUMMARY"]);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_LINKEDIN_SUMMARY);
+      toast.apiError((error as Error).message || SYNC_LABEL["FAILED_TO_GENERATE_LINKEDIN_SUMMARY"]);
     } finally {
-      setAiLoading("");
+      setAiLoading(AI_LOADING["IDLE"]);
     }
   }, [aiModel, getArticleContext, onLinkedInSummaryGenerated, preferredReadMoreUrl, toast]);
 
   const handleGenerateImage = useCallback(async () => {
     const topic = aiKeyword.trim();
     if (!topic) {
-      toast.validationError(SYNC_LABEL.AI_KEYWORD_REQUIRED_FOR_IMAGE);
+      toast.validationError(SYNC_LABEL["AI_KEYWORD_REQUIRED_FOR_IMAGE"]);
       return;
     }
-    setAiLoading("image");
+    setAiLoading(AI_LOADING["IMAGE"]);
     setGeneratedImageDataUrl(null);
     setGeneratedImageUrl(null);
     setGeneratedImageSource(null);
@@ -253,45 +257,47 @@ export function useEditorAI({
         setGeneratedImageDataUrl(response.data.imageDataUrl);
         setGeneratedImageUrl(response.data.imageUrl || null);
         setGeneratedImageSource(response.data.source || null);
-        toast.success(TOAST_TITLES.IMAGE_GENERATED, SYNC_LABEL.AI_IMAGE_GENERATED);
+        toast.success(TOAST_TITLES["IMAGE_GENERATED"], SYNC_LABEL["AI_IMAGE_GENERATED"]);
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
+        toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_GENERATE_IMAGE"]);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_GENERATE_IMAGE);
+      toast.apiError((error as Error).message || SYNC_LABEL["FAILED_TO_GENERATE_IMAGE"]);
     } finally {
-      setAiLoading("");
+      setAiLoading(AI_LOADING["IDLE"]);
     }
   }, [aiKeyword, aiImagePrompt, toast]);
 
   const handleUseAsFeaturedImage = useCallback(() => {
     const target = generatedImageUrl || generatedImageDataUrl;
-    if (!target) return;
-    if (typeof window !== "undefined" && generatedImageDataUrl) {
-      sessionStorage.setItem(`cover_preview_${target}`, generatedImageDataUrl);
+    if (!target) {
+      return;
+    }
+    if (generatedImageDataUrl) {
+      writeCoverPreviewCache(target, generatedImageDataUrl);
     }
     onCoverImageSet(target);
-    toast.success(TOAST_TITLES.FEATURED_IMAGE_SET, SYNC_LABEL.AI_FEATURED_IMAGE_SET);
+    toast.success(TOAST_TITLES["FEATURED_IMAGE_SET"], SYNC_LABEL["AI_FEATURED_IMAGE_SET"]);
   }, [generatedImageUrl, generatedImageDataUrl, onCoverImageSet, toast]);
 
   const handleUploadAndAttach = useCallback(async () => {
-    if (!generatedImageDataUrl || !postId) return;
+    if (!generatedImageDataUrl || !postId) {
+      return;
+    }
     setUploadingCover(true);
     try {
       const response = await apiClient.uploadPostCover(postId, generatedImageDataUrl);
       if (response?.success && response.data?.url) {
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem(`cover_preview_${response.data.url}`, generatedImageDataUrl);
-        }
+        writeCoverPreviewCache(response.data.url, generatedImageDataUrl);
         onCoverImageSet(response.data.url);
         setGeneratedImageDataUrl(null);
         setGeneratedImageUrl(null);
-        toast.success(TOAST_TITLES.IMAGE_UPLOADED, SYNC_LABEL.AI_COVER_ATTACHED);
+        toast.success(TOAST_TITLES["IMAGE_UPLOADED"], SYNC_LABEL["AI_COVER_ATTACHED"]);
       } else {
-        toast.apiError(response?.error || SYNC_LABEL.FAILED_TO_UPLOAD_COVER);
+        toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_UPLOAD_COVER"]);
       }
     } catch (error) {
-      toast.apiError((error as Error).message || SYNC_LABEL.FAILED_TO_UPLOAD_COVER);
+      toast.apiError((error as Error).message || SYNC_LABEL["FAILED_TO_UPLOAD_COVER"]);
     } finally {
       setUploadingCover(false);
     }
@@ -299,38 +305,44 @@ export function useEditorAI({
 
   const handleCopyImageUrl = useCallback(async () => {
     const target = generatedImageUrl || generatedImageDataUrl;
-    if (!target) return;
+    if (!target) {
+      return;
+    }
     try {
       await navigator.clipboard.writeText(target);
-      toast.success("Copied", "Image URL copied to clipboard");
+      toast.success(TOAST_TITLES["COPIED"], SYNC_LABEL["AI_IMAGE_URL_COPIED"]);
     } catch {
-      toast.apiError("Failed to copy image URL to clipboard");
+      toast.apiError(SYNC_LABEL["FAILED_TO_COPY_IMAGE_URL"]);
     }
   }, [generatedImageUrl, generatedImageDataUrl, toast]);
 
   const handleDownloadImage = useCallback(() => {
     const target = generatedImageDataUrl || generatedImageUrl;
-    if (!target) return;
+    if (!target) {
+      return;
+    }
     try {
       const a = document.createElement("a");
       a.href = target;
-      a.download = `cover-${Date.now()}.png`;
+      a.download = `${AI_COVER_DOWNLOAD["PREFIX"]}${Date.now()}${AI_COVER_DOWNLOAD["EXT"]}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      toast.success("Downloaded", "Image downloaded to your device");
+      toast.success(TOAST_TITLES["DOWNLOADED"], SYNC_LABEL["AI_IMAGE_DOWNLOADED"]);
     } catch {
-      toast.apiError("Failed to download image");
+      toast.apiError(SYNC_LABEL["FAILED_TO_DOWNLOAD_IMAGE"]);
     }
   }, [generatedImageDataUrl, generatedImageUrl, toast]);
 
   const handleCopyLinkedInPost = useCallback(async () => {
-    if (!linkedinPost?.trim()) return;
+    if (!linkedinPost?.trim()) {
+      return;
+    }
     try {
       await navigator.clipboard.writeText(linkedinPost);
-      toast.success(TOAST_TITLES.LINKEDIN_COPIED, SYNC_LABEL.AI_LINKEDIN_COPIED);
+      toast.success(TOAST_TITLES["LINKEDIN_COPIED"], SYNC_LABEL["AI_LINKEDIN_COPIED"]);
     } catch {
-      toast.apiError(SYNC_LABEL.FAILED_TO_COPY_LINKEDIN);
+      toast.apiError(SYNC_LABEL["FAILED_TO_COPY_LINKEDIN"]);
     }
   }, [linkedinPost, toast]);
 

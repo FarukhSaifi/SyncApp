@@ -1,9 +1,10 @@
+
+import { config } from "@config";
+import { DATABASE } from "@constants";
+import { createLogger } from "@utils/logger";
 import mongoose from "mongoose";
 
-import { config } from "../config";
-import { DATABASE } from "../constants";
-import { DB_LOG } from "../constants/logging";
-import { createLogger } from "../utils/logger";
+import { DB_LOG } from "@constants/logging";
 
 const logger = createLogger("DB");
 
@@ -25,7 +26,7 @@ type MongooseCache = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var mongooseCache: MongooseCache | undefined;
 }
 
@@ -35,7 +36,7 @@ global.mongooseCache = cached;
 let listenersAttached = false;
 
 function attachConnectionListeners(): void {
-  if (listenersAttached) return;
+  if (listenersAttached) {return;}
   listenersAttached = true;
 
   mongoose.connection.on("connected", () => {

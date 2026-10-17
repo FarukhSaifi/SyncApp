@@ -15,6 +15,7 @@ export const PLATFORM_CONFIG = Object.freeze({
     name: "DEV.to",
     errorMessage: "DEV.to API credentials not found. Please configure your DEV.to API key in settings.",
     published: true,
+    /** Hard API max — see PLATFORM_TAG_LIMITS.DEVTO */
     maxTags: 4,
   },
   wordpress: {
@@ -25,5 +26,7 @@ export const PLATFORM_CONFIG = Object.freeze({
   linkedin: {
     name: "LinkedIn",
     errorMessage: "LinkedIn is not connected. Connect LinkedIn in Settings to publish the summary.",
+    /** Ideal hashtag count in commentary — see PLATFORM_TAG_LIMITS.LINKEDIN */
+    maxHashtags: 5,
   },
 } as const);

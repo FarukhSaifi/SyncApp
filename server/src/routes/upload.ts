@@ -1,9 +1,9 @@
-import { Router } from "express";
 
-import { getPresignedUrl } from "../controllers/upload";
-import { validateBody } from "../middleware/validation";
-import { presignedUrlRequestSchema } from "../schemas";
-import { authenticateToken } from "../utils/auth";
+import { getPresignedUrl } from "@controllers/upload";
+import { validateBody } from "@middleware/validation";
+import { presignedUrlRequestSchema } from "@schemas";
+import { authenticateToken } from "@utils/auth";
+import { Router } from "express";
 
 const router: Router = Router();
 

@@ -3,7 +3,8 @@
  */
 import type { GenerateContentConfig } from "@google/genai";
 
-export type AiProvider = "studio" | "none";
+/** Matches AI_PROVIDERS in constants/ai.ts */
+export type AiProvider = "vertex" | "studio" | "none";
 
 export interface AiCapabilities {
   textAi: boolean;
@@ -11,9 +12,13 @@ export interface AiCapabilities {
   provider: AiProvider;
   defaultModel: string;
   studioUrl: string;
+  /** GCP project when provider is vertex. */
+  project?: string;
+  /** Vertex AI location when provider is vertex. */
+  location?: string;
 }
 
-export type StudioGenerateOptions = {
+export type AiGenerateOptions = {
   model: string;
   contents: string;
   systemInstruction?: string;
@@ -25,6 +30,10 @@ export type StudioGenerateOptions = {
   tools?: GenerateContentConfig["tools"];
 };
 
+/** @deprecated Prefer AiGenerateOptions. */
+export type StudioGenerateOptions = AiGenerateOptions;
+
+/** Image backend label; `imagen` retained for older clients but is no longer produced. */
 export type ImageSource = "gemini" | "imagen";
 
 export interface GenerateImageResult {
@@ -52,6 +61,8 @@ export type TrendingCacheEntry = {
   topics: string[];
   keywords: string[];
   source: TrendingTopicsSource;
+  /** Epoch ms when the live Google/Studio fetch completed. */
+  fetchedAt: number;
   expiresAt: number;
 };
 

@@ -122,6 +122,13 @@ export const LABELS = Object.freeze({
   USER_MANAGEMENT: "Manage team members and access",
   SETTINGS_INTRO: "Connect publishing platforms with API credentials",
   ANALYTICS_INTRO: "Overview of your content and publishing activity",
+  UNPUBLISH: "Unpublish",
+  UPLOAD_COVER: "Upload cover",
+  PICK_COVER: "Choose from library",
+  COVER_UPLOADED: "Cover uploaded",
+  OPTIMIZE_FOR: "Optimize AI draft for",
+  OPTIMIZE_DEVTO: "DEV.to",
+  OPTIMIZE_LINKEDIN: "LinkedIn",
   USERNAME_EMAIL_REQUIRED: "Username and email are required",
   USER_CREATED: "User created",
   USER_UPDATED: "User updated",
@@ -168,6 +175,8 @@ export const TOAST = Object.freeze({
   LINKEDIN_COPIED: "LinkedIn post copied",
   LINKEDIN_DISCONNECTED: "LinkedIn disconnected",
   LINKEDIN_CONNECTED: "LinkedIn connected",
+  UNPUBLISHED: "Unpublished",
+  COVER_UPLOADED: "Cover uploaded",
 });
 
 export const ERRORS = Object.freeze({
@@ -189,6 +198,9 @@ export const ERRORS = Object.freeze({
   IMAGE_TOPIC_REQUIRED: "Enter a topic to generate an image",
   AI_EDIT_FAILED: "AI edit failed",
   OPEN_LINK_FAILED: "Could not open link",
+  UNPUBLISH_FAILED: "Failed to unpublish",
+  COVER_UPLOAD_FAILED: "Failed to upload cover",
+  IMAGE_PICKER_FAILED: "Could not open photo library",
 });
 
 export const ALERTS = Object.freeze({

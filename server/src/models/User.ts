@@ -1,9 +1,10 @@
+import type { IUser } from "@types";
 import bcrypt from "bcryptjs";
 import mongoose, { Document, Model, Schema } from "mongoose";
-import { USER_INDEXES } from "../constants/indexes";
-import { USER_ROLES, VALID_USER_ROLES } from "../constants/userRoles";
-import { NUMERIC_LIMITS, REGEX_PATTERNS, STRING_LIMITS, VALIDATION_ERRORS } from "../constants/validation";
-import type { IUser } from "../types/index";
+
+import { USER_INDEXES } from "@constants/indexes";
+import { USER_ROLES, VALID_USER_ROLES } from "@constants/userRoles";
+import { NUMERIC_LIMITS, REGEX_PATTERNS, STRING_LIMITS, VALIDATION_ERRORS } from "@constants/validation";
 
 export interface IUserDocument extends Document, Omit<IUser, "_id"> {
   lastLogin?: Date;
@@ -73,7 +74,7 @@ const userSchema = new Schema<IUserDocument>(
 userSchema.index(USER_INDEXES.ROLE_RECENT);
 
 userSchema.pre("save", async function (this: IUserDocument) {
-  if (!this.isModified("password")) return;
+  if (!this.isModified("password")) {return;}
 
   const salt = await bcrypt.genSalt(NUMERIC_LIMITS.BCRYPT_SALT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);

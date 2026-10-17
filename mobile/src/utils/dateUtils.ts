@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
-import { APP_CONFIG } from "@/src/constants/config";
-import { LABELS } from "@/src/constants/messages";
+import { APP_CONFIG } from "@constants/config";
+import { LABELS } from "@constants/messages";
 
 export function formatDateTime(dateString?: string | null): string {
   if (!dateString) return "—";

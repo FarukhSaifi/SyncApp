@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface CardProps extends ViewProps {
   children: React.ReactNode;

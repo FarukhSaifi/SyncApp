@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { AiContentModel, AiImageSource } from "./ai";
+import type { AiContentModel, AiImageSource, AiLoadingKey } from "./ai";
 import type { Post } from "./models";
 
 export interface EditorFormData {
@@ -31,11 +31,15 @@ export interface WordCountStats {
 
 export interface EditorSidebarLeftProps {
   isOpen: boolean;
+  /** Close mobile temporary drawer (ignored on desktop docked sidebar). */
+  onClose: () => void;
   formData: EditorFormData;
   tagList: string[];
   tagInput: string;
   setTagInput: (v: string) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  /** Set or clear the featured/cover image URL (GCS public URL after upload). */
+  onCoverImageChange: (url: string) => void;
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
   onTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -44,6 +48,8 @@ export interface EditorSidebarLeftProps {
 
 export interface EditorSidebarRightProps {
   isOpen: boolean;
+  /** Close mobile temporary drawer (ignored on desktop docked sidebar). */
+  onClose: () => void;
   postId?: string;
   status: string;
   publishing: boolean;
@@ -64,7 +70,7 @@ export interface EditorSidebarRightProps {
   setTargetPlatforms: (platforms: string[]) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
-  aiLoading: string;
+  aiLoading: AiLoadingKey;
   generatedImageDataUrl: string | null;
   generatedImageUrl?: string | null;
   generatedImageSource?: AiImageSource | null;
@@ -137,4 +143,32 @@ export interface SeoScorecard {
   maxScore: number;
   checks: SeoCheck[];
   summary?: string;
+}
+
+/** Collapsible section shared by left/right editor sidebars. */
+export interface EditorSidebarSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+/** Circular SEO score indicator in the left sidebar. */
+export interface SeoScoreRingProps {
+  score: number;
+  maxScore: number;
+}
+
+/** LinkedIn summary + publish panel in the right sidebar. */
+export interface LinkedInPostPanelProps {
+  linkedinPost: string | null;
+  linkedinReadMoreUrl: string | null;
+  linkedinMissingCanonical: boolean;
+  linkedinConnected: boolean;
+  publishing?: boolean;
+  generating?: boolean;
+  onCopy: () => void;
+  onPublish: () => void;
+  onGenerate: () => void;
+  disabled?: boolean;
 }

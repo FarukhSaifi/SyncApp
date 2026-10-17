@@ -2,14 +2,14 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Card, CardContent, CardHeader } from "@/src/components/Card";
-import { Input } from "@/src/components/Input";
-import { PasswordInput } from "@/src/components/PasswordInput";
-import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, ROUTES } from "@/src/constants";
-import { BUTTON_VARIANTS } from "@/src/constants/designTokens";
-import { useAuth } from "@/src/contexts/AuthContext";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Button } from "@components/Button";
+import { Card, CardContent, CardHeader } from "@components/Card";
+import { Input } from "@components/Input";
+import { PasswordInput } from "@components/PasswordInput";
+import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, ROUTES } from "@constants";
+import { BUTTON_VARIANTS } from "@constants/designTokens";
+import { useAuth } from "@contexts/AuthContext";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 export default function RegisterScreen() {
   const { register } = useAuth();

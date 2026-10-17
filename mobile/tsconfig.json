@@ -11,6 +11,9 @@
       "@/*": [
         "./*"
       ],
+      "@src/*": [
+        "./src/*"
+      ],
       "@constants": [
         "./src/constants/index.ts"
       ],
@@ -44,13 +47,15 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
+    "types/expo-ambient.d.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
     "node_modules",
     "android",
     "ios",
-    "babel.config.js",
-    "metro.config.js"
+    "babel.config.cjs",
+    "metro.config.cjs",
+    "expo-env.d.ts"
   ]
 }

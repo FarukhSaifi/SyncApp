@@ -3,17 +3,18 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Card } from "@/src/components/Card";
-import { ROUTES } from "@/src/constants";
-import { BUTTON_VARIANTS, RADIUS } from "@/src/constants/designTokens";
-import { PLATFORM_DISPLAY_NAMES, type PlatformSlug } from "@/src/constants/platforms";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorForm } from "@/src/types";
+import { Button } from "@components/Button";
+import { Card } from "@components/Card";
+import { ROUTES } from "@constants";
+import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { PLATFORM_DISPLAY_NAMES, type PlatformSlug } from "@constants/platforms";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { EditorForm, Post } from "@types";
 
 interface ChannelsTabProps {
   form: EditorForm;
-  platforms: typeof import("@/src/constants/platforms").PLATFORMS;
+  platforms: typeof import("@constants/platforms").PLATFORMS;
   connectedPlatforms: PlatformSlug[];
   loadingPlatforms?: boolean;
   selectedPlatforms: PlatformSlug[];
@@ -21,6 +22,9 @@ interface ChannelsTabProps {
   updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
   generateLinkedInSummary: () => Promise<void>;
   aiLoading: boolean;
+  platformStatus?: Post["platform_status"];
+  unpublish: (platform: string) => Promise<void>;
+  publishing: boolean;
 }
 
 const PLATFORM_THEMES: Record<
@@ -59,6 +63,9 @@ export function ChannelsTab({
   updateField,
   generateLinkedInSummary,
   aiLoading,
+  platformStatus,
+  unpublish,
+  publishing,
 }: ChannelsTabProps) {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -119,49 +126,70 @@ export function ChannelsTab({
             const hasTitle = Boolean(form.title.trim());
             const hasContent = Boolean(form.content_markdown.trim());
             const isChannelReady = hasTitle && hasContent;
+            const isPublished = Boolean(platformStatus?.[platform]?.published);
 
             return (
-              <Pressable
-                key={platform}
-                onPress={() => togglePlatform(platform)}
-                style={({ pressed }) => [
-                  styles.platformCard,
-                  selected && styles.platformCardSelected,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View style={[styles.platformIconWrapper, { backgroundColor: `${theme.brandColor}20` }]}>
-                  <Ionicons name={theme.icon} size={22} color={theme.brandColor} />
-                </View>
-
-                <View style={styles.platformCopy}>
-                  <View style={styles.platformTitleRow}>
-                    <Text style={styles.platformName}>{PLATFORM_DISPLAY_NAMES[platform]}</Text>
-                    <View
-                      style={[styles.statusPill, isChannelReady ? styles.statusPillReady : styles.statusPillAttention]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          isChannelReady ? styles.statusPillTextReady : styles.statusPillTextAttention,
-                        ]}
-                      >
-                        {isChannelReady ? "Ready" : "Needs Content"}
-                      </Text>
-                    </View>
+              <View key={platform} style={styles.platformBlock}>
+                <Pressable
+                  onPress={() => togglePlatform(platform)}
+                  style={({ pressed }) => [
+                    styles.platformCard,
+                    selected && styles.platformCardSelected,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <View style={[styles.platformIconWrapper, { backgroundColor: `${theme.brandColor}20` }]}>
+                    <Ionicons name={theme.icon} size={22} color={theme.brandColor} />
                   </View>
 
-                  <Text style={styles.platformSummary} numberOfLines={2}>
-                    {theme.summary}
-                  </Text>
-                </View>
+                  <View style={styles.platformCopy}>
+                    <View style={styles.platformTitleRow}>
+                      <Text style={styles.platformName}>{PLATFORM_DISPLAY_NAMES[platform]}</Text>
+                      <View
+                        style={[
+                          styles.statusPill,
+                          isPublished
+                            ? styles.statusPillReady
+                            : isChannelReady
+                              ? styles.statusPillReady
+                              : styles.statusPillAttention,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusPillText,
+                            isPublished || isChannelReady
+                              ? styles.statusPillTextReady
+                              : styles.statusPillTextAttention,
+                          ]}
+                        >
+                          {isPublished ? LABELS.PUBLISHED : isChannelReady ? "Ready" : "Needs Content"}
+                        </Text>
+                      </View>
+                    </View>
 
-                <Ionicons
-                  name={selected ? "checkmark-circle" : "ellipse-outline"}
-                  size={24}
-                  color={selected ? colors.primary : colors.mutedForeground}
-                />
-              </Pressable>
+                    <Text style={styles.platformSummary} numberOfLines={2}>
+                      {theme.summary}
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name={selected ? "checkmark-circle" : "ellipse-outline"}
+                    size={24}
+                    color={selected ? colors.primary : colors.mutedForeground}
+                  />
+                </Pressable>
+                {isPublished ? (
+                  <Button
+                    title={LABELS.UNPUBLISH}
+                    variant={BUTTON_VARIANTS.OUTLINE}
+                    size="sm"
+                    onPress={() => void unpublish(platform)}
+                    loading={publishing}
+                    style={styles.unpublishBtn}
+                  />
+                ) : null}
+              </View>
             );
           })}
         </View>
@@ -268,6 +296,13 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.mutedForeground,
       marginTop: 4,
       lineHeight: 18,
+    },
+    platformBlock: {
+      gap: 8,
+    },
+    unpublishBtn: {
+      alignSelf: "flex-start",
+      marginLeft: 4,
     },
     platformsList: {
       gap: 10,

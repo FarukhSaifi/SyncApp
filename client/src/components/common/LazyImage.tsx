@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import type { LazyImageProps } from "@types";
 import Image from "next/image";
 
+import { LAZY_IMAGE } from "@constants/designTokens";
+
 import Skeleton from "@components/common/Skeleton";
 
 /**
@@ -19,7 +21,7 @@ export default function LazyImage({
   height,
   className = "",
   containerClassName = "",
-  skeletonClassName = "absolute inset-0",
+  skeletonClassName = LAZY_IMAGE["SKELETON_CLASS"],
   onImageError,
   showSkeleton = true,
   viewportLazy: _viewportLazy,
@@ -27,60 +29,68 @@ export default function LazyImage({
   fill,
   ...restProps
 }: LazyImageProps) {
-  const [error, setError] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     setError(false);
     setLoaded(false);
   }, [src]);
 
-  if (!src) return null;
+  if (!src) {
+    return null;
+  }
 
-  const isDataUri = src.startsWith("data:");
+  const isDataUri = src.startsWith(LAZY_IMAGE["DATA_URI_PREFIX"]);
   const showImage = !error;
 
   const numericWidth = typeof width === "number" ? width : Number(width);
   const numericHeight = typeof height === "number" ? height : Number(height);
   const hasDimensions = !fill && !isNaN(numericWidth) && !isNaN(numericHeight) && numericWidth > 0 && numericHeight > 0;
+  const resolvedAlt = alt || LAZY_IMAGE["DEFAULT_ALT"];
 
   return (
     <div className={`relative overflow-hidden ${containerClassName}`}>
-      {showSkeleton && !loaded && !isDataUri && !error && <Skeleton className={skeletonClassName} aria-hidden />}
-      {showImage &&
-        (hasDimensions ? (
+      {showSkeleton && !loaded && !isDataUri && !error ? <Skeleton className={skeletonClassName} aria-hidden /> : null}
+      {showImage ? (
+        hasDimensions ? (
           <Image
             src={src}
-            alt={alt || "Image"}
+            alt={resolvedAlt}
             width={numericWidth}
             height={numericHeight}
             className={`object-cover ${className} transition-opacity duration-300 ${
               loaded || isDataUri ? "opacity-100" : "opacity-0"
             }`}
-            onLoad={() => setLoaded(true)}
+            onLoad={() => {
+              setLoaded(true);
+            }}
             onError={() => {
               setError(true);
               onImageError?.();
             }}
-            {...(restProps as any)}
+            {...restProps}
           />
         ) : (
           <Image
             src={src}
-            alt={alt || "Image"}
+            alt={resolvedAlt}
             fill
             className={`object-cover ${className} transition-opacity duration-300 ${
               loaded || isDataUri ? "opacity-100" : "opacity-0"
             }`}
-            onLoad={() => setLoaded(true)}
+            onLoad={() => {
+              setLoaded(true);
+            }}
             onError={() => {
               setError(true);
               onImageError?.();
             }}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            {...(restProps as any)}
+            sizes={LAZY_IMAGE["SIZES"]}
+            {...restProps}
           />
-        ))}
+        )
+      ) : null}
     </div>
   );
 }

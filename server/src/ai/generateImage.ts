@@ -1,28 +1,41 @@
 /**
  * AI Featured Image Generation
- * Uses real AI models (Gemini 2.5 Flash Image & Imagen) configured for 16:9 blog headers.
- * Powered by Google AI Studio via GEMINI_API_KEY.
+ * Primary: Gemini multimodal image models on Vertex AI (preferred) or Studio fallback.
+ * Imagen is not used (deprecated on Vertex as of 2026-06-30).
+ * Configured for 16:9 blog headers.
  */
-import { AI_CONFIG, AI_POST_LIMITS, AI_PROMPTS, DEFAULT_VALUES } from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import { uploadToGCS } from "../services/storage";
-import type { GenerateImageResult, ImageSource } from "../types";
-import { logger } from "../utils/logger";
+
+import {
+  AI_CONFIG,
+  AI_IMAGE_SOURCES,
+  AI_POST_LIMITS,
+  AI_PROMPTS,
+  AI_PROVIDERS,
+  DEFAULT_VALUES,
+  REGEX_PATTERNS,
+} from "@constants";
+import { AppError } from "@middleware/errorHandler";
+import { uploadToGCS } from "@services/storage";
+import type { GenerateImageResult, ImageSource } from "@types";
+import { logger } from "@utils/logger";
+
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+
 import {
   buildModelCandidates,
+  generateAiContent,
   getAiClient,
   getModelName,
   getText,
-  studioGenerateContent,
+  resolveAiProvider,
 } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 
 export type { GenerateImageResult, ImageSource };
 
-function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime = "image/png"): string {
+function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime: string = AI_CONFIG.IMAGE_MIME_PNG): string {
   const base64 = typeof bytes === "string" ? bytes : Buffer.from(bytes).toString("base64");
   return `data:${mime};base64,${base64}`;
 }
@@ -35,7 +48,7 @@ function extractInlineImage(result: Record<string, unknown>): string | null {
       | { data?: string; mimeType?: string; mime_type?: string }
       | undefined;
     if (inline?.data) {
-      return toBase64DataUrl(inline.data, inline.mimeType || inline.mime_type || "image/png");
+      return toBase64DataUrl(inline.data, inline.mimeType || inline.mime_type || AI_CONFIG.IMAGE_MIME_PNG);
     }
   }
   return null;
@@ -46,8 +59,10 @@ function extractInlineImage(result: Record<string, unknown>): string | null {
  */
 async function persistImage(dataUrl: string, topic: string): Promise<string | undefined> {
   try {
-    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!match) return undefined;
+    const match = dataUrl.match(REGEX_PATTERNS["DATA_URL_BASE64"]);
+    if (!match) {
+      return undefined;
+    }
     const mimetype = match[1];
     const buffer = Buffer.from(match[2], "base64");
     const slug = topic
@@ -73,7 +88,7 @@ async function generatePrompt(topic: string, userInstruction?: string): Promise<
   for (const model of candidates) {
     try {
       const result = await withRetry(() =>
-        studioGenerateContent({
+        generateAiContent({
           model,
           contents: AI_PROMPTS.IMAGE_FROM_TOPIC_USER(topic.trim(), userInstruction),
           systemInstruction: AI_PROMPTS.IMAGE_FROM_TOPIC_SYSTEM,
@@ -84,7 +99,9 @@ async function generatePrompt(topic: string, userInstruction?: string): Promise<
       return getText(result);
     } catch (err) {
       lastErr = err;
-      if (!isFallbackWorthyError(err)) break;
+      if (!isFallbackWorthyError(err)) {
+        break;
+      }
     }
   }
 
@@ -94,14 +111,26 @@ async function generatePrompt(topic: string, userInstruction?: string): Promise<
   );
 }
 
+function imageModelCandidates(): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const model of [AI_CONFIG.IMAGE_MODEL, ...AI_CONFIG.IMAGE_MODEL_FALLBACKS]) {
+    if (model.startsWith(AI_CONFIG.IMAGEN_MODEL_PREFIX)) {
+      continue;
+    }
+    if (seen.has(model)) {
+      continue;
+    }
+    seen.add(model);
+    out.push(model);
+  }
+  return out;
+}
+
 /**
- * Try generating an image with Google AI Studio and Gemini multimodal model.
+ * Try generating an image with Gemini multimodal image models (Vertex or Studio client).
  */
-async function tryGeminiModel(
-  model: string,
-  prompt: string,
-  providerLabel: string,
-): Promise<string | null> {
+async function tryGeminiImageModel(model: string, prompt: string, providerLabel: string): Promise<string | null> {
   const formattedPrompt = `Create a high-CTR 16:9 (${AI_POST_LIMITS.COVER_WIDTH}×${AI_POST_LIMITS.COVER_HEIGHT}) blog featured image. Clean, modern developer aesthetic, no watermarks, no UI chrome. ${prompt}`;
   try {
     const ai = getAiClient();
@@ -110,9 +139,12 @@ async function tryGeminiModel(
         ai.models.generateContent({
           model,
           contents: formattedPrompt,
-          config: { responseModalities: ["TEXT", "IMAGE"], temperature: 0.8 },
+          config: {
+            responseModalities: [AI_CONFIG.RESPONSE_MODALITY_TEXT, AI_CONFIG.RESPONSE_MODALITY_IMAGE],
+            temperature: AI_CONFIG.TEMPERATURE_IMAGE,
+          },
         }),
-      { attempts: 1 },
+      { attempts: AI_CONFIG.RETRY_ATTEMPTS_ONCE },
     );
     const dataUrl = extractInlineImage(res as unknown as Record<string, unknown>);
     if (dataUrl) {
@@ -120,56 +152,19 @@ async function tryGeminiModel(
       return dataUrl;
     }
   } catch (err) {
-    logger.warn(`${providerLabel} (${model}) failed: ${(err as Error).message.slice(0, 150)}`);
+    logger.warn(`${providerLabel} (${model}) failed: ${(err as Error).message.slice(0, AI_CONFIG.IMAGE_ERROR_LOG_MAX_CHARS)}`);
   }
   return null;
 }
 
-/**
- * Try generating image via Google AI Studio Gemini multimodal models.
- */
-async function tryStudioGemini(prompt: string): Promise<string | null> {
-  const models = [
-    AI_CONFIG.IMAGE_MODEL,
-    ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => !m.startsWith("imagen")),
-  ];
-
-  for (const model of models) {
-    const result = await tryGeminiModel(model, prompt, "AI Studio Gemini");
-    if (result) return result;
-  }
-  return null;
-}
-
-/**
- * Try generating image via Imagen models (16:9 aspect ratio).
- */
-async function tryImagen(prompt: string): Promise<string | null> {
-  const ai = getAiClient();
-  const models = [
-    "imagen-4.0-fast-generate-001",
-    "imagen-3.0-generate-002",
-    ...AI_CONFIG.IMAGE_MODEL_FALLBACKS.filter((m) => m.startsWith("imagen")),
-  ];
-
-  for (const model of models) {
-    try {
-      const res = await withRetry(
-        () =>
-          ai.models.generateImages({
-            model,
-            prompt,
-            config: { numberOfImages: 1, aspectRatio: "16:9" },
-          }),
-        { attempts: 1 },
-      );
-      const img = res?.generatedImages?.[0]?.image;
-      if (img?.imageBytes) {
-        logger.info(`AI image generated via Imagen (${model})`);
-        return toBase64DataUrl(img.imageBytes, img.mimeType || "image/png");
-      }
-    } catch (err) {
-      logger.warn(`Imagen (${model}) failed: ${(err as Error).message.slice(0, 150)}`);
+async function tryGeminiImageModels(prompt: string): Promise<string | null> {
+  const provider = resolveAiProvider();
+  const providerLabel =
+    provider === AI_PROVIDERS.VERTEX ? AI_CONFIG.PROVIDER_LABEL_VERTEX_GEMINI : AI_CONFIG.PROVIDER_LABEL_STUDIO_GEMINI;
+  for (const model of imageModelCandidates()) {
+    const result = await tryGeminiImageModel(model, prompt, providerLabel);
+    if (result) {
+      return result;
     }
   }
   return null;
@@ -190,22 +185,14 @@ export async function generateImageFromTopic(
     additionalPrompt?.trim() || (await generatePrompt(topic, additionalPrompt))
   ).trim();
 
-  // 1. Google AI Studio (Multimodal Gemini)
-  const studioData = await tryStudioGemini(prompt);
-  if (studioData) {
-    const publicUrl = await persistImage(studioData, topic);
-    return { imageDataUrl: studioData, imageUrl: publicUrl, source: "gemini" };
-  }
-
-  // 2. Google AI Studio (Imagen)
-  const imagenData = await tryImagen(prompt);
-  if (imagenData) {
-    const publicUrl = await persistImage(imagenData, topic);
-    return { imageDataUrl: imagenData, imageUrl: publicUrl, source: "imagen" };
+  const imageData = await tryGeminiImageModels(prompt);
+  if (imageData) {
+    const publicUrl = await persistImage(imageData, topic);
+    return { imageDataUrl: imageData, imageUrl: publicUrl, source: AI_IMAGE_SOURCES.GEMINI };
   }
 
   throw new AppError(
-    `${ERROR_MESSAGES.AI_IMAGE_FAILED} — AI image models are temporarily unavailable or rate limited. Please retry shortly.`,
+    `${ERROR_MESSAGES.AI_IMAGE_FAILED}${ERROR_MESSAGES.AI_IMAGE_UNAVAILABLE_DETAIL}`,
     HTTP_STATUS.SERVICE_UNAVAILABLE,
   );
 }

@@ -1,8 +1,9 @@
+import { HTTP_STATUS } from "@constants";
+import connectDB from "@database/connection";
 import type { NextFunction, Request, Response } from "express";
 
-import { HTTP_STATUS } from "../constants";
-import { ERROR_MESSAGES } from "../constants/messages";
-import connectDB from "../database/connection";
+import { ERROR_MESSAGES } from "@constants/messages";
+
 
 /**
  * Ensures MongoDB is connected before handling the request.

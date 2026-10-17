@@ -1,11 +1,12 @@
 import { Tabs, router } from "expo-router";
 
-import { AppHeaderLeft, AppHeaderRight } from "@/src/components/AppHeaderActions";
-import { FloatingTabBar, type FloatingTabBarProps } from "@/src/components/FloatingTabBar";
-import { FLOATING_TAB_BAR_STYLE, LABELS, ROUTES, tabScreenOptions } from "@/src/constants";
-import { USER_ROLES } from "@/src/constants/userRoles";
-import { useAuth } from "@/src/contexts/AuthContext";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { AppHeaderLeft, AppHeaderRight } from "@components/AppHeaderActions";
+import { FloatingTabBar } from "@components/FloatingTabBar";
+import { FLOATING_TAB_BAR_STYLE, LABELS, ROUTES, tabScreenOptions } from "@constants";
+import { USER_ROLES } from "@constants/userRoles";
+import { useAuth } from "@contexts/AuthContext";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { FloatingTabBarProps } from "@types";
 
 const tabHeaderActions = {
   headerLeft: () => <AppHeaderLeft />,

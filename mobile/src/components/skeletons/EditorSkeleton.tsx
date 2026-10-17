@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { Skeleton } from "@/src/components/Skeleton";
-import { IOS26, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Skeleton } from "@components/Skeleton";
+import { IOS26, RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 export function EditorSkeleton() {
   const colors = useThemeColors();

@@ -1,27 +1,30 @@
 /**
- * Full-post generation — Google AI Studio only.
+ * Full-post generation — Vertex AI preferred, Google AI Studio fallback.
  */
-import { config } from "../config";
+
+import { config } from "@config";
 import {
   AI_CONFIG,
   AI_RESPONSE_SCHEMA,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
   includesLinkedInTarget,
-} from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import type { GeneratePostResult } from "../types";
-import { buildReadMoreUrl, slugifyArticlePath } from "../utils/linkedinPost";
-import { buildModelCandidates, getModelName, getText, studioGenerateContent } from "./client";
+} from "@constants";
+import { AppError } from "@middleware/errorHandler";
+import type { GeneratePostResult } from "@types";
+import { buildReadMoreUrl, slugifyArticlePath } from "@utils/linkedinPost";
+
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+
+import { buildModelCandidates, generateAiContent, getModelName, getText } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 import { parseGeneratePostResponse } from "./schemas";
 
 function isRateLimited(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return /429|RESOURCE_EXHAUSTED|Resource exhausted/i.test(msg);
+  return AI_CONFIG.ERR_RATE_LIMIT_PATTERN.test(msg);
 }
 
 async function generateWithModel(
@@ -32,16 +35,18 @@ async function generateWithModel(
   includeLinkedIn: boolean,
 ): Promise<GeneratePostResult> {
   // Pro / paid-quota models: one shot then fall back (avoid burning retries on 429).
-  const attempts = /pro/i.test(modelName) ? 1 : AI_CONFIG.RETRY_ATTEMPTS;
+  const attempts = AI_CONFIG.PRO_MODEL_NAME_PATTERN.test(modelName)
+    ? AI_CONFIG.PRO_MODEL_RETRY_ATTEMPTS
+    : AI_CONFIG.RETRY_ATTEMPTS;
   const result = await withRetry(
     () =>
-      studioGenerateContent({
+      generateAiContent({
         model: modelName,
         contents: userMessage,
         systemInstruction,
         maxOutputTokens: AI_CONFIG.MAX_DRAFT_TOKENS,
         temperature: AI_CONFIG.TEMPERATURE_POST,
-        responseMimeType: "application/json",
+        responseMimeType: AI_CONFIG.RESPONSE_MIME_JSON,
         responseSchema: AI_RESPONSE_SCHEMA,
         ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
       }),

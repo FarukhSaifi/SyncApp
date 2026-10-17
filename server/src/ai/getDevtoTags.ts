@@ -2,13 +2,14 @@
  * High-reach DEV.to tags via the public Forem tags API (ordered by popularity).
  * No curated fallback — callers surface errors to the UI.
  */
-import { AI_CONFIG, API_URLS } from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import { logger } from "../utils/logger";
+import { AI_CONFIG, API_URLS } from "@constants";
+import { AppError } from "@middleware/errorHandler";
+import type { DevtoCacheEntry, DevtoReachTagsResult } from "@types";
+import { logger } from "@utils/logger";
 
-import type { DevtoCacheEntry, DevtoReachTagsResult } from "../types";
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+
 
 export type { DevtoReachTagsResult };
 

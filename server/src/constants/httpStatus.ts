@@ -13,6 +13,8 @@ export const HTTP_STATUS = Object.freeze({
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  /** Google AI Studio returns 402 when prepaid credits are depleted. */
+  PAYMENT_REQUIRED: 402,
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
 

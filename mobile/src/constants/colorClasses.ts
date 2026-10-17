@@ -1,4 +1,4 @@
-import type { ThemeColors } from "@/src/constants/palette";
+import type { ThemeColors } from "@constants/palette";
 
 /** Semantic badge / alert styles for React Native — mirrors client colorClasses.ts */
 export function getBadgeStyles(colors: ThemeColors) {

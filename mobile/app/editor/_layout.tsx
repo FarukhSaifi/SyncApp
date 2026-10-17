@@ -1,10 +1,10 @@
 import { Stack } from "expo-router";
 import { Platform } from "react-native";
 
-import { AppHeaderRight } from "@/src/components/AppHeaderActions";
-import { LABELS } from "@/src/constants";
-import { editorProfileHeaderOptions, tabScreenOptions } from "@/src/constants/layout";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { AppHeaderRight } from "@components/AppHeaderActions";
+import { LABELS } from "@constants";
+import { editorProfileHeaderOptions, tabScreenOptions } from "@constants/layout";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 export default function EditorLayout() {
   const colors = useThemeColors();

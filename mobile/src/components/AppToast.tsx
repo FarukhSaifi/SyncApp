@@ -1,7 +1,7 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-import { glassToastConfig, glassToastDefaults } from "@/src/components/GlassToast";
+import { glassToastConfig, glassToastDefaults } from "@components/GlassToast";
 
 /** Global toast host with Liquid Glass cards. */
 export function AppToast() {

@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-import { IconHeaderButton } from "@/src/components/IconHeaderButton";
-import { ROUTES } from "@/src/constants";
-import { HEADER_ICON_BUTTON } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { IconHeaderButton } from "@components/IconHeaderButton";
+import { ROUTES } from "@constants";
+import { HEADER_ICON_BUTTON } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 /** Opens profile as a root-stack modal popup. */
 export function ProfileHeaderButton() {

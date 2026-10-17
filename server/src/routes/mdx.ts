@@ -1,11 +1,12 @@
+import { HTTP_STATUS, ERROR_MESSAGES, STRING_LIMITS, HTTP, MDX_CONFIG } from '@constants';
+import Post from '@models/Post';
+import { authenticateToken } from '@utils/auth';
+import { createLogger } from '@utils/logger';
+import dayjs from 'dayjs';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import createSlug from 'slugify';
-import Post from '../models/Post';
-import dayjs from 'dayjs';
-import { authenticateToken } from '../utils/auth';
-import { HTTP_STATUS, ERROR_MESSAGES, STRING_LIMITS, HTTP, MDX_CONFIG } from '../constants';
-import { createLogger } from '../utils/logger';
+
 
 const router: Router = Router();
 const logger = createLogger('MDX');

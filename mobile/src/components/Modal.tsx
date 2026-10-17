@@ -10,8 +10,8 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface ModalProps {
   visible: boolean;

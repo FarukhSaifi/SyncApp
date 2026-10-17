@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface ScreenIntroProps {
   description: string;

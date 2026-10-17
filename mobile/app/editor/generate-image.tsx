@@ -1,4 +1,4 @@
-import GenerateImageScreen from "@/src/screens/GenerateImageScreen";
+import GenerateImageScreen from "@screens/GenerateImageScreen";
 import { useLocalSearchParams } from "expo-router";
 
 export default function GenerateImageRoute() {

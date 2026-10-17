@@ -23,7 +23,7 @@
 3. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms? }`.
 4. Server validates model against allowlist and targets against `devto` / `linkedin`.
 5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` via `@google/genai` SDK — no Vertex required).
-6. `buildFullPostSystemPrompt(targets)` merges base SEO rules with platform-specific instructions; response is parsed as JSON (`schemas.ts`).
+6. `buildFullPostSystemPrompt(targets)` merges base rules from `AI_PROMPTS.FULL_POST_SYSTEM_BASE` in [`server/src/constants/ai.ts`](../server/src/constants/ai.ts) (humanization / anti AI-detection, anti-spam / natural keyword density, SEO E-E-A-T, conciseness) with platform-specific blocks in [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts); response is parsed as JSON (`schemas.ts`).
 7. Client fills the editor with the full article `{ title, meta_description, tags, content }`.
 8. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor persists these on the Post (`linkedin_post`, `linkedin_read_more_url`) and shows a **LinkedIn summary** panel with Copy + Publish. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
 

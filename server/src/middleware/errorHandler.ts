@@ -3,10 +3,12 @@
  * Provides consistent error responses and logging
  */
 
+
+import { config } from "@config";
+import { DEFAULT_VALUES, ERROR_MESSAGES, HTTP_STATUS } from "@constants";
+import type { AxiosErrorLike, MongoCastError, MongoDuplicateKeyError, MongoValidationError } from "@types";
+import { logger } from "@utils/logger";
 import type { ErrorRequestHandler, NextFunction, Request, Response } from "express";
-import { config } from "../config";
-import { DEFAULT_VALUES, ERROR_MESSAGES, HTTP_STATUS } from "../constants";
-import { logger } from "../utils/logger";
 
 export class AppError extends Error {
   statusCode: number;
@@ -45,8 +47,6 @@ export class ForbiddenError extends AppError {
     super(message, HTTP_STATUS.FORBIDDEN);
   }
 }
-
-import { AxiosErrorLike, MongoCastError, MongoDuplicateKeyError, MongoValidationError } from "../types";
 
 function handleMongoError(error: Error & { code?: number; keyPattern?: Record<string, unknown> }): AppError {
   if (error.name === "ValidationError") {

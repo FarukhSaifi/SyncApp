@@ -27,6 +27,13 @@ export const USER_INDEXES = Object.freeze({
   ROLE_RECENT: { role: 1, createdAt: -1 },
 } as const);
 
+export const ANALYTICS_SNAPSHOT_INDEXES = Object.freeze({
+  /** One latest snapshot per post + platform */
+  POST_PLATFORM_UNIQUE: { post: 1, platform: 1 },
+  /** Author dashboard: list by views */
+  AUTHOR_PLATFORM_VIEWS: { author: 1, platform: 1, views: -1 },
+} as const);
+
 /** Index names to drop when migrating from pre-production schemas */
 export const LEGACY_INDEXES_TO_DROP = Object.freeze({
   credentials: ["platform_name_1", "user_id_1", "is_active_1", "author_1"],
@@ -39,4 +46,5 @@ export const LEGACY_INDEXES_TO_DROP = Object.freeze({
     "scheduled_for_1",
   ],
   users: [],
+  postanalyticssnapshots: [],
 } as const);

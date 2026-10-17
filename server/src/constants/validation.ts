@@ -53,6 +53,14 @@ export const REGEX_PATTERNS = Object.freeze({
   EMAIL: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
   ALPHANUMERIC: /^[a-zA-Z0-9]+$/,
   URL: /^https?:\/\/.+/,
+  /** Full data-URL with base64 payload (cover / AI image upload). */
+  DATA_URL_BASE64: /^data:([^;]+);base64,(.+)$/,
+  /** Inline markdown image data-URLs (`data:image/<subtype>;base64,...`). */
+  MARKDOWN_IMAGE_DATA_URL: /data:image\/([^;]+);base64,([A-Za-z0-9+/=]+)/g,
+  /** Absolute GCS public object URL. */
+  GCS_PUBLIC_OBJECT_URL: /^https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/,
+  /** GCS public URLs embedded in markdown (stops at ), whitespace, or "). */
+  GCS_PUBLIC_URL_IN_MARKDOWN: /https:\/\/storage\.googleapis\.com\/([^/]+)\/([^)\s"]+)/g,
 } as const);
 
 // Validation error messages

@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { ImageDataUrlPreview } from "@/src/components/ImageDataUrlPreview";
-import { Skeleton } from "@/src/components/Skeleton";
-import { Spinner } from "@/src/components/Spinner";
-import { DESCRIPTIONS, LABELS } from "@/src/constants";
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { ImageDataUrlPreview } from "@components/ImageDataUrlPreview";
+import { Skeleton } from "@components/Skeleton";
+import { Spinner } from "@components/Spinner";
+import { DESCRIPTIONS, LABELS } from "@constants";
+import { RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface ImagePreviewFrameProps {
   generating: boolean;

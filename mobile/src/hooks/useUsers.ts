@@ -2,12 +2,12 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
-import { ALERTS, APP_CONFIG, ERRORS, LABELS, ROUTES, TOAST } from "@/src/constants";
-import { USER_ROLES, USER_VERIFIED_FILTER } from "@/src/constants/userRoles";
-import { useDebounce } from "@/src/hooks/useDebounce";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
-import type { User } from "@/src/types";
+import { ALERTS, APP_CONFIG, ERRORS, LABELS, ROUTES, TOAST } from "@constants";
+import { USER_ROLES, USER_VERIFIED_FILTER } from "@constants/userRoles";
+import { useDebounce } from "@hooks/useDebounce";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
+import type { User } from "@types";
 
 interface UseUsersOptions {
   userRole?: string;

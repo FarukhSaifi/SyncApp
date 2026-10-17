@@ -3,11 +3,11 @@ import dayjs from "dayjs";
 import { useMemo } from "react";
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { RADIUS } from "@/src/constants/designTokens";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@/src/constants/platforms";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorForm, EditorReadiness } from "@/src/types";
+import { Button } from "@components/Button";
+import { RADIUS } from "@constants/designTokens";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { EditorForm, EditorReadiness } from "@types";
 
 interface ReviewPublishSheetProps {
   visible: boolean;

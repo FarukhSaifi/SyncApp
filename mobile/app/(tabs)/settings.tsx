@@ -2,18 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Card, CardContent } from "@/src/components/Card";
-import { Input } from "@/src/components/Input";
-import { PasswordInput } from "@/src/components/PasswordInput";
-import { ScreenIntro } from "@/src/components/ScreenIntro";
-import { APP_CONFIG, DESCRIPTIONS, ERRORS, EXTERNAL_LINKS, LABELS, TOAST } from "@/src/constants";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { PLATFORMS } from "@/src/constants/platforms";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { useTabBarInset } from "@/src/hooks/useTabBarInset";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
+import { Button } from "@components/Button";
+import { Card, CardContent } from "@components/Card";
+import { Input } from "@components/Input";
+import { PasswordInput } from "@components/PasswordInput";
+import { ScreenIntro } from "@components/ScreenIntro";
+import { APP_CONFIG, DESCRIPTIONS, ERRORS, EXTERNAL_LINKS, LABELS, TOAST } from "@constants";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { PLATFORMS } from "@constants/platforms";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { useTabBarInset } from "@hooks/useTabBarInset";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
 
 type PlatformKey = "medium" | "devto" | "wordpress" | "linkedin";
 
@@ -57,26 +57,33 @@ export default function SettingsScreen() {
           apiClient.getCredential(PLATFORMS.LINKEDIN),
         ]);
         if (m.success && m.data) {
-          setMediumKey((m.data as { api_key?: string }).api_key ?? "");
-          setConnected((c) => ({ ...c, medium: true }));
+          // Server returns masked keys only — leave input empty for re-entry.
+          setMediumKey("");
+          setConnected((c) => ({
+            ...c,
+            medium: Boolean((m.data as { configured?: boolean }).configured ?? true),
+          }));
         }
         if (d.success && d.data) {
           const cred = d.data as {
-            api_key?: string;
+            configured?: boolean;
             platform_config?: { devto_username?: string };
           };
-          setDevtoKey(cred.api_key ?? "");
+          setDevtoKey("");
           setDevtoUser(cred.platform_config?.devto_username ?? "");
-          setConnected((c) => ({ ...c, devto: true }));
+          setConnected((c) => ({ ...c, devto: Boolean(cred.configured ?? true) }));
         }
         if (w.success && w.data) {
-          const cred = w.data as { api_key?: string; site_url?: string };
-          setWpKey(cred.api_key ?? "");
+          const cred = w.data as { configured?: boolean; site_url?: string };
+          setWpKey("");
           setWpUrl(cred.site_url ?? "");
-          setConnected((c) => ({ ...c, wordpress: true }));
+          setConnected((c) => ({ ...c, wordpress: Boolean(cred.configured ?? true) }));
         }
         if (l.success && l.data) {
-          setConnected((c) => ({ ...c, linkedin: true }));
+          setConnected((c) => ({
+            ...c,
+            linkedin: Boolean((l.data as { configured?: boolean }).configured ?? true),
+          }));
         }
       } catch {
         /* credentials may not exist yet */

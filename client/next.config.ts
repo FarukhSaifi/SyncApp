@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
-      }
+      },
     ],
   },
   experimental: {
@@ -66,6 +66,7 @@ const nextConfig: NextConfig = {
     const origin = getApiOrigin();
     return [{ source: "/api/:path*", destination: `${origin}/api/:path*` }];
   },
+  allowedDevOrigins: ["localhost:3000", "192.168.1.54"],
 };
 
 export default nextConfig;

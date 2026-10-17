@@ -1,5 +1,6 @@
 import createSlug from "slugify";
-import { STRING_LIMITS } from "../constants/validation";
+
+import { STRING_LIMITS } from "@constants/validation";
 
 /** Safe path segment from slug or title — no path chars, lowercase. */
 export function slugifyMediaName(value?: string | null, fallback = "post"): string {
@@ -27,9 +28,15 @@ export function resolvePostMediaSlug(opts: {
   title?: string | null;
   postId?: string | null;
 }): string {
-  if (opts.slug?.trim()) return slugifyMediaName(opts.slug);
-  if (opts.title?.trim()) return slugifyMediaName(opts.title);
-  if (opts.postId?.trim()) return slugifyMediaName(opts.postId, "post");
+  if (opts.slug?.trim()) {
+    return slugifyMediaName(opts.slug);
+  }
+  if (opts.title?.trim()) {
+    return slugifyMediaName(opts.title);
+  }
+  if (opts.postId?.trim()) {
+    return slugifyMediaName(opts.postId, "post");
+  }
   return "post";
 }
 

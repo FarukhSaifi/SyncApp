@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-import { STORAGE_KEYS } from "@/src/constants/config";
+import { STORAGE_KEYS } from "@constants/config";
 
 export async function getToken(): Promise<string | null> {
   try {

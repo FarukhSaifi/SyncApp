@@ -2,8 +2,8 @@ import { Link, Stack } from "expo-router";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { LABELS, ROUTES } from "@/src/constants";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { LABELS, ROUTES } from "@constants";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 export default function NotFoundScreen() {
   const colors = useThemeColors();

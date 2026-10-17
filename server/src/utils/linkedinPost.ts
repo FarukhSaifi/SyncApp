@@ -1,9 +1,15 @@
 /**
  * Build public article "Read more" URLs for LinkedIn teasers.
  */
+
+
+import { config } from "@config";
+import { AI_POST_LIMITS } from "@constants";
 import createSlug from "slugify";
-import { config } from "../config";
-import { AI_POST_LIMITS } from "../constants";
+
+import { UTM_SOURCES } from "@constants/utm";
+
+import { appendUtmParams } from "./utm";
 
 export function slugifyArticlePath(value: string): string {
   return createSlug(value.trim(), { lower: true, strict: true }) || "post";
@@ -13,10 +19,13 @@ export function slugifyArticlePath(value: string): string {
  * Prefer AI slug (canonical_url field is a slug hint), else title.
  * Returns undefined when CANONICAL_BASE_URL (public blog, e.g. farukh.me) is not configured.
  * Never uses SITE_URL — that is the SyncApp client for auth/publishing UI.
+ * Appends LinkedIn UTM params for GA4 attribution on the public blog.
  */
 export function buildReadMoreUrl(title: string, aiSlugHint?: string): string | undefined {
   const base = (config.canonicalBaseUrl || "").trim().replace(/\/$/, "");
-  if (!base) return undefined;
+  if (!base) {
+    return undefined;
+  }
 
   const rawHint = (aiSlugHint || "").trim().replace(/^\/+|\/+$/g, "");
   const slug =
@@ -24,7 +33,8 @@ export function buildReadMoreUrl(title: string, aiSlugHint?: string): string | u
       ? slugifyArticlePath(rawHint)
       : slugifyArticlePath(title);
 
-  return `${base}/${slug}`;
+  const absolute = `${base}/${slug}`;
+  return appendUtmParams(absolute, { source: UTM_SOURCES["LINKEDIN"], content: slug });
 }
 
 /** Trailing lines that are only hashtags (e.g. "#WebDev #JavaScript"). */
@@ -73,7 +83,8 @@ export function finalizeLinkedInPost(linkedinPost: string, readMoreUrl?: string)
     .trim();
 
   if (readMoreUrl) {
-    text = insertReadMoreBeforeHashtags(text, `${prefix} ${readMoreUrl}`);
+    const withUtm = appendUtmParams(readMoreUrl, { source: UTM_SOURCES["LINKEDIN"] });
+    text = insertReadMoreBeforeHashtags(text, `${prefix} ${withUtm}`);
   }
 
   return text;

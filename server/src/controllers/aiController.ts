@@ -2,22 +2,24 @@
  * AI Controller – generate post, image, edit, capabilities
  */
 
-import type { Request, Response } from "express";
+
 import {
   HTTP_STATUS,
   isAllowedContentModel,
   isValidOptimizationTargets,
   resolveOptimizationTargets,
-} from "../constants";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError, asyncHandler } from "../middleware/errorHandler";
-import * as aiService from "../services/aiService";
+} from "@constants";
+import { AppError, asyncHandler } from "@middleware/errorHandler";
+import * as aiService from "@services/aiService";
 import type {
   GenerateEditRequestBody,
   GenerateImageRequestBody,
   GenerateLinkedInSummaryRequestBody,
   GeneratePostRequestBody,
-} from "../types";
+} from "@types";
+import type { Request, Response } from "express";
+
+import { ERROR_MESSAGES } from "@constants/messages";
 
 function isRefreshQuery(value: unknown): boolean {
   const raw = String(value || "");
@@ -36,7 +38,10 @@ export const getCapabilities = asyncHandler(async (_req: Request, res: Response)
 });
 
 export const getTrendingTopics = asyncHandler(async (req: Request, res: Response) => {
-  const data = await aiService.getTrendingTopics({ refresh: isRefreshQuery(req.query.refresh) });
+  const refresh = isRefreshQuery(req.query.refresh);
+  const data = await aiService.getTrendingTopics({ refresh });
+  // Prefer fresh fetches over intermediary HTTP caches; in-memory TTL is short.
+  res.setHeader("Cache-Control", refresh ? "no-store" : "private, max-age=0, must-revalidate");
   res.status(HTTP_STATUS.OK).json({ success: true, data });
 });
 

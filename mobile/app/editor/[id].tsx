@@ -1,4 +1,4 @@
-import EditorScreen from "@/src/screens/EditorScreen";
+import EditorScreen from "@screens/EditorScreen";
 import { useLocalSearchParams } from "expo-router";
 
 export default function EditEditorRoute() {

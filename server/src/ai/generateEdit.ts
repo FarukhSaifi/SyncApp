@@ -1,13 +1,17 @@
 /**
- * Inline editor AI actions (proofread, rewrite, etc.) — Google AI Studio.
+ * Inline editor AI actions (proofread, rewrite, etc.) — Vertex AI preferred, Studio fallback.
  */
-import { AI_CONFIG, AI_PROMPTS } from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import { buildModelCandidates, getModelName, getText, studioGenerateContent } from "./client";
+import { AI_CONFIG, AI_PROMPTS } from "@constants";
+import { AppError } from "@middleware/errorHandler";
+
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+
+import { buildModelCandidates, generateAiContent, getModelName, getText } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
+
+
 
 export async function generateEdit(action: string, contextText: string): Promise<string> {
   if (!contextText || typeof contextText !== "string" || !contextText.trim()) {
@@ -20,7 +24,7 @@ export async function generateEdit(action: string, contextText: string): Promise
   for (const modelName of candidates) {
     try {
       const result = await withRetry(() =>
-        studioGenerateContent({
+        generateAiContent({
           model: modelName,
           contents: AI_PROMPTS.EDITOR_TOOL_USER(action, contextText.trim()),
           systemInstruction: AI_PROMPTS.EDITOR_TOOL_SYSTEM,

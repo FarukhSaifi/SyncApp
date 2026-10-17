@@ -36,17 +36,27 @@ const HTML_BLOCK_ANY = /<\/?(?:p|div|h[1-6]|ul|ol|li|blockquote|pre|article|sect
 
 function isLikelyHtml(content: string): boolean {
   const trimmed = content.trim();
-  if (!trimmed) return false;
-  if (HTML_BLOCK_OPEN.test(trimmed)) return true;
+  if (!trimmed) {
+    return false;
+  }
+  if (HTML_BLOCK_OPEN.test(trimmed)) {
+    return true;
+  }
   return (trimmed.match(HTML_BLOCK_ANY)?.length ?? 0) >= 2;
 }
 
 /** Ensure `content_markdown` is markdown, not TipTap HTML. */
 export function ensureMarkdownContent(content: string | undefined | null): string {
-  if (!content || typeof content !== "string") return "";
+  if (!content || typeof content !== "string") {
+    return "";
+  }
   const trimmed = content.trim();
-  if (!trimmed) return "";
-  if (!isLikelyHtml(trimmed)) return trimmed;
+  if (!trimmed) {
+    return "";
+  }
+  if (!isLikelyHtml(trimmed)) {
+    return trimmed;
+  }
   return turndown
     .turndown(trimmed)
     .replace(/\u00a0/g, " ")

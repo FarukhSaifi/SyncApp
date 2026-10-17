@@ -1,8 +1,8 @@
 import { StyleSheet, View } from "react-native";
 
-import { ProfileHeaderButton } from "@/src/components/ProfileHeaderButton";
-import { ThemeToggleButton } from "@/src/components/ThemeToggleButton";
-import { HEADER_ACTION } from "@/src/constants/headerActions";
+import { ProfileHeaderButton } from "@components/ProfileHeaderButton";
+import { ThemeToggleButton } from "@components/ThemeToggleButton";
+import { HEADER_ACTION } from "@constants/headerActions";
 
 type HeaderActionSlotProps = {
   children: React.ReactNode;

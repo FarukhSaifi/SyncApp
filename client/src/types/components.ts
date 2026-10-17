@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { Editor } from "@tiptap/react";
+import type { ImageProps } from "next/image";
 
 import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES, PILL_SIZES } from "@constants/designTokens";
 
@@ -14,11 +15,17 @@ export type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
 export type IconComponent = React.ComponentType<{ className?: string }>;
 export type PostCoverThumbSize = "sm" | "md";
 
+/** Props forwarded to `next/image` after LazyImage handles layout/loading. */
+export type LazyImagePassthroughProps = Omit<
+  ImageProps,
+  "src" | "alt" | "width" | "height" | "fill" | "onLoad" | "onError" | "className" | "sizes"
+>;
+
 export interface SkeletonProps extends React.HTMLAttributes<HTMLSpanElement> {
   className?: string;
 }
 
-export interface LazyImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt" | "width" | "height"> {
+export interface LazyImageProps extends LazyImagePassthroughProps {
   src: string;
   alt: string;
   width?: number | string;

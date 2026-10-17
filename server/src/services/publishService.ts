@@ -1,6 +1,6 @@
-import axios from "axios";
-import dayjs from "dayjs";
-import { config } from "../config";
+
+
+import { config } from "@config";
 import {
   API_URLS,
   ERROR_MESSAGES,
@@ -10,13 +10,12 @@ import {
   PLATFORMS,
   POST_STATUS,
   SUCCESS_MESSAGES,
-} from "../constants";
-import { SCHEDULED_PUBLISH_MAX_PER_RUN } from "../constants/notifications";
-import type { ICredentialDocument } from "../models/Credential";
-import Credential from "../models/Credential";
-import type { IPostDocument } from "../models/Post";
-import Post from "../models/Post";
-import User from "../models/User";
+} from "@constants";
+import type { ICredentialDocument } from "@models/Credential";
+import Credential from "@models/Credential";
+import type { IPostDocument } from "@models/Post";
+import Post from "@models/Post";
+import User from "@models/User";
 import type {
   IPlatformStatus,
   PlatformPublishAction,
@@ -24,12 +23,17 @@ import type {
   PublishScheduledPostsResult,
   PublishToActivePlatformsResult,
   ScheduledPublishPostResult,
-} from "../types";
-import { cache, cacheKeys } from "../utils/cache";
-import { decryptCredential } from "../utils/encryption";
-import { finalizeLinkedInPost } from "../utils/linkedinPost";
-import { logger } from "../utils/logger";
-import { scheduledPublishDueFilter } from "../utils/scheduleUtils";
+} from "@types";
+import { cache, cacheKeys } from "@utils/cache";
+import { decryptCredential } from "@utils/encryption";
+import { finalizeLinkedInPost } from "@utils/linkedinPost";
+import { logger } from "@utils/logger";
+import { scheduledPublishDueFilter } from "@utils/scheduleUtils";
+import axios from "axios";
+import dayjs from "dayjs";
+
+import { SCHEDULED_PUBLISH_MAX_PER_RUN } from "@constants/notifications";
+
 import { resolveLinkedInAccess } from "./linkedinOAuthService";
 import { notifyScheduledPublishResult } from "./notificationService";
 
@@ -45,12 +49,16 @@ function isValidHttpUrl(value: string): boolean {
 /** Resolve a full canonical URL for Dev.to, or undefined when none is valid. */
 function resolveDevtoCanonicalUrl(post: IPostDocument): string | undefined {
   const stored = (post.canonical_url || "").trim();
-  if (isValidHttpUrl(stored)) return stored;
+  if (isValidHttpUrl(stored)) {
+    return stored;
+  }
 
   const base = config.canonicalBaseUrl;
   if (base && post.slug) {
     const built = `${base}/${post.slug}`;
-    if (isValidHttpUrl(built)) return built;
+    if (isValidHttpUrl(built)) {
+      return built;
+    }
   }
 
   return undefined;
@@ -89,7 +97,9 @@ function prepareDevtoTags(tags: string[] | undefined): string[] {
         .replace(/[\s-]+/g, ""),
     )
     .filter((tag) => {
-      if (!tag || seen.has(tag)) return false;
+      if (!tag || seen.has(tag)) {
+        return false;
+      }
       seen.add(tag);
       return true;
     })
@@ -99,9 +109,15 @@ function prepareDevtoTags(tags: string[] | undefined): string[] {
 /** Resolve a public HTTP(S) cover URL for Dev.to, or empty when not publishable. */
 function resolveDevtoCoverImage(post: IPostDocument): string {
   const cover = (post.cover_image || "").trim();
-  if (!cover) return "";
-  if (cover.startsWith("data:")) return "";
-  if (isValidHttpUrl(cover)) return cover;
+  if (!cover) {
+    return "";
+  }
+  if (cover.startsWith("data:")) {
+    return "";
+  }
+  if (isValidHttpUrl(cover)) {
+    return cover;
+  }
   return "";
 }
 
@@ -134,7 +150,9 @@ function devtoAuthHeaders(apiKey: string) {
 /** Editor stores Quill HTML in content_markdown; Medium requires matching contentFormat. */
 function isHtmlContent(content: string): boolean {
   const trimmed = content.trim();
-  if (!trimmed) return false;
+  if (!trimmed) {
+    return false;
+  }
   return trimmed.startsWith("<") && /<[a-z][\s\S]*>/i.test(trimmed);
 }
 
@@ -146,38 +164,71 @@ function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "htm
   };
 }
 
+function isDecryptFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message === ERROR_MESSAGES.FAILED_TO_DECRYPT || message.includes("bad decrypt");
+}
+
+/** Decrypt platform API key; surface actionable Settings guidance on key mismatch. */
+function decryptPlatformApiKey(credential: ICredentialDocument): string {
+  try {
+    return decryptCredential(credential.encrypted_payload || credential.api_key);
+  } catch (error) {
+    if (isDecryptFailure(error)) {
+      throw new Error(ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED, { cause: error });
+    }
+    throw error;
+  }
+}
+
 function mediumErrorMessage(error: unknown): string {
+  if (isDecryptFailure(error) || (error as Error).message === ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED) {
+    return ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED;
+  }
   const axiosError = error as Error & {
     isAxiosError?: boolean;
     response?: { status?: number; data?: { errors?: Array<{ message?: string }> } };
   };
   if (axiosError.isAxiosError && axiosError.response?.data?.errors?.length) {
     const messages = axiosError.response.data.errors.map((e) => e.message).filter(Boolean);
-    if (messages.length > 0) return messages.join("; ");
+    if (messages.length > 0) {
+      return messages.join("; ");
+    }
   }
   return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
 function devtoErrorMessage(error: unknown): string {
+  if (isDecryptFailure(error) || (error as Error).message === ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED) {
+    return ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED;
+  }
   const axiosError = error as Error & {
     isAxiosError?: boolean;
     response?: { status?: number; data?: Record<string, unknown> };
   };
   const data = axiosError.response?.data;
   if (axiosError.isAxiosError && data) {
-    if (typeof data.error === "string" && data.error.trim()) return data.error;
-    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    if (typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+    if (typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
     if (Array.isArray(data.errors)) {
       const messages = data.errors
         .map((entry) => {
-          if (typeof entry === "string") return entry;
+          if (typeof entry === "string") {
+            return entry;
+          }
           if (entry && typeof entry === "object" && "message" in entry) {
             return String((entry as { message?: unknown }).message ?? "");
           }
           return "";
         })
         .filter(Boolean);
-      if (messages.length > 0) return messages.join("; ");
+      if (messages.length > 0) {
+        return messages.join("; ");
+      }
     }
     if (typeof data === "object") {
       return JSON.stringify(data);
@@ -200,9 +251,15 @@ function linkedinErrorMessage(error: unknown): string {
   };
   const data = axiosError.response?.data;
   if (axiosError.isAxiosError && data) {
-    if (typeof data.message === "string" && data.message.trim()) return data.message;
-    if (typeof data.error_description === "string" && data.error_description.trim()) return data.error_description;
-    if (typeof data.error === "string" && data.error.trim()) return data.error;
+    if (typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+    if (typeof data.error_description === "string" && data.error_description.trim()) {
+      return data.error_description;
+    }
+    if (typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
   }
   return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
@@ -215,8 +272,10 @@ export async function publishToMedium(
     return { updates: existingPlatformUpdates(post, PLATFORMS.MEDIUM), action: "skip" };
   }
 
-  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
-  if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_MEDIUM_API_KEY);
+  const apiKey = decryptPlatformApiKey(credential);
+  if (!apiKey) {
+    throw new Error(ERROR_MESSAGES.INVALID_MEDIUM_API_KEY);
+  }
 
   const userResponse = await axios.get(API_URLS.MEDIUM.ME_ENDPOINT, {
     headers: {
@@ -259,8 +318,10 @@ export async function publishToDevto(
   post: IPostDocument,
   credential: ICredentialDocument,
 ): Promise<PlatformPublishResult> {
-  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
-  if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_DEVTO_API_KEY);
+  const apiKey = decryptPlatformApiKey(credential);
+  if (!apiKey) {
+    throw new Error(ERROR_MESSAGES.INVALID_DEVTO_API_KEY);
+  }
 
   const article = buildDevtoArticlePayload(post);
   const existing = getExistingPlatformStatus(post, PLATFORMS.DEVTO);
@@ -298,12 +359,16 @@ export async function publishToWordpress(
   post: IPostDocument,
   credential: ICredentialDocument,
 ): Promise<PlatformPublishResult> {
-  const apiKey = decryptCredential(credential.encrypted_payload || credential.api_key);
-  if (!apiKey) throw new Error(ERROR_MESSAGES.INVALID_WORDPRESS_API_KEY);
+  const apiKey = decryptPlatformApiKey(credential);
+  if (!apiKey) {
+    throw new Error(ERROR_MESSAGES.INVALID_WORDPRESS_API_KEY);
+  }
 
   const siteUrl =
     credential.site_url || (credential.platform_config as { wordpress_url?: string } | undefined)?.wordpress_url;
-  if (!siteUrl) throw new Error(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
+  if (!siteUrl) {
+    throw new Error(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
+  }
 
   const payload = {
     title: post.title,
@@ -408,7 +473,7 @@ export async function publishToLinkedin(
       action: wasPublished ? "update" : "create",
     };
   } catch (error) {
-    throw new Error(linkedinErrorMessage(error));
+    throw new Error(linkedinErrorMessage(error), { cause: error });
   }
 }
 
@@ -424,8 +489,12 @@ const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: 
 function platformSuccessMessage(platformName: string, action: PlatformPublishAction): string {
   const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
   const name = platformCfg?.name ?? platformName;
-  if (action === "update") return SUCCESS_MESSAGES.UPDATED_ON_PLATFORM(name);
-  if (action === "skip") return SUCCESS_MESSAGES.ALREADY_PUBLISHED_ON_PLATFORM(name);
+  if (action === "update") {
+    return SUCCESS_MESSAGES.UPDATED_ON_PLATFORM(name);
+  }
+  if (action === "skip") {
+    return SUCCESS_MESSAGES.ALREADY_PUBLISHED_ON_PLATFORM(name);
+  }
   return SUCCESS_MESSAGES.PUBLISHED_TO_PLATFORM(name);
 }
 
@@ -454,7 +523,7 @@ export async function performPublishToAll(post: IPostDocument) {
   const updatedPost = await Post.findByIdAndUpdate(
     freshPost._id,
     { status: POST_STATUS.PUBLISHED, ...platformUpdates },
-    { new: true, runValidators: true },
+    { returnDocument: "after", runValidators: true },
   );
 
   let message: string;
@@ -507,7 +576,9 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
               ? devtoErrorMessage(error)
               : platformName === PLATFORMS.LINKEDIN
                 ? linkedinErrorMessage(error)
-                : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+                : isDecryptFailure(error) || (error as Error).message === ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED
+                  ? ERROR_MESSAGES.CREDENTIAL_DECRYPT_FAILED
+                  : (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
         errors.push({
           platform: platformCfg.name,
           error: errorMessage,
@@ -521,7 +592,9 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
 
 async function loadAuthorForNotification(authorId: unknown) {
   const author = await User.findById(authorId).select("email firstName lastName").lean();
-  if (!author) return { authorEmail: undefined, authorName: undefined };
+  if (!author) {
+    return { authorEmail: undefined, authorName: undefined };
+  }
   const name = [author.firstName, author.lastName].filter(Boolean).join(" ").trim();
   return { authorEmail: author.email, authorName: name || undefined };
 }
@@ -589,7 +662,7 @@ export async function publishScheduledPost(post: IPostDocument): Promise<Schedul
   await Post.findByIdAndUpdate(
     freshPost._id,
     { status: POST_STATUS.PUBLISHED, scheduled_for: null, ...platformUpdates },
-    { new: true, runValidators: true },
+    { returnDocument: "after", runValidators: true },
   );
 
   const notification = await notifyScheduledPublishResult({
@@ -661,6 +734,6 @@ export async function publishScheduledPosts(): Promise<PublishScheduledPostsResu
   };
 }
 
-export type { PlatformPublishAction, PlatformPublishResult } from "../types";
+export type { PlatformPublishAction, PlatformPublishResult } from "@types";
 
 export { platformSuccessMessage };

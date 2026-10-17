@@ -1,10 +1,14 @@
 import { randomUUID } from "crypto";
+
+import { config } from "@config";
+import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "@constants";
+import type { IPlatformStatus, IPost } from "@types";
 import mongoose, { Document, Model, Schema } from "mongoose";
 import createSlug from "slugify";
-import { config } from "../config";
-import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "../constants";
-import { POST_INDEXES } from "../constants/indexes";
-import type { IPlatformStatus, IPost } from "../types/index";
+
+
+import { POST_INDEXES } from "@constants/indexes";
+
 
 export interface IPostDocument extends Document, Omit<IPost, "_id" | "author"> {
   author: mongoose.Types.ObjectId;
@@ -126,12 +130,12 @@ async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
 }
 
 postSchema.pre("validate", async function (this: IPostDocument) {
-  if (!this.isModified("title") && this.slug) return;
+  if (!this.isModified("title") && this.slug) {return;}
   this.slug = await generateUniqueSlug(this);
 });
 
 postSchema.pre("save", function (this: IPostDocument) {
-  if (this.canonical_url && this.canonical_url.trim() !== "") return; // Respect custom canonical URL if set
+  if (this.canonical_url && this.canonical_url.trim() !== "") {return;} // Respect custom canonical URL if set
 
   const base = config.canonicalBaseUrl as string | undefined;
   if (base && this.slug) {
@@ -155,7 +159,7 @@ postSchema.virtual("updated_at").get(function (this: IPostDocument) {
 
 postSchema.virtual("is_published_anywhere").get(function (this: IPostDocument) {
   const platformStatus = this.platform_status as Record<string, IPlatformStatus> | undefined;
-  if (!platformStatus) return false;
+  if (!platformStatus) {return false;}
   return Object.values(platformStatus).some((platform) => platform.published);
 });
 

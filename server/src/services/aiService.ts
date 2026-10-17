@@ -1,8 +1,8 @@
 /**
  * AI Service — stable import path for controllers and services.
- * Powered by Google AI Studio (@google/genai).
+ * Powered by Vertex AI (preferred) or Google AI Studio via @google/genai.
  */
-export { getAiClient } from "../ai/client";
+export { getAiClient } from "@ai/client";
 export {
   generateEdit,
   generateImageFromTopic,
@@ -11,4 +11,4 @@ export {
   getAiCapabilities,
   getDevtoReachTags,
   getTrendingTopics,
-} from "../ai";
+} from "@ai";

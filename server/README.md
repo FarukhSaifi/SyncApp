@@ -14,17 +14,17 @@
 
 1. **Install dependencies:**
 
-   ```bash
+   ````bash
    npm install
    ```21. **Generate encryption keys (if needed):**
 
    ```bash
    node ../scripts/generate-keys.js
-   ```
+   ````
 
    Copy the output key for the next step.
 
-3. **Configure environment variables:**
+2. **Configure environment variables:**
 
    ```bash
    cp .env.dev.example .env.dev
@@ -57,13 +57,13 @@
    RATE_LIMIT_MAX_REQUESTS=100
    ```
 
-4. **Set up the database:**
+3. **Set up the database:**
 
    ```bash
    npm run db:setup
    ```
 
-5. **Start the server:**
+4. **Start the server:**
 
    ```bash
    # Development (with auto-reload)
@@ -104,12 +104,16 @@
 | `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit window in ms | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
-| `GEMINI_API_KEY` | Google AI Studio API key ([get one free](https://aistudio.google.com/apikey)) — required for AI routes | _(not set)_ |
+| `GOOGLE_CLOUD_PROJECT` | GCP project for **Vertex AI** + GCS (prefer `syncapp-ai`) | _(not set)_ |
+| `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to SA JSON or ADC (local Vertex + GCS) | _(not set)_ |
+| `GOOGLE_CREDENTIALS_JSON` | Raw SA JSON (Vercel Vertex + GCS + GA4) | _(not set)_ |
+| `GCS_SIGNING_SERVICE_ACCOUNT` | SA email to impersonate for V4 signed uploads (user ADC) | project Vertex SA |
 | `GOOGLE_AI_MODEL` | Gemini content model | `gemini-3.8-flash` |
-| `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for SEO posts | `true` |
-| `GOOGLE_CLOUD_PROJECT` | GCP project ID (optional — GCS cover uploads) | _(not set)_ |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local GCS) | _(not set)_ |
-| `GOOGLE_CREDENTIALS_JSON` | Raw service account JSON (Vercel GCS) | _(not set)_ |
+| `GEMINI_API_KEY` | Google AI Studio fallback only — do not top up Studio billing | _(not set)_ |
+| `GOOGLE_ANALYTICS_PROPERTY_ID` | Numeric GA4 property id for blog analytics | _(not set)_ |
+| `CANONICAL_BASE_URL` | Public blog base (LinkedIn Read more + canonicals) | _(not set)_ |
+| `AI_USE_GOOGLE_SEARCH_RETRIEVAL` | Use Google Search grounding for SEO posts | `false` |
 
 ## 🏗️ Tech Stack
 
@@ -118,7 +122,7 @@
 - **TypeScript & Zod** - Strict typing & schema validation
 - **MongoDB** - Database (Mongoose ODM)
 - **JWT & bcryptjs** - Authentication & password hashing
-- **Google AI Studio (`@google/genai`)** - Generative AI integration
+- **Vertex AI / `@google/genai`** - Generative AI (Vertex preferred; Studio fallback)
 - **Google Cloud Storage** - V4 Presigned Direct PUT URLs for image uploads
 - **Axios** - HTTP client for platform APIs for external APIs
 
@@ -211,16 +215,16 @@ server/
 
 - `POST /api/upload/presigned-url` - Generate V4 Presigned Direct PUT URL for uploading post cover images directly from browser to GCS
 
-### AI (auth required) — Google AI Studio
+### AI (auth required) — Vertex AI (preferred)
 
-- `GET /api/ai/capabilities` - `{ textAi, imageAi, provider, defaultModel }`
+- `GET /api/ai/capabilities` - `{ textAi, imageAi, provider, defaultModel, project?, location? }`
 - `GET /api/ai/trending-topics` - Live topics + Google SEO keywords via Search grounding (`?refresh=1`)
 - `GET /api/ai/devto-tags` - High-reach DEV.to tags from Forem `/api/tags` (`?refresh=1`)
 - `POST /api/ai/generate` - Full SEO post from keyword (body: `{ keyword, model?, targetPlatforms? }`)
 - `POST /api/ai/generate-image` - Featured image from topic
 - `POST /api/ai/edit` - Inline edit selected text (body: `{ action, text }`)
 
-Requires `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). Default model: `gemini-3.8-flash`. See [docs/AI_SETUP.md](../docs/AI_SETUP.md). Without the key, AI routes return **503**.
+Prefer **Vertex AI** on project `syncapp-ai` (`GOOGLE_CLOUD_PROJECT` + SA credentials). Studio `GEMINI_API_KEY` is fallback only — do not top up AI Studio billing. Default model: `gemini-3.8-flash`. See [docs/AI_SETUP.md](../docs/AI_SETUP.md). Without Vertex or a Studio key, AI routes return **503**.
 
 ### System
 

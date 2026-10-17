@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
-import { GlassSurface } from "@/src/components/GlassSurface";
-import { HEADER_ICON_BUTTON, RADIUS, TAB_BAR } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { isLiquidGlassAvailable } from "@/src/utils/nativeGlass";
+import { GlassSurface } from "@components/GlassSurface";
+import { HEADER_ICON_BUTTON, RADIUS, TAB_BAR } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { isLiquidGlassAvailable } from "@utils/nativeGlass";
 
 export interface IconHeaderButtonProps {
   accessibilityLabel: string;

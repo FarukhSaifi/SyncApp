@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { APP_CONFIG, ERRORS } from "@/src/constants";
-import { apiClient } from "@/src/services/apiClient";
-import type { Post } from "@/src/types";
+import { APP_CONFIG, ERRORS } from "@constants";
+import { apiClient } from "@services/apiClient";
+import type { Post } from "@types";
 
 export function usePosts() {
   const [posts, setPosts] = useState<Post[]>([]);

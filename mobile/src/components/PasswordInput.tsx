@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Input, type InputProps } from "@/src/components/Input";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Input, type InputProps } from "@components/Input";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 type PasswordInputProps = Omit<InputProps, "secureTextEntry">;
 

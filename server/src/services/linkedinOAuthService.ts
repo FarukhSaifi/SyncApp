@@ -1,18 +1,19 @@
 /**
  * LinkedIn OAuth (authorization code) + token refresh helpers.
  */
+
+import { config } from "@config";
+import { API_URLS, ERROR_MESSAGES, HTTP, PLATFORMS } from "@constants";
+import { ValidationError } from "@middleware/errorHandler";
+import Credential from "@models/Credential";
+import type { LinkedInAccessContext } from "@types";
+import { cache, cacheKeys } from "@utils/cache";
+import { decryptCredential, encryptCredential } from "@utils/encryption";
+import { createLogger } from "@utils/logger";
+import { toObjectId } from "@utils/objectId";
 import axios from "axios";
 import dayjs from "dayjs";
 import jwt from "jsonwebtoken";
-import { config } from "../config";
-import { API_URLS, ERROR_MESSAGES, HTTP, PLATFORMS } from "../constants";
-import { ValidationError } from "../middleware/errorHandler";
-import Credential from "../models/Credential";
-import { cache, cacheKeys } from "../utils/cache";
-import { decryptCredential, encryptCredential } from "../utils/encryption";
-import { createLogger } from "../utils/logger";
-import { toObjectId } from "../utils/objectId";
-import type { LinkedInAccessContext } from "../types";
 
 export type { LinkedInAccessContext };
 
@@ -161,7 +162,7 @@ export async function upsertLinkedInCredential(userId: string, tokens: TokenResp
 
   const credential = await Credential.findOneAndUpdate({ author, platform_name: PLATFORMS.LINKEDIN }, updateData, {
     upsert: true,
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   }).lean();
 
@@ -236,8 +237,8 @@ export async function resolveLinkedInAccess(credential: {
 export function settingsRedirectUrl(params: { connected?: boolean; error?: string }): string {
   const base = (config.siteUrl || "http://localhost:3000").replace(/\/$/, "");
   const query = new URLSearchParams();
-  if (params.connected) query.set("linkedin", "connected");
-  if (params.error) query.set("linkedin_error", params.error);
+  if (params.connected) {query.set("linkedin", "connected");}
+  if (params.error) {query.set("linkedin_error", params.error);}
   const qs = query.toString();
   return `${base}/settings${qs ? `?${qs}` : ""}`;
 }

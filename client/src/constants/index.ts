@@ -18,5 +18,6 @@ export * from "./routes";
 export * from "./seo";
 export * from "./theme";
 export * from "./userRoles";
+export * from "./utm";
 
 export { SYNC_LABEL } from "./messages";

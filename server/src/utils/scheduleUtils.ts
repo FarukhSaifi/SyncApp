@@ -1,9 +1,10 @@
+
+import { POST_STATUS } from "@constants";
+import { ValidationError } from "@middleware/errorHandler";
+import type { NormalizeScheduledForOptions } from "@types";
 import dayjs from "dayjs";
 
-import { POST_STATUS } from "../constants";
-import { VALIDATION_ERRORS } from "../constants/validation";
-import { ValidationError } from "../middleware/errorHandler";
-import type { NormalizeScheduledForOptions } from "../types";
+import { VALIDATION_ERRORS } from "@constants/validation";
 
 /**
  * Normalize scheduled_for for create/update.

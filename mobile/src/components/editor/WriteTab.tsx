@@ -1,28 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Card } from "@/src/components/Card";
-import { CoverImagePreview } from "@/src/components/CoverImagePreview";
-import { Input } from "@/src/components/Input";
-import { AiCopilotSheet } from "@/src/components/editor/AiCopilotSheet";
-import { BlockInserterSheet } from "@/src/components/editor/BlockInserterSheet";
-import { FormattingAccessoryBar } from "@/src/components/editor/FormattingAccessoryBar";
-import { VisualBlockPreview } from "@/src/components/editor/VisualBlockPreview";
-import { RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { EditorForm } from "@/src/types";
+import { Button } from "@components/Button";
+import { Card } from "@components/Card";
+import { CoverImagePreview } from "@components/CoverImagePreview";
+import { Input } from "@components/Input";
+import { AiCopilotSheet } from "@components/editor/AiCopilotSheet";
+import { BlockInserterSheet } from "@components/editor/BlockInserterSheet";
+import { FormattingAccessoryBar } from "@components/editor/FormattingAccessoryBar";
+import { VisualBlockPreview } from "@components/editor/VisualBlockPreview";
+import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
+import { ERRORS, LABELS } from "@constants/messages";
+import type { OptimizationTarget } from "@constants/platforms";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { toast } from "@hooks/useToast";
+import type { EditorForm } from "@types";
 
 interface WriteTabProps {
   form: EditorForm;
   updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
   openGenerateImage: () => void;
+  uploadCoverFromUri: (uri: string, filename: string, mimeType: string) => Promise<string | null>;
   aiEdit: (action: string) => Promise<string | void>;
   generatePost: (topic: string) => Promise<void>;
   aiLoading: boolean;
+  aiTargetPlatforms: OptimizationTarget[];
+  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
 }
 
-export function WriteTab({ form, updateField, openGenerateImage, aiEdit, generatePost, aiLoading }: WriteTabProps) {
+export function WriteTab({
+  form,
+  updateField,
+  openGenerateImage,
+  uploadCoverFromUri,
+  aiEdit,
+  generatePost,
+  aiLoading,
+  aiTargetPlatforms,
+  toggleAiTargetPlatform,
+}: WriteTabProps) {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -61,6 +79,29 @@ export function WriteTab({ form, updateField, openGenerateImage, aiEdit, generat
 
   const wordCount = form.content_markdown.trim().split(/\s+/).filter(Boolean).length;
 
+  const pickCoverFromLibrary = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        toast.error(ERRORS.IMAGE_PICKER_FAILED);
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.9,
+        allowsEditing: true,
+        aspect: [16, 9],
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const filename = asset.fileName || `cover-${Date.now()}.jpg`;
+      const mimeType = asset.mimeType || "image/jpeg";
+      await uploadCoverFromUri(asset.uri, filename, mimeType);
+    } catch {
+      toast.error(ERRORS.IMAGE_PICKER_FAILED);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* 1. Canvas vs. Live Preview Switcher */}
@@ -98,6 +139,21 @@ export function WriteTab({ form, updateField, openGenerateImage, aiEdit, generat
         onPress={openGenerateImage}
         onRemove={() => updateField("cover_image", "")}
       />
+      <View style={styles.coverActions}>
+        <Button
+          title={LABELS.PICK_COVER}
+          variant={BUTTON_VARIANTS.OUTLINE}
+          onPress={() => void pickCoverFromLibrary()}
+          loading={aiLoading}
+          style={styles.coverActionBtn}
+        />
+        <Button
+          title={LABELS.GENERATE_IMAGE}
+          variant={BUTTON_VARIANTS.SECONDARY}
+          onPress={openGenerateImage}
+          style={styles.coverActionBtn}
+        />
+      </View>
 
       {/* 3. Headline Field */}
       <Card style={styles.headlineCard}>
@@ -168,6 +224,8 @@ export function WriteTab({ form, updateField, openGenerateImage, aiEdit, generat
         onAiEdit={aiEdit}
         onGeneratePost={generatePost}
         aiLoading={aiLoading}
+        aiTargetPlatforms={aiTargetPlatforms}
+        toggleAiTargetPlatform={toggleAiTargetPlatform}
       />
     </View>
   );
@@ -254,5 +312,15 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       lineHeight: 24,
       color: colors.foreground,
       minHeight: 200,
+    },
+    coverActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 12,
+    },
+    coverActionBtn: {
+      flexGrow: 1,
+      flexBasis: "45%",
     },
   });

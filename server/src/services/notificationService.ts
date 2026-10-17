@@ -1,18 +1,19 @@
+import { config } from "@config";
+import type { NotificationResult, ScheduledPublishNotificationPayload } from "@types";
+import { logger } from "@utils/logger";
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { Resend } from "resend";
 
-import { config } from "../config";
 import {
   NOTIFICATION_CHANNEL_STATUS,
   NOTIFICATION_COPY,
   NOTIFICATION_LINKS,
   type NotificationChannelStatus,
   type ScheduledPublishOutcome,
-} from "../constants/notifications";
-import type { NotificationResult, ScheduledPublishNotificationPayload } from "../types";
-import { logger } from "../utils/logger";
+} from "@constants/notifications";
+
 
 dayjs.extend(utc);
 
@@ -54,7 +55,7 @@ type SlackBlock = Record<string, unknown>;
 function getClientAppBaseUrl(): string {
   // SyncApp editor/dashboard links — never the public blog (CANONICAL_BASE_URL / farukh.me).
   const explicit = (config.siteUrl || "").replace(/\/$/, "");
-  if (explicit) return explicit;
+  if (explicit) {return explicit;}
 
   const corsOrigin = (config.corsOrigin || "").split(",")[0]?.trim().replace(/\/$/, "");
   return corsOrigin || "";
@@ -98,7 +99,7 @@ function formatScheduledFor(date: Date): string {
 }
 
 function truncateForSlack(value: string, max = SLACK_ERROR_MAX_LEN): string {
-  if (value.length <= max) return value;
+  if (value.length <= max) {return value;}
   return `${value.slice(0, max - 1)}…`;
 }
 
@@ -106,7 +107,7 @@ function platformSummary(payload: ScheduledPublishNotificationPayload): string {
   const ok = payload.successes?.length ?? 0;
   const failed = payload.errors?.length ?? 0;
   const total = ok + failed;
-  if (total === 0) return "—";
+  if (total === 0) {return "—";}
   return NOTIFICATION_COPY.SLACK_LABEL_PLATFORMS_SUMMARY(ok, total);
 }
 
@@ -325,7 +326,7 @@ export async function notifyScheduledPublishResult(
   payload: ScheduledPublishNotificationPayload,
 ): Promise<NotificationResult> {
   if (config.nodeEnv === "production") {
-    if (!config.slackWebhookUrl) logger.warn("SLACK_WEBHOOK_URL not configured — Slack notifications skipped");
+    if (!config.slackWebhookUrl) {logger.warn("SLACK_WEBHOOK_URL not configured — Slack notifications skipped");}
     if (!config.resendApiKey || !config.notificationFromEmail) {
       logger.warn("RESEND_API_KEY or NOTIFICATION_FROM_EMAIL not configured — email notifications skipped");
     }

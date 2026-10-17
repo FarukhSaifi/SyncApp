@@ -1,7 +1,10 @@
 import crypto from "crypto";
 
-import { config } from "../config";
-import { ERROR_MESSAGES } from "../constants/messages";
+
+import { config } from "@config";
+
+import { ERROR_MESSAGES } from "@constants/messages";
+
 import { logger } from "./logger";
 
 function getKeyBuffer(): Buffer {
@@ -32,7 +35,7 @@ export function encryptCredential(plaintext: string): string {
     return `${ivHex}:${authTag}:${ciphertext}`;
   } catch (error) {
     logger.error(ERROR_MESSAGES.ENCRYPTION_ERROR_LOG, error as Error);
-    throw new Error(ERROR_MESSAGES.FAILED_TO_ENCRYPT);
+    throw new Error(ERROR_MESSAGES.FAILED_TO_ENCRYPT, { cause: error });
   }
 }
 
@@ -44,7 +47,9 @@ export function encryptCredential(plaintext: string): string {
  */
 export function decryptCredential(packedPayload: string): string {
   try {
-    if (!packedPayload) return "";
+    if (!packedPayload) {
+      return "";
+    }
 
     const parts = packedPayload.split(":");
     if (parts.length === 3) {
@@ -71,7 +76,7 @@ export function decryptCredential(packedPayload: string): string {
     return legacyDecrypted;
   } catch (error) {
     logger.error(ERROR_MESSAGES.DECRYPTION_ERROR_LOG_GENERIC, error as Error);
-    throw new Error(ERROR_MESSAGES.FAILED_TO_DECRYPT);
+    throw new Error(ERROR_MESSAGES.FAILED_TO_DECRYPT, { cause: error });
   }
 }
 

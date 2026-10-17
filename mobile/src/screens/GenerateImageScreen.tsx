@@ -2,15 +2,15 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { ImagePreviewFrame } from "@/src/components/ImagePreviewFrame";
-import { Input } from "@/src/components/Input";
-import { DESCRIPTIONS, EDITOR_CONFIG, ERRORS, LABELS, PLACEHOLDERS, TOAST } from "@/src/constants";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { toast } from "@/src/hooks/useToast";
-import { apiClient } from "@/src/services/apiClient";
-import { setPendingCoverUri } from "@/src/utils/editorCoverPending";
+import { Button } from "@components/Button";
+import { ImagePreviewFrame } from "@components/ImagePreviewFrame";
+import { Input } from "@components/Input";
+import { DESCRIPTIONS, EDITOR_CONFIG, ERRORS, LABELS, PLACEHOLDERS, TOAST } from "@constants";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { toast } from "@hooks/useToast";
+import { apiClient } from "@services/apiClient";
+import { setPendingCoverUri } from "@utils/editorCoverPending";
 
 interface GenerateImageScreenProps {
   defaultTopic?: string;

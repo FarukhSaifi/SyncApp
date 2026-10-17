@@ -2,17 +2,17 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Card, CardContent, CardHeader } from "@/src/components/Card";
-import { Input } from "@/src/components/Input";
-import { PasswordInput } from "@/src/components/PasswordInput";
-import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, PLACEHOLDERS } from "@/src/constants";
-import { getBadgeStyles } from "@/src/constants/colorClasses";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { USER_ROLE_LABELS } from "@/src/constants/userRoles";
-import { useAuth } from "@/src/contexts/AuthContext";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import { toast } from "@/src/hooks/useToast";
+import { Button } from "@components/Button";
+import { Card, CardContent, CardHeader } from "@components/Card";
+import { Input } from "@components/Input";
+import { PasswordInput } from "@components/PasswordInput";
+import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, PLACEHOLDERS } from "@constants";
+import { getBadgeStyles } from "@constants/colorClasses";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { USER_ROLE_LABELS } from "@constants/userRoles";
+import { useAuth } from "@contexts/AuthContext";
+import { useThemeColors } from "@contexts/ThemeContext";
+import { toast } from "@hooks/useToast";
 
 export default function ProfileScreen() {
   const { user, updateProfile, changePassword, logout } = useAuth();

@@ -1,16 +1,18 @@
 /**
  * Parse and normalize AI generate-post JSON (no Zod — plain JSON + sanitize).
  */
-import { AI_POST_LIMITS } from "../constants";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { AppError } from "../middleware/errorHandler";
-import type { GeneratePostResult } from "../types";
-import { buildReadMoreUrl, finalizeLinkedInPost } from "../utils/linkedinPost";
-import { sanitizeJsonString } from "../utils/sanitizeJson";
+import { AI_POST_LIMITS } from "@constants";
+import { AppError } from "@middleware/errorHandler";
+import type { GeneratePostResult } from "@types";
+import type { ParseGeneratePostOptions } from "@types";
+import { buildReadMoreUrl, finalizeLinkedInPost } from "@utils/linkedinPost";
+import { sanitizeJsonString } from "@utils/sanitizeJson";
+
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
 
 function normalizeTags(tags: unknown): string[] {
-  if (!Array.isArray(tags)) return [];
+  if (!Array.isArray(tags)) {return [];}
   return tags
     .map((tag) => String(tag).trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, ""))
     .filter(Boolean)
@@ -19,13 +21,13 @@ function normalizeTags(tags: unknown): string[] {
 
 function softClampTitle(title: string): string {
   const trimmed = title.trim();
-  if (trimmed.length <= AI_POST_LIMITS.TITLE_MAX) return trimmed;
+  if (trimmed.length <= AI_POST_LIMITS.TITLE_MAX) {return trimmed;}
   return trimmed.slice(0, AI_POST_LIMITS.TITLE_MAX).trim();
 }
 
 function softClampMeta(meta: string): string {
   const trimmed = meta.trim();
-  if (trimmed.length <= AI_POST_LIMITS.META_DESC_MAX) return trimmed;
+  if (trimmed.length <= AI_POST_LIMITS.META_DESC_MAX) {return trimmed;}
   return trimmed.slice(0, AI_POST_LIMITS.META_DESC_MAX).trim();
 }
 
@@ -38,7 +40,7 @@ function tryParseObject(raw: string): Record<string, unknown> {
 
   const attempts = [stripped, sanitizeJsonString(stripped)];
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (jsonMatch) attempts.push(sanitizeJsonString(jsonMatch[0]));
+  if (jsonMatch) {attempts.push(sanitizeJsonString(jsonMatch[0]));}
 
   for (const candidate of attempts) {
     try {
@@ -54,7 +56,6 @@ function tryParseObject(raw: string): Record<string, unknown> {
   throw new Error("unparseable");
 }
 
-import type { ParseGeneratePostOptions } from "../types";
 
 export type { ParseGeneratePostOptions };
 
@@ -94,7 +95,7 @@ export function parseGeneratePostResponse(rawText: string, options: ParseGenerat
 
     return result;
   } catch (err) {
-    if (err instanceof AppError) throw err;
+    if (err instanceof AppError) {throw err;}
     throw new AppError(ERROR_MESSAGES.AI_PARSE_FAILED, HTTP_STATUS.BAD_GATEWAY);
   }
 }

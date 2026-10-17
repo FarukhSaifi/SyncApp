@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { Spinner } from "@/src/components/Spinner";
-import { LOADING_UI } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
+import { Spinner } from "@components/Spinner";
+import { LOADING_UI } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 interface LoadingScreenProps {
   message?: string;

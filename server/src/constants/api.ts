@@ -15,6 +15,8 @@ export const API_URLS = {
     BASE_URL: "https://dev.to/api",
     ARTICLES_ENDPOINT: "https://dev.to/api/articles",
     ARTICLE_BY_ID: (id: string) => `https://dev.to/api/articles/${id}`,
+    /** Authenticated user's articles (includes page_views_count when api-key is set). */
+    ARTICLES_ME_ENDPOINT: "https://dev.to/api/articles/me",
     /** Popular tags ordered by reach — https://developers.forem.com/api/v1#tag/tags/operation/getTags */
     TAGS_ENDPOINT: "https://dev.to/api/tags",
   },

@@ -1,6 +1,7 @@
+
+import * as aiController from "@controllers/aiController";
+import { authenticateToken } from "@utils/auth";
 import { Router } from "express";
-import * as aiController from "../controllers/aiController";
-import { authenticateToken } from "../utils/auth";
 
 const router: Router = Router();
 

@@ -1,6 +1,7 @@
+
+import * as usersController from '@controllers/usersController';
+import { authenticateToken, requireAdmin } from '@utils/auth';
 import { Router } from 'express';
-import { authenticateToken, requireAdmin } from '../utils/auth';
-import * as usersController from '../controllers/usersController';
 
 const router: Router = Router();
 

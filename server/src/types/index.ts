@@ -4,20 +4,18 @@
  */
 
 export * from "./ai";
-export * from "./storage";
 export * from "./auth";
-export * from "./posts";
-export * from "./users";
-export * from "./credentials";
-export * from "./publish";
-export * from "./config";
-export * from "./errors";
 export * from "./common";
+export * from "./config";
+export * from "./credentials";
+export * from "./errors";
+export * from "./posts";
+export * from "./publish";
+export * from "./storage";
+export * from "./users";
 
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: string;
-    }
+declare module "express-serve-static-core" {
+  interface Request {
+    userId?: string;
   }
 }

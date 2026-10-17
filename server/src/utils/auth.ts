@@ -1,12 +1,16 @@
+import { config } from "@config";
+import type { JwtPayload } from "@types";
 import type { NextFunction, Request, Response } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { config } from "../config";
-import { HTTP } from "../constants/http";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { ERROR_MESSAGES } from "../constants/messages";
-import { USER_ROLES } from "../constants/userRoles";
-import type { JwtPayload } from "../types/index";
+
+
+import { HTTP } from "@constants/http";
+import { HTTP_STATUS } from "@constants/httpStatus";
+import { ERROR_MESSAGES } from "@constants/messages";
+import { USER_ROLES } from "@constants/userRoles";
+
 import { logger } from "./logger";
+
 
 const BEARER_PREFIX = `${HTTP.AUTH_SCHEMES.BEARER} `;
 
@@ -72,7 +76,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
 export const requireAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Dynamic import to avoid circular dependency
-    const User = (await import("../models/User")).default;
+    const User = (await import("@models/User")).default;
     const user = await User.findById(req.userId).select("role");
 
     if (!user) {

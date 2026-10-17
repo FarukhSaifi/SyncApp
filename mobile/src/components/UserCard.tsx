@@ -1,15 +1,15 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/src/components/Button";
-import { Card } from "@/src/components/Card";
-import { getBadgeStyles } from "@/src/constants/colorClasses";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { USER_ROLES, USER_ROLE_LABELS } from "@/src/constants/userRoles";
-import { useThemeColors } from "@/src/contexts/ThemeContext";
-import type { User } from "@/src/types";
-import { formatDateTime, formatLastLogin } from "@/src/utils/dateUtils";
+import { Button } from "@components/Button";
+import { Card } from "@components/Card";
+import { getBadgeStyles } from "@constants/colorClasses";
+import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { USER_ROLES, USER_ROLE_LABELS } from "@constants/userRoles";
+import { useThemeColors } from "@contexts/ThemeContext";
+import type { User } from "@types";
+import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 
 interface UserCardProps {
   user: User;

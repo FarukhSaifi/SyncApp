@@ -1,19 +1,21 @@
-import cors from "cors";
-import dayjs from "dayjs";
-import type { Application, Request, Response } from "express";
-import express from "express";
-import rateLimit from "express-rate-limit";
-import helmet from "helmet";
-import compression from "compression";
 import path from "path";
 
-import { config } from "./config";
-import { AI_CONFIG, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP } from "./constants";
-import connectDB, { getDbConnectionMeta, isDbConnected } from "./database/connection";
-import { ensureDb } from "./middleware/ensureDb";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
-import apiRoutes from "./routes";
-import { logger, requestLogger } from "./utils/logger";
+
+import { getAiCapabilities } from "@ai/client";
+import { config } from "@config";
+import { AI_PROVIDERS, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP, HTTP_STATUS } from "@constants";
+import connectDB, { getDbConnectionMeta, isDbConnected } from "@database/connection";
+import { ensureDb } from "@middleware/ensureDb";
+import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
+import apiRoutes from "@routes";
+import { logger, requestLogger } from "@utils/logger";
+import compression from "compression";
+import cors from "cors";
+import dayjs from "dayjs";
+import express from "express";
+import type { Application, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 
 const app: Application = express();
 const PORT = config.port;
@@ -26,41 +28,39 @@ app.use(compression());
 const limiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
-  message: ERROR_MESSAGES.TOO_MANY_REQUESTS,
+  message: ERROR_MESSAGES["TOO_MANY_REQUESTS"],
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use("/api", limiter);
 
-// CORS middleware
+// CORS middleware — production uses CORS_ORIGIN only; never merge localhost/preview defaults.
 const corsOriginEnv = config.corsOrigin || "";
-const allowedOrigins = corsOriginEnv
+const envOrigins = corsOriginEnv
   .split(",")
   .map((s) => s.trim())
-  .filter(Boolean)
-  .concat(DEFAULT_VALUES.DEFAULT_DEV_ORIGINS);
+  .filter(Boolean);
+const isDevelopment = config.nodeEnv === DEFAULT_VALUES["NODE_ENV_DEVELOPMENT"];
+const allowedOrigins = isDevelopment
+  ? [...new Set([...envOrigins, ...DEFAULT_VALUES["DEFAULT_DEV_ORIGINS"]])]
+  : envOrigins;
 
 const corsOptions = {
-  origin:
-    config.nodeEnv === "development"
-      ? true
-      : allowedOrigins.length
-        ? allowedOrigins
-        : [...DEFAULT_VALUES.DEFAULT_DEV_ORIGINS],
+  origin: isDevelopment ? true : allowedOrigins.length > 0 ? allowedOrigins : false,
   credentials: true,
-  methods: [...HTTP.METHODS] as string[],
-  allowedHeaders: [...HTTP.CORS_HEADERS.ALLOWED] as string[],
-  exposedHeaders: [...HTTP.CORS_HEADERS.EXPOSED] as string[],
+  methods: [...HTTP["METHODS"]] as string[],
+  allowedHeaders: [...HTTP["CORS_HEADERS"]["ALLOWED"]] as string[],
+  exposedHeaders: [...HTTP["CORS_HEADERS"]["EXPOSED"]] as string[],
 };
 
 app.use(cors(corsOptions));
 
 // Body parsing middleware
-app.use(express.json({ limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT }));
+app.use(express.json({ limit: DEFAULT_VALUES["DEFAULT_BODY_LIMIT"] }));
 app.use(
   express.urlencoded({
     extended: true,
-    limit: DEFAULT_VALUES.DEFAULT_BODY_LIMIT,
+    limit: DEFAULT_VALUES["DEFAULT_BODY_LIMIT"],
   }),
 );
 
@@ -69,7 +69,7 @@ app.use(requestLogger);
 
 // Root + browser probes — avoid ERROR spam on Vercel dashboard / crawlers
 app.get("/", (_req: Request, res: Response) => {
-  res.status(200).json({
+  res.status(HTTP_STATUS["OK"]).json({
     success: true,
     service: "sync-app-server",
     health: "/health",
@@ -78,7 +78,7 @@ app.get("/", (_req: Request, res: Response) => {
 });
 
 app.get(["/favicon.ico", "/favicon.png"], (_req: Request, res: Response) => {
-  res.status(204).end();
+  res.status(HTTP_STATUS["NO_CONTENT"]).end();
 });
 
 // Health check endpoint — awaits DB connect (important on Vercel cold starts)
@@ -88,33 +88,36 @@ app.get("/health", async (req: Request, res: Response) => {
     await connectDB();
   } catch (error) {
     connectionError = (error as Error).message;
-    logger.error(HEALTH.LOG.DB_CONNECT_FAILED, error as Error);
+    logger.error(HEALTH["LOG"]["DB_CONNECT_FAILED"], error as Error);
   }
 
   const dbConnected = isDbConnected();
   const { host, name } = getDbConnectionMeta();
-  const aiConfigured = Boolean(config.geminiApiKey?.trim());
+  const aiCaps = getAiCapabilities();
+  const aiConfigured = aiCaps.provider !== AI_PROVIDERS["NONE"];
   const healthInfo = {
-    status: HEALTH.STATUS.OK,
+    status: HEALTH["STATUS"]["OK"],
     timestamp: dayjs().toISOString(),
     uptime: Number(process.uptime().toFixed(2)),
     environment: config.nodeEnv,
     database: {
-      status: dbConnected ? HEALTH.DB.CONNECTED : HEALTH.DB.DISCONNECTED,
-      host: host || HEALTH.STATUS.UNKNOWN,
-      name: name || HEALTH.STATUS.UNKNOWN,
+      status: dbConnected ? HEALTH["DB"]["CONNECTED"] : HEALTH["DB"]["DISCONNECTED"],
+      host: host || HEALTH["STATUS"]["UNKNOWN"],
+      name: name || HEALTH["STATUS"]["UNKNOWN"],
       mongoUriConfigured: Boolean(config.mongoUri?.trim()),
       ...(connectionError && !dbConnected ? { error: connectionError } : {}),
     },
     ai: {
       configured: aiConfigured,
-      provider: aiConfigured ? "studio" : "none",
+      provider: aiCaps.provider,
       model: config.googleAiModel,
+      ...(aiCaps.project ? { project: aiCaps.project } : {}),
+      ...(aiCaps.location ? { location: aiCaps.location } : {}),
     },
     services: {
-      mongodb: dbConnected ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
-      server: HEALTH.SERVICE.HEALTHY,
-      ai: aiConfigured ? HEALTH.SERVICE.HEALTHY : HEALTH.SERVICE.UNHEALTHY,
+      mongodb: dbConnected ? HEALTH["SERVICE"]["HEALTHY"] : HEALTH["SERVICE"]["UNHEALTHY"],
+      server: HEALTH["SERVICE"]["HEALTHY"],
+      ai: aiConfigured ? HEALTH["SERVICE"]["HEALTHY"] : HEALTH["SERVICE"]["UNHEALTHY"],
     },
   };
 
@@ -125,7 +128,7 @@ app.get("/health", async (req: Request, res: Response) => {
     dbStatus: healthInfo.database.status,
   });
 
-  res.status(dbConnected ? 200 : 503).json(healthInfo);
+  res.status(dbConnected ? HTTP_STATUS["OK"] : HTTP_STATUS["SERVICE_UNAVAILABLE"]).json(healthInfo);
 });
 
 // Static file uploads fallback route
@@ -143,20 +146,26 @@ app.use(errorHandler);
 // Export app for Vercel (serverless). The server is only started in non-serverless envs.
 if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
   app.listen(PORT, () => {
-    logger.info(HEALTH.LOG.SERVER_STARTED, {
+    logger.info(HEALTH["LOG"]["SERVER_STARTED"], {
       port: PORT,
       environment: config.nodeEnv,
       corsOrigin: config.corsOrigin,
-      healthCheck: HEALTH.HEALTH_URL_LOCAL(PORT),
+      healthCheck: HEALTH["HEALTH_URL_LOCAL"](PORT),
     });
-    if (!config.geminiApiKey) {
-      logger.warn(
-        `AI: GEMINI_API_KEY is empty — add a free key from ${AI_CONFIG.GEMINI_API_KEY_URL} (usually starts with AIza)`,
+    const caps = getAiCapabilities();
+    if (caps.provider === AI_PROVIDERS["NONE"]) {
+      logger.warn(ERROR_MESSAGES["AI_STARTUP_NO_PROVIDER"]);
+    } else if (caps.provider === AI_PROVIDERS["VERTEX"]) {
+      logger.info(
+        `${ERROR_MESSAGES["AI_STARTUP_VERTEX_PREFIX"]}${caps.project || ""}${ERROR_MESSAGES["AI_STARTUP_VERTEX_MID"]}${caps.location || ""}${ERROR_MESSAGES["AI_STARTUP_VERTEX_SUFFIX"]}`,
       );
     } else {
       const key = config.geminiApiKey;
-      const hint = key.length > 12 ? `${key.slice(0, 6)}…${key.slice(-4)}` : "(set)";
-      logger.info(`AI: Google AI Studio key detected (${hint}) — text and image generation use GEMINI_API_KEY`);
+      const hint =
+        key.length > 12 ? `${key.slice(0, 6)}…${key.slice(-4)}` : ERROR_MESSAGES["AI_STARTUP_KEY_SET_HINT"];
+      logger.info(
+        `${ERROR_MESSAGES["AI_STARTUP_STUDIO_PREFIX"]}${hint}${ERROR_MESSAGES["AI_STARTUP_STUDIO_SUFFIX"]}`,
+      );
     }
   });
 }

@@ -124,3 +124,10 @@ pnpm-lock.yaml
 *.lock
 google-credentials.json
 client/next-env.d.ts
+
+application_default_credentials.json
+
+# Workload Identity Federation external_account config (no private key, still local-only)
+server/google-wif-credentials.json
+google-wif-credentials.json
+client/next-env.d.ts

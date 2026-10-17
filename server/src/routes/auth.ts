@@ -1,16 +1,17 @@
-import dayjs from "dayjs";
-import type { Request, Response } from "express";
-import { Router } from "express";
-import { ERROR_MESSAGES, FIELDS, HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
-import User from "../models/User";
+
+import { ERROR_MESSAGES, FIELDS, HTTP_STATUS, SUCCESS_MESSAGES } from "@constants";
+import User from "@models/User";
 import type {
   ChangePasswordRequestBody,
   LoginRequestBody,
   RegisterRequestBody,
   UpdateProfileRequestBody,
-} from "../types";
-import { authenticateToken, generateToken } from "../utils/auth";
-import { createLogger } from "../utils/logger";
+} from "@types";
+import { authenticateToken, generateToken } from "@utils/auth";
+import { createLogger } from "@utils/logger";
+import dayjs from "dayjs";
+import { Router } from "express";
+import type { Request, Response } from "express";
 
 const router: Router = Router();
 const logger = createLogger("AUTH");
@@ -164,10 +165,10 @@ router.put("/me", authenticateToken, async (req: Request, res: Response) => {
       return;
     }
 
-    if (firstName !== undefined) user.firstName = firstName;
-    if (lastName !== undefined) user.lastName = lastName;
-    if (bio !== undefined) user.bio = bio;
-    if (avatar !== undefined) user.avatar = avatar;
+    if (firstName !== undefined) {user.firstName = firstName;}
+    if (lastName !== undefined) {user.lastName = lastName;}
+    if (bio !== undefined) {user.bio = bio;}
+    if (avatar !== undefined) {user.avatar = avatar;}
 
     await user.save();
 

@@ -1,6 +1,7 @@
+
+import * as postsController from "@controllers/postsController";
+import { authenticateToken, optionalAuth } from "@utils/auth";
 import { Router } from "express";
-import * as postsController from "../controllers/postsController";
-import { authenticateToken, optionalAuth } from "../utils/auth";
 
 const router: Router = Router();
 

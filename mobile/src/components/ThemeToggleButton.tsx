@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { IconHeaderButton } from "@/src/components/IconHeaderButton";
-import { HEADER_ICON_BUTTON } from "@/src/constants/designTokens";
-import { LABELS } from "@/src/constants/messages";
-import { useTheme, useThemeColors } from "@/src/contexts/ThemeContext";
+import { IconHeaderButton } from "@components/IconHeaderButton";
+import { HEADER_ICON_BUTTON } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
+import { useTheme, useThemeColors } from "@contexts/ThemeContext";
 
 type ThemeToggleButtonProps = {
   /** Use in stack headers (default) or floating on auth screens */

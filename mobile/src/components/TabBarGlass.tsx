@@ -1,7 +1,7 @@
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 
-import { GlassSurface } from "@/src/components/GlassSurface";
-import { IOS26 } from "@/src/constants/designTokens";
+import { GlassSurface } from "@components/GlassSurface";
+import { IOS26 } from "@constants/designTokens";
 
 interface TabBarGlassProps {
   style?: StyleProp<ViewStyle>;

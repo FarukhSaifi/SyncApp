@@ -4,11 +4,14 @@
  * Typed with ApiResponse<T> and domain types from src/types.
  */
 
-import { API_BASE, API_PATHS, APP_CONFIG, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
+import { API_BASE, API_PATHS, APP_CONFIG, ERROR_MESSAGES, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
 import type {
   AiImageSource,
   AnalyticsStats,
   ApiResponse,
+  DevtoEngagementSummary,
+  DevtoEngagementSyncResult,
+  Ga4WebsiteAnalytics,
   ListResponse,
   PaginatedResponse,
   Post,
@@ -28,13 +31,13 @@ class ApiClient {
       headers: { "Content-Type": "application/json" },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "comma", skipNulls: true }),
       withCredentials: false,
-      timeout: APP_CONFIG.API_TIMEOUT,
+      timeout: APP_CONFIG["API_TIMEOUT"],
     });
 
     this.client.interceptors.request.use(
       (config) => {
         if (typeof window !== "undefined") {
-          const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+          const token = localStorage.getItem(STORAGE_KEYS["AUTH_TOKEN"]);
           if (token) {
             config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
@@ -73,7 +76,7 @@ class ApiClient {
   }
 
   async request<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { method = HTTP_METHODS.GET, headers = {}, body, params, timeout } = options;
+    const { method = HTTP_METHODS["GET"], headers = {}, body, params, timeout } = options;
     const urlPath = path.startsWith(API_BASE) ? path.slice(API_BASE.length) : path;
     const response = await this.client.request({
       url: urlPath,
@@ -88,95 +91,95 @@ class ApiClient {
 
   // Auth
   login(body: Record<string, unknown>): Promise<ApiResponse<{ user: User; token: string }>> {
-    return this.request(`${API_PATHS.AUTH}/login`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AUTH"]}/login`, {
+      method: HTTP_METHODS["POST"],
       body,
     });
   }
 
   register(body: Record<string, unknown>): Promise<ApiResponse<{ user: User; token: string }>> {
-    return this.request(`${API_PATHS.AUTH}/register`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AUTH"]}/register`, {
+      method: HTTP_METHODS["POST"],
       body,
     });
   }
 
   getMe(): Promise<ApiResponse<User>> {
-    return this.request(`${API_PATHS.AUTH}/me`);
+    return this.request(`${API_PATHS["AUTH"]}/me`);
   }
 
   updateProfile(body: Record<string, unknown>): Promise<ApiResponse<User>> {
-    return this.request(`${API_PATHS.AUTH}/me`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["AUTH"]}/me`, {
+      method: HTTP_METHODS["PUT"],
       body,
     });
   }
 
   changePassword(body: Record<string, unknown>): Promise<ApiResponse<unknown>> {
-    return this.request(`${API_PATHS.AUTH}/change-password`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["AUTH"]}/change-password`, {
+      method: HTTP_METHODS["PUT"],
       body,
     });
   }
 
   // Posts
   getPosts(params: Record<string, unknown> = {}): Promise<ApiResponse<PaginatedResponse<Post>>> {
-    return this.request(`${API_PATHS.POSTS}`, { params });
+    return this.request(`${API_PATHS["POSTS"]}`, { params });
   }
 
   getPost(id: string): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.POSTS}/${id}`);
+    return this.request(`${API_PATHS["POSTS"]}/${id}`);
   }
 
   getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.POSTS}/slug/${encodeURIComponent(slug)}`);
+    return this.request(`${API_PATHS["POSTS"]}/slug/${encodeURIComponent(slug)}`);
   }
 
   createPost(body: Record<string, unknown>): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.POSTS}`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["POSTS"]}`, {
+      method: HTTP_METHODS["POST"],
       body,
     });
   }
 
   updatePost(id: string, body: Record<string, unknown>): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.POSTS}/${id}`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["POSTS"]}/${id}`, {
+      method: HTTP_METHODS["PUT"],
       body,
     });
   }
 
   deletePost(id: string): Promise<ApiResponse<unknown>> {
-    return this.request(`${API_PATHS.POSTS}/${id}`, {
-      method: HTTP_METHODS.DELETE,
+    return this.request(`${API_PATHS["POSTS"]}/${id}`, {
+      method: HTTP_METHODS["DELETE"],
     });
   }
 
   // Credentials
   upsertCredential(platform: string, body: Record<string, unknown>): Promise<ApiResponse<unknown>> {
-    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["CREDENTIALS"]}/${platform}`, {
+      method: HTTP_METHODS["PUT"],
       body,
     });
   }
 
   deleteCredential(platform: string): Promise<ApiResponse<unknown>> {
-    return this.request(`${API_PATHS.CREDENTIALS}/${platform}`, {
-      method: HTTP_METHODS.DELETE,
+    return this.request(`${API_PATHS["CREDENTIALS"]}/${platform}`, {
+      method: HTTP_METHODS["DELETE"],
     });
   }
 
   // Publish
   publish(platform: string, postId: string): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.PUBLISH}/${platform}`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["PUBLISH"]}/${platform}`, {
+      method: HTTP_METHODS["POST"],
       body: { postId },
     });
   }
 
   publishAll(postId: string): Promise<ApiResponse<Post>> {
-    return this.request(`${API_PATHS.PUBLISH}/all`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["PUBLISH"]}/all`, {
+      method: HTTP_METHODS["POST"],
       body: { postId },
     });
   }
@@ -185,32 +188,54 @@ class ApiClient {
     platform: string,
     postId: string,
   ): Promise<ApiResponse<{ platformStatus: Record<string, unknown> }>> {
-    return this.request(`${API_PATHS.PUBLISH}/${platform}/${postId}`, {
-      method: HTTP_METHODS.DELETE,
+    return this.request(`${API_PATHS["PUBLISH"]}/${platform}/${postId}`, {
+      method: HTTP_METHODS["DELETE"],
     });
   }
 
   /** LinkedIn OAuth — returns authorize URL for browser redirect */
   linkedinOAuthStart(): Promise<ApiResponse<{ url: string }>> {
-    return this.request(`${API_PATHS.LINKEDIN}/oauth/start`);
+    return this.request(`${API_PATHS["LINKEDIN"]}/oauth/start`);
   }
 
   /** Analytics */
   async getAnalyticsStats(): Promise<ApiResponse<AnalyticsStats>> {
-    return this.request("/analytics/stats");
+    return this.request(`${API_PATHS["ANALYTICS"]}/stats`);
+  }
+
+  async getAnalyticsEngagement(): Promise<ApiResponse<DevtoEngagementSummary>> {
+    return this.request(`${API_PATHS["ANALYTICS"]}/engagement`);
+  }
+
+  async refreshAnalyticsEngagement(): Promise<ApiResponse<DevtoEngagementSyncResult>> {
+    return this.request(`${API_PATHS["ANALYTICS"]}/engagement/refresh`, {
+      method: HTTP_METHODS["POST"],
+    });
+  }
+
+  async getAnalyticsWebsite(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<Ga4WebsiteAnalytics>> {
+    return this.request(`${API_PATHS["ANALYTICS"]}/website`, {
+      method: HTTP_METHODS["GET"],
+      params: params || {},
+    });
   }
 
   // MDX export
   async downloadMdx(postId: string): Promise<void> {
     const url = `${API_BASE}/mdx/${postId}`;
-    const token = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS["AUTH_TOKEN"]) : null;
     const response = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    if (!response.ok) throw new Error(MDX_DOWNLOAD.FAILED_MESSAGE);
+    if (!response.ok) {
+      throw new Error(MDX_DOWNLOAD["FAILED_MESSAGE"]);
+    }
     const blob = await response.blob();
     const disposition = response.headers.get("content-disposition") || "";
-    let filename = `${MDX_DOWNLOAD.FILENAME_PREFIX}${postId}${MDX_DOWNLOAD.FILENAME_EXT}`;
+    let filename = `${MDX_DOWNLOAD["FILENAME_PREFIX"]}${postId}${MDX_DOWNLOAD["FILENAME_EXT"]}`;
     const match = disposition.match(/filename\*=UTF-8''([^;\n]*)|filename="?([^";\n]*)"?/i);
     if (match) {
       filename = decodeURIComponent(match[1] || match[2] || filename);
@@ -219,7 +244,9 @@ class ApiClient {
       const { saveAs } = await import("file-saver");
       saveAs(blob, filename);
     } catch {
-      if (typeof document === "undefined") throw new Error("Download is only supported in the browser");
+      if (typeof document === "undefined") {
+        throw new Error(ERROR_MESSAGES["DOWNLOAD_BROWSER_ONLY"]);
+      }
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = filename;
@@ -244,10 +271,10 @@ class ApiClient {
       linkedin_missing_canonical?: boolean;
     }>
   > {
-    return this.request(`${API_PATHS.AI}/generate`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AI"]}/generate`, {
+      method: HTTP_METHODS["POST"],
       body: { keyword, ...options },
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
 
@@ -255,10 +282,10 @@ class ApiClient {
     topic: string,
     additionalPrompt?: string,
   ): Promise<ApiResponse<{ imageDataUrl: string; imageUrl?: string; source?: AiImageSource }>> {
-    return this.request(`${API_PATHS.AI}/generate-image`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AI"]}/generate-image`, {
+      method: HTTP_METHODS["POST"],
       body: { topic, additionalPrompt },
-      timeout: APP_CONFIG.API_AI_IMAGE_TIMEOUT,
+      timeout: APP_CONFIG["API_AI_IMAGE_TIMEOUT"],
     });
   }
 
@@ -274,18 +301,18 @@ class ApiClient {
       linkedin_missing_canonical?: boolean;
     }>
   > {
-    return this.request(`${API_PATHS.AI}/generate-linkedin-summary`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AI"]}/generate-linkedin-summary`, {
+      method: HTTP_METHODS["POST"],
       body: payload,
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
 
   aiEdit(action: string, text: string): Promise<ApiResponse<{ result: string }>> {
-    return this.request(`${API_PATHS.AI}/edit`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["AI"]}/edit`, {
+      method: HTTP_METHODS["POST"],
       body: { action, text },
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
 
@@ -299,9 +326,9 @@ class ApiClient {
     }>
   > {
     const q = refresh ? "?refresh=1" : "";
-    return this.request(`${API_PATHS.AI}/trending-topics${q}`, {
-      method: HTTP_METHODS.GET,
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    return this.request(`${API_PATHS["AI"]}/trending-topics${q}`, {
+      method: HTTP_METHODS["GET"],
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
 
@@ -309,49 +336,55 @@ class ApiClient {
     refresh = false,
   ): Promise<ApiResponse<{ tags: string[]; source: "devto"; cached: boolean; updatedAt: string }>> {
     const q = refresh ? "?refresh=1" : "";
-    return this.request(`${API_PATHS.AI}/devto-tags${q}`, {
-      method: HTTP_METHODS.GET,
-      timeout: APP_CONFIG.API_AI_TIMEOUT,
+    return this.request(`${API_PATHS["AI"]}/devto-tags${q}`, {
+      method: HTTP_METHODS["GET"],
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
 
   uploadPostCover(postId: string, imageDataUrl: string): Promise<ApiResponse<{ url: string; post: unknown }>> {
-    return this.request(`${API_PATHS.POSTS}/${postId}/cover`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["POSTS"]}/${postId}/cover`, {
+      method: HTTP_METHODS["PUT"],
       body: { image: imageDataUrl },
-      timeout: APP_CONFIG.API_COVER_UPLOAD_TIMEOUT,
+      timeout: APP_CONFIG["API_COVER_UPLOAD_TIMEOUT"],
     });
   }
 
   async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
     // Step 1: Request a cryptographically signed V4 PUT URL targeting Firebase/GCS bucket
-    const presignedRes = await this.request<ApiResponse<{ presignedUrl: string; publicUrl: string; key: string }>>(
-      `${API_PATHS.UPLOAD}/presigned-url`,
-      {
-        method: HTTP_METHODS.POST,
-        body: {
-          filename: file.name,
-          size: file.size,
-          contentType: file.type || "application/octet-stream",
-        },
+    const presignedRes = await this.request<
+      ApiResponse<{
+        presignedUrl: string;
+        publicUrl: string;
+        key: string;
+        headers?: Record<string, string>;
+      }>
+    >(`${API_PATHS["UPLOAD"]}/presigned-url`, {
+      method: HTTP_METHODS["POST"],
+      body: {
+        filename: file.name,
+        size: file.size,
+        contentType: file.type || "application/octet-stream",
       },
-    );
+    });
 
     if (!presignedRes.success || !presignedRes.data?.presignedUrl) {
-      throw new Error(presignedRes.error || "Failed to obtain presigned upload URL");
+      throw new Error(presignedRes.error || ERROR_MESSAGES["FAILED_TO_OBTAIN_PRESIGNED_URL"]);
     }
 
-    // Step 2: Directly execute PUT against Google Cloud Storage
+    // Step 2: Directly execute PUT against Google Cloud Storage (headers bound into V4 signature)
+    const uploadHeaders: Record<string, string> = {
+      "Content-Type": file.type || "application/octet-stream",
+      ...(presignedRes.data.headers || {}),
+    };
     const uploadRes = await fetch(presignedRes.data.presignedUrl, {
-      method: HTTP_METHODS.PUT,
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-      },
+      method: HTTP_METHODS["PUT"],
+      headers: uploadHeaders,
       body: file,
     });
 
     if (!uploadRes.ok) {
-      throw new Error(`Direct cloud storage upload failed with HTTP status ${uploadRes.status}`);
+      throw new Error(ERROR_MESSAGES["DIRECT_CLOUD_UPLOAD_FAILED"](uploadRes.status));
     }
 
     // Step 3: Return the resolved public CDN URL
@@ -363,30 +396,30 @@ class ApiClient {
 
   // Users (Admin only)
   getUsers(params: Record<string, unknown> = {}): Promise<ListResponse<User>> {
-    return this.request(`${API_PATHS.USERS}`, { params });
+    return this.request(`${API_PATHS["USERS"]}`, { params });
   }
 
   getUser(id: string): Promise<ApiResponse<unknown>> {
-    return this.request(`${API_PATHS.USERS}/${id}`);
+    return this.request(`${API_PATHS["USERS"]}/${id}`);
   }
 
   createUser(body: Record<string, unknown>): Promise<ApiResponse<User>> {
-    return this.request(`${API_PATHS.USERS}`, {
-      method: HTTP_METHODS.POST,
+    return this.request(`${API_PATHS["USERS"]}`, {
+      method: HTTP_METHODS["POST"],
       body,
     });
   }
 
   updateUser(id: string, body: Record<string, unknown>): Promise<ApiResponse<User>> {
-    return this.request(`${API_PATHS.USERS}/${id}`, {
-      method: HTTP_METHODS.PUT,
+    return this.request(`${API_PATHS["USERS"]}/${id}`, {
+      method: HTTP_METHODS["PUT"],
       body,
     });
   }
 
   deleteUser(id: string): Promise<ApiResponse<User>> {
-    return this.request(`${API_PATHS.USERS}/${id}`, {
-      method: HTTP_METHODS.DELETE,
+    return this.request(`${API_PATHS["USERS"]}/${id}`, {
+      method: HTTP_METHODS["DELETE"],
     });
   }
 }

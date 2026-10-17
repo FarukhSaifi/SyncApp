@@ -1,7 +1,8 @@
+
+import { HTTP_STATUS, SUCCESS_MESSAGES } from "@constants";
+import { asyncHandler } from "@middleware/errorHandler";
+import * as usersService from "@services/usersService";
 import type { Request, Response } from "express";
-import { HTTP_STATUS, SUCCESS_MESSAGES } from "../constants";
-import { asyncHandler } from "../middleware/errorHandler";
-import * as usersService from "../services/usersService";
 
 /**
  * Get all users with pagination and filtering

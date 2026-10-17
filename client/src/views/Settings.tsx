@@ -52,23 +52,24 @@ const Settings = () => {
           const linkedin = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.LINKEDIN);
 
           if (medium) {
-            setConnected((prev) => ({ ...prev, medium: true }));
-            if (medium.api_key) setMediumApiKey(medium.api_key as string);
+            setConnected((prev) => ({ ...prev, medium: Boolean(medium.configured ?? true) }));
+            // Keys are masked server-side — leave input empty; placeholder shows "Saved (hidden)".
+            setMediumApiKey("");
           }
           if (devto) {
-            setConnected((prev) => ({ ...prev, devto: true }));
+            setConnected((prev) => ({ ...prev, devto: Boolean(devto.configured ?? true) }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username as unknown as string);
             }
-            if (devto.api_key) setDevtoApiKey(devto.api_key as string);
+            setDevtoApiKey("");
           }
           if (wordpress) {
-            setConnected((prev) => ({ ...prev, wordpress: true }));
+            setConnected((prev) => ({ ...prev, wordpress: Boolean(wordpress.configured ?? true) }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
-            if (wordpress.api_key) setWordpressApiKey(wordpress.api_key as string);
+            setWordpressApiKey("");
           }
           if (linkedin) {
-            setConnected((prev) => ({ ...prev, linkedin: true }));
+            setConnected((prev) => ({ ...prev, linkedin: Boolean(linkedin.configured ?? true) }));
           }
         } else {
           devWarn((result as ApiResponse<unknown>)?.message || "No credentials found or invalid response");

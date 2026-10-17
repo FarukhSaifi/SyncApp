@@ -1,14 +1,17 @@
-import { API_BASE, HTTP_METHODS } from "@/src/constants/api";
-import { APP_CONFIG } from "@/src/constants/config";
+import { API_BASE, HTTP_METHODS } from "@constants/api";
+import { APP_CONFIG } from "@constants/config";
 import type {
   AnalyticsStats,
   ApiResponse,
+  DevtoEngagementSummary,
+  DevtoEngagementSyncResult,
+  Ga4WebsiteAnalytics,
   GeneratedPostData,
   ListResponse,
   Post,
   RequestOptions,
   User,
-} from "@/src/types";
+} from "@types";
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
 
@@ -149,8 +152,37 @@ class ApiClient {
     });
   }
 
+  unpublishFromPlatform(
+    platform: string,
+    postId: string,
+  ): Promise<ApiResponse<{ platformStatus: Record<string, unknown> }>> {
+    return this.request(`${API_BASE}/publish/${platform}/${postId}`, {
+      method: HTTP_METHODS.DELETE,
+    });
+  }
+
   getAnalyticsStats(): Promise<ApiResponse<AnalyticsStats>> {
     return this.request(`${API_BASE}/analytics/stats`);
+  }
+
+  getAnalyticsEngagement(): Promise<ApiResponse<DevtoEngagementSummary>> {
+    return this.request(`${API_BASE}/analytics/engagement`);
+  }
+
+  refreshAnalyticsEngagement(): Promise<ApiResponse<DevtoEngagementSyncResult>> {
+    return this.request(`${API_BASE}/analytics/engagement/refresh`, {
+      method: HTTP_METHODS.POST,
+    });
+  }
+
+  getAnalyticsWebsite(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<Ga4WebsiteAnalytics>> {
+    return this.request(`${API_BASE}/analytics/website`, {
+      method: HTTP_METHODS.GET,
+      params: params || {},
+    });
   }
 
   aiGenerate(keyword: string, model?: string, targetPlatforms?: string[]): Promise<ApiResponse<GeneratedPostData>> {
@@ -229,9 +261,54 @@ class ApiClient {
     });
   }
 
-  uploadImage(uri: string, filename: string, mimeType: string): Promise<ApiResponse<{ url: string }>> {
+  /**
+   * Direct-to-GCS upload via signed V4 PUT URL (same path as web client).
+   * Falls back to legacy multipart `/upload` if presign is unavailable.
+   */
+  async uploadImage(uri: string, filename: string, mimeType: string, size?: number): Promise<ApiResponse<{ url: string }>> {
+    const contentType = mimeType || "application/octet-stream";
+    try {
+      const blobRes = await fetch(uri);
+      const blob = await blobRes.blob();
+      const byteSize = size ?? blob.size;
+
+      const presignedRes = await this.request<
+        ApiResponse<{
+          presignedUrl: string;
+          publicUrl: string;
+          key: string;
+          headers?: Record<string, string>;
+        }>
+      >(`${API_BASE}/upload/presigned-url`, {
+        method: HTTP_METHODS.POST,
+        body: {
+          filename,
+          size: byteSize,
+          contentType,
+        },
+      });
+
+      if (presignedRes.success && presignedRes.data?.presignedUrl) {
+        const uploadHeaders: Record<string, string> = {
+          "Content-Type": contentType,
+          ...(presignedRes.data.headers || {}),
+        };
+        const uploadRes = await fetch(presignedRes.data.presignedUrl, {
+          method: HTTP_METHODS.PUT,
+          headers: uploadHeaders,
+          body: blob,
+        });
+        if (!uploadRes.ok) {
+          throw new Error(`Direct cloud upload failed (${uploadRes.status})`);
+        }
+        return { success: true, data: { url: presignedRes.data.publicUrl } };
+      }
+    } catch {
+      /* fall through to multipart */
+    }
+
     const formData = new FormData();
-    formData.append("image", { uri, name: filename, type: mimeType } as unknown as Blob);
+    formData.append("image", { uri, name: filename, type: contentType } as unknown as Blob);
     return this.request(`${API_BASE}/upload`, {
       method: HTTP_METHODS.POST,
       body: formData,

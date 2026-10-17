@@ -6,13 +6,15 @@
   "scripts": {
     "start": "APP_ENV=prod node dist/src/index.js",
     "dev": "APP_ENV=dev nodemon --watch src --watch .env.dev --watch .env --ext ts,js,json,dev --exec 'tsx src/index.ts'",
-    "build": "tsc",
+    "build": "tsc && tsc-alias -p tsconfig.json",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src api --report-unused-disable-directives --max-warnings 10",
     "db:setup": "APP_ENV=dev tsx src/database/setup.ts",
-    "vercel-build": "echo 'Vercel build complete'",
+    "vercel-build": "tsc && tsc-alias -p tsconfig.json",
     "env:sync": "node scripts/sync-vercel-env.mjs"
   },
   "dependencies": {
+    "@google-analytics/data": "^7.3.0",
     "@google-cloud/storage": "^8.1.0",
     "@google/genai": "2.28.0",
     "axios": "1.20.0",
@@ -21,7 +23,6 @@
     "cors": "2.8.6",
     "dayjs": "1.11.23",
     "dotenv": "17.4.2",
-    "eas-cli": "24.12.1",
     "express": "5.2.1",
     "express-rate-limit": "8.7.1",
     "helmet": "8.3.0",
@@ -33,13 +34,20 @@
     "zod": "^4.6.4"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "2.8.19",
     "@types/express": "5.0.6",
     "@types/jsonwebtoken": "9.0.10",
     "@types/node": "25.9.1",
     "@types/turndown": "^5.0.6",
+    "@typescript-eslint/eslint-plugin": "8.71.1",
+    "@typescript-eslint/parser": "8.71.1",
+    "eslint": "^10.4.0",
+    "eslint-plugin-import-x": "^4.16.2",
+    "globals": "17.13.0",
     "nodemon": "3.1.14",
+    "tsc-alias": "^1.9.7",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
   },

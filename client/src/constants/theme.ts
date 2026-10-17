@@ -6,6 +6,8 @@ export const THEME_VALUES = Object.freeze({
   DARK: "dark",
 } as const);
 
+export type AppThemeMode = (typeof THEME_VALUES)[keyof typeof THEME_VALUES];
+
 export const STORAGE_KEYS = Object.freeze({
   AUTH_TOKEN: "token",
   THEME: "theme",

@@ -1,4 +1,4 @@
-import EditorScreen from "@/src/screens/EditorScreen";
+import EditorScreen from "@screens/EditorScreen";
 
 export default function NewEditorRoute() {
   return <EditorScreen />;

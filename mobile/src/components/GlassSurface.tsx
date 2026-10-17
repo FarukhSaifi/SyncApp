@@ -2,9 +2,9 @@ import { BlurView } from "expo-blur";
 import type { ComponentType } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { useTheme } from "@/src/contexts/ThemeContext";
-import { isNativeBlurAvailable } from "@/src/utils/nativeBlur";
-import { isLiquidGlassAvailable } from "@/src/utils/nativeGlass";
+import { useTheme } from "@contexts/ThemeContext";
+import { isNativeBlurAvailable } from "@utils/nativeBlur";
+import { isLiquidGlassAvailable } from "@utils/nativeGlass";
 
 interface GlassSurfaceProps {
   style?: StyleProp<ViewStyle>;

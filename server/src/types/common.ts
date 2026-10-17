@@ -2,7 +2,8 @@
  * Common cross-cutting server types.
  */
 import type { Request as ExpressRequest, Response as ExpressResponse } from "express";
-import type { NotificationChannelStatus } from "../constants/notifications";
+
+import type { NotificationChannelStatus } from "@constants/notifications";
 
 export interface ILogger {
   error(message: string, error?: Error | null, meta?: Record<string, unknown>): void;

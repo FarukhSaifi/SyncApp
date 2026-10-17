@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { type ZodSchema, ZodError } from "zod";
 
-import { HTTP_STATUS } from "../constants/httpStatus";
+import { HTTP_STATUS } from "@constants/httpStatus";
 
 /**
  * Middleware factory to validate request body using a Zod schema.
