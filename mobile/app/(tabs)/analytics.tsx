@@ -1,27 +1,13 @@
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
 
 import { Button } from "@components/Button";
 import { Card } from "@components/Card";
 import { ScreenIntro } from "@components/ScreenIntro";
 import { AnalyticsSkeleton } from "@components/skeletons/AnalyticsSkeleton";
-import {
-  ANALYTICS_DATE_PRESET_OPTIONS,
-  ANALYTICS_LABELS,
-  BUTTON_VARIANTS,
-  ERRORS,
-  LABELS,
-} from "@constants";
+import { ANALYTICS_DATE_PRESET_OPTIONS, ANALYTICS_LABELS, BUTTON_VARIANTS, LABELS } from "@constants";
 import { ANALYTICS_COLORS } from "@constants/colorClasses";
 import { ANALYTICS_CHART, IOS26, RADIUS } from "@constants/designTokens";
 import { USER_ROLES } from "@constants/userRoles";
@@ -31,17 +17,13 @@ import { useResponsiveLayout } from "@hooks/useResponsiveLayout";
 import { useTabBarInset } from "@hooks/useTabBarInset";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
-import type {
-  AnalyticsDateRange,
-  AnalyticsStats,
-  DevtoEngagementSummary,
-  Ga4WebsiteAnalytics,
-} from "@types";
+import type { AnalyticsDateRange, AnalyticsStats, DevtoEngagementSummary, Ga4WebsiteAnalytics } from "@types";
 import {
   createDefaultDateRange,
   engagementTotals,
   filterHistoryByRange,
   formatMetric,
+  settleAnalyticsRequest,
   topEngagementPosts,
   websiteConfigured,
 } from "@utils/analyticsDashboard";
@@ -68,55 +50,58 @@ export default function AnalyticsScreen() {
   const loadAll = useCallback(
     async (nextRange: AnalyticsDateRange, options?: { syncDevto?: boolean }) => {
       const syncDevto = options?.syncDevto === true;
-      try {
-        if (syncDevto) setRefreshing(true);
-        else setLoading(true);
+      if (syncDevto) setRefreshing(true);
+      else setLoading(true);
 
-        const [statsRes, engagementRes, websiteRes] = await Promise.all([
-          apiClient.getAnalyticsStats(),
-          syncDevto
-            ? apiClient.refreshAnalyticsEngagement().then((res) => ({
-                success: res.success,
-                data: res.data?.summary,
-                error: res.error,
-                message: res.message,
-              }))
-            : apiClient.getAnalyticsEngagement(),
-          isAdmin
-            ? apiClient.getAnalyticsWebsite({
+      const engagementPromise = syncDevto
+        ? settleAnalyticsRequest(apiClient.refreshAnalyticsEngagement()).then((res) => ({
+            success: res.success,
+            data: res.data?.summary,
+            error: res.error,
+            message: res.message,
+          }))
+        : settleAnalyticsRequest(apiClient.getAnalyticsEngagement());
+
+      const [statsRes, engagementRes, websiteRes] = await Promise.all([
+        settleAnalyticsRequest(apiClient.getAnalyticsStats()),
+        engagementPromise,
+        isAdmin
+          ? settleAnalyticsRequest(
+              apiClient.getAnalyticsWebsite({
                 startDate: nextRange.start,
                 endDate: nextRange.end,
-              })
-            : Promise.resolve({ success: true as const, data: null }),
-        ]);
+              }),
+            )
+          : Promise.resolve({ success: true as const, data: null }),
+      ]);
 
-        if (statsRes?.success) setStats(statsRes.data ?? null);
-        else toast.error(statsRes?.error ?? ANALYTICS_LABELS.LOAD_FAILED);
+      if (statsRes.success) setStats(statsRes.data ?? null);
+      else toast.error(statsRes.error ?? ANALYTICS_LABELS.LOAD_FAILED);
 
-        if (engagementRes?.success) {
-          setEngagement(engagementRes.data ?? null);
-          if (syncDevto && "message" in engagementRes && engagementRes.message) {
-            toast.success(String(engagementRes.message) || ANALYTICS_LABELS.ENGAGEMENT_REFRESH_OK);
-          }
-        } else if (engagementRes?.error) {
-          toast.error(engagementRes.error || ANALYTICS_LABELS.ENGAGEMENT_LOAD_FAILED);
-          if (!syncDevto) setEngagement(null);
+      if (engagementRes.success) {
+        setEngagement(engagementRes.data ?? null);
+        if (syncDevto && engagementRes.message) {
+          toast.success(String(engagementRes.message) || ANALYTICS_LABELS.ENGAGEMENT_REFRESH_OK);
         }
-
-        if (!isAdmin) {
-          setWebsite(null);
-        } else if (websiteRes?.success) {
-          setWebsite(websiteRes.data ?? null);
-        } else if (websiteRes && "error" in websiteRes && websiteRes.error) {
-          toast.error(String(websiteRes.error) || ANALYTICS_LABELS.GA4_LOAD_FAILED);
-          setWebsite(null);
-        }
-      } catch (e) {
-        toast.error((e as Error).message || ERRORS.SAVE_FAILED);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+      } else if (engagementRes.error) {
+        toast.error(
+          engagementRes.error ||
+            (syncDevto ? ANALYTICS_LABELS.ENGAGEMENT_REFRESH_FAILED : ANALYTICS_LABELS.ENGAGEMENT_LOAD_FAILED),
+        );
+        if (!syncDevto) setEngagement(null);
       }
+
+      if (!isAdmin) {
+        setWebsite(null);
+      } else if (websiteRes.success) {
+        setWebsite(websiteRes.data ?? null);
+      } else if (websiteRes.error) {
+        toast.error(String(websiteRes.error) || ANALYTICS_LABELS.GA4_LOAD_FAILED);
+        setWebsite(null);
+      }
+
+      setLoading(false);
+      setRefreshing(false);
     },
     [isAdmin],
   );
@@ -257,9 +242,7 @@ export default function AnalyticsScreen() {
 
         <Text style={styles.metaSync}>
           {ANALYTICS_LABELS.LAST_SYNCED}:{" "}
-          {eng.lastSyncedAt
-            ? dayjs(eng.lastSyncedAt).format("MMM D, YYYY h:mm A")
-            : ANALYTICS_LABELS.NEVER_SYNCED}
+          {eng.lastSyncedAt ? dayjs(eng.lastSyncedAt).format("MMM D, YYYY h:mm A") : ANALYTICS_LABELS.NEVER_SYNCED}
         </Text>
 
         <Text style={styles.section}>{LABELS.ACTIVITY}</Text>
@@ -267,8 +250,16 @@ export default function AnalyticsScreen() {
           {postsLine.length > 0 ? (
             <>
               <View style={styles.legend}>
-                <LegendDot color={colors.primary} label={ANALYTICS_LABELS.SERIES_CREATED} muted={colors.mutedForeground} />
-                <LegendDot color={colors.positive} label={ANALYTICS_LABELS.SERIES_PUBLISHED} muted={colors.mutedForeground} />
+                <LegendDot
+                  color={colors.primary}
+                  label={ANALYTICS_LABELS.SERIES_CREATED}
+                  muted={colors.mutedForeground}
+                />
+                <LegendDot
+                  color={colors.positive}
+                  label={ANALYTICS_LABELS.SERIES_PUBLISHED}
+                  muted={colors.mutedForeground}
+                />
               </View>
               <LineChart
                 dataSet={[
@@ -439,11 +430,7 @@ function LegendDot({ color, label, muted }: { color: string; label: string; mute
   );
 }
 
-const createStyles = (
-  colors: ReturnType<typeof useThemeColors>,
-  tabBarInset: number,
-  isCompact: boolean,
-) =>
+const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: number, isCompact: boolean) =>
   StyleSheet.create({
     shell: { flex: 1, backgroundColor: colors.groupedBackground },
     scroll: { flex: 1 },

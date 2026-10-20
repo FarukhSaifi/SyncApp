@@ -15,9 +15,25 @@ import type {
   AnalyticsDailyActivity,
   AnalyticsDateRange,
   AnalyticsStats,
+  ApiResponse,
   DevtoEngagementSummary,
   Ga4WebsiteAnalytics,
 } from "@types";
+
+/**
+ * Convert axios/network rejections into `{ success: false }` so parallel
+ * analytics fetches can settle independently.
+ */
+export async function settleAnalyticsRequest<T>(promise: Promise<ApiResponse<T>>): Promise<ApiResponse<T>> {
+  try {
+    return await promise;
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
 
 export function createDefaultDateRange(days: number = ANALYTICS_DATE_PRESETS.DAYS_30): AnalyticsDateRange {
   const end = dayjs().format(ANALYTICS_DATE_ISO_FORMAT);
@@ -68,8 +84,7 @@ export function engagementTotals(engagement: DevtoEngagementSummary | null) {
     views: engagement?.totalViews ?? null,
     reactions: engagement?.totalReactions ?? null,
     comments: engagement?.totalComments ?? null,
-    engagementScore:
-      engagement != null ? (engagement.totalReactions ?? 0) + (engagement.totalComments ?? 0) : null,
+    engagementScore: engagement != null ? (engagement.totalReactions ?? 0) + (engagement.totalComments ?? 0) : null,
     articleCount: engagement?.articleCount ?? 0,
     lastSyncedAt: engagement?.lastSyncedAt ?? null,
     hasData: Boolean(engagement && engagement.articleCount > 0),

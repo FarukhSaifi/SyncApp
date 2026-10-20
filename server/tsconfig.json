@@ -20,65 +20,63 @@
     "sourceMap": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@src/*": [
-        "src/*"
+        "./src/*"
       ],
       "@ai": [
-        "src/ai"
+        "./src/ai"
       ],
       "@ai/*": [
-        "src/ai/*"
+        "./src/ai/*"
       ],
       "@config": [
-        "src/config"
+        "./src/config"
       ],
       "@config/*": [
-        "src/config/*"
+        "./src/config/*"
       ],
       "@constants": [
-        "src/constants"
+        "./src/constants"
       ],
       "@constants/*": [
-        "src/constants/*"
+        "./src/constants/*"
       ],
       "@controllers/*": [
-        "src/controllers/*"
+        "./src/controllers/*"
       ],
       "@database/*": [
-        "src/database/*"
+        "./src/database/*"
       ],
       "@middleware/*": [
-        "src/middleware/*"
+        "./src/middleware/*"
       ],
       "@models/*": [
-        "src/models/*"
+        "./src/models/*"
       ],
       "@routes": [
-        "src/routes"
+        "./src/routes"
       ],
       "@routes/*": [
-        "src/routes/*"
+        "./src/routes/*"
       ],
       "@schemas": [
-        "src/schemas"
+        "./src/schemas"
       ],
       "@schemas/*": [
-        "src/schemas/*"
+        "./src/schemas/*"
       ],
       "@services/*": [
-        "src/services/*"
+        "./src/services/*"
       ],
       "@types": [
-        "src/types"
+        "./src/types"
       ],
       "@utils/*": [
-        "src/utils/*"
+        "./src/utils/*"
       ],
       "@validations/*": [
-        "src/validations/*"
+        "./src/validations/*"
       ]
     }
   },

@@ -177,8 +177,7 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_UPLOAD_IMAGE: "Failed to upload image",
   FAILED_TO_UPLOAD_DROPPED_IMAGE: "Failed to upload dropped image",
   FAILED_TO_OBTAIN_PRESIGNED_URL: "Failed to obtain presigned upload URL",
-  DIRECT_CLOUD_UPLOAD_FAILED: (status: number) =>
-    `Direct cloud storage upload failed with HTTP status ${status}`,
+  DIRECT_CLOUD_UPLOAD_FAILED: (status: number) => `Direct cloud storage upload failed with HTTP status ${status}`,
   DOWNLOAD_BROWSER_ONLY: "Download is only supported in the browser",
   // AI
   FAILED_TO_GENERATE_POST: "Failed to generate post",
@@ -652,6 +651,9 @@ export const INFO_MESSAGES = Object.freeze({
   GITHUB_REPOSITORY: "GitHub Repository",
   // Error Messages - Settings
   FAILED_TO_LOAD_CREDENTIALS: "Failed to load credentials",
+  CREDENTIAL_DECRYPT_FAILED_BANNER:
+    "Saved API key cannot be decrypted (ENCRYPTION_KEY changed or key is outdated). Re-enter your API key below and save.",
+  CREDENTIAL_REENTER_REQUIRED: "Re-enter API key to reconnect",
   // Auth
   DONT_HAVE_ACCOUNT: "Don't have an account?",
   SIGN_UP_HERE: "Sign up here",
@@ -937,6 +939,11 @@ export const EDITOR_UI = Object.freeze({
   REMOVE_TAG_ARIA: (tag: string) => `Remove ${tag}`,
   WORD_COUNT_LABEL: (count: string) => `${count} words`,
   UNSAVED_CHANGES_TITLE: "Unsaved changes",
+  UNSAVED_LEAVE_TITLE: "Leave without saving?",
+  UNSAVED_LEAVE_MESSAGE:
+    "Going back will discard the post details you entered. This cannot be undone.",
+  UNSAVED_LEAVE_CONFIRM: "OK",
+  UNSAVED_LEAVE_CANCEL: "Cancel",
 
   // LinkedIn teaser panel
   LINKEDIN_POST_TITLE: "LinkedIn summary",

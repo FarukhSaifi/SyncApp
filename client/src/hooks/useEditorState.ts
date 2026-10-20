@@ -65,6 +65,8 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const isDirtyRef = useRef(isDirty);
   const formDataRef = useRef(formData);
   const tagListRef = useRef(tagList);
+  /** Skip the next formData/tagList dirty effect (initial mount, hydrate, save sync). */
+  const suppressDirtyRef = useRef(true);
 
   // Sync ref values safely inside useEffect to avoid render-phase mutation warnings in React 19
   useEffect(() => {
@@ -93,6 +95,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           linkedin_read_more_url: post.linkedin_read_more_url || "",
         });
         setTagList(Array.isArray(post.tags) ? post.tags : []);
+        suppressDirtyRef.current = true;
         setIsDirty(false);
       } else {
         toast.apiError(response?.error || "Failed to fetch post");
@@ -142,8 +145,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     loadConnectedPlatforms();
   }, []);
 
-  // Track dirty state
+  // Track dirty state (skip hydrate / initial mount so empty composers stay clean)
   useEffect(() => {
+    if (suppressDirtyRef.current) {
+      suppressDirtyRef.current = false;
+      return;
+    }
     setIsDirty(true);
   }, [formData, tagList]);
 
@@ -246,6 +253,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
             if (savedPost) onPostCreate(savedPost);
             toast.saveSuccess(false);
           }
+          suppressDirtyRef.current = true;
           setIsDirty(false);
           setLastSavedAt(new Date());
           const isNewPost = !id;
@@ -530,6 +538,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
             TOAST_TITLES.SUCCESS,
             scheduledFor ? EDITOR_UI.SCHEDULE_SET_SUCCESS : EDITOR_UI.SCHEDULE_CLEARED_SUCCESS,
           );
+          suppressDirtyRef.current = true;
           setIsDirty(false);
           setLastSavedAt(new Date());
           return true;

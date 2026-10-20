@@ -17,15 +17,19 @@ import EditorToolbar from "@components/editor/EditorToolbar";
 import { useEditorAI } from "@hooks/useEditorAI";
 import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
+import { useUnsavedLeaveGuard } from "@hooks/useUnsavedLeaveGuard";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
 import { normalizeMarkdownNewlines, toStorageMarkdown } from "@utils/contentUtils";
 import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl, resolveLinkedInReadMoreUrl } from "@utils/linkedinPost";
 import dynamic from "next/dynamic";
 
+import { EDITOR_UI } from "@constants/messages";
 import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { SEO_THRESHOLDS } from "@constants/seo";
+
+import ConfirmationModal from "@components/common/ConfirmationModal";
 
 const EditorContent = dynamic(() => import("@components/editor/EditorContent"), {
   ssr: false,
@@ -36,6 +40,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   const state = useEditorState({ onPostCreate, onPostUpdate });
   const preferredReadMoreUrl = resolveLinkedInReadMoreUrl(state.formData.canonical_url);
   const { setFormData } = state;
+  const leaveGuard = useUnsavedLeaveGuard(state.isDirty);
 
   const ai = useEditorAI({
     postId: state.id,
@@ -151,7 +156,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         activeTab={state.activeTab}
         onTogglePreview={state.togglePreview}
         onSave={() => state.handleSave()}
-        onBack={() => state.router.push("/")}
+        onBack={() => leaveGuard.requestLeave(() => state.router.push("/"))}
         loading={state.loading}
         isDirty={state.isDirty}
         wordCount={wordStats.words}
@@ -233,7 +238,9 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
           }
           void ai.handleCopyLinkedInPost();
         }}
-        onPublishLinkedInPost={() => void state.handlePublishToPlatform(PLATFORMS["LINKEDIN"], linkedinPublishOverrides)}
+        onPublishLinkedInPost={() =>
+          void state.handlePublishToPlatform(PLATFORMS["LINKEDIN"], linkedinPublishOverrides)
+        }
         onGenerateLinkedInSummary={() => void ai.handleGenerateLinkedInSummary()}
         onGeneratePost={ai.handleGeneratePost}
         onGenerateImage={ai.handleGenerateImage}
@@ -250,6 +257,16 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         readingTimeMinutes={wordStats.readingTimeMinutes}
         lastSavedAt={state.lastSavedAt}
         isDirty={state.isDirty}
+      />
+
+      <ConfirmationModal
+        isOpen={leaveGuard.isLeaveModalOpen}
+        onClose={leaveGuard.closeLeaveModal}
+        onConfirm={leaveGuard.confirmLeave}
+        title={EDITOR_UI.UNSAVED_LEAVE_TITLE}
+        message={EDITOR_UI.UNSAVED_LEAVE_MESSAGE}
+        confirmText={EDITOR_UI.UNSAVED_LEAVE_CONFIRM}
+        cancelText={EDITOR_UI.UNSAVED_LEAVE_CANCEL}
       />
     </div>
   );

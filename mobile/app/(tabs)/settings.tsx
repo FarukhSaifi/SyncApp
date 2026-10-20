@@ -58,26 +58,28 @@ export default function SettingsScreen() {
         ]);
         if (m.success && m.data) {
           // Server returns masked keys only — leave input empty for re-entry.
+          const cred = m.data as { configured?: boolean; decrypt_failed?: boolean };
           setMediumKey("");
           setConnected((c) => ({
             ...c,
-            medium: Boolean((m.data as { configured?: boolean }).configured ?? true),
+            medium: Boolean(cred.configured) && !cred.decrypt_failed,
           }));
         }
         if (d.success && d.data) {
           const cred = d.data as {
             configured?: boolean;
+            decrypt_failed?: boolean;
             platform_config?: { devto_username?: string };
           };
           setDevtoKey("");
           setDevtoUser(cred.platform_config?.devto_username ?? "");
-          setConnected((c) => ({ ...c, devto: Boolean(cred.configured ?? true) }));
+          setConnected((c) => ({ ...c, devto: Boolean(cred.configured) && !cred.decrypt_failed }));
         }
         if (w.success && w.data) {
-          const cred = w.data as { configured?: boolean; site_url?: string };
+          const cred = w.data as { configured?: boolean; decrypt_failed?: boolean; site_url?: string };
           setWpKey("");
           setWpUrl(cred.site_url ?? "");
-          setConnected((c) => ({ ...c, wordpress: Boolean(cred.configured ?? true) }));
+          setConnected((c) => ({ ...c, wordpress: Boolean(cred.configured) && !cred.decrypt_failed }));
         }
         if (l.success && l.data) {
           setConnected((c) => ({

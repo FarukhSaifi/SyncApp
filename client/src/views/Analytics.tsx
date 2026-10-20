@@ -30,6 +30,7 @@ import {
   buildTrafficSources,
   createDefaultDateRange,
   filterHistoryByRange,
+  settleAnalyticsRequest,
   topEngagementPosts,
 } from "@utils/analyticsDashboard";
 import { apiClient } from "@utils/apiClient";
@@ -157,72 +158,76 @@ const Analytics = () => {
   const loadAll = useCallback(
     async (nextRange: AnalyticsDateRange, options?: { syncDevto?: boolean }) => {
       const syncDevto = options?.syncDevto === true;
-      try {
-        if (syncDevto) {
-          setRefreshing(true);
-        } else {
-          setLoading(true);
-        }
+      if (syncDevto) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
 
-        const [statsRes, engagementRes, websiteRes] = await Promise.all([
-          apiClient.getAnalyticsStats(),
-          syncDevto
-            ? apiClient.refreshAnalyticsEngagement().then((res) => ({
-                success: res.success,
-                data: res.data?.summary,
-                error: res.error,
-                message: res.message,
-              }))
-            : apiClient.getAnalyticsEngagement(),
-          isAdmin
-            ? apiClient.getAnalyticsWebsite({
+      const engagementPromise = syncDevto
+        ? settleAnalyticsRequest(apiClient.refreshAnalyticsEngagement()).then((res) => ({
+            success: res.success,
+            data: res.data?.summary,
+            error: res.error,
+            message: res.message,
+          }))
+        : settleAnalyticsRequest(apiClient.getAnalyticsEngagement());
+
+      const [statsRes, engagementRes, websiteRes] = await Promise.all([
+        settleAnalyticsRequest(apiClient.getAnalyticsStats()),
+        engagementPromise,
+        isAdmin
+          ? settleAnalyticsRequest(
+              apiClient.getAnalyticsWebsite({
                 startDate: nextRange.start,
                 endDate: nextRange.end,
-              })
-            : Promise.resolve({ success: true as const, data: null }),
-        ]);
+              }),
+            )
+          : Promise.resolve({ success: true as const, data: null }),
+      ]);
 
-        if (statsRes?.success) {
-          setStats(statsRes.data ?? null);
-        } else {
-          toast.apiError(statsRes?.error || ANALYTICS_LABELS["LOAD_FAILED"]);
-        }
-
-        if (engagementRes?.success) {
-          setEngagement(engagementRes.data ?? null);
-          if (syncDevto && "message" in engagementRes && engagementRes.message) {
-            toast.apiSuccess(String(engagementRes.message), ANALYTICS_LABELS["ENGAGEMENT_REFRESH_OK"]);
-          }
-        } else if (engagementRes?.error) {
-          toast.apiError(engagementRes.error || ANALYTICS_LABELS["ENGAGEMENT_LOAD_FAILED"]);
-          if (!syncDevto) {
-            setEngagement(null);
-          }
-        }
-
-        if (!isAdmin) {
-          setWebsite(null);
-        } else if (websiteRes?.success) {
-          setWebsite(websiteRes.data ?? null);
-        } else if (websiteRes?.error) {
-          toast.apiError(websiteRes.error || ANALYTICS_LABELS["GA4_LOAD_FAILED"]);
-          setWebsite(null);
-        }
-      } catch {
-        toast.apiError(ANALYTICS_LABELS["LOAD_ERROR"]);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+      if (statsRes.success) {
+        setStats(statsRes.data ?? null);
+      } else {
+        toast.apiError(statsRes.error || ANALYTICS_LABELS["LOAD_FAILED"]);
       }
+
+      if (engagementRes.success) {
+        setEngagement(engagementRes.data ?? null);
+        if (syncDevto && engagementRes.message) {
+          toast.apiSuccess(String(engagementRes.message), ANALYTICS_LABELS["ENGAGEMENT_REFRESH_OK"]);
+        }
+      } else if (engagementRes.error) {
+        toast.apiError(
+          engagementRes.error ||
+            (syncDevto ? ANALYTICS_LABELS["ENGAGEMENT_REFRESH_FAILED"] : ANALYTICS_LABELS["ENGAGEMENT_LOAD_FAILED"]),
+        );
+        if (!syncDevto) {
+          setEngagement(null);
+        }
+      }
+
+      if (!isAdmin) {
+        setWebsite(null);
+      } else if (websiteRes.success) {
+        setWebsite(websiteRes.data ?? null);
+      } else if (websiteRes.error) {
+        toast.apiError(websiteRes.error || ANALYTICS_LABELS["GA4_LOAD_FAILED"]);
+        setWebsite(null);
+      }
+
+      setLoading(false);
+      setRefreshing(false);
     },
     [isAdmin, toast],
   );
 
   useEffect(() => {
+    if (!user) return;
     void loadAll(range);
-    // Initial load only — range changes call loadAll explicitly.
+    // Reload when auth role is known so admin website metrics are fetched.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?._id, isAdmin]);
 
   const filteredHistory = useMemo(() => filterHistoryByRange(stats?.history ?? [], range), [stats, range]);
 
@@ -238,7 +243,7 @@ const Analytics = () => {
     return [
       { name: ANALYTICS_LABELS["CHART_DRAFTS"], value: stats?.summary.totalDrafts ?? 0 },
       { name: ANALYTICS_LABELS["CHART_PUBLISHED"], value: stats?.summary.totalPublished ?? 0 },
-    ];
+    ].filter((entry) => entry.value > 0);
   }, [stats]);
 
   const handlePreset = (days: number | null) => {
@@ -317,7 +322,7 @@ const Analytics = () => {
             type="button"
             variant={BUTTON_VARIANTS["OUTLINE"]}
             size={BUTTON_SIZES["SM"]}
-            disabled={refreshing}
+            disabled={loading || refreshing}
             onClick={() => void loadAll(range, { syncDevto: true })}
             className={ANALYTICS_UI["ACTION_BTN"]}
           >
@@ -470,29 +475,33 @@ const Analytics = () => {
             <CardDescription>{ANALYTICS_LABELS["STATUS_DISTRIBUTION_DESC"]}</CardDescription>
           </CardHeader>
           <CardContent className={ANALYTICS_UI["CHART_STATUS"]}>
-            <ResponsiveContainer
-              width={ANALYTICS_UI["CHART_WIDTH_PCT"]}
-              height={ANALYTICS_UI["CHART_HEIGHT_PCT"]}
-              minWidth={ANALYTICS_UI["CHART_MIN_SIZE"]}
-              minHeight={ANALYTICS_UI["CHART_MIN_SIZE"]}
-            >
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx={ANALYTICS_UI["PIE_CENTER"]}
-                  cy={ANALYTICS_UI["PIE_CENTER"]}
-                  innerRadius={ANALYTICS_UI["PIE_INNER_DESKTOP"]}
-                  outerRadius={ANALYTICS_UI["PIE_OUTER_DESKTOP"]}
-                  paddingAngle={ANALYTICS_UI["PIE_PADDING_ANGLE"]}
-                  dataKey={ANALYTICS_CHART_KEYS["VALUE"]}
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={entry.name} fill={chartPalette[index % chartPalette.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipContentStyle} />
-              </PieChart>
-            </ResponsiveContainer>
+            {statusData.length === 0 ? (
+              <div className={ANALYTICS_UI["CHART_EMPTY"]}>{ANALYTICS_LABELS["EMPTY_STATUS_CHART"]}</div>
+            ) : (
+              <ResponsiveContainer
+                width={ANALYTICS_UI["CHART_WIDTH_PCT"]}
+                height={ANALYTICS_UI["CHART_HEIGHT_PCT"]}
+                minWidth={ANALYTICS_UI["CHART_MIN_SIZE"]}
+                minHeight={ANALYTICS_UI["CHART_MIN_SIZE"]}
+              >
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx={ANALYTICS_UI["PIE_CENTER"]}
+                    cy={ANALYTICS_UI["PIE_CENTER"]}
+                    innerRadius={ANALYTICS_UI["PIE_INNER_DESKTOP"]}
+                    outerRadius={ANALYTICS_UI["PIE_OUTER_DESKTOP"]}
+                    paddingAngle={ANALYTICS_UI["PIE_PADDING_ANGLE"]}
+                    dataKey={ANALYTICS_CHART_KEYS["VALUE"]}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={entry.name} fill={chartPalette[index % chartPalette.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipContentStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -685,75 +694,79 @@ const Analytics = () => {
           </CardContent>
         </Card>
 
-        <Card className={ANALYTICS_UI["CARD_SURFACE"]}>
-          <CardHeader>
-            <CardTitle>{ANALYTICS_LABELS["WEBSITE_TITLE"]}</CardTitle>
-            <CardDescription>{ANALYTICS_LABELS["WEBSITE_DESC"]}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!website?.configured ? (
-              <div className={ANALYTICS_UI["ALERT_WARNING"]} role="status">
-                <div className={ANALYTICS_UI["ALERT_TITLE"]}>{ANALYTICS_LABELS["SETUP_GA4_TITLE"]}</div>
-                <div className={ANALYTICS_UI["ALERT_BODY"]}>
-                  {website?.message || ANALYTICS_LABELS["EMPTY_TRAFFIC_HINT"]}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={ANALYTICS_UI["WEBSITE_METRICS_GRID"]}>
-                  <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_SESSIONS"]}</p>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>{website.totals.sessions.toLocaleString()}</p>
-                  </div>
-                  <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_PAGEVIEWS"]}</p>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>{website.totals.pageviews.toLocaleString()}</p>
-                  </div>
-                  <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_USERS"]}</p>
-                    <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>
-                      {website.totals.activeUsers.toLocaleString()}
-                    </p>
+        {isAdmin ? (
+          <Card className={ANALYTICS_UI["CARD_SURFACE"]}>
+            <CardHeader>
+              <CardTitle>{ANALYTICS_LABELS["WEBSITE_TITLE"]}</CardTitle>
+              <CardDescription>{ANALYTICS_LABELS["WEBSITE_DESC"]}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!website?.configured ? (
+                <div className={ANALYTICS_UI["ALERT_WARNING"]} role="status">
+                  <div className={ANALYTICS_UI["ALERT_TITLE"]}>{ANALYTICS_LABELS["SETUP_GA4_TITLE"]}</div>
+                  <div className={ANALYTICS_UI["ALERT_BODY"]}>
+                    {website?.message || ANALYTICS_LABELS["EMPTY_TRAFFIC_HINT"]}
                   </div>
                 </div>
-                <div>
-                  <h3 className={ANALYTICS_UI["TRAFFIC_TITLE"]}>{ANALYTICS_LABELS["TRAFFIC_SOURCES_TITLE"]}</h3>
-                  <ResponsiveContainer
-                    width={ANALYTICS_UI["CHART_WIDTH_PCT"]}
-                    height={ANALYTICS_UI["TRAFFIC_CHART_HEIGHT_PX"]}
-                    minWidth={ANALYTICS_UI["CHART_MIN_SIZE"]}
-                    minHeight={ANALYTICS_UI["CHART_MIN_SIZE"]}
-                  >
-                    <BarChart data={trafficSources.filter((s) => s.available)}>
-                      <CartesianGrid
-                        strokeDasharray={ANALYTICS_UI["CHART_STROKE_DASH"]}
-                        vertical={ANALYTICS_UI["GRID_STROKE_VERTICAL"]}
-                        stroke={ANALYTICS_CHART_COLORS["BORDER"]}
-                      />
-                      <XAxis
-                        dataKey={ANALYTICS_CHART_KEYS["LABEL"]}
-                        stroke={ANALYTICS_CHART_COLORS["BORDER"]}
-                        tick={axisTickSm}
-                      />
-                      <YAxis stroke={ANALYTICS_CHART_COLORS["BORDER"]} tick={axisTickSm} />
-                      <Tooltip contentStyle={tooltipContentStyle} />
-                      <Bar
-                        dataKey={ANALYTICS_CHART_KEYS["SESSIONS"]}
-                        fill={chartPalette[0]}
-                        radius={[
-                          ANALYTICS_UI["BAR_RADIUS"][0],
-                          ANALYTICS_UI["BAR_RADIUS"][1],
-                          ANALYTICS_UI["BAR_RADIUS"][2],
-                          ANALYTICS_UI["BAR_RADIUS"][3],
-                        ]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <>
+                  <div className={ANALYTICS_UI["WEBSITE_METRICS_GRID"]}>
+                    <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_SESSIONS"]}</p>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>{website.totals.sessions.toLocaleString()}</p>
+                    </div>
+                    <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_PAGEVIEWS"]}</p>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>
+                        {website.totals.pageviews.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className={ANALYTICS_UI["WEBSITE_METRIC_CARD"]}>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_LABEL"]}>{ANALYTICS_LABELS["WEBSITE_USERS"]}</p>
+                      <p className={ANALYTICS_UI["WEBSITE_METRIC_VALUE"]}>
+                        {website.totals.activeUsers.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className={ANALYTICS_UI["TRAFFIC_TITLE"]}>{ANALYTICS_LABELS["TRAFFIC_SOURCES_TITLE"]}</h3>
+                    <ResponsiveContainer
+                      width={ANALYTICS_UI["CHART_WIDTH_PCT"]}
+                      height={ANALYTICS_UI["TRAFFIC_CHART_HEIGHT_PX"]}
+                      minWidth={ANALYTICS_UI["CHART_MIN_SIZE"]}
+                      minHeight={ANALYTICS_UI["CHART_MIN_SIZE"]}
+                    >
+                      <BarChart data={trafficSources.filter((s) => s.available)}>
+                        <CartesianGrid
+                          strokeDasharray={ANALYTICS_UI["CHART_STROKE_DASH"]}
+                          vertical={ANALYTICS_UI["GRID_STROKE_VERTICAL"]}
+                          stroke={ANALYTICS_CHART_COLORS["BORDER"]}
+                        />
+                        <XAxis
+                          dataKey={ANALYTICS_CHART_KEYS["LABEL"]}
+                          stroke={ANALYTICS_CHART_COLORS["BORDER"]}
+                          tick={axisTickSm}
+                        />
+                        <YAxis stroke={ANALYTICS_CHART_COLORS["BORDER"]} tick={axisTickSm} />
+                        <Tooltip contentStyle={tooltipContentStyle} />
+                        <Bar
+                          dataKey={ANALYTICS_CHART_KEYS["SESSIONS"]}
+                          fill={chartPalette[0]}
+                          radius={[
+                            ANALYTICS_UI["BAR_RADIUS"][0],
+                            ANALYTICS_UI["BAR_RADIUS"][1],
+                            ANALYTICS_UI["BAR_RADIUS"][2],
+                            ANALYTICS_UI["BAR_RADIUS"][3],
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

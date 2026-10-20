@@ -8,10 +8,27 @@ import type {
   AnalyticsPlatformRowModel,
   AnalyticsStats,
   AnalyticsTrafficSourceModel,
+  ApiResponse,
   DevtoEngagementSummary,
   Ga4WebsiteAnalytics,
 } from "@types";
 import dayjs from "dayjs";
+
+/**
+ * Convert axios/network rejections into `{ success: false }` so parallel
+ * analytics fetches can settle independently (one platform failure must not
+ * blank the whole dashboard).
+ */
+export async function settleAnalyticsRequest<T>(promise: Promise<ApiResponse<T>>): Promise<ApiResponse<T>> {
+  try {
+    return await promise;
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
 
 import {
   ANALYTICS_AVAILABILITY,
@@ -86,9 +103,7 @@ export function buildOverviewCards(
       value: engagement ? totalViews.toLocaleString() : ANALYTICS_LABELS["METRIC_UNAVAILABLE"],
       hint: ANALYTICS_LABELS["CARD_VIEWS_HINT"],
       availability:
-        engagement && engagement.articleCount > 0
-          ? ANALYTICS_AVAILABILITY["LIVE"]
-          : ANALYTICS_AVAILABILITY["EMPTY"],
+        engagement && engagement.articleCount > 0 ? ANALYTICS_AVAILABILITY["LIVE"] : ANALYTICS_AVAILABILITY["EMPTY"],
     },
     {
       id: ANALYTICS_OVERVIEW_CARD_IDS["CLICKS"],
@@ -103,9 +118,7 @@ export function buildOverviewCards(
       value: engagement ? totalEngagement.toLocaleString() : ANALYTICS_LABELS["METRIC_UNAVAILABLE"],
       hint: ANALYTICS_LABELS["CARD_ENGAGEMENT_HINT"],
       availability:
-        engagement && engagement.articleCount > 0
-          ? ANALYTICS_AVAILABILITY["LIVE"]
-          : ANALYTICS_AVAILABILITY["EMPTY"],
+        engagement && engagement.articleCount > 0 ? ANALYTICS_AVAILABILITY["LIVE"] : ANALYTICS_AVAILABILITY["EMPTY"],
     },
   ];
 }
@@ -175,7 +188,5 @@ export function topEngagementPosts(engagement: DevtoEngagementSummary | null) {
   if (!engagement) {
     return [];
   }
-  return [...engagement.posts]
-    .sort((a, b) => b.views - a.views)
-    .slice(0, ANALYTICS_UI["TOP_POSTS_LIMIT"]);
+  return [...engagement.posts].sort((a, b) => b.views - a.views).slice(0, ANALYTICS_UI["TOP_POSTS_LIMIT"]);
 }

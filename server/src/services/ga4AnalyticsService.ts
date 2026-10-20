@@ -5,20 +5,10 @@
  */
 
 import { config } from "@config";
-import {
-  AI_CONFIG,
-  ANALYTICS_SYNC,
-  ERROR_MESSAGES,
-  GA4_SOURCE_CHANNEL_MAP,
-  HTTP_STATUS,
-} from "@constants";
+import { AI_CONFIG, ANALYTICS_SYNC, ERROR_MESSAGES, GA4_SOURCE_CHANNEL_MAP } from "@constants";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
-import { AppError } from "@middleware/errorHandler";
 import type { Ga4TrafficSourceRow, Ga4WebsiteAnalytics } from "@src/types/analytics";
-import {
-  hasGoogleCloudCredentialsEnv,
-  loadGoogleServiceAccountCredentials,
-} from "@utils/googleCredentials";
+import { hasGoogleCloudCredentialsEnv, loadGoogleServiceAccountCredentials } from "@utils/googleCredentials";
 import { createLogger } from "@utils/logger";
 import dayjs from "dayjs";
 
@@ -34,8 +24,7 @@ type DateRangeInput = {
 function resolveDateRange(input: DateRangeInput): { startDate: string; endDate: string } {
   const end = input.endDate && dayjs(input.endDate).isValid() ? dayjs(input.endDate) : dayjs();
   const startDefault = end.subtract(ANALYTICS_SYNC["GA4_DEFAULT_DAYS"] - 1, "day");
-  const start =
-    input.startDate && dayjs(input.startDate).isValid() ? dayjs(input.startDate) : startDefault;
+  const start = input.startDate && dayjs(input.startDate).isValid() ? dayjs(input.startDate) : startDefault;
 
   return {
     startDate: start.format("YYYY-MM-DD"),
@@ -229,9 +218,17 @@ export async function getWebsiteAnalytics(range: DateRangeInput = {}): Promise<G
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.warn(`GA4 runReport failed: ${message.slice(0, 200)}`);
-    throw new AppError(
-      `${ERROR_MESSAGES["ANALYTICS_GA4_FETCH_FAILED"]}: ${message.slice(0, 160)}`,
-      HTTP_STATUS["BAD_GATEWAY"],
-    );
+    // Soft-fail so admin analytics dashboards still load when GA4 is misconfigured.
+    return {
+      configured: false,
+      setupRequired: true,
+      message: `${ERROR_MESSAGES["ANALYTICS_GA4_FETCH_FAILED"]}: ${message.slice(0, 160)}`,
+      propertyIdSet: true,
+      credentialsAvailable: true,
+      dateRange,
+      totals: { sessions: 0, pageviews: 0, activeUsers: 0 },
+      sources: [],
+      topPages: [],
+    };
   }
 }

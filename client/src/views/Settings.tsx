@@ -28,6 +28,12 @@ const Settings = () => {
     wordpress: false,
     linkedin: false,
   });
+  const [decryptFailed, setDecryptFailed] = useState<SavedState>({
+    medium: false,
+    devto: false,
+    wordpress: false,
+    linkedin: false,
+  });
   const [showMediumKey, setShowMediumKey] = useState<boolean>(false);
   const [showDevtoKey, setShowDevtoKey] = useState<boolean>(false);
   const [showWordpressKey, setShowWordpressKey] = useState<boolean>(false);
@@ -52,19 +58,25 @@ const Settings = () => {
           const linkedin = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.LINKEDIN);
 
           if (medium) {
-            setConnected((prev) => ({ ...prev, medium: Boolean(medium.configured ?? true) }));
+            const mediumOk = Boolean(medium.configured) && !medium.decrypt_failed;
+            setConnected((prev) => ({ ...prev, medium: mediumOk }));
+            setDecryptFailed((prev) => ({ ...prev, medium: Boolean(medium.decrypt_failed) }));
             // Keys are masked server-side — leave input empty; placeholder shows "Saved (hidden)".
             setMediumApiKey("");
           }
           if (devto) {
-            setConnected((prev) => ({ ...prev, devto: Boolean(devto.configured ?? true) }));
+            const devtoOk = Boolean(devto.configured) && !devto.decrypt_failed;
+            setConnected((prev) => ({ ...prev, devto: devtoOk }));
+            setDecryptFailed((prev) => ({ ...prev, devto: Boolean(devto.decrypt_failed) }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username as unknown as string);
             }
             setDevtoApiKey("");
           }
           if (wordpress) {
-            setConnected((prev) => ({ ...prev, wordpress: Boolean(wordpress.configured ?? true) }));
+            const wordpressOk = Boolean(wordpress.configured) && !wordpress.decrypt_failed;
+            setConnected((prev) => ({ ...prev, wordpress: wordpressOk }));
+            setDecryptFailed((prev) => ({ ...prev, wordpress: Boolean(wordpress.decrypt_failed) }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
             setWordpressApiKey("");
           }
@@ -135,6 +147,7 @@ const Settings = () => {
           toast.credentialsRemoved(SYNC_LABEL.PLATFORM_MEDIUM);
         } else {
           setConnected((prev) => ({ ...prev, medium: true }));
+          setDecryptFailed((prev) => ({ ...prev, medium: false }));
           setSaved((prev) => ({ ...prev, medium: true }));
           setTimeout(() => setSaved((prev) => ({ ...prev, medium: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
           toast.credentialsSaved(SYNC_LABEL.PLATFORM_MEDIUM);
@@ -195,6 +208,7 @@ const Settings = () => {
           toast.credentialsRemoved(SYNC_LABEL.PLATFORM_DEVTO);
         } else {
           setConnected((prev) => ({ ...prev, devto: true }));
+          setDecryptFailed((prev) => ({ ...prev, devto: false }));
           setSaved((prev) => ({ ...prev, devto: true }));
           setTimeout(() => setSaved((prev) => ({ ...prev, devto: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
           toast.credentialsSaved(SYNC_LABEL.PLATFORM_DEVTO);
@@ -258,6 +272,7 @@ const Settings = () => {
           toast.credentialsRemoved(SYNC_LABEL.PLATFORM_WORDPRESS);
         } else {
           setConnected((prev) => ({ ...prev, wordpress: true }));
+          setDecryptFailed((prev) => ({ ...prev, wordpress: false }));
           setSaved((prev) => ({ ...prev, wordpress: true }));
           setTimeout(() => setSaved((prev) => ({ ...prev, wordpress: false })), APP_CONFIG.SAVED_TOAST_DURATION_MS);
           toast.credentialsSaved(SYNC_LABEL.PLATFORM_WORDPRESS);
@@ -453,6 +468,14 @@ const Settings = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {decryptFailed.devto ? (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <FiAlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <p className="text-sm text-destructive">{SYNC_LABEL.CREDENTIAL_DECRYPT_FAILED_BANNER}</p>
+              </div>
+            </div>
+          ) : null}
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 shrink-0" />
@@ -504,7 +527,13 @@ const Settings = () => {
                   type={showDevtoKey ? "text" : "password"}
                   value={devtoApiKey}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoApiKey(e.target.value)}
-                  placeholder={connected.devto ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY}
+                  placeholder={
+                    decryptFailed.devto
+                      ? SYNC_LABEL.CREDENTIAL_REENTER_REQUIRED
+                      : connected.devto
+                        ? SYNC_LABEL.SAVED_HIDDEN
+                        : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY
+                  }
                   className="w-full pr-12 sm:pr-10"
                   autoComplete="off"
                 />

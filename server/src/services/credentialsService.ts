@@ -60,8 +60,9 @@ function sanitizeCredentialForClient(credential: Record<string, unknown>): Recor
       }
     } catch (error) {
       logger.error(ERROR_MESSAGES["DECRYPTION_ERROR_LOG"], error as Error);
+      // Unreadable ciphertext must not look "connected" — force re-entry in Settings.
       decryptFailed = true;
-      configured = true;
+      configured = false;
     }
   }
 
