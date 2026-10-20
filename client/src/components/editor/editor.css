@@ -7,7 +7,7 @@
   display: grid;
   grid-template-columns: 280px 1fr 300px;
   grid-template-rows: auto 1fr auto; /* toolbar / body / status bar */
-  height: calc(100vh - 73px); /* full viewport minus the app header */
+  height: calc(100dvh - var(--app-header-height, 3rem)); /* viewport minus app header */
   overflow: hidden;
 }
 
@@ -62,10 +62,14 @@
   }
 }
 
-/* Temporary mobile drawers (Post Settings + Publish & AI) */
+/* Temporary mobile drawers (Post Settings + Publish & AI).
+   Sit below the compact app header so chrome stays consistent. */
 .editor-drawer-root {
   position: fixed;
-  inset: 0;
+  top: var(--app-header-height, 3rem);
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 40;
 }
 
@@ -158,6 +162,30 @@
 
 .sidebar-section-body {
   padding: 16px 14px;
+}
+
+/* Compact accordion chrome inside mobile temporary drawers */
+@media (max-width: 1023px) {
+  .editor-drawer-panel .sidebar-section {
+    margin: 6px;
+  }
+
+  .editor-drawer-panel .sidebar-section:first-of-type {
+    margin-top: 8px;
+  }
+
+  .editor-drawer-panel .sidebar-section:last-of-type {
+    margin-bottom: 8px;
+  }
+
+  .editor-drawer-panel .sidebar-section-header {
+    min-height: 2.5rem;
+    padding: 8px 12px;
+  }
+
+  .editor-drawer-panel .sidebar-section-body {
+    padding: 10px 12px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

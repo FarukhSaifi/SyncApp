@@ -39,6 +39,8 @@
 
 @layer base {
   :root {
+    /* Compact mobile app header (h-12); desktop restores roomier bar in Layout. */
+    --app-header-height: 3rem;
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -63,6 +65,13 @@
     --input: 214 32% 91%;
     --ring: 263 70% 58%;
     --radius: 0.5rem;
+  }
+
+  @media (min-width: 768px) {
+    :root {
+      /* Matches Layout desktop header (py-4 + ~2rem logo row ≈ 73px). */
+      --app-header-height: 4.5625rem;
+    }
   }
 
   .dark {

@@ -89,3 +89,21 @@ export const LAZY_IMAGE = Object.freeze({
   SIZES: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
   SKELETON_CLASS: "absolute inset-0",
 } as const);
+
+/**
+ * App shell header — keep the mobile bar compact (≤ ~15% of viewport).
+ * CSS variable `--app-header-height` in globals.css must stay in sync.
+ */
+export const APP_HEADER = Object.freeze({
+  /** Outer header classes (sticky shell + mobile height cap). */
+  ROOT_CLASS: "app-header border-b bg-card sticky top-0 z-30 shrink-0 max-md:max-h-[15dvh]",
+  /** Inner padding / row height: compact on mobile, roomier on md+. */
+  INNER_CLASS: "container mx-auto flex h-12 max-h-[15dvh] items-center px-3 md:h-auto md:max-h-none md:px-4 md:py-4",
+  LOGO_ICON_CLASS: "h-6 w-6 text-primary md:h-8 md:w-8",
+  LOGO_TEXT_CLASS: "text-lg font-bold text-foreground md:text-2xl",
+  ACTIONS_GAP_CLASS: "flex items-center gap-2 md:gap-4",
+  THEME_BUTTON_CLASS:
+    "flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors touch-manipulation hover:bg-primary/20 hover:text-foreground min-h-10 min-w-10 md:min-h-0 md:min-w-0 md:p-2.5",
+  MENU_BUTTON_CLASS:
+    "flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-foreground min-h-10 min-w-10",
+} as const);

@@ -7,7 +7,6 @@ import GeneratePostModal from "@components/editor/GeneratePostModal";
 import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
 import { APP_CONFIG } from "@constants";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useMediaQuery } from "@hooks/useMediaQuery";
 import type { EditorSidebarRightProps } from "@types";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
@@ -26,8 +25,9 @@ import {
   FiZap,
 } from "react-icons/fi";
 
-import { AI_LOADING, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
+import { AI_LOADING, EDITOR_DRAWER, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 
 import Button from "@components/common/Button";
@@ -369,18 +369,18 @@ const EditorSidebarRight = ({
             aria-label={EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}
           >
             <div className="flex h-full min-h-0 flex-col">
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-                <h2 className="text-sm font-semibold text-foreground">{EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}</h2>
+              <div className={EDITOR_DRAWER["TITLE_BAR_CLASS"]}>
+                <h2 className={EDITOR_DRAWER["TITLE_CLASS"]}>{EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}</h2>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className={EDITOR_DRAWER["CLOSE_BUTTON_CLASS"]}
                   aria-label={EDITOR_UI["CLOSE_PUBLISH_AI_DRAWER"]}
                 >
-                  <FiX className="h-5 w-5" />
+                  <FiX className={EDITOR_DRAWER["CLOSE_ICON_CLASS"]} />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">{panelContent}</div>
+              <div className={EDITOR_DRAWER["BODY_CLASS"]}>{panelContent}</div>
             </div>
           </aside>
         </div>

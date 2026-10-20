@@ -32,6 +32,8 @@ import {
   FiX,
 } from "react-icons/fi";
 
+import { APP_HEADER } from "@constants/designTokens";
+
 const Layout = ({ children }: LayoutProps) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -89,14 +91,14 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      {/* Header — compact on mobile (≤15dvh), full chrome on md+ */}
+      <header className={APP_HEADER.ROOT_CLASS}>
+        <div className={APP_HEADER.INNER_CLASS}>
+          <div className="flex w-full items-center justify-between gap-2">
             {/* Logo */}
-            <Link href={ROUTES.DASHBOARD} className="flex items-center space-x-2">
-              <FiFileText className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{APP_CONFIG.APP_NAME}</span>
+            <Link href={ROUTES.DASHBOARD} className="flex min-w-0 items-center gap-1.5 md:gap-2">
+              <FiFileText className={APP_HEADER.LOGO_ICON_CLASS} />
+              <span className={`${APP_HEADER.LOGO_TEXT_CLASS} truncate`}>{APP_CONFIG.APP_NAME}</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -123,11 +125,11 @@ const Layout = ({ children }: LayoutProps) => {
             </nav>
 
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-4">
+            <div className={APP_HEADER.ACTIONS_GAP_CLASS}>
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 sm:p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center touch-manipulation"
+                className={APP_HEADER.THEME_BUTTON_CLASS}
                 aria-label={INFO_MESSAGES.TOGGLE_THEME_ARIA}
                 title={INFO_MESSAGES.TOGGLE_THEME(theme === THEME_VALUES.DARK ? THEME_VALUES.LIGHT : THEME_VALUES.DARK)}
               >
@@ -178,7 +180,7 @@ const Layout = ({ children }: LayoutProps) => {
               {/* Mobile Menu Button */}
               <div className="md:hidden relative" ref={mobileMenuRef}>
                 <button
-                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors"
+                  className={APP_HEADER.MENU_BUTTON_CLASS}
                   onClick={() => {
                     setShowMobileMenu(!showMobileMenu);
                     setShowProfileMenu(false);
@@ -186,7 +188,7 @@ const Layout = ({ children }: LayoutProps) => {
                   aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
                   aria-expanded={showMobileMenu}
                 >
-                  {showMobileMenu ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+                  {showMobileMenu ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
                 </button>
 
                 {showMobileMenu && (

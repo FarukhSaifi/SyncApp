@@ -57,6 +57,19 @@ export const EDITOR_LAYOUT = Object.freeze({
 } as const);
 
 /**
+ * Mobile temporary drawer chrome — keep the title bar compact (≤ ~15dvh),
+ * matching the app shell header treatment.
+ */
+export const EDITOR_DRAWER = Object.freeze({
+  TITLE_BAR_CLASS: "flex h-12 max-h-[15dvh] shrink-0 items-center justify-between gap-2 border-b border-border px-3",
+  TITLE_CLASS: "truncate text-sm font-semibold text-foreground",
+  CLOSE_BUTTON_CLASS:
+    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors touch-manipulation hover:bg-muted hover:text-foreground",
+  CLOSE_ICON_CLASS: "h-5 w-5",
+  BODY_CLASS: "min-h-0 flex-1 overflow-y-auto",
+} as const);
+
+/**
  * Featured / cover image file upload constraints.
  * Must stay aligned with server `presignedUrlRequestSchema` (raster images only, max 6MB).
  */
