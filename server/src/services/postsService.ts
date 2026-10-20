@@ -22,7 +22,7 @@ import {
 } from "@utils/imageUpload";
 import { logger } from "@utils/logger";
 import { buildCoverFilename, buildInlineImageFilename } from "@utils/mediaFilename";
-import { normalizeScheduledFor } from "@utils/scheduleUtils";
+import { normalizeScheduledFor, normalizeScheduledPlatforms } from "@utils/scheduleUtils";
 
 import { uploadToGCS } from "./storage";
 
@@ -154,6 +154,7 @@ export async function createPost(input: CreatePostInput) {
     linkedin_post,
     linkedin_read_more_url,
     scheduled_for,
+    scheduled_platforms,
     author,
   } = input;
 
@@ -179,8 +180,18 @@ export async function createPost(input: CreatePostInput) {
   };
 
   if (scheduled_for !== undefined) {
-    postPayload.scheduled_for = normalizeScheduledFor(scheduled_for, {
+    const normalizedSchedule = normalizeScheduledFor(scheduled_for, {
       currentStatus: status as string,
+    });
+    postPayload.scheduled_for = normalizedSchedule;
+    if (scheduled_platforms !== undefined || normalizedSchedule) {
+      postPayload.scheduled_platforms = normalizeScheduledPlatforms(scheduled_platforms, {
+        scheduledFor: normalizedSchedule,
+      });
+    }
+  } else if (scheduled_platforms !== undefined) {
+    postPayload.scheduled_platforms = normalizeScheduledPlatforms(scheduled_platforms, {
+      scheduledFor: null,
     });
   }
 
@@ -426,8 +437,23 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
       typeof updates.linkedin_read_more_url === "string" ? updates.linkedin_read_more_url.trim() : "";
   }
   if (updates.scheduled_for !== undefined) {
-    updateData.scheduled_for = normalizeScheduledFor(updates.scheduled_for, {
+    const normalizedSchedule = normalizeScheduledFor(updates.scheduled_for, {
       currentStatus: (updates.status as string) || post.status,
+    });
+    updateData.scheduled_for = normalizedSchedule;
+    if (updates.scheduled_platforms !== undefined || normalizedSchedule !== null) {
+      updateData.scheduled_platforms = normalizeScheduledPlatforms(
+        updates.scheduled_platforms !== undefined ? updates.scheduled_platforms : post.scheduled_platforms,
+        { scheduledFor: normalizedSchedule },
+      );
+    }
+    if (normalizedSchedule === null) {
+      updateData.scheduled_platforms = [];
+    }
+  } else if (updates.scheduled_platforms !== undefined) {
+    const existingSchedule = post.scheduled_for ? new Date(post.scheduled_for) : null;
+    updateData.scheduled_platforms = normalizeScheduledPlatforms(updates.scheduled_platforms, {
+      scheduledFor: existingSchedule,
     });
   }
 

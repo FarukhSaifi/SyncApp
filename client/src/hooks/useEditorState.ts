@@ -8,6 +8,7 @@ import { useToast } from "@hooks/useToast";
 import type { EditorFormData, Post, PublishFormOverrides, UseEditorStateOptions } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { toStorageMarkdown } from "@utils/contentUtils";
+import { isCredentialConnected } from "@utils/credentials";
 import { devError, devLog } from "@utils/logger";
 import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
@@ -99,6 +100,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           cover_image: post.cover_image || "",
           canonical_url: resolveCanonicalUrl(post.canonical_url, post.slug),
           scheduled_for: post.scheduled_for || "",
+          scheduled_platforms: Array.isArray(post.scheduled_platforms) ? post.scheduled_platforms : [],
           linkedin_post: post.linkedin_post || "",
           linkedin_read_more_url: post.linkedin_read_more_url || "",
         });
@@ -145,7 +147,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         );
         if (result?.success && Array.isArray(result.data)) {
           setConnectedPlatforms(
-            result.data.filter((c) => (c as { configured?: boolean }).configured !== false).map((c) => c.platform_name),
+            result.data
+              .filter((c) => isCredentialConnected(c as { configured?: boolean; decrypt_failed?: boolean }))
+              .map((c) => c.platform_name),
           );
         }
       } catch (error) {
@@ -293,7 +297,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       }
 
       const clearScheduledForInForm = () => {
-        setFormData((prev) => ({ ...prev, scheduled_for: "", ...overrides }));
+        setFormData((prev) => ({
+          ...prev,
+          scheduled_for: "",
+          scheduled_platforms: [],
+          ...overrides,
+        }));
       };
 
       const status = data.status ?? POST_STATUS.DRAFT;
@@ -303,6 +312,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         tags: tagList,
         status,
         scheduled_for: null,
+        scheduled_platforms: [],
       };
 
       if (!id) {
@@ -509,7 +519,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   }, [id, toast]);
 
   const handleScheduleSave = useCallback(
-    async (scheduledFor: string): Promise<boolean> => {
+    async (scheduledFor: string, platforms: string[]): Promise<boolean> => {
       if (!formData.title.trim() || !formData.content_markdown.trim()) {
         toast.validationError(SYNC_LABEL.FILL_TITLE_AND_CONTENT);
         return false;
@@ -517,11 +527,13 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
       setLoading(true);
       try {
+        const nextPlatforms = scheduledFor ? platforms : [];
         const postData = {
           ...formData,
           tags: tagList,
           status: formData.status ?? POST_STATUS.DRAFT,
           scheduled_for: scheduledFor || null,
+          scheduled_platforms: nextPlatforms,
         };
 
         let response;
@@ -536,6 +548,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           setFormData((prev) => ({
             ...prev,
             scheduled_for: savedPost.scheduled_for || scheduledFor || "",
+            scheduled_platforms: Array.isArray(savedPost.scheduled_platforms)
+              ? savedPost.scheduled_platforms
+              : nextPlatforms,
             status: savedPost.status ?? prev.status,
             canonical_url: resolveCanonicalUrl(savedPost.canonical_url, savedPost.slug) || prev.canonical_url,
           }));

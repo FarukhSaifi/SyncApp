@@ -6,7 +6,8 @@ import PostStatusPill from "@components/dashboard/PostStatusPill";
 import GeneratePostModal from "@components/editor/GeneratePostModal";
 import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
-import { APP_CONFIG, PLATFORMS } from "@constants";
+import { APP_CONFIG } from "@constants";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useMediaQuery } from "@hooks/useMediaQuery";
 import type { EditorSidebarRightProps } from "@types";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
@@ -50,6 +51,7 @@ const EditorSidebarRight = ({
   connectedPlatforms,
   onDownloadMdx,
   scheduledFor,
+  scheduledPlatforms,
   onScheduleSave,
   coverImage,
   // AI props
@@ -62,7 +64,7 @@ const EditorSidebarRight = ({
   setTargetPlatforms,
   researchContext,
   applyResearchPick,
-  clearResearchContext,
+  selectSuggestionKeyword,
   aiImagePrompt,
   setAiImagePrompt,
   aiLoading,
@@ -172,7 +174,11 @@ const EditorSidebarRight = ({
 
             {isScheduled ? (
               <p className="text-xs text-muted-foreground">
-                {EDITOR_UI["SCHEDULE_AUTO_PUBLISH"](dayjs(scheduledFor).format(APP_CONFIG["DATE_FORMAT_WITH_TIME"]))}
+                {EDITOR_UI["SCHEDULE_AUTO_PUBLISH"](
+                  dayjs(scheduledFor).format(APP_CONFIG["DATE_FORMAT_WITH_TIME"]),
+                  scheduledPlatforms.map((slug) => PLATFORM_DISPLAY_NAMES[slug as PlatformSlug] ?? slug).join(", ") ||
+                    undefined,
+                )}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">{EDITOR_UI["SCHEDULE_MODAL_DESC"]}</p>
@@ -394,13 +400,15 @@ const EditorSidebarRight = ({
         isGenerating={aiLoading === AI_LOADING["POST"]}
         researchContext={researchContext}
         onResearchPick={applyResearchPick}
-        onResearchClear={clearResearchContext}
+        onSelectSuggestionKeyword={selectSuggestionKeyword}
       />
 
       <SchedulePostModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         scheduledFor={scheduledFor}
+        scheduledPlatforms={scheduledPlatforms}
+        connectedPlatforms={connectedPlatforms}
         onScheduleSave={onScheduleSave}
         isPublished={status === "published"}
         isSaving={loading}

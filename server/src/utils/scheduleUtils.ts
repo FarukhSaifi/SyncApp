@@ -1,5 +1,5 @@
 
-import { POST_STATUS } from "@constants";
+import { POST_STATUS, VALID_SCHEDULE_PLATFORMS, type SchedulePlatform } from "@constants";
 import { ValidationError } from "@middleware/errorHandler";
 import type { NormalizeScheduledForOptions } from "@types";
 import dayjs from "dayjs";
@@ -34,6 +34,49 @@ export function normalizeScheduledFor(value: unknown, options: NormalizeSchedule
   }
 
   return parsed.toDate();
+}
+
+/**
+ * Normalize scheduled_platforms for create/update.
+ * - null / undefined / empty → []
+ * - unknown slugs stripped; duplicates removed
+ * - when a future schedule is set, at least one valid platform is required
+ */
+export function normalizeScheduledPlatforms(
+  value: unknown,
+  options: { scheduledFor: Date | null } = { scheduledFor: null },
+): SchedulePlatform[] {
+  if (value === null || value === undefined) {
+    if (options.scheduledFor) {
+      throw new ValidationError(VALIDATION_ERRORS.SCHEDULE_PLATFORMS_REQUIRED);
+    }
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new ValidationError(VALIDATION_ERRORS.SCHEDULE_PLATFORMS_INVALID);
+  }
+
+  const allowed = new Set<string>(VALID_SCHEDULE_PLATFORMS);
+  const unique: SchedulePlatform[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "string") {
+      continue;
+    }
+    const slug = entry.trim().toLowerCase();
+    if (!allowed.has(slug)) {
+      continue;
+    }
+    if (!unique.includes(slug as SchedulePlatform)) {
+      unique.push(slug as SchedulePlatform);
+    }
+  }
+
+  if (options.scheduledFor && unique.length === 0) {
+    throw new ValidationError(VALIDATION_ERRORS.SCHEDULE_PLATFORMS_REQUIRED);
+  }
+
+  return unique;
 }
 
 /** Mongo filter for drafts due for the daily publish cron. */

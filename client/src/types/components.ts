@@ -80,7 +80,11 @@ export interface SchedulePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   scheduledFor: string;
-  onScheduleSave: (value: string) => Promise<boolean>;
+  /** Platforms previously saved on the post (intersected with connected on open). */
+  scheduledPlatforms: string[];
+  /** Connected credential platform slugs available for scheduling. */
+  connectedPlatforms: string[];
+  onScheduleSave: (scheduledFor: string, platforms: string[]) => Promise<boolean>;
   isPublished?: boolean;
   isSaving?: boolean;
 }

@@ -577,11 +577,19 @@ export async function performPublishToAll(post: IPostDocument) {
   };
 }
 
-/** Syndicate to all active author credentials. Does not mutate post document. */
-export async function publishToActivePlatforms(post: IPostDocument): Promise<PublishToActivePlatformsResult> {
+/** Syndicate to active author credentials (optionally filtered by platform slug). Does not mutate post. */
+export async function publishToActivePlatforms(
+  post: IPostDocument,
+  options?: { platforms?: string[] },
+): Promise<PublishToActivePlatformsResult> {
   const credentials = await Credential.find({ author: post.author, is_active: true });
+  const allowed =
+    Array.isArray(options?.platforms) && options.platforms.length > 0
+      ? new Set(options.platforms.map((p) => p.trim().toLowerCase()).filter(Boolean))
+      : null;
+  const targets = allowed ? credentials.filter((c) => allowed.has(c.platform_name)) : credentials;
 
-  if (credentials.length === 0) {
+  if (targets.length === 0) {
     throw new Error(ERROR_MESSAGES.NO_ACTIVE_CREDENTIALS);
   }
 
@@ -590,7 +598,7 @@ export async function publishToActivePlatforms(post: IPostDocument): Promise<Pub
   const successes: string[] = [];
 
   await Promise.allSettled(
-    credentials.map(async (credential) => {
+    targets.map(async (credential) => {
       const platformName = credential.platform_name;
       const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
 
@@ -645,8 +653,16 @@ export async function publishScheduledPost(post: IPostDocument): Promise<Schedul
   const title = freshPost.title;
   const { authorEmail, authorName } = await loadAuthorForNotification(freshPost.author);
 
+  const scheduledTargets = Array.isArray(freshPost.scheduled_platforms)
+    ? freshPost.scheduled_platforms.filter((p): p is string => typeof p === "string" && p.trim().length > 0)
+    : [];
   const credentials = await Credential.find({ author: freshPost.author, is_active: true });
-  if (credentials.length === 0) {
+  const matchingCredentials =
+    scheduledTargets.length > 0
+      ? credentials.filter((c) => scheduledTargets.includes(c.platform_name))
+      : credentials;
+
+  if (matchingCredentials.length === 0) {
     const notification = await notifyScheduledPublishResult({
       postId,
       title,
@@ -667,7 +683,9 @@ export async function publishScheduledPost(post: IPostDocument): Promise<Schedul
     };
   }
 
-  const { platformUpdates, successes, errors } = await publishToActivePlatforms(freshPost);
+  const { platformUpdates, successes, errors } = await publishToActivePlatforms(freshPost, {
+    platforms: scheduledTargets.length > 0 ? scheduledTargets : undefined,
+  });
 
   if (successes.length === 0) {
     const notification = await notifyScheduledPublishResult({
@@ -696,7 +714,7 @@ export async function publishScheduledPost(post: IPostDocument): Promise<Schedul
 
   await Post.findByIdAndUpdate(
     freshPost._id,
-    { status: POST_STATUS.PUBLISHED, scheduled_for: null, ...platformUpdates },
+    { status: POST_STATUS.PUBLISHED, scheduled_for: null, scheduled_platforms: [], ...platformUpdates },
     { returnDocument: "after", runValidators: true },
   );
 

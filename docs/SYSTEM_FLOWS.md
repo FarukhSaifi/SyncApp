@@ -60,9 +60,10 @@ flowchart TD
   find --> loop[For_each_post]
   loop --> creds{Active_credentials}
   creds -->|no| skip[skipped_no_credentials]
-  creds -->|yes| pub[publishToActivePlatforms]
+  creds -->|yes| filter[Filter_by_scheduled_platforms_or_all_active]
+  filter --> pub[publishToActivePlatforms]
   pub --> result{Any_success}
-  result -->|yes| done[status_published_clear_schedule]
+  result -->|yes| done[status_published_clear_schedule_and_platforms]
   result -->|no| fail[failed]
   done --> notify[notifyScheduledPublishResult]
   fail --> notify

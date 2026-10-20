@@ -90,4 +90,6 @@ export const VALIDATION_ERRORS = Object.freeze({
   SCHEDULE_INVALID_DATE: "Invalid schedule date",
   SCHEDULE_MUST_BE_FUTURE: "Schedule date must be in the future",
   SCHEDULE_NOT_ALLOWED_PUBLISHED: "Published posts cannot be scheduled",
+  SCHEDULE_PLATFORMS_REQUIRED: "Select at least one platform to schedule for",
+  SCHEDULE_PLATFORMS_INVALID: "Scheduled platforms must be an array of platform slugs",
 } as const);

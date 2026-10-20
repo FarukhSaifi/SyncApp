@@ -19,6 +19,7 @@ export interface Post {
   cover_image?: string;
   canonical_url?: string;
   scheduled_for?: string;
+  scheduled_platforms?: string[];
   author?: User | string;
   platform_status?: {
     medium?: PlatformStatus;
@@ -194,6 +195,7 @@ export interface EditorForm {
   cover_image: string;
   canonical_url: string;
   scheduled_for: string;
+  scheduled_platforms: string[];
   tags: string[];
   linkedin_post?: string;
   linkedin_read_more_url?: string;

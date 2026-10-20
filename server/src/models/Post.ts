@@ -94,6 +94,10 @@ const postSchema = new Schema<IPostDocument>(
     scheduled_for: {
       type: Date,
     },
+    scheduled_platforms: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

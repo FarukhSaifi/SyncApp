@@ -47,6 +47,8 @@ export interface Post {
   cover_image?: string;
   canonical_url?: string;
   scheduled_for?: string;
+  /** Platforms to syndicate when the scheduled cron runs. */
+  scheduled_platforms?: string[];
   author: UserRef | string;
   platform_status?: {
     medium?: PlatformStatus;

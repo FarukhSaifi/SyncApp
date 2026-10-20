@@ -90,6 +90,18 @@ export type PostStatus = (typeof POST_STATUS)[keyof typeof POST_STATUS];
 // Valid platform array
 export const VALID_PLATFORMS = Object.freeze(Object.values(PLATFORMS)) as Platform[];
 
+/** Platforms eligible for schedule / syndicate (excludes unused Hashnode slug). */
+export const SCHEDULE_PLATFORMS = Object.freeze([
+  PLATFORMS.MEDIUM,
+  PLATFORMS.DEVTO,
+  PLATFORMS.WORDPRESS,
+  PLATFORMS.LINKEDIN,
+] as const);
+
+export type SchedulePlatform = (typeof SCHEDULE_PLATFORMS)[number];
+
+export const VALID_SCHEDULE_PLATFORMS = Object.freeze([...SCHEDULE_PLATFORMS]) as SchedulePlatform[];
+
 // Valid post status array
 export const VALID_POST_STATUS = Object.freeze(Object.values(POST_STATUS)) as PostStatus[];
 

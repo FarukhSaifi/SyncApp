@@ -11,9 +11,10 @@ export const INITIAL_EDITOR_FORM = Object.freeze({
   cover_image: "",
   canonical_url: "",
   scheduled_for: "",
+  scheduled_platforms: [] as string[],
   linkedin_post: "",
   linkedin_read_more_url: "",
-} as const);
+});
 
 /** Autosave interval (ms). Drafts are saved automatically when dirty. */
 export const AUTOSAVE_INTERVAL_MS = 60000;

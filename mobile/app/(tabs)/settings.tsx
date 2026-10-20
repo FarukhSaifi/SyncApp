@@ -14,6 +14,7 @@ import { useThemeColors } from "@contexts/ThemeContext";
 import { useTabBarInset } from "@hooks/useTabBarInset";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
+import { isCredentialConnected } from "@utils/credentials";
 
 type PlatformKey = "medium" | "devto" | "wordpress" | "linkedin";
 
@@ -62,7 +63,7 @@ export default function SettingsScreen() {
           setMediumKey("");
           setConnected((c) => ({
             ...c,
-            medium: Boolean(cred.configured) && !cred.decrypt_failed,
+            medium: isCredentialConnected(cred),
           }));
         }
         if (d.success && d.data) {
@@ -73,18 +74,18 @@ export default function SettingsScreen() {
           };
           setDevtoKey("");
           setDevtoUser(cred.platform_config?.devto_username ?? "");
-          setConnected((c) => ({ ...c, devto: Boolean(cred.configured) && !cred.decrypt_failed }));
+          setConnected((c) => ({ ...c, devto: isCredentialConnected(cred) }));
         }
         if (w.success && w.data) {
           const cred = w.data as { configured?: boolean; decrypt_failed?: boolean; site_url?: string };
           setWpKey("");
           setWpUrl(cred.site_url ?? "");
-          setConnected((c) => ({ ...c, wordpress: Boolean(cred.configured) && !cred.decrypt_failed }));
+          setConnected((c) => ({ ...c, wordpress: isCredentialConnected(cred) }));
         }
         if (l.success && l.data) {
           setConnected((c) => ({
             ...c,
-            linkedin: Boolean((l.data as { configured?: boolean }).configured),
+            linkedin: isCredentialConnected(l.data as { configured?: boolean }),
           }));
         }
       } catch {

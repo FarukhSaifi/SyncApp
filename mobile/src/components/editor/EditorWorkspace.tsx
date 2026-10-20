@@ -180,7 +180,9 @@ export function EditorWorkspace({
           />
         ) : null}
 
-        {mode === "details" ? <DetailsTab form={form} updateField={updateField} /> : null}
+        {mode === "details" ? (
+          <DetailsTab form={form} connectedPlatforms={connectedPlatforms} updateField={updateField} />
+        ) : null}
       </ScrollView>
 
       {/* 4. Bottom Sticky Action Command Bar */}
@@ -225,11 +227,7 @@ export function EditorWorkspace({
   );
 }
 
-const createStyles = (
-  colors: ReturnType<typeof useThemeColors>,
-  isCompact: boolean,
-  horizontalPadding: number,
-) =>
+const createStyles = (colors: ReturnType<typeof useThemeColors>, isCompact: boolean, horizontalPadding: number) =>
   StyleSheet.create({
     shell: {
       flex: 1,

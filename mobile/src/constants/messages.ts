@@ -246,8 +246,7 @@ export const ERRORS = Object.freeze({
   IMAGE_PICKER_FAILED: "Could not open photo library",
   REQUEST_FAILED: "Request failed",
   DIRECT_CLOUD_UPLOAD_FAILED: (status: number) => `Direct cloud upload failed (${status})`,
-  CONNECT_PLATFORM_FIRST: (platform: string) =>
-    `Please connect your ${platform} account in Settings first.`,
+  CONNECT_PLATFORM_FIRST: (platform: string) => `Please connect your ${platform} account in Settings first.`,
   NO_PLATFORMS_CONNECTED: "No platforms connected. Please connect platforms in Settings first.",
 });
 
@@ -263,8 +262,7 @@ export const EDITOR_READINESS = Object.freeze({
   COVER_READY: "Image selected",
   COVER_OPTIONAL: "Optional, but improves previews",
   CHANNELS_LABEL: "Channels",
-  CHANNELS_CONNECTED: (count: number) =>
-    `${count} ${count === 1 ? "platform" : "platforms"} connected`,
+  CHANNELS_CONNECTED: (count: number) => `${count} ${count === 1 ? "platform" : "platforms"} connected`,
   CHANNELS_NONE: "No platforms connected in Settings",
   DETAILS_LABEL: "Publishing details",
   DETAILS_SCHEDULED: "Scheduled delivery set",
@@ -302,8 +300,7 @@ export const EDITOR_UI = Object.freeze({
   LIVE_ARTICLE_PREVIEW: "Live Article Preview",
   STORY_BODY: "STORY BODY",
   FORMAT_BLOCK: "Block",
-  PREVIEW_EMPTY_SUB:
-    "Write in the canvas or insert blocks to see your rendered post formatted here in real time.",
+  PREVIEW_EMPTY_SUB: "Write in the canvas or insert blocks to see your rendered post formatted here in real time.",
   INSERT_BLOCK_TITLE: "Insert Content Block",
   INSERT_BLOCK_SUBTITLE: "Choose a block to add to your story",
   AI_IMAGE_SHORTCUT_TITLE: "Generate AI Image / Cover",
@@ -330,6 +327,10 @@ export const EDITOR_UI = Object.freeze({
   SCHEDULED_DELIVERY: "Scheduled Delivery",
   SCHEDULED_DELIVERY_SUB: "Choose when this post should be published, or publish immediately",
   SCHEDULED_FUTURE_NOTE: "Scheduled for future publication",
+  SCHEDULE_PLATFORMS_LABEL: "Publish to",
+  SCHEDULE_PLATFORMS_HINT: "Select which connected platforms receive this scheduled post",
+  SCHEDULE_PLATFORMS_NONE: "Connect a platform in Settings to schedule syndication",
+  SCHEDULE_PLATFORMS_REQUIRED: "Select at least one platform before scheduling",
   PUBLISH_NOW_INSTEAD: "Publish Now Instead",
   QUICK_SCHEDULE_PRESETS: "QUICK SCHEDULE PRESETS",
   PRESET_IN_4_HOURS: "In 4 Hours",
@@ -345,12 +346,10 @@ export const EDITOR_UI = Object.freeze({
   INSTANT_DISTRIBUTION: "Instant distribution",
   PREFLIGHT_CHECKLIST: "PRE-FLIGHT READINESS CHECKLIST",
   TARGET_CHANNELS: (count: number) => `TARGET CHANNELS (${count})`,
-  NO_CHANNELS_REVIEW_WARNING:
-    "No publishing channels connected. Add your credentials in Settings to publish.",
+  NO_CHANNELS_REVIEW_WARNING: "No publishing channels connected. Add your credentials in Settings to publish.",
   CHANNEL_WILL_PUBLISH: "Will publish",
   CHANNEL_SKIPPED: "Skipped",
-  REVIEW_AUTO_SAVE_NOTICE:
-    "Your draft is automatically saved before broadcasting to all selected destinations.",
+  REVIEW_AUTO_SAVE_NOTICE: "Your draft is automatically saved before broadcasting to all selected destinations.",
   FORMAT_DEFAULT_TEXT: "text",
 });
 
@@ -406,7 +405,7 @@ export const EDITOR_CONTENT_BLOCKS = Object.freeze([
     category: "text" as const,
     title: "Pull Quote",
     description: "Highlighted quote or testimonial",
-    template: "> \"A key quote or thought from your story.\"\n\n",
+    template: '> "A key quote or thought from your story."\n\n',
   },
   {
     id: "callout",
@@ -448,8 +447,7 @@ export const EDITOR_CONTENT_BLOCKS = Object.freeze([
     category: "code" as const,
     title: "Code Snippet",
     description: "Formatted syntax code block",
-    template:
-      "```typescript\n// Example implementation\nexport function example() {\n  return true;\n}\n```\n\n",
+    template: "```typescript\n// Example implementation\nexport function example() {\n  return true;\n}\n```\n\n",
   },
   {
     id: "table",

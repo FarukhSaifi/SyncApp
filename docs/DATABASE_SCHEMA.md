@@ -51,21 +51,22 @@ erDiagram
 
 ## Post
 
-| Field                    | Type                                 | Notes                            |
-| ------------------------ | ------------------------------------ | -------------------------------- |
-| `author`                 | ObjectId                             | Ref `User`                       |
-| `slug`                   | String                               | Unique, auto from title          |
-| `title`                  | String                               | Required                         |
-| `content_markdown`       | String                               | Required                         |
-| `status`                 | `draft` \| `published` \| `archived` | Default `draft`                  |
-| `platform_status`        | Object                               | Per-platform publish state       |
-| `tags`                   | String[]                             |                                  |
-| `meta_description`       | String                               | Max 160 chars                    |
-| `cover_image`            | String                               | Direct GCS / Firebase public URL |
-| `canonical_url`          | String                               | SEO                              |
-| `linkedin_post`          | String                               | Short LinkedIn teaser text       |
-| `linkedin_read_more_url` | String                               | Public article URL for Read more |
-| `scheduled_for`          | Date                                 | Cron trigger when due            |
+| Field | Type | Notes |
+| --- | --- | --- |
+| `author` | ObjectId | Ref `User` |
+| `slug` | String | Unique, auto from title |
+| `title` | String | Required |
+| `content_markdown` | String | Required |
+| `status` | `draft` \| `published` \| `archived` | Default `draft` |
+| `platform_status` | Object | Per-platform publish state |
+| `tags` | String[] |  |
+| `meta_description` | String | Max 160 chars |
+| `cover_image` | String | Direct GCS / Firebase public URL |
+| `canonical_url` | String | SEO |
+| `linkedin_post` | String | Short LinkedIn teaser text |
+| `linkedin_read_more_url` | String | Public article URL for Read more |
+| `scheduled_for` | Date | Cron trigger when due |
+| `scheduled_platforms` | String[] | Platforms to syndicate on cron (`medium`, `devto`, `wordpress`, `linkedin`). Empty on legacy posts → all active credentials |
 
 **Indexes:** `{ author, createdAt }`, `{ status, scheduled_for }`
 
@@ -73,17 +74,17 @@ erDiagram
 
 ## Credential
 
-| Field               | Type     | Notes                                                       |
-| ------------------- | -------- | ----------------------------------------------------------- |
-| `author`            | ObjectId | Ref `User`                                                  |
-| `platform_name`     | Enum     | `medium`, `devto`, `wordpress`, `linkedin`                  |
-| `encrypted_payload` | String   | Authenticated AES-256-GCM packed as `IV:TAG:CIPHERTEXT`     |
+| Field               | Type     | Notes                                                          |
+| ------------------- | -------- | -------------------------------------------------------------- |
+| `author`            | ObjectId | Ref `User`                                                     |
+| `platform_name`     | Enum     | `medium`, `devto`, `wordpress`, `linkedin`                     |
+| `encrypted_payload` | String   | Authenticated AES-256-GCM packed as `IV:TAG:CIPHERTEXT`        |
 | `api_key`           | String   | Synchronized backward-compatible alias for `encrypted_payload` |
-| `refresh_token`     | String   | Encrypted; LinkedIn OAuth refresh token                     |
-| `token_expires_at`  | Date     | LinkedIn access token expiry                                |
-| `site_url`          | String   | Required for WordPress                                      |
-| `is_active`         | Boolean  | Only active creds used for publish/cron                     |
-| `platform_config`   | Object   | e.g. `devto_username`, `linkedin_person_urn`                |
+| `refresh_token`     | String   | Encrypted; LinkedIn OAuth refresh token                        |
+| `token_expires_at`  | Date     | LinkedIn access token expiry                                   |
+| `site_url`          | String   | Required for WordPress                                         |
+| `is_active`         | Boolean  | Only active creds used for publish/cron                        |
+| `platform_config`   | Object   | e.g. `devto_username`, `linkedin_person_urn`                   |
 
 **Indexes:** Unique compound `{ author: 1, platform_name: 1 }`, `{ author: 1, is_active: 1 }`
 

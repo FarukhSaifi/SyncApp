@@ -120,6 +120,16 @@ export function useEditorAI({
     selectedResearchKeywordRef.current = null;
   }, []);
 
+  /**
+   * Pick a trending/Google suggestion: always drop research monetization context first,
+   * even when the new text matches a previously researched keyword.
+   */
+  const selectSuggestionKeyword = useCallback((value: string) => {
+    setResearchContext(null);
+    selectedResearchKeywordRef.current = null;
+    setAiKeyword(value);
+  }, []);
+
   const applyResearchPick = useCallback((item: KeywordResearchItem) => {
     selectedResearchKeywordRef.current = item.keyword;
     setResearchContext({
@@ -413,6 +423,7 @@ export function useEditorAI({
     researchContext,
     applyResearchPick,
     clearResearchContext,
+    selectSuggestionKeyword,
     handleGeneratePost,
     handleGenerateLinkedInSummary,
     handleGenerateImage,

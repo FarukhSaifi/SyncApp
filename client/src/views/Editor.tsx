@@ -214,6 +214,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         connectedPlatforms={state.connectedPlatforms}
         onDownloadMdx={state.handleDownloadMdx}
         scheduledFor={state.formData.scheduled_for}
+        scheduledPlatforms={state.formData.scheduled_platforms}
         onScheduleSave={state.handleScheduleSave}
         coverImage={state.formData.cover_image}
         aiKeyword={ai.aiKeyword}
@@ -225,7 +226,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         setTargetPlatforms={ai.setTargetPlatforms}
         researchContext={ai.researchContext}
         applyResearchPick={ai.applyResearchPick}
-        clearResearchContext={ai.clearResearchContext}
+        selectSuggestionKeyword={ai.selectSuggestionKeyword}
         aiImagePrompt={ai.aiImagePrompt}
         setAiImagePrompt={ai.setAiImagePrompt}
         aiLoading={ai.aiLoading}

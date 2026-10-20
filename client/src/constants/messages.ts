@@ -809,12 +809,19 @@ export const EDITOR_UI = Object.freeze({
   // Publish sidebar
   STATUS_LABEL: "Status",
   SCHEDULE_PUBLICATION_LABEL: "Schedule Publication",
-  SCHEDULE_AUTO_PUBLISH: (formattedDate: string) =>
-    `Will publish to all connected platforms after ${formattedDate} (daily run at midnight)`,
+  SCHEDULE_AUTO_PUBLISH: (formattedDate: string, platformsLabel?: string) =>
+    platformsLabel
+      ? `Will publish to ${platformsLabel} after ${formattedDate} (daily run at midnight)`
+      : `Will publish after ${formattedDate} (daily run at midnight)`,
   SCHEDULE_MODAL_TITLE: "Schedule publication",
   SCHEDULE_MODAL_DESC:
-    "Pick the earliest date and time to publish. Due posts are syndicated to all connected platforms on the next daily midnight run.",
+    "Pick when to publish and which connected platforms should receive the post on the next daily midnight run.",
   SCHEDULE_MODAL_DATETIME_LABEL: "Publish date & time",
+  SCHEDULE_MODAL_PLATFORMS_LABEL: "Publish to",
+  SCHEDULE_MODAL_PLATFORMS_HINT: "Only platforms with saved credentials are listed.",
+  SCHEDULE_MODAL_NO_CONNECTED:
+    "Connect at least one platform in Settings before scheduling a publication.",
+  SCHEDULE_MODAL_NO_PLATFORMS: "Select at least one platform to schedule for.",
   SCHEDULE_MODAL_BUTTON: "Schedule publication",
   SCHEDULE_MODAL_EDIT: "Edit schedule",
   SCHEDULE_MODAL_CONFIRM: "Set schedule",

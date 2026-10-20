@@ -6,31 +6,42 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Card } from "@components/Card";
 import { Input } from "@components/Input";
 import { RADIUS } from "@constants/designTokens";
-import {
-  EDITOR_A11Y,
-  EDITOR_UI,
-  LABELS,
-  PLACEHOLDERS,
-  editorMetaCharCount,
-} from "@constants/messages";
+import { EDITOR_A11Y, EDITOR_UI, editorMetaCharCount, LABELS, PLACEHOLDERS } from "@constants/messages";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
+import { toast } from "@hooks/useToast";
 import type { EditorForm } from "@types";
 
 interface DetailsTabProps {
   form: EditorForm;
+  connectedPlatforms: PlatformSlug[];
   updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
 }
 
-export function DetailsTab({ form, updateField }: DetailsTabProps) {
+const SCHEDULE_PLATFORM_ORDER: PlatformSlug[] = [
+  PLATFORMS.MEDIUM,
+  PLATFORMS.DEVTO,
+  PLATFORMS.WORDPRESS,
+  PLATFORMS.LINKEDIN,
+];
+
+export function DetailsTab({ form, connectedPlatforms, updateField }: DetailsTabProps) {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [newTagInput, setNewTagInput] = useState("");
   const [showAdvancedSeo, setShowAdvancedSeo] = useState(Boolean(form.canonical_url));
 
+  const availablePlatforms = useMemo(
+    () => SCHEDULE_PLATFORM_ORDER.filter((slug) => connectedPlatforms.includes(slug)),
+    [connectedPlatforms],
+  );
+
   const handleAddTag = () => {
     const trimmed = newTagInput.trim().replace(/^#/, "");
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
     if (!form.tags.includes(trimmed)) {
       updateField("tags", [...form.tags, trimmed]);
     }
@@ -44,14 +55,37 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
     );
   };
 
+  const ensureSchedulePlatforms = (): string[] => {
+    const current = form.scheduled_platforms.filter((p) => availablePlatforms.includes(p as PlatformSlug));
+    return current.length > 0 ? current : [...availablePlatforms];
+  };
+
   // Quick schedule presets
   const handleSetPresetSchedule = (hoursFromNow: number) => {
+    if (availablePlatforms.length === 0) {
+      toast.error(EDITOR_UI.SCHEDULE_PLATFORMS_NONE);
+      return;
+    }
+    const platforms = ensureSchedulePlatforms();
+    if (platforms.length === 0) {
+      toast.error(EDITOR_UI.SCHEDULE_PLATFORMS_REQUIRED);
+      return;
+    }
     const scheduledDate = dayjs().add(hoursFromNow, "hour").toISOString();
+    updateField("scheduled_platforms", platforms);
     updateField("scheduled_for", scheduledDate);
   };
 
   const handleClearSchedule = () => {
     updateField("scheduled_for", "");
+    updateField("scheduled_platforms", []);
+  };
+
+  const toggleSchedulePlatform = (platform: PlatformSlug) => {
+    const next = form.scheduled_platforms.includes(platform)
+      ? form.scheduled_platforms.filter((p) => p !== platform)
+      : [...form.scheduled_platforms, platform];
+    updateField("scheduled_platforms", next);
   };
 
   const metaLength = form.meta_description.length;
@@ -116,15 +150,46 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
         </View>
         <Text style={styles.cardSub}>{EDITOR_UI.SCHEDULED_DELIVERY_SUB}</Text>
 
+        <Text style={styles.presetHeading}>{EDITOR_UI.SCHEDULE_PLATFORMS_LABEL}</Text>
+        <Text style={styles.cardSub}>{EDITOR_UI.SCHEDULE_PLATFORMS_HINT}</Text>
+        {availablePlatforms.length === 0 ? (
+          <Text style={styles.cardSub}>{EDITOR_UI.SCHEDULE_PLATFORMS_NONE}</Text>
+        ) : (
+          <View style={styles.platformChipsRow}>
+            {availablePlatforms.map((platform) => {
+              const selected = form.scheduled_platforms.includes(platform);
+              return (
+                <Pressable
+                  key={platform}
+                  style={({ pressed }) => [
+                    styles.platformChip,
+                    selected && styles.platformChipSelected,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => toggleSchedulePlatform(platform)}
+                >
+                  <Text style={[styles.platformChipText, selected && styles.platformChipTextSelected]}>
+                    {PLATFORM_DISPLAY_NAMES[platform]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
         {form.scheduled_for ? (
           <View style={styles.activeScheduleBox}>
             <View style={styles.scheduleInfo}>
               <Ionicons name="calendar" size={20} color={colors.primary} />
               <View>
-                <Text style={styles.scheduleDate}>
-                  {dayjs(form.scheduled_for).format("MMM D, YYYY [at] h:mm A")}
+                <Text style={styles.scheduleDate}>{dayjs(form.scheduled_for).format("MMM D, YYYY [at] h:mm A")}</Text>
+                <Text style={styles.scheduleRelative}>
+                  {form.scheduled_platforms.length > 0
+                    ? form.scheduled_platforms
+                        .map((slug) => PLATFORM_DISPLAY_NAMES[slug as PlatformSlug] ?? slug)
+                        .join(", ")
+                    : EDITOR_UI.SCHEDULED_FUTURE_NOTE}
                 </Text>
-                <Text style={styles.scheduleRelative}>{EDITOR_UI.SCHEDULED_FUTURE_NOTE}</Text>
               </View>
             </View>
             <Pressable
@@ -183,27 +248,15 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
           style={styles.metaInput}
         />
         <View style={styles.metaFooter}>
-          <Text
-            style={[
-              styles.metaCounter,
-              metaLength > 160 && styles.metaCounterWarning,
-            ]}
-          >
+          <Text style={[styles.metaCounter, metaLength > 160 && styles.metaCounterWarning]}>
             {editorMetaCharCount(metaLength)}
           </Text>
         </View>
 
         {/* Collapsible Canonical URL */}
-        <Pressable
-          style={styles.advancedToggle}
-          onPress={() => setShowAdvancedSeo((prev) => !prev)}
-        >
+        <Pressable style={styles.advancedToggle} onPress={() => setShowAdvancedSeo((prev) => !prev)}>
           <Text style={styles.advancedToggleText}>{EDITOR_UI.ADVANCED_SEO_TOGGLE}</Text>
-          <Ionicons
-            name={showAdvancedSeo ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={colors.mutedForeground}
-          />
+          <Ionicons name={showAdvancedSeo ? "chevron-up" : "chevron-down"} size={18} color={colors.mutedForeground} />
         </Pressable>
 
         {showAdvancedSeo ? (
@@ -341,6 +394,32 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     clearScheduleText: {
       fontSize: 11,
       fontWeight: "600",
+      color: colors.primary,
+    },
+    platformChipsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 14,
+    },
+    platformChip: {
+      borderRadius: RADIUS.FULL,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    platformChipSelected: {
+      borderColor: colors.primary,
+      backgroundColor: `${colors.primary}18`,
+    },
+    platformChipText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.foreground,
+    },
+    platformChipTextSelected: {
       color: colors.primary,
     },
     presetsWrapper: {

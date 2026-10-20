@@ -8,35 +8,73 @@ import dayjs from "dayjs";
 import { FiClock } from "react-icons/fi";
 
 import { EDITOR_UI } from "@constants/messages";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 
 import Button from "@components/common/Button";
 import Modal from "@components/common/Modal";
+
+function platformCheckboxClass(checked: boolean): string {
+  const base = "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors";
+  return checked
+    ? `${base} border-primary bg-primary/10 text-foreground`
+    : `${base} border-border bg-background hover:border-primary/40 hover:bg-muted/40`;
+}
+
+const SCHEDULE_PLATFORM_ORDER: PlatformSlug[] = [
+  PLATFORMS.MEDIUM,
+  PLATFORMS.DEVTO,
+  PLATFORMS.WORDPRESS,
+  PLATFORMS.LINKEDIN,
+];
 
 export default function SchedulePostModal({
   isOpen,
   onClose,
   scheduledFor,
+  scheduledPlatforms,
+  connectedPlatforms,
   onScheduleSave,
   isPublished = false,
   isSaving = false,
 }: SchedulePostModalProps) {
   const [draftDateTime, setDraftDateTime] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const availablePlatforms = useMemo(
+    () => SCHEDULE_PLATFORM_ORDER.filter((slug) => connectedPlatforms.includes(slug)),
+    [connectedPlatforms],
+  );
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     setDraftDateTime(scheduledFor ? dayjs(scheduledFor).format("YYYY-MM-DDTHH:mm") : "");
+    const saved = scheduledPlatforms.filter((p) => availablePlatforms.includes(p as PlatformSlug));
+    setSelectedPlatforms(saved.length > 0 ? saved : [...availablePlatforms]);
     setError(null);
-  }, [isOpen, scheduledFor]);
+  }, [isOpen, scheduledFor, scheduledPlatforms, availablePlatforms]);
 
   const minDateTime = useMemo(() => dayjs().format("YYYY-MM-DDTHH:mm"), []);
 
   const busy = isSaving || submitting;
 
+  const togglePlatform = (platform: string) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform],
+    );
+    setError(null);
+  };
+
   const handleConfirm = async () => {
     if (isPublished) {
       setError(EDITOR_UI.SCHEDULE_MODAL_PUBLISHED_DISABLED);
+      return;
+    }
+    if (availablePlatforms.length === 0) {
+      setError(EDITOR_UI.SCHEDULE_MODAL_NO_CONNECTED);
       return;
     }
     if (!draftDateTime) {
@@ -48,11 +86,17 @@ export default function SchedulePostModal({
       setError(EDITOR_UI.SCHEDULE_MODAL_PAST_DATE);
       return;
     }
+    if (selectedPlatforms.length === 0) {
+      setError(EDITOR_UI.SCHEDULE_MODAL_NO_PLATFORMS);
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const ok = await onScheduleSave(selected.toISOString());
-      if (ok) onClose();
+      const ok = await onScheduleSave(selected.toISOString(), selectedPlatforms);
+      if (ok) {
+        onClose();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -61,8 +105,10 @@ export default function SchedulePostModal({
   const handleClear = async () => {
     setSubmitting(true);
     try {
-      const ok = await onScheduleSave("");
-      if (ok) onClose();
+      const ok = await onScheduleSave("", []);
+      if (ok) {
+        onClose();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -72,6 +118,10 @@ export default function SchedulePostModal({
     draftDateTime && dayjs(draftDateTime).isAfter(dayjs())
       ? dayjs(draftDateTime).format(APP_CONFIG.DATE_FORMAT_WITH_TIME)
       : null;
+
+  const platformsLabel = selectedPlatforms
+    .map((slug) => PLATFORM_DISPLAY_NAMES[slug as PlatformSlug] ?? slug)
+    .join(", ");
 
   return (
     <Modal
@@ -127,13 +177,41 @@ export default function SchedulePostModal({
               />
             </div>
 
-            {previewDate && (
-              <p className="text-sm text-primary/90 bg-primary/5 border border-primary/15 rounded-md px-3 py-2">
-                {EDITOR_UI.SCHEDULE_AUTO_PUBLISH(previewDate)}
-              </p>
-            )}
+            <div className="space-y-2">
+              <span className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                {EDITOR_UI.SCHEDULE_MODAL_PLATFORMS_LABEL}
+              </span>
+              <p className="text-[11px] text-muted-foreground">{EDITOR_UI.SCHEDULE_MODAL_PLATFORMS_HINT}</p>
+              {availablePlatforms.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{EDITOR_UI.SCHEDULE_MODAL_NO_CONNECTED}</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {availablePlatforms.map((platform) => {
+                    const checked = selectedPlatforms.includes(platform);
+                    return (
+                      <label key={platform} className={platformCheckboxClass(checked)}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40"
+                          checked={checked}
+                          disabled={busy}
+                          onChange={() => togglePlatform(platform)}
+                        />
+                        <span>{PLATFORM_DISPLAY_NAMES[platform]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {previewDate && selectedPlatforms.length > 0 ? (
+              <p className="text-sm text-primary/90 bg-primary/5 border border-primary/15 rounded-md px-3 py-2">
+                {EDITOR_UI.SCHEDULE_AUTO_PUBLISH(previewDate, platformsLabel)}
+              </p>
+            ) : null}
+
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </>
         )}
       </div>

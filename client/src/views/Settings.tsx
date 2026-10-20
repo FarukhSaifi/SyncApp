@@ -16,6 +16,7 @@ import {
 import { useToast } from "@hooks/useToast";
 import type { ApiCredential, ApiResponse, SavedState } from "@types";
 import { apiClient } from "@utils/apiClient";
+import { isCredentialConnected } from "@utils/credentials";
 import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiCopy, FiExternalLink, FiEye, FiEyeOff, FiKey, FiLinkedin, FiSave } from "react-icons/fi";
 
@@ -70,15 +71,13 @@ const Settings = () => {
           const linkedin = creds.find((c: ApiCredential) => c.platform_name === PLATFORMS.LINKEDIN);
 
           if (medium) {
-            const mediumOk = Boolean(medium.configured) && !medium.decrypt_failed;
-            setConnected((prev) => ({ ...prev, medium: mediumOk }));
+            setConnected((prev) => ({ ...prev, medium: isCredentialConnected(medium) }));
             setDecryptFailed((prev) => ({ ...prev, medium: Boolean(medium.decrypt_failed) }));
             // Keys are masked server-side — leave input empty; placeholder shows "Saved (hidden)".
             setMediumApiKey("");
           }
           if (devto) {
-            const devtoOk = Boolean(devto.configured) && !devto.decrypt_failed;
-            setConnected((prev) => ({ ...prev, devto: devtoOk }));
+            setConnected((prev) => ({ ...prev, devto: isCredentialConnected(devto) }));
             setDecryptFailed((prev) => ({ ...prev, devto: Boolean(devto.decrypt_failed) }));
             if (devto.platform_config?.devto_username) {
               setDevtoUsername(devto.platform_config.devto_username as unknown as string);
@@ -86,14 +85,13 @@ const Settings = () => {
             setDevtoApiKey("");
           }
           if (wordpress) {
-            const wordpressOk = Boolean(wordpress.configured) && !wordpress.decrypt_failed;
-            setConnected((prev) => ({ ...prev, wordpress: wordpressOk }));
+            setConnected((prev) => ({ ...prev, wordpress: isCredentialConnected(wordpress) }));
             setDecryptFailed((prev) => ({ ...prev, wordpress: Boolean(wordpress.decrypt_failed) }));
             if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
             setWordpressApiKey("");
           }
           if (linkedin) {
-            setConnected((prev) => ({ ...prev, linkedin: Boolean(linkedin.configured) }));
+            setConnected((prev) => ({ ...prev, linkedin: isCredentialConnected(linkedin) }));
             setLinkedinTokenExpired(Boolean(linkedin.token_expired));
           }
         } else {

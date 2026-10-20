@@ -29,6 +29,8 @@ export interface IPost {
   /** Public article URL appended as Read more when publishing to LinkedIn. */
   linkedin_read_more_url?: string;
   scheduled_for?: Date;
+  /** Platforms to syndicate when the scheduled cron runs. Empty = all active credentials (legacy). */
+  scheduled_platforms?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +43,7 @@ export interface CreatePostInput {
   cover_image?: string | null;
   canonical_url?: string;
   scheduled_for?: Date | string;
+  scheduled_platforms?: string[] | null;
   meta_description?: string;
   linkedin_post?: string;
   linkedin_read_more_url?: string;

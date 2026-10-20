@@ -16,6 +16,7 @@ export interface EditorFormData {
   cover_image: string;
   canonical_url: string;
   scheduled_for: string;
+  scheduled_platforms: string[];
   status: string;
   linkedin_post: string;
   linkedin_read_more_url: string;
@@ -65,7 +66,8 @@ export interface EditorSidebarRightProps {
   onPublishToAll: () => void;
   onDownloadMdx: () => void;
   scheduledFor: string;
-  onScheduleSave: (value: string) => Promise<boolean>;
+  scheduledPlatforms: string[];
+  onScheduleSave: (scheduledFor: string, platforms: string[]) => Promise<boolean>;
   coverImage?: string;
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
@@ -76,7 +78,7 @@ export interface EditorSidebarRightProps {
   setTargetPlatforms: (platforms: string[]) => void;
   researchContext: GeneratePostResearchContext | null;
   applyResearchPick: (item: KeywordResearchItem) => void;
-  clearResearchContext: () => void;
+  selectSuggestionKeyword: (value: string) => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
   aiLoading: AiLoadingKey;

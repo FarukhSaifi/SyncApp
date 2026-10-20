@@ -15,6 +15,7 @@ import { editorRoute } from "@constants/routes";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
 import type { EditorForm, EditorReadiness, PlatformStatus, Post } from "@types";
+import { isCredentialConnected } from "@utils/credentials";
 
 export type { EditorForm };
 
@@ -26,6 +27,7 @@ const INITIAL: EditorForm = {
   cover_image: "",
   canonical_url: "",
   scheduled_for: "",
+  scheduled_platforms: [],
   tags: [],
   linkedin_post: "",
   linkedin_read_more_url: "",
@@ -51,10 +53,16 @@ export function useEditorState(postId?: string) {
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
         const active = res.data
           .filter(
-            (c: unknown): c is { platform_name: string; is_active?: boolean; configured?: boolean } =>
-              typeof c === "object" && c !== null && "platform_name" in c,
+            (
+              c: unknown,
+            ): c is {
+              platform_name: string;
+              is_active?: boolean;
+              configured?: boolean;
+              decrypt_failed?: boolean;
+            } => typeof c === "object" && c !== null && "platform_name" in c,
           )
-          .filter((c) => c.is_active !== false && c.configured !== false)
+          .filter((c) => isCredentialConnected(c))
           .map((c) => c.platform_name as PlatformSlug)
           .filter((slug) => (Object.values(PLATFORMS) as readonly string[]).includes(slug));
         setConnectedPlatforms(active);
@@ -99,6 +107,7 @@ export function useEditorState(postId?: string) {
             cover_image: p.cover_image ?? "",
             canonical_url: p.canonical_url ?? "",
             scheduled_for: p.scheduled_for ?? "",
+            scheduled_platforms: Array.isArray(p.scheduled_platforms) ? p.scheduled_platforms : [],
             tags: p.tags ?? [],
             linkedin_post: p.linkedin_post ?? "",
             linkedin_read_more_url: p.linkedin_read_more_url ?? "",
@@ -127,6 +136,7 @@ export function useEditorState(postId?: string) {
       cover_image: form.cover_image || undefined,
       canonical_url: form.canonical_url || undefined,
       scheduled_for: form.scheduled_for || null,
+      scheduled_platforms: form.scheduled_for ? form.scheduled_platforms : [],
       tags: form.tags,
       linkedin_post: form.linkedin_post || undefined,
       linkedin_read_more_url: form.linkedin_read_more_url || undefined,

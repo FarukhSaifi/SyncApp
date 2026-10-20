@@ -54,7 +54,7 @@ export default function GeneratePostModal({
   isGenerating,
   researchContext,
   onResearchPick,
-  onResearchClear,
+  onSelectSuggestionKeyword,
 }: GeneratePostModalProps) {
   const trimmedKeyword = keyword.trim();
   const hasTargets = targetPlatforms.length > 0;
@@ -483,10 +483,7 @@ export default function GeneratePostModal({
                     key={topic}
                     type="button"
                     disabled={isGenerating || topicsLoading}
-                    onClick={() => {
-                      onResearchClear();
-                      onKeywordChange(topic);
-                    }}
+                    onClick={() => onSelectSuggestionKeyword(topic)}
                     className={topicCardClass(isSelected)}
                     aria-pressed={isSelected}
                   >
@@ -528,10 +525,7 @@ export default function GeneratePostModal({
                     key={kw}
                     type="button"
                     disabled={isGenerating || topicsLoading}
-                    onClick={() => {
-                      onResearchClear();
-                      onKeywordChange(kw);
-                    }}
+                    onClick={() => onSelectSuggestionKeyword(kw)}
                     className={keywordChipClass(isSelected)}
                     aria-pressed={isSelected}
                   >

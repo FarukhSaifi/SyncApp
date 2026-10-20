@@ -96,8 +96,11 @@ export interface GeneratePostModalProps {
   researchContext: GeneratePostResearchContext | null;
   /** Apply a researched keyword + monetization context for draft generation. */
   onResearchPick: (item: KeywordResearchItem) => void;
-  /** Clear monetization context (e.g. when picking a trending topic instead). */
-  onResearchClear: () => void;
+  /**
+   * Select a trending/Google keyword and clear research monetization context atomically
+   * (including when the text matches a prior research pick).
+   */
+  onSelectSuggestionKeyword: (value: string) => void;
 }
 
 export interface UseEditorAIOptions {
@@ -136,6 +139,7 @@ export interface UseEditorAIReturn {
   researchContext: GeneratePostResearchContext | null;
   applyResearchPick: (item: KeywordResearchItem) => void;
   clearResearchContext: () => void;
+  selectSuggestionKeyword: (value: string) => void;
   handleGeneratePost: () => Promise<void>;
   handleGenerateLinkedInSummary: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;
