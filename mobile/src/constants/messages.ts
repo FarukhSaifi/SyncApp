@@ -129,12 +129,47 @@ export const LABELS = Object.freeze({
   OPTIMIZE_FOR: "Optimize AI draft for",
   OPTIMIZE_DEVTO: "DEV.to",
   OPTIMIZE_LINKEDIN: "LinkedIn",
+  OPTIMIZE_GOOGLE: "Google",
   USERNAME_EMAIL_REQUIRED: "Username and email are required",
   USER_CREATED: "User created",
   USER_UPDATED: "User updated",
   USERNAME_MIN_LENGTH: "Username must be at least 3 characters",
   CONFIRM_PASSWORD: "Confirm Password",
   ACCOUNT_INFO: "Account Information",
+  HELP_MEDIUM_SETTINGS: "Medium settings",
+  HELP_DEVTO_SETTINGS: "Dev.to settings",
+  HELP_WORDPRESS_JWT: "WordPress JWT plugin",
+  HELP_LINKEDIN_DEVELOPERS: "LinkedIn developers",
+  AI_COPILOT_TITLE: "AI Copilot Studio",
+  AI_COPILOT_SUBTITLE: "Refine your message or generate drafts",
+  AI_REVIEW_CHANGES: "Review AI Changes",
+  AI_REVIEW_NOTICE:
+    "Review the proposed text before applying. Your existing draft will not be changed unless you confirm.",
+  AI_PROPOSED_VERSION: "AI PROPOSED VERSION",
+  AI_ACCEPT_REPLACE: "Accept & Replace",
+  AI_APPEND_STORY: "Append to Story",
+  AI_DISCARD: "Discard",
+  AI_QUICK_ENHANCEMENTS: "QUICK ENHANCEMENTS",
+  AI_IMPROVE_CLARITY: "Improve clarity",
+  AI_MAKE_PUNCHY: "Make punchy & viral",
+  AI_PROFESSIONAL_TONE: "Professional tone",
+  AI_FIX_GRAMMAR: "Fix grammar & typos",
+  AI_SHORTEN: "Shorten & condense",
+  AI_EXPAND: "Expand with examples",
+  AI_CUSTOM_EDIT: "CUSTOM EDIT INSTRUCTION",
+  AI_APPLY_EDIT: "Apply Edit",
+  AI_GENERATE_DRAFT_SECTION: "GENERATE FULL DRAFT FROM TOPIC",
+  AI_CREATE_DRAFT: "Create Draft",
+  AI_PROCESSING: "Gemini AI is processing your content...",
+  SAVE_CHANGES: "Save Changes",
+  REVIEW_AND_PUBLISH: "Review & Publish",
+  CONNECT_CHANNELS: "Connect Channels",
+  CHECKING_CHANNELS: "Checking Channels...",
+  ADD: "Add",
+  HEADLINE: "Headline",
+  AI_SUMMARIZE: "AI Summarize",
+  CHANNEL_READY: "Ready",
+  CHANNEL_NEEDS_CONTENT: "Needs Content",
 });
 
 export const DESCRIPTIONS = Object.freeze({
@@ -154,6 +189,14 @@ export const PLACEHOLDERS = Object.freeze({
   EMAIL: "you@example.com",
   CONFIRM_PASSWORD: "Confirm password",
   IMAGE_STYLE: "minimal, no text",
+  AI_CUSTOM_PROMPT: "e.g. Turn this into a Twitter thread intro...",
+  AI_NEW_TOPIC: "Enter topic or angle for a fresh draft...",
+  EDITOR_HEADLINE: "Catchy, high-impact story title...",
+  EDITOR_BODY: "Write freely, insert blocks (+ Block), or ask AI (✨ AI)...",
+  EDITOR_TAG: "Add a topic or tag (e.g. react, ai)...",
+  EDITOR_META: "Concise summary for Google search results and social cards...",
+  EDITOR_CANONICAL: "https://original-source.com/blog/my-post",
+  EDITOR_LINKEDIN_POST: "Craft your LinkedIn hook, key takeaways, and hashtags...",
 });
 
 export const TOAST = Object.freeze({
@@ -201,11 +244,295 @@ export const ERRORS = Object.freeze({
   UNPUBLISH_FAILED: "Failed to unpublish",
   COVER_UPLOAD_FAILED: "Failed to upload cover",
   IMAGE_PICKER_FAILED: "Could not open photo library",
+  REQUEST_FAILED: "Request failed",
+  DIRECT_CLOUD_UPLOAD_FAILED: (status: number) => `Direct cloud upload failed (${status})`,
+  CONNECT_PLATFORM_FIRST: (platform: string) =>
+    `Please connect your ${platform} account in Settings first.`,
+  NO_PLATFORMS_CONNECTED: "No platforms connected. Please connect platforms in Settings first.",
+});
+
+/** Editor readiness checklist copy (Review & Publish). */
+export const EDITOR_READINESS = Object.freeze({
+  TITLE_LABEL: "Title",
+  TITLE_READY: "Ready to review",
+  TITLE_ATTENTION: "Add a clear headline",
+  STORY_LABEL: "Story",
+  STORY_READY: "Draft has content",
+  STORY_ATTENTION: "Write the main content",
+  COVER_LABEL: "Cover image",
+  COVER_READY: "Image selected",
+  COVER_OPTIONAL: "Optional, but improves previews",
+  CHANNELS_LABEL: "Channels",
+  CHANNELS_CONNECTED: (count: number) =>
+    `${count} ${count === 1 ? "platform" : "platforms"} connected`,
+  CHANNELS_NONE: "No platforms connected in Settings",
+  DETAILS_LABEL: "Publishing details",
+  DETAILS_SCHEDULED: "Scheduled delivery set",
+  DETAILS_READY: "Publish when ready",
 });
 
 export const ALERTS = Object.freeze({
   DELETE_USER_TITLE: "Delete user?",
+  UNSAVED_CHANGES_TITLE: "Unsaved Changes",
+  UNSAVED_CHANGES_MESSAGE: "You have unsaved edits. Are you sure you want to exit without saving?",
+  KEEP_EDITING: "Keep Editing",
+  DISCARD_AND_EXIT: "Discard & Exit",
 });
+
+/** AI edit action strings sent to the API (mobile editor copilot). */
+export const EDITOR_AI_PROMPTS = Object.freeze({
+  IMPROVE_CLARITY: "improve clarity",
+  MAKE_PUNCHY: "make it punchy and engaging",
+  PROFESSIONAL_TONE: "adapt to professional tone",
+  FIX_GRAMMAR: "fix grammar and typos",
+  SHORTEN: "shorten and condense",
+  EXPAND: "expand with actionable examples",
+});
+
+/** Mobile editor UI copy (workspace, tabs, sheets, previews). */
+export const EDITOR_UI = Object.freeze({
+  CONTENT_WORKSPACE: "CONTENT WORKSPACE",
+  UNTITLED_STORY: "Untitled story",
+  SAVED: "Saved",
+  SAVING: "Saving...",
+  TAB_WRITE: "Write",
+  TAB_CHANNELS: "Channels",
+  TAB_DETAILS: "Details",
+  CANVAS_EDITOR: "Canvas Editor",
+  LIVE_ARTICLE_PREVIEW: "Live Article Preview",
+  STORY_BODY: "STORY BODY",
+  FORMAT_BLOCK: "Block",
+  PREVIEW_EMPTY_SUB:
+    "Write in the canvas or insert blocks to see your rendered post formatted here in real time.",
+  INSERT_BLOCK_TITLE: "Insert Content Block",
+  INSERT_BLOCK_SUBTITLE: "Choose a block to add to your story",
+  AI_IMAGE_SHORTCUT_TITLE: "Generate AI Image / Cover",
+  AI_IMAGE_SHORTCUT_SUB: "Create stunning art with Gemini AI",
+  PUBLISHING_CHANNELS: "Publishing Channels",
+  CHANNELS_READY_SUB: "Your authenticated publishing channels ready for distribution.",
+  CHANNELS_NONE_SUB: "No active publishing channels found. Connect channels in Settings to publish.",
+  CHECKING_CONNECTED_CHANNELS: "Checking connected channels...",
+  NO_CHANNELS_CONNECTED_TITLE: "No Channels Connected",
+  NO_CHANNELS_CONNECTED_SUB:
+    "Connect your accounts (Medium, DEV.to, WordPress, or LinkedIn) with API keys in Settings to enable one-click publishing.",
+  CONNECT_CHANNELS_IN_SETTINGS: "Connect Channels in Settings",
+  LINKEDIN_ADAPTATION_TITLE: "LinkedIn Post Adaptation",
+  LINKEDIN_ADAPTATION_SUB: "Optimized summary tailored for your professional network",
+  LINKEDIN_CHAR_RECOMMENDED: "Recommended: 600 - 1000 characters",
+  LIVE_CHANNEL_MOCKUP: "LIVE CHANNEL MOCKUP",
+  MOCKUP_LINKEDIN: "Simulated LinkedIn feed appearance",
+  MOCKUP_FEED_AUTHOR: "You",
+  MOCKUP_FEED_TIME: "Just now • Public",
+  MOCKUP_HEADLINE_FALLBACK: "Your story headline",
+  MOCKUP_EXCERPT_FALLBACK: "Your story content excerpt will appear here.",
+  TAGS_AND_TOPICS: "Tags & Topics",
+  TAGS_AND_TOPICS_SUB: "Categorize your post across platforms for maximum discoverability",
+  SCHEDULED_DELIVERY: "Scheduled Delivery",
+  SCHEDULED_DELIVERY_SUB: "Choose when this post should be published, or publish immediately",
+  SCHEDULED_FUTURE_NOTE: "Scheduled for future publication",
+  PUBLISH_NOW_INSTEAD: "Publish Now Instead",
+  QUICK_SCHEDULE_PRESETS: "QUICK SCHEDULE PRESETS",
+  PRESET_IN_4_HOURS: "In 4 Hours",
+  PRESET_TOMORROW_AM: "Tomorrow AM",
+  PRESET_IN_3_DAYS: "In 3 Days",
+  SEARCH_SOCIAL_PREVIEWS: "Search & Social Previews",
+  META_DESCRIPTION_LABEL: "Meta Description",
+  ADVANCED_SEO_TOGGLE: "Advanced SEO (Canonical URL)",
+  CANONICAL_HINT:
+    "Specify where this article was originally published to avoid search engine duplicate content penalties.",
+  REVIEW_SHEET_TITLE: "Review & Publish",
+  REVIEW_SHEET_SUBTITLE: "Final pre-flight check before distribution",
+  INSTANT_DISTRIBUTION: "Instant distribution",
+  PREFLIGHT_CHECKLIST: "PRE-FLIGHT READINESS CHECKLIST",
+  TARGET_CHANNELS: (count: number) => `TARGET CHANNELS (${count})`,
+  NO_CHANNELS_REVIEW_WARNING:
+    "No publishing channels connected. Add your credentials in Settings to publish.",
+  CHANNEL_WILL_PUBLISH: "Will publish",
+  CHANNEL_SKIPPED: "Skipped",
+  REVIEW_AUTO_SAVE_NOTICE:
+    "Your draft is automatically saved before broadcasting to all selected destinations.",
+  FORMAT_DEFAULT_TEXT: "text",
+});
+
+export const EDITOR_A11Y = Object.freeze({
+  BACK_TO_POSTS: "Back to posts",
+  CLOSE_BLOCK_MENU: "Close block menu",
+  INSERT_BLOCK: "Insert block",
+  OPEN_AI_STUDIO: "Open AI Studio",
+  CLOSE_REVIEW_SHEET: "Close review sheet",
+  CLEAR_SCHEDULE: "Clear schedule",
+  REMOVE_TAG: (tag: string) => `Remove tag ${tag}`,
+});
+
+export const EDITOR_BLOCK_CATEGORIES = Object.freeze([
+  { id: "all", label: "All Blocks" },
+  { id: "text", label: "Text" },
+  { id: "lists", label: "Lists" },
+  { id: "code", label: "Code & Data" },
+  { id: "media", label: "Media & Links" },
+] as const);
+
+export const EDITOR_CONTENT_BLOCKS = Object.freeze([
+  {
+    id: "h1",
+    category: "text" as const,
+    title: "Heading 1",
+    description: "Main section header for large topics",
+    template: "# Section Heading\n\n",
+  },
+  {
+    id: "h2",
+    category: "text" as const,
+    title: "Heading 2",
+    description: "Sub-section header for structure",
+    template: "## Sub-heading\n\n",
+  },
+  {
+    id: "h3",
+    category: "text" as const,
+    title: "Heading 3",
+    description: "Minor header for grouping points",
+    template: "### Topic Detail\n\n",
+  },
+  {
+    id: "paragraph",
+    category: "text" as const,
+    title: "Paragraph",
+    description: "Standard body text block",
+    template: "Write your thought or explanation here...\n\n",
+  },
+  {
+    id: "quote",
+    category: "text" as const,
+    title: "Pull Quote",
+    description: "Highlighted quote or testimonial",
+    template: "> \"A key quote or thought from your story.\"\n\n",
+  },
+  {
+    id: "callout",
+    category: "text" as const,
+    title: "Callout Box",
+    description: "Important callout with tip or notice",
+    template: "> **Tip:** Here is an actionable tip or note for your readers.\n\n",
+  },
+  {
+    id: "divider",
+    category: "text" as const,
+    title: "Divider",
+    description: "Horizontal separator between sections",
+    template: "---\n\n",
+  },
+  {
+    id: "bullet-list",
+    category: "lists" as const,
+    title: "Bullet List",
+    description: "Unordered list of points",
+    template: "- Key takeaway 1\n- Key takeaway 2\n- Key takeaway 3\n\n",
+  },
+  {
+    id: "numbered-list",
+    category: "lists" as const,
+    title: "Numbered List",
+    description: "Step-by-step ordered sequence",
+    template: "1. First step or phase\n2. Second step or phase\n3. Third step or phase\n\n",
+  },
+  {
+    id: "checklist",
+    category: "lists" as const,
+    title: "Task Checklist",
+    description: "Interactive actionable items",
+    template: "- [ ] Action item 1\n- [ ] Action item 2\n- [ ] Action item 3\n\n",
+  },
+  {
+    id: "code-block",
+    category: "code" as const,
+    title: "Code Snippet",
+    description: "Formatted syntax code block",
+    template:
+      "```typescript\n// Example implementation\nexport function example() {\n  return true;\n}\n```\n\n",
+  },
+  {
+    id: "table",
+    category: "code" as const,
+    title: "Comparison Table",
+    description: "Structured rows and columns",
+    template:
+      "| Feature | Platform A | Platform B |\n| :--- | :--- | :--- |\n| Support | Yes | Yes |\n| Status | Active | In Progress |\n\n",
+  },
+  {
+    id: "image",
+    category: "media" as const,
+    title: "Inline Image",
+    description: "Embed markdown image link",
+    template: "![Image caption or description](https://example.com/image.png)\n\n",
+  },
+  {
+    id: "link",
+    category: "media" as const,
+    title: "Web Link",
+    description: "Clickable hyperlink reference",
+    template: "[Read more here](https://your-domain.com)\n\n",
+  },
+]);
+
+export const EDITOR_PLATFORM_SUMMARIES = Object.freeze({
+  medium: "Long-form editorial publication format with full markdown and clean typography.",
+  devto: "Developer community format with code highlighting, tags, and interactive cover banner.",
+  wordpress: "Standard CMS blog post with category taxonomy, slug, and featured media.",
+  linkedin: "Executive social feed post with professional hook, hashtags, and call to action.",
+});
+
+export const EDITOR_FORMAT_TOOLS = Object.freeze({
+  bold: { label: "B", defaultText: "bold text", tooltip: "Bold" },
+  italic: { label: "I", defaultText: "italic text", tooltip: "Italic" },
+  h1: { label: "H1", defaultText: "Heading 1", tooltip: "Heading 1" },
+  h2: { label: "H2", defaultText: "Heading 2", tooltip: "Heading 2" },
+  bullet: { defaultText: "List item", tooltip: "Bullet list" },
+  check: { defaultText: "Task item", tooltip: "Checklist" },
+  quote: { defaultText: "Quote", tooltip: "Blockquote" },
+  code: { defaultText: "code", tooltip: "Code block" },
+  link: { defaultText: "link text", tooltip: "Link" },
+});
+
+export function editorWordsReadTime(words: number, readTimeMin: number): string {
+  return `${words} words • ~${readTimeMin} min read`;
+}
+
+export function editorReadinessBadge(completed: number, total: number): string {
+  return `${completed}/${total} Ready`;
+}
+
+export function editorBodyMetrics(wordCount: number): string {
+  return `${wordCount} words • Markdown enabled`;
+}
+
+export function editorLinkedInCharCount(count: number): string {
+  return `${count} / 1300 characters`;
+}
+
+export function editorMetaCharCount(length: number): string {
+  return `${length} / 160 recommended characters`;
+}
+
+export function editorMockupPlatformsAppearance(platformNames: string): string {
+  return `Simulated ${platformNames} appearance`;
+}
+
+export function editorReviewStoryMeta(words: number, scheduledLabel: string): string {
+  return `${words} words • ${scheduledLabel}`;
+}
+
+export function editorScheduledFor(formatted: string): string {
+  return `Scheduled for ${formatted}`;
+}
+
+export function editorPublishCtaTitle(scheduled: boolean, channelCount: number): string {
+  const channelWord = channelCount === 1 ? "Channel" : "Channels";
+  if (scheduled) {
+    return `Confirm Schedule to ${channelCount} ${channelWord}`;
+  }
+  return `Publish to ${channelCount} ${channelWord} Now`;
+}
 
 export function publishedToPlatform(platform: string): string {
   return `Published to ${platform}`;

@@ -13,3 +13,12 @@ export const HTTP_METHODS = Object.freeze({
   PUT: "PUT",
   DELETE: "DELETE",
 } as const);
+
+export const HTTP_CONTENT_TYPES = Object.freeze({
+  JSON: "application/json",
+  OCTET_STREAM: "application/octet-stream",
+} as const);
+
+export const API_PATHS = Object.freeze({
+  LINKEDIN_OAUTH_STATUS: "/linkedin/oauth/status",
+} as const);

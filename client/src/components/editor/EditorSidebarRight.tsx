@@ -60,6 +60,9 @@ const EditorSidebarRight = ({
   aiModels,
   targetPlatforms,
   setTargetPlatforms,
+  researchContext,
+  applyResearchPick,
+  clearResearchContext,
   aiImagePrompt,
   setAiImagePrompt,
   aiLoading,
@@ -265,7 +268,11 @@ const EditorSidebarRight = ({
       </EditorSidebarSection>
 
       {/* Export */}
-      <EditorSidebarSection title={PUBLISH_SECTIONS["EXPORT"]} icon={<FiDownload className="h-3.5 w-3.5" />} defaultOpen={false}>
+      <EditorSidebarSection
+        title={PUBLISH_SECTIONS["EXPORT"]}
+        icon={<FiDownload className="h-3.5 w-3.5" />}
+        defaultOpen={false}
+      >
         <Button
           variant="outline"
           size="sm"
@@ -279,7 +286,10 @@ const EditorSidebarRight = ({
       </EditorSidebarSection>
 
       {/* AI Assistant */}
-      <EditorSidebarSection title={PUBLISH_SECTIONS["AI_ASSISTANT"]} icon={<FiZap className="h-3.5 w-3.5 text-primary" />}>
+      <EditorSidebarSection
+        title={PUBLISH_SECTIONS["AI_ASSISTANT"]}
+        icon={<FiZap className="h-3.5 w-3.5 text-primary" />}
+      >
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">{SYNC_LABEL["AI_ASSISTANT_HINT"]}</p>
 
@@ -382,6 +392,9 @@ const EditorSidebarRight = ({
         onTargetPlatformsChange={setTargetPlatforms}
         onGenerate={onGeneratePost}
         isGenerating={aiLoading === AI_LOADING["POST"]}
+        researchContext={researchContext}
+        onResearchPick={applyResearchPick}
+        onResearchClear={clearResearchContext}
       />
 
       <SchedulePostModal
@@ -545,9 +558,7 @@ const EditorSidebarRight = ({
                       size="sm"
                       onClick={onCopyImageUrl}
                       className="flex-1 justify-center text-xs py-2"
-                      title={
-                        generatedImageUrl ? EDITOR_UI["COPY_IMAGE_URL_TITLE"] : EDITOR_UI["COPY_IMAGE_DATA_TITLE"]
-                      }
+                      title={generatedImageUrl ? EDITOR_UI["COPY_IMAGE_URL_TITLE"] : EDITOR_UI["COPY_IMAGE_DATA_TITLE"]}
                     >
                       <FiCopy className="h-3.5 w-3.5 mr-1.5" />
                       {EDITOR_UI["COPY_IMAGE_LINK"]}

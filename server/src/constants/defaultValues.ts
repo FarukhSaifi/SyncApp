@@ -39,6 +39,25 @@ export const DEFAULT_VALUES = Object.freeze({
     "https://sync-app-client.vercel.app",
   ],
 
+  /** Client App Router path for Settings (LinkedIn OAuth redirect target). */
+  CLIENT_SETTINGS_PATH: "/settings",
+
+  /** OpenSSL / Node crypto decrypt failure substring in error messages. */
+  DECRYPT_OPENSSL_BAD_DECRYPT_SNIPPET: "bad decrypt",
+
+  /** Truncate external/API error snippets for logs and soft-fail UI messages. */
+  ERROR_SNIPPET_SHORT_CHARS: 120,
+  ERROR_SNIPPET_MEDIUM_CHARS: 160,
+  ERROR_SNIPPET_LONG_CHARS: 200,
+
+  /** Fallback slug when a post has no title. */
+  UNTITLED_POST_SLUG: "untitled-post",
+
+  /** Mask Gemini API key in startup logs: show prefix…suffix when longer than this. */
+  API_KEY_LOG_MASK_MIN_LEN: 12,
+  API_KEY_LOG_MASK_PREFIX_LEN: 6,
+  API_KEY_LOG_MASK_SUFFIX_LEN: 4,
+
   // Body Parsing
   DEFAULT_BODY_LIMIT: "10mb",
 

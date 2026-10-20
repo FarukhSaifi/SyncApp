@@ -50,6 +50,8 @@ export const TOAST_TITLES = Object.freeze({
   IMAGE_GENERATED: "Image generated",
   FEATURED_IMAGE_SET: "Featured image set",
   IMAGE_UPLOADED: "Image uploaded",
+  UPLOADING_IMAGE: "Uploading Image",
+  UPLOAD_FAILED: "Upload Failed",
   LINKEDIN_COPIED: "LinkedIn post copied",
   LINKEDIN_SUMMARY_GENERATED: "LinkedIn summary ready",
   COPIED: "Copied",
@@ -96,6 +98,7 @@ const createSuccessMessages = () => {
     AI_COVER_ATTACHED: "Cover image attached to this post.",
     AI_IMAGE_URL_COPIED: "Image URL copied to clipboard",
     AI_IMAGE_DOWNLOADED: "Image downloaded to your device",
+    AI_EDIT_COMPLETE: "AI Edit Complete",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
@@ -135,6 +138,7 @@ export const ERROR_MESSAGES = Object.freeze({
   // Generic
   OPERATION_FAILED: "Operation failed",
   NETWORK_ERROR: "Unable to connect to server. Please check your connection.",
+  NETWORK_ERROR_UNABLE_TO_CONNECT: "Network error: Unable to connect to server",
   UNEXPECTED_ERROR: "An unexpected error occurred. Please try again.",
   // Auth
   SESSION_EXPIRED: "Session expired. Please log in again.",
@@ -160,6 +164,7 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_LOAD_POSTS: (error: string) => `Failed to load posts: ${error}`,
   FAILED_TO_LOAD_POSTS_TITLE: "Failed to load posts",
   // Publishing
+  FAILED_TO_PUBLISH_TO: (platform: string) => `Failed to publish to ${platform}`,
   FAILED_TO_PUBLISH_PLATFORM: (platform: string, error: string) => `Failed to publish to ${platform}: ${error}`,
   FAILED_TO_PUBLISH_ALL: "Failed to publish to all platforms",
   FAILED_TO_UNPUBLISH: (platform: string, error: string) => `Failed to unpublish from ${platform}: ${error}`,
@@ -189,6 +194,9 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_COPY_LINKEDIN: "Could not copy LinkedIn post to clipboard",
   FAILED_TO_COPY_IMAGE_URL: "Failed to copy image URL to clipboard",
   FAILED_TO_DOWNLOAD_IMAGE: "Failed to download image",
+  EDITOR_NOT_INITIALIZED: "Editor not initialized",
+  FAILED_TO_PERFORM_AI_EDIT: "Failed to perform AI edit",
+  AI_EDIT_UNKNOWN_ERROR: "Unknown error occurred",
   AI_LINKEDIN_MISSING_CANONICAL:
     "LinkedIn summary is ready, but no blog base URL is set — add CANONICAL_BASE_URL / NEXT_PUBLIC_CANONICAL_BASE_URL for a Read more link.",
 } as const);
@@ -223,12 +231,15 @@ export const VALIDATION_MESSAGES = Object.freeze({
   AI_KEYWORD_REQUIRED: "Enter a keyword or topic",
   AI_KEYWORD_REQUIRED_FOR_IMAGE: "Enter a keyword or topic first to generate an image.",
   AI_TARGETS_REQUIRED: "Select at least one platform to optimize for",
+  EDITOR_CONTENT_OR_SELECTION_REQUIRED: "Please write something or highlight text first.",
 } as const);
 
 // ============================================================================
 // LABELS - Form Labels and UI Labels
 // ============================================================================
 export const LABELS = Object.freeze({
+  REQUIRED: "Required",
+  PUBLISH_NONE: "none",
   // Form Labels - User Management & Profile
   USERNAME: "Username",
   LABEL_USERNAME: "Username",
@@ -571,6 +582,8 @@ export const INFO_MESSAGES = Object.freeze({
   LINKEDIN_CONNECTED_SUCCESS: "LinkedIn connected successfully",
   LINKEDIN_CONNECT_FAILED: "Failed to start LinkedIn connection",
   LINKEDIN_OAUTH_NOT_CONFIGURED: "LinkedIn OAuth is not configured on the server",
+  LINKEDIN_TOKEN_EXPIRED_HINT:
+    "LinkedIn session expired (or was never refreshable). Connect again to resume publishing.",
   PLATFORM_STATUS: "Platform Status",
   PLATFORM_STATUS_DESC: "Current status of your connected platforms",
   HELP_SUPPORT: "Help & Support",
@@ -691,6 +704,8 @@ export const SERVER_ERROR_MESSAGES = Object.freeze({
   // MDX
   FAILED_TO_DOWNLOAD_MDX: "Failed to download MDX",
   FAILED_TO_GENERATE_MDX: "Failed to generate MDX",
+  COULD_NOT_EXPORT_MDX: "Could not export MDX",
+  EXPORT_FORMAT_MDX: "MDX",
   // Publishing
   INVALID_MEDIUM_API_KEY: "Invalid Medium API key",
   INVALID_DEVTO_API_KEY: "Invalid DEV.to API key",
@@ -912,16 +927,35 @@ export const EDITOR_UI = Object.freeze({
   // Generate post modal
   GENERATE_POST_MODAL_TITLE: "Generate SEO post",
   GENERATE_POST_MODAL_DESC:
-    "Pick a topic, AI model, and target platforms. AI drafts one post optimized for your selection.",
+    "Research high-intent keywords from a seed topic, pick a winner, then generate an SEO draft optimized for your platforms.",
   GENERATE_POST_MODEL_LABEL: "AI model",
   GENERATE_POST_TARGETS_LABEL: "Optimize for",
   GENERATE_POST_TARGETS_HINT:
-    "Select at least one. LinkedIn adds a short summary + Read more link to your site; the full article stays in the editor.",
+    "Select at least one. Google optimizes for Search SEO; LinkedIn adds a short summary + Read more; the full article stays in the editor.",
   GENERATE_POST_TARGET_DEVTO: "DEV.to",
   GENERATE_POST_TARGET_LINKEDIN: "LinkedIn",
+  GENERATE_POST_TARGET_GOOGLE: "Google",
   GENERATE_POST_TARGETS_REQUIRED: "Select at least one platform",
   GENERATE_POST_KEYWORD_LABEL: "Topic or keyword",
   GENERATE_POST_KEYWORD_PLACEHOLDER: "e.g. Building a Next.js app with MongoDB",
+  KEYWORD_RESEARCH_TITLE: "Keyword research",
+  KEYWORD_RESEARCH_HINT:
+    "Enter a broad seed topic. AI uses Google Search grounding to find long-tail keywords with high commercial intent and lower competition.",
+  KEYWORD_RESEARCH_SEED_LABEL: "Seed topic",
+  KEYWORD_RESEARCH_SEED_PLACEHOLDER: "e.g. serverless billing",
+  KEYWORD_RESEARCH_BUTTON: "Research keywords",
+  KEYWORD_RESEARCH_LOADING: "Researching keywords\u2026",
+  KEYWORD_RESEARCH_ERROR: "Keyword research failed. Check AI configuration and try again.",
+  KEYWORD_RESEARCH_EMPTY: "No opportunities yet. Enter a seed and click Research keywords.",
+  KEYWORD_RESEARCH_SCORES_NOTE:
+    "Scores are AI estimates from Search grounding — not measured volume or keyword difficulty.",
+  KEYWORD_RESEARCH_OPPORTUNITY: "Opportunity",
+  KEYWORD_RESEARCH_INTENT: "Intent",
+  KEYWORD_RESEARCH_COMPETITION: "Competition",
+  KEYWORD_RESEARCH_ANGLE: "Monetization",
+  KEYWORD_RESEARCH_SELECTED: "Selected for draft",
+  KEYWORD_RESEARCH_CACHED: "Cached results",
+  KEYWORD_RESEARCH_LIVE: "Live · Google Search",
   REACH_TAGS_TITLE: "High-reach DEV.to tags",
   REACH_TAGS_HINT:
     "Live popular tags from DEV.to. AI picks 2 reach tags from this list + 2 stack-specific tags (4 total).",
@@ -940,10 +974,52 @@ export const EDITOR_UI = Object.freeze({
   WORD_COUNT_LABEL: (count: string) => `${count} words`,
   UNSAVED_CHANGES_TITLE: "Unsaved changes",
   UNSAVED_LEAVE_TITLE: "Leave without saving?",
-  UNSAVED_LEAVE_MESSAGE:
-    "Going back will discard the post details you entered. This cannot be undone.",
+  UNSAVED_LEAVE_MESSAGE: "Going back will discard the post details you entered. This cannot be undone.",
   UNSAVED_LEAVE_CONFIRM: "OK",
   UNSAVED_LEAVE_CANCEL: "Cancel",
+
+  // TipTap editor — toolbar, prompts, status bar, skeletons
+  TIPTAP_PLACEHOLDER: "Start writing your post…",
+  TITLE_INPUT_PLACEHOLDER: "Add title",
+  POST_TITLE_ARIA: "Post title",
+  PROMPT_IMAGE_URL: "Image URL:",
+  PROMPT_LINK_URL: "Link URL:",
+  TOOLBAR_HEADING_1: "Heading 1",
+  TOOLBAR_HEADING_2: "Heading 2",
+  TOOLBAR_HEADING_3: "Heading 3",
+  TOOLBAR_NORMAL_TEXT: "Normal text",
+  TOOLBAR_BOLD: "Bold (Ctrl+B)",
+  TOOLBAR_ITALIC: "Italic (Ctrl+I)",
+  TOOLBAR_UNDERLINE: "Underline (Ctrl+U)",
+  TOOLBAR_STRIKETHROUGH: "Strikethrough",
+  TOOLBAR_INLINE_CODE: "Inline code",
+  TOOLBAR_BULLET_LIST: "Bullet list",
+  TOOLBAR_ORDERED_LIST: "Ordered list",
+  TOOLBAR_BLOCKQUOTE: "Blockquote",
+  TOOLBAR_CODE_BLOCK: "Code block",
+  TOOLBAR_ALIGN_LEFT: "Align left",
+  TOOLBAR_ALIGN_CENTER: "Align center",
+  TOOLBAR_ALIGN_RIGHT: "Align right",
+  TOOLBAR_LINK: "Link",
+  TOOLBAR_IMAGE: "Image",
+  TOOLBAR_HORIZONTAL_RULE: "Horizontal rule",
+  TOOLBAR_UNDO: "Undo (Ctrl+Z)",
+  TOOLBAR_REDO: "Redo (Ctrl+Y)",
+  STATUS_UNSAVED_CHANGES: "Unsaved changes",
+  STATUS_SAVED_AT: (time: string) => `Saved at ${time}`,
+  STATUS_NOT_SAVED_YET: "Not saved yet",
+  STATUS_NEW_POST: "New post",
+  CHAR_COUNT_LABEL: (count: string) => `${count} chars`,
+  READ_TIME_LABEL: (minutes: number) => `${minutes} min read`,
+  AI_TOOLKIT_TRIGGER: "AI Toolkit examples",
+  AI_TOOLKIT_ADD_COMMENT: "Add AI comment",
+  AI_TOOLKIT_ADD_PARAGRAPH: "Add new paragraph",
+  AI_TOOLKIT_PROOFREAD: "Proofread",
+  AI_TOOLKIT_ADJUST_SELECTION: "Adjust text selection",
+  AI_TOOLKIT_ADD_COMPONENT: "Add custom component",
+  AI_TOOLKIT_JUSTIFY_EDIT: "Justify edit",
+  LOADING_EDITOR_ARIA: "Loading editor",
+  LOADING_PREVIEW_ARIA: "Loading preview",
 
   // LinkedIn teaser panel
   LINKEDIN_POST_TITLE: "LinkedIn summary",

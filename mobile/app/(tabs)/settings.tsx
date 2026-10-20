@@ -84,7 +84,7 @@ export default function SettingsScreen() {
         if (l.success && l.data) {
           setConnected((c) => ({
             ...c,
-            linkedin: Boolean((l.data as { configured?: boolean }).configured ?? true),
+            linkedin: Boolean((l.data as { configured?: boolean }).configured),
           }));
         }
       } catch {
@@ -276,22 +276,22 @@ export default function SettingsScreen() {
         <Card>
           <CardContent>
             <HelpLink
-              label="Medium settings"
+              label={LABELS.HELP_MEDIUM_SETTINGS}
               onPress={() => void openLink(EXTERNAL_LINKS.MEDIUM_SETTINGS)}
               colors={colors}
             />
             <HelpLink
-              label="Dev.to settings"
+              label={LABELS.HELP_DEVTO_SETTINGS}
               onPress={() => void openLink(EXTERNAL_LINKS.DEVTO_SETTINGS)}
               colors={colors}
             />
             <HelpLink
-              label="WordPress JWT plugin"
+              label={LABELS.HELP_WORDPRESS_JWT}
               onPress={() => void openLink(EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN)}
               colors={colors}
             />
             <HelpLink
-              label="LinkedIn developers"
+              label={LABELS.HELP_LINKEDIN_DEVELOPERS}
               onPress={() => void openLink(EXTERNAL_LINKS.LINKEDIN_DEVELOPER)}
               colors={colors}
             />

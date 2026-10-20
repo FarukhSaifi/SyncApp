@@ -4,13 +4,12 @@
 
 import { appendUtmParams } from "@utils/utm";
 
+import { LINKEDIN_POST } from "@constants/ai";
 import { CANONICAL_BASE_URL } from "@constants/api";
 import { UTM_SOURCES } from "@constants/utm";
 
-const READ_MORE_PREFIX = "Read more:";
-
-/** Trailing lines that are only hashtags (e.g. "#WebDev #JavaScript"). */
-const HASHTAG_LINE = /^(?:\s*#[\w-]+\s*)+$/;
+const READ_MORE_PREFIX = LINKEDIN_POST.READ_MORE_PREFIX;
+const HASHTAG_LINE = LINKEDIN_POST.HASHTAG_LINE;
 
 /** Last path segment of a URL or path (post slug). */
 export function extractSlugFromUrlOrPath(value: string): string {

@@ -4,7 +4,7 @@
 
 
 import { config } from "@config";
-import { AI_POST_LIMITS } from "@constants";
+import { AI_POST_LIMITS, REGEX_PATTERNS } from "@constants";
 import createSlug from "slugify";
 
 import { UTM_SOURCES } from "@constants/utm";
@@ -29,16 +29,13 @@ export function buildReadMoreUrl(title: string, aiSlugHint?: string): string | u
 
   const rawHint = (aiSlugHint || "").trim().replace(/^\/+|\/+$/g, "");
   const slug =
-    rawHint && !/^https?:\/\//i.test(rawHint) && !rawHint.includes(".")
+    rawHint && !REGEX_PATTERNS.ABSOLUTE_HTTP_URL_PREFIX.test(rawHint) && !rawHint.includes(".")
       ? slugifyArticlePath(rawHint)
       : slugifyArticlePath(title);
 
   const absolute = `${base}/${slug}`;
   return appendUtmParams(absolute, { source: UTM_SOURCES["LINKEDIN"], content: slug });
 }
-
-/** Trailing lines that are only hashtags (e.g. "#WebDev #JavaScript"). */
-const HASHTAG_LINE = /^(?:\s*#[\w-]+\s*)+$/;
 
 /**
  * Insert Read more before trailing hashtag lines so the order is:
@@ -54,7 +51,7 @@ export function insertReadMoreBeforeHashtags(body: string, readMoreLine: string)
       hashtagStart -= 1;
       continue;
     }
-    if (HASHTAG_LINE.test(line)) {
+    if (REGEX_PATTERNS.LINKEDIN_HASHTAG_LINE.test(line)) {
       hashtagStart -= 1;
       continue;
     }
@@ -79,7 +76,7 @@ export function finalizeLinkedInPost(linkedinPost: string, readMoreUrl?: string)
   const prefix = AI_POST_LIMITS.LINKEDIN_READ_MORE_PREFIX;
   let text = linkedinPost
     .replace(new RegExp(`\\n*${prefix}\\s*\\S+`, "gi"), "")
-    .replace(/\n*Read\s+the\s+full\s+article:\s*\S+/gi, "")
+    .replace(REGEX_PATTERNS.LINKEDIN_READ_FULL_ARTICLE, "")
     .trim();
 
   if (readMoreUrl) {

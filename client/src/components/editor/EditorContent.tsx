@@ -30,7 +30,13 @@ import {
   FiUnderline,
 } from "react-icons/fi";
 
-import { ERROR_MESSAGES, INFO_MESSAGES, SUCCESS_MESSAGES } from "@constants/messages";
+import {
+  EDITOR_UI,
+  ERROR_MESSAGES,
+  INFO_MESSAGES,
+  SUCCESS_MESSAGES,
+  TOAST_TITLES,
+} from "@constants/messages";
 
 import { EditorPreviewSkeleton } from "./EditorSkeletons";
 
@@ -72,7 +78,7 @@ const ToolbarButton = ({
 const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof useEditor> | null }) => {
   const addImage = useCallback(() => {
     if (!editor) return;
-    const url = window.prompt("Image URL:");
+    const url = window.prompt(EDITOR_UI.PROMPT_IMAGE_URL);
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
@@ -81,7 +87,7 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
   const addLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("Link URL:", previousUrl);
+    const url = window.prompt(EDITOR_UI.PROMPT_LINK_URL, previousUrl);
     if (url === null) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
@@ -104,28 +110,28 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           isActive={editor.isActive("heading", { level: 1 })}
-          title="Heading 1"
+          title={EDITOR_UI.TOOLBAR_HEADING_1}
         >
           <span className="text-xs font-bold">H1</span>
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           isActive={editor.isActive("heading", { level: 2 })}
-          title="Heading 2"
+          title={EDITOR_UI.TOOLBAR_HEADING_2}
         >
           <span className="text-xs font-bold">H2</span>
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           isActive={editor.isActive("heading", { level: 3 })}
-          title="Heading 3"
+          title={EDITOR_UI.TOOLBAR_HEADING_3}
         >
           <span className="text-xs font-bold">H3</span>
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().setParagraph().run()}
           isActive={editor.isActive("paragraph") && !editor.isActive("heading")}
-          title="Normal text"
+          title={EDITOR_UI.TOOLBAR_NORMAL_TEXT}
         >
           <FiType className="h-3.5 w-3.5" />
         </ToolbarButton>
@@ -137,35 +143,35 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive("bold")}
-          title="Bold (Ctrl+B)"
+          title={EDITOR_UI.TOOLBAR_BOLD}
         >
           <FiBold className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive("italic")}
-          title="Italic (Ctrl+I)"
+          title={EDITOR_UI.TOOLBAR_ITALIC}
         >
           <FiItalic className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           isActive={editor.isActive("underline")}
-          title="Underline (Ctrl+U)"
+          title={EDITOR_UI.TOOLBAR_UNDERLINE}
         >
           <FiUnderline className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleStrike().run()}
           isActive={editor.isActive("strike")}
-          title="Strikethrough"
+          title={EDITOR_UI.TOOLBAR_STRIKETHROUGH}
         >
           <FiMinus className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleCode().run()}
           isActive={editor.isActive("code")}
-          title="Inline code"
+          title={EDITOR_UI.TOOLBAR_INLINE_CODE}
         >
           <FiCode className="h-3.5 w-3.5" />
         </ToolbarButton>
@@ -177,28 +183,28 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive("bulletList")}
-          title="Bullet list"
+          title={EDITOR_UI.TOOLBAR_BULLET_LIST}
         >
           <FiList className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           isActive={editor.isActive("orderedList")}
-          title="Ordered list"
+          title={EDITOR_UI.TOOLBAR_ORDERED_LIST}
         >
           <span className="text-xs font-bold">1.</span>
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           isActive={editor.isActive("blockquote")}
-          title="Blockquote"
+          title={EDITOR_UI.TOOLBAR_BLOCKQUOTE}
         >
           <span className="text-sm font-bold">&quot;</span>
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           isActive={editor.isActive("codeBlock")}
-          title="Code block"
+          title={EDITOR_UI.TOOLBAR_CODE_BLOCK}
         >
           <span className="text-xs font-mono">{"</>"}</span>
         </ToolbarButton>
@@ -210,21 +216,21 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
         <ToolbarButton
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
           isActive={editor.isActive({ textAlign: "left" })}
-          title="Align left"
+          title={EDITOR_UI.TOOLBAR_ALIGN_LEFT}
         >
           <FiAlignLeft className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
           isActive={editor.isActive({ textAlign: "center" })}
-          title="Align center"
+          title={EDITOR_UI.TOOLBAR_ALIGN_CENTER}
         >
           <FiAlignCenter className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
           isActive={editor.isActive({ textAlign: "right" })}
-          title="Align right"
+          title={EDITOR_UI.TOOLBAR_ALIGN_RIGHT}
         >
           <FiAlignRight className="h-3.5 w-3.5" />
         </ToolbarButton>
@@ -233,10 +239,10 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
       <div className="tiptap-toolbar-sep" />
 
       <div className="tiptap-toolbar-group">
-        <ToolbarButton onClick={addLink} isActive={editor.isActive("link")} title="Link">
+        <ToolbarButton onClick={addLink} isActive={editor.isActive("link")} title={EDITOR_UI.TOOLBAR_LINK}>
           <FiLink className="h-3.5 w-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={addImage} title="Image">
+        <ToolbarButton onClick={addImage} title={EDITOR_UI.TOOLBAR_IMAGE}>
           <FiImage className="h-3.5 w-3.5" />
         </ToolbarButton>
       </div>
@@ -244,13 +250,16 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
       <div className="tiptap-toolbar-sep" />
 
       <div className="tiptap-toolbar-group">
-        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal rule">
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          title={EDITOR_UI.TOOLBAR_HORIZONTAL_RULE}
+        >
           <span className="text-xs">—</span>
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo (Ctrl+Z)">
+        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title={EDITOR_UI.TOOLBAR_UNDO}>
           <span className="text-xs">↩</span>
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo (Ctrl+Y)">
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title={EDITOR_UI.TOOLBAR_REDO}>
           <span className="text-xs">↪</span>
         </ToolbarButton>
       </div>
@@ -275,7 +284,7 @@ const extensions = [
     HTMLAttributes: { class: "tiptap-image" },
   }),
   Placeholder.configure({
-    placeholder: "Start writing your post…",
+    placeholder: EDITOR_UI.TIPTAP_PLACEHOLDER,
   }),
   TextAlign.configure({
     types: ["heading", "paragraph"],
@@ -305,7 +314,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
             const file = item.getAsFile();
             if (!file) return false;
 
-            const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_IMAGE);
+            const toastId = toast.loading(TOAST_TITLES.UPLOADING_IMAGE, INFO_MESSAGES.UPLOADING_IMAGE);
             apiClient
               .uploadImage(file)
               .then((res) => {
@@ -315,12 +324,12 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
                   const tr = view.state.tr.replaceSelectionWith(node);
                   view.dispatch(tr);
                   toast.removeToast(toastId);
-                  toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
+                  toast.success(TOAST_TITLES.IMAGE_UPLOADED, SUCCESS_MESSAGES.IMAGE_UPLOADED);
                 }
               })
               .catch((err) => {
                 toast.removeToast(toastId);
-                toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_IMAGE);
+                toast.error(TOAST_TITLES.UPLOAD_FAILED, err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_IMAGE);
               });
             return true; // handled
           }
@@ -334,7 +343,7 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
             event.preventDefault();
 
             const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-            const toastId = toast.loading("Uploading Image", INFO_MESSAGES.UPLOADING_DROPPED_IMAGE);
+            const toastId = toast.loading(TOAST_TITLES.UPLOADING_IMAGE, INFO_MESSAGES.UPLOADING_DROPPED_IMAGE);
 
             apiClient
               .uploadImage(file)
@@ -352,12 +361,12 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
                     view.dispatch(tr);
                   }
                   toast.removeToast(toastId);
-                  toast.success("Image Uploaded", SUCCESS_MESSAGES.IMAGE_UPLOADED);
+                  toast.success(TOAST_TITLES.IMAGE_UPLOADED, SUCCESS_MESSAGES.IMAGE_UPLOADED);
                 }
               })
               .catch((err) => {
                 toast.removeToast(toastId);
-                toast.error("Upload Failed", err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_DROPPED_IMAGE);
+                toast.error(TOAST_TITLES.UPLOAD_FAILED, err.message || ERROR_MESSAGES.FAILED_TO_UPLOAD_DROPPED_IMAGE);
               });
             return true;
           }
@@ -398,9 +407,9 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
           name="title"
           value={formData.title}
           onChange={onTitleChange}
-          placeholder="Add title"
+          placeholder={EDITOR_UI.TITLE_INPUT_PLACEHOLDER}
           className="editor-title-input"
-          aria-label="Post title"
+          aria-label={EDITOR_UI.POST_TITLE_ARIA}
           autoFocus
         />
         <div className="tiptap-wrapper flex flex-col flex-1">

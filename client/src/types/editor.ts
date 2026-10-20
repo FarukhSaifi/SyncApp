@@ -1,6 +1,12 @@
 import React from "react";
 
-import type { AiContentModel, AiImageSource, AiLoadingKey } from "./ai";
+import type {
+  AiContentModel,
+  AiImageSource,
+  AiLoadingKey,
+  GeneratePostResearchContext,
+  KeywordResearchItem,
+} from "./ai";
 import type { Post } from "./models";
 
 export interface EditorFormData {
@@ -68,6 +74,9 @@ export interface EditorSidebarRightProps {
   aiModels: AiContentModel[];
   targetPlatforms: string[];
   setTargetPlatforms: (platforms: string[]) => void;
+  researchContext: GeneratePostResearchContext | null;
+  applyResearchPick: (item: KeywordResearchItem) => void;
+  clearResearchContext: () => void;
   aiImagePrompt: string;
   setAiImagePrompt: (v: string) => void;
   aiLoading: AiLoadingKey;

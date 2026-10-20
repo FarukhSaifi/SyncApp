@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EDITOR_CONFIG } from "@constants/editor";
-import { ERRORS, publishedToPlatform, TOAST } from "@constants/messages";
+import { EDITOR_READINESS, ERRORS, publishedToPlatform, TOAST } from "@constants/messages";
 import {
   DEFAULT_OPTIMIZATION_TARGETS,
   PLATFORM_DISPLAY_NAMES,
@@ -41,9 +41,7 @@ export function useEditorState(postId?: string) {
   const [connectedPlatforms, setConnectedPlatforms] = useState<PlatformSlug[]>([]);
   const [loadingPlatforms, setLoadingPlatforms] = useState(true);
   const [platformStatus, setPlatformStatus] = useState<Post["platform_status"]>({});
-  const [aiTargetPlatforms, setAiTargetPlatforms] = useState<OptimizationTarget[]>([
-    ...DEFAULT_OPTIMIZATION_TARGETS,
-  ]);
+  const [aiTargetPlatforms, setAiTargetPlatforms] = useState<OptimizationTarget[]>([...DEFAULT_OPTIMIZATION_TARGETS]);
   const dirtyRef = useRef(false);
 
   const reloadConnectedPlatforms = useCallback(async () => {
@@ -53,10 +51,10 @@ export function useEditorState(postId?: string) {
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
         const active = res.data
           .filter(
-            (c: unknown): c is { platform_name: string; is_active?: boolean } =>
+            (c: unknown): c is { platform_name: string; is_active?: boolean; configured?: boolean } =>
               typeof c === "object" && c !== null && "platform_name" in c,
           )
-          .filter((c) => c.is_active !== false)
+          .filter((c) => c.is_active !== false && c.configured !== false)
           .map((c) => c.platform_name as PlatformSlug)
           .filter((slug) => (Object.values(PLATFORMS) as readonly string[]).includes(slug));
         setConnectedPlatforms(active);
@@ -210,7 +208,7 @@ export function useEditorState(postId?: string) {
     async (platform: string, savedPostId?: string) => {
       const slug = platform as PlatformSlug;
       if (!connectedPlatforms.includes(slug)) {
-        toast.error(`Please connect your ${PLATFORM_DISPLAY_NAMES[slug] || platform} account in Settings first.`);
+        toast.error(ERRORS.CONNECT_PLATFORM_FIRST(PLATFORM_DISPLAY_NAMES[slug] || platform));
         return;
       }
       let id = savedPostId;
@@ -239,7 +237,7 @@ export function useEditorState(postId?: string) {
   const publishAll = useCallback(
     async (savedPostId?: string) => {
       if (connectedPlatforms.length === 0) {
-        toast.error("No platforms connected. Please connect platforms in Settings first.");
+        toast.error(ERRORS.NO_PLATFORMS_CONNECTED);
         return;
       }
       let id = savedPostId;
@@ -427,39 +425,39 @@ export function useEditorState(postId?: string) {
     items: [
       {
         id: "title",
-        label: "Title",
-        detail: form.title.trim() ? "Ready to review" : "Add a clear headline",
+        label: EDITOR_READINESS.TITLE_LABEL,
+        detail: form.title.trim() ? EDITOR_READINESS.TITLE_READY : EDITOR_READINESS.TITLE_ATTENTION,
         tone: form.title.trim() ? "ready" : "attention",
         mode: "write",
       },
       {
         id: "content",
-        label: "Story",
-        detail: form.content_markdown.trim() ? "Draft has content" : "Write the main content",
+        label: EDITOR_READINESS.STORY_LABEL,
+        detail: form.content_markdown.trim() ? EDITOR_READINESS.STORY_READY : EDITOR_READINESS.STORY_ATTENTION,
         tone: form.content_markdown.trim() ? "ready" : "attention",
         mode: "write",
       },
       {
         id: "cover",
-        label: "Cover image",
-        detail: form.cover_image ? "Image selected" : "Optional, but improves previews",
+        label: EDITOR_READINESS.COVER_LABEL,
+        detail: form.cover_image ? EDITOR_READINESS.COVER_READY : EDITOR_READINESS.COVER_OPTIONAL,
         tone: form.cover_image ? "ready" : "neutral",
         mode: "write",
       },
       {
         id: "channels",
-        label: "Channels",
+        label: EDITOR_READINESS.CHANNELS_LABEL,
         detail:
           connectedPlatforms.length > 0
-            ? `${connectedPlatforms.length} ${connectedPlatforms.length === 1 ? "platform" : "platforms"} connected`
-            : "No platforms connected in Settings",
+            ? EDITOR_READINESS.CHANNELS_CONNECTED(connectedPlatforms.length)
+            : EDITOR_READINESS.CHANNELS_NONE,
         tone: connectedPlatforms.length > 0 ? "ready" : "attention",
         mode: "channels",
       },
       {
         id: "details",
-        label: "Publishing details",
-        detail: form.scheduled_for ? "Scheduled delivery set" : "Publish when ready",
+        label: EDITOR_READINESS.DETAILS_LABEL,
+        detail: form.scheduled_for ? EDITOR_READINESS.DETAILS_SCHEDULED : EDITOR_READINESS.DETAILS_READY,
         tone: form.scheduled_for ? "ready" : "neutral",
         mode: "details",
       },

@@ -1,9 +1,12 @@
+import { EDITOR_UI } from "@constants/messages";
+
 import Skeleton from "@components/common/Skeleton";
+
 
 /** Skeleton for the editor main panel while TipTap or post data loads. */
 export function EditorContentSkeleton() {
   return (
-    <div className="editor-main bg-background p-4 sm:p-6 space-y-4" aria-busy="true" aria-label="Loading editor">
+    <div className="editor-main bg-background p-4 sm:p-6 space-y-4" aria-busy="true" aria-label={EDITOR_UI.LOADING_EDITOR_ARIA}>
       <Skeleton className="h-10 w-2/3 max-w-md" />
       <div className="flex gap-1.5 border-b border-border pb-2">
         {Array.from({ length: 10 }, (_, i) => (
@@ -22,7 +25,7 @@ export function EditorContentSkeleton() {
 /** Skeleton for the preview tab while markdown renderer loads. */
 export function EditorPreviewSkeleton() {
   return (
-    <div className="editor-preview p-4 sm:p-6 space-y-4" aria-busy="true" aria-label="Loading preview">
+    <div className="editor-preview p-4 sm:p-6 space-y-4" aria-busy="true" aria-label={EDITOR_UI.LOADING_PREVIEW_ARIA}>
       <Skeleton className="h-9 w-3/4 max-w-lg" />
       <Skeleton className="w-full aspect-video max-h-64 rounded-lg" />
       <div className="space-y-2.5">

@@ -1,5 +1,6 @@
-import { API_BASE, HTTP_METHODS } from "@constants/api";
+import { API_BASE, API_PATHS, HTTP_CONTENT_TYPES, HTTP_METHODS } from "@constants/api";
 import { APP_CONFIG } from "@constants/config";
+import { ERRORS } from "@constants/messages";
 import type {
   AnalyticsStats,
   ApiResponse,
@@ -30,7 +31,7 @@ class ApiClient {
   constructor(baseURL: string = API_BASE) {
     this.client = axios.create({
       baseURL,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": HTTP_CONTENT_TYPES.JSON },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "comma", skipNulls: true }),
       timeout: APP_CONFIG.API_TIMEOUT,
     });
@@ -55,7 +56,7 @@ class ApiClient {
           onUnauthorized?.();
         }
         const message =
-          error.response?.data?.error || error.response?.data?.message || error.message || "Request failed";
+          error.response?.data?.error || error.response?.data?.message || error.message || ERRORS.REQUEST_FAILED;
         return Promise.reject(new Error(message));
       },
     );
@@ -135,7 +136,7 @@ class ApiClient {
   }
 
   getLinkedInOAuthStatus(): Promise<ApiResponse<{ configured: boolean; redirectUri: string; scopes: string }>> {
-    return this.request(`${API_BASE}/linkedin/oauth/status`);
+    return this.request(`${API_BASE}${API_PATHS.LINKEDIN_OAUTH_STATUS}`);
   }
 
   publish(platform: string, postId: string): Promise<ApiResponse<unknown>> {
@@ -266,7 +267,7 @@ class ApiClient {
    * Falls back to legacy multipart `/upload` if presign is unavailable.
    */
   async uploadImage(uri: string, filename: string, mimeType: string, size?: number): Promise<ApiResponse<{ url: string }>> {
-    const contentType = mimeType || "application/octet-stream";
+    const contentType = mimeType || HTTP_CONTENT_TYPES.OCTET_STREAM;
     try {
       const blobRes = await fetch(uri);
       const blob = await blobRes.blob();
@@ -299,7 +300,7 @@ class ApiClient {
           body: blob,
         });
         if (!uploadRes.ok) {
-          throw new Error(`Direct cloud upload failed (${uploadRes.status})`);
+          throw new Error(ERRORS.DIRECT_CLOUD_UPLOAD_FAILED(uploadRes.status));
         }
         return { success: true, data: { url: presignedRes.data.publicUrl } };
       }

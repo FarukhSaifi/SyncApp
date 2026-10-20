@@ -3,6 +3,7 @@ import React from "react";
 import type { InputProps } from "@types";
 
 import { INPUT_SIZES } from "@constants/designTokens";
+import { LABELS } from "@constants/messages";
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
@@ -53,7 +54,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <label htmlFor={id} className="block text-sm font-medium text-foreground">
               {label}
             </label>
-            {required && <span className="text-xs font-medium text-muted-foreground">Required</span>}
+            {required ? (
+              <span className="text-xs font-medium text-muted-foreground">{LABELS.REQUIRED}</span>
+            ) : null}
           </div>
         )}
         <div className="relative">
@@ -78,7 +81,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               onKeyDown={onRightIconClick ? (e) => e.key === "Enter" && onRightIconClick(e) : undefined}
               role={onRightIconClick ? "button" : undefined}
               tabIndex={onRightIconClick ? 0 : undefined}
-              aria-label={onRightIconClick ? "Toggle visibility" : undefined}
+              aria-label={onRightIconClick ? LABELS.TOGGLE_PASSWORD_VISIBILITY : undefined}
             >
               {rightIcon}
             </div>

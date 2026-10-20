@@ -8,10 +8,11 @@ import {
   AI_RESPONSE_SCHEMA,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
+  includesGoogleTarget,
   includesLinkedInTarget,
 } from "@constants";
 import { AppError } from "@middleware/errorHandler";
-import type { GeneratePostResult } from "@types";
+import type { GeneratePostResearchContext, GeneratePostResult } from "@types";
 import { buildReadMoreUrl, slugifyArticlePath } from "@utils/linkedinPost";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
@@ -19,12 +20,32 @@ import { ERROR_MESSAGES } from "@constants/messages";
 
 import { buildModelCandidates, generateAiContent, getModelName, getText } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
+import { isKeywordIntentLabel, parseIntentLabel } from "./parseHelpers";
 import { withRetry } from "./retries";
 import { parseGeneratePostResponse } from "./schemas";
 
 function isRateLimited(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return AI_CONFIG.ERR_RATE_LIMIT_PATTERN.test(msg);
+}
+
+function sanitizeResearchContext(
+  researchContext?: GeneratePostResearchContext,
+): GeneratePostResearchContext | undefined {
+  if (!researchContext || typeof researchContext !== "object") {
+    return undefined;
+  }
+  const monetizationAngle =
+    typeof researchContext.monetizationAngle === "string"
+      ? researchContext.monetizationAngle.trim().slice(0, AI_CONFIG["MONETIZATION_ANGLE_MAX_LEN"])
+      : undefined;
+  if (!monetizationAngle || !isKeywordIntentLabel(researchContext.intentLabel)) {
+    return undefined;
+  }
+  return {
+    monetizationAngle,
+    intentLabel: parseIntentLabel(researchContext.intentLabel),
+  };
 }
 
 async function generateWithModel(
@@ -57,7 +78,11 @@ async function generateWithModel(
 
 export async function generatePost(
   keyword: string,
-  options: { model?: string; targetPlatforms?: string[] } = {},
+  options: {
+    model?: string;
+    targetPlatforms?: string[];
+    researchContext?: GeneratePostResearchContext;
+  } = {},
 ): Promise<GeneratePostResult> {
   if (!keyword || typeof keyword !== "string" || !keyword.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
@@ -69,14 +94,18 @@ export async function generatePost(
     ? buildReadMoreUrl(keyword.trim(), slugifyArticlePath(keyword.trim()))
     : undefined;
 
+  const researchContext = sanitizeResearchContext(options.researchContext);
   const primaryModel = getModelName(options.model);
-  const systemInstruction = buildFullPostSystemPrompt(options.targetPlatforms);
+  const systemInstruction = buildFullPostSystemPrompt(options.targetPlatforms, researchContext);
   const userMessage = buildFullPostUserPrompt(keyword.trim(), options.targetPlatforms, {
     readMoreUrl: readMoreHint,
+    researchContext,
   });
   const candidates = buildModelCandidates(primaryModel);
+  const preferSearchGrounding =
+    config.aiUseGoogleSearchRetrieval || includesGoogleTarget(options.targetPlatforms);
 
-  if (config.aiUseGoogleSearchRetrieval) {
+  if (preferSearchGrounding) {
     try {
       return await generateWithModel(primaryModel, systemInstruction, userMessage, true, includeLinkedIn);
     } catch {

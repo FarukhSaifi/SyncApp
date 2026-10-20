@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RADIUS } from "@constants/designTokens";
+import { ALERTS, EDITOR_A11Y, EDITOR_UI, editorReadinessBadge, editorWordsReadTime } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { EditorReadiness } from "@types";
 
@@ -32,14 +33,10 @@ export function EditorHeader({
 
   const handleBack = () => {
     if (isDirty) {
-      Alert.alert(
-        "Unsaved Changes",
-        "You have unsaved edits. Are you sure you want to exit without saving?",
-        [
-          { text: "Keep Editing", style: "cancel" },
-          { text: "Discard & Exit", style: "destructive", onPress: () => router.back() },
-        ],
-      );
+      Alert.alert(ALERTS.UNSAVED_CHANGES_TITLE, ALERTS.UNSAVED_CHANGES_MESSAGE, [
+        { text: ALERTS.KEEP_EDITING, style: "cancel" },
+        { text: ALERTS.DISCARD_AND_EXIT, style: "destructive", onPress: () => router.back() },
+      ]);
     } else {
       router.back();
     }
@@ -52,7 +49,7 @@ export function EditorHeader({
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
           onPress={handleBack}
-          accessibilityLabel="Back to posts"
+          accessibilityLabel={EDITOR_A11Y.BACK_TO_POSTS}
         >
           <Ionicons name="chevron-back" size={22} color={colors.foreground} />
         </Pressable>
@@ -61,7 +58,7 @@ export function EditorHeader({
           {/* Word Count & Read Time Pill */}
           <View style={styles.statPill}>
             <Text style={styles.statText}>
-              {wordCount} words • ~{readTimeMin} min read
+              {editorWordsReadTime(wordCount, readTimeMin)}
             </Text>
           </View>
 
@@ -77,7 +74,7 @@ export function EditorHeader({
               ]}
             />
             <Text style={styles.readinessText}>
-              {readiness.completed}/{readiness.total} Ready
+              {editorReadinessBadge(readiness.completed, readiness.total)}
             </Text>
           </Pressable>
         </View>
@@ -86,9 +83,9 @@ export function EditorHeader({
       {/* Bottom Row: Title + Save State */}
       <View style={styles.titleRow}>
         <View style={styles.titleInfo}>
-          <Text style={styles.eyebrow}>CONTENT WORKSPACE</Text>
+          <Text style={styles.eyebrow}>{EDITOR_UI.CONTENT_WORKSPACE}</Text>
           <Text style={styles.headline} numberOfLines={1}>
-            {title.trim() || "Untitled story"}
+            {title.trim() || EDITOR_UI.UNTITLED_STORY}
           </Text>
         </View>
 
@@ -100,7 +97,7 @@ export function EditorHeader({
             ]}
           />
           <Text style={styles.saveText}>
-            {saving ? "Saving..." : "Saved"}
+            {saving ? EDITOR_UI.SAVING : EDITOR_UI.SAVED}
           </Text>
         </View>
       </View>

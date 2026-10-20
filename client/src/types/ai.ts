@@ -17,8 +17,58 @@ export type AiLoadingKey = "" | "post" | "image" | "linkedin";
 export type AiTopicsSource = "google_search";
 export type AiReachTagsSource = "devto";
 
+export interface TrendingTopicsResult {
+  topics: string[];
+  keywords: string[];
+  source: AiTopicsSource;
+  cached: boolean;
+  updatedAt: string;
+}
+
+/** Search-intent labels from keyword research (AI estimates). */
+export type KeywordIntentLabel = "transactional" | "commercial" | "informational";
+
+export interface KeywordResearchItem {
+  keyword: string;
+  commercialIntent: number;
+  competition: number;
+  opportunityScore: number;
+  intentLabel: KeywordIntentLabel;
+  monetizationAngle: string;
+  rationale: string;
+}
+
+export interface KeywordResearchResult {
+  seed: string;
+  keywords: KeywordResearchItem[];
+  source: "google_search";
+  cached: boolean;
+  updatedAt: string;
+  scoresEstimated: true;
+}
+
+/** Monetization context passed from keyword research into draft generation. */
+export interface GeneratePostResearchContext {
+  monetizationAngle?: string;
+  intentLabel?: KeywordIntentLabel;
+}
+
 export interface SuggestionErrorProps {
   message: string;
+}
+
+export interface KeywordResearchSectionProps {
+  seed: string;
+  onSeedChange: (value: string) => void;
+  results: KeywordResearchItem[];
+  loading: boolean;
+  error: string | null;
+  cached: boolean;
+  updatedAt: string | null;
+  selectedKeyword: string;
+  onResearch: () => void;
+  onPick: (item: KeywordResearchItem) => void;
+  disabled?: boolean;
 }
 
 export interface GeneratedPostData {
@@ -43,6 +93,11 @@ export interface GeneratePostModalProps {
   onTargetPlatformsChange: (platforms: string[]) => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  researchContext: GeneratePostResearchContext | null;
+  /** Apply a researched keyword + monetization context for draft generation. */
+  onResearchPick: (item: KeywordResearchItem) => void;
+  /** Clear monetization context (e.g. when picking a trending topic instead). */
+  onResearchClear: () => void;
 }
 
 export interface UseEditorAIOptions {
@@ -78,6 +133,9 @@ export interface UseEditorAIReturn {
   linkedinPost: string | null;
   linkedinReadMoreUrl: string | null;
   linkedinMissingCanonical: boolean;
+  researchContext: GeneratePostResearchContext | null;
+  applyResearchPick: (item: KeywordResearchItem) => void;
+  clearResearchContext: () => void;
   handleGeneratePost: () => Promise<void>;
   handleGenerateLinkedInSummary: () => Promise<void>;
   handleGenerateImage: () => Promise<void>;

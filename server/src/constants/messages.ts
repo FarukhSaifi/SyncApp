@@ -109,9 +109,14 @@ export const ERROR_MESSAGES = {
     "The selected AI model was not found or is not available in this region/project. Try gemini-3.8-flash, or set GOOGLE_CLOUD_LOCATION to a region that hosts the model.",
   AI_DRAFT_FAILED: "Failed to generate draft",
   AI_PARSE_FAILED: "AI returned invalid JSON. Please try again with a different model or keyword.",
+  AI_KEYWORD_RESEARCH_PARSE_FAILED: "Unable to parse keyword research from AI response",
+  AI_TRENDING_PARSE_FAILED: "Unable to parse topics or keywords from AI response",
   AI_KEYWORD_REQUIRED: "Keyword or topic is required",
+  AI_SEED_REQUIRED: "Seed topic is required for keyword research",
+  AI_SEED_TOO_SHORT: "Seed topic is too short",
+  AI_SEED_TOO_LONG: "Seed topic is too long",
   AI_INVALID_MODEL: "The selected AI model is not allowed. Choose a model from the list.",
-  AI_INVALID_OPTIMIZATION_TARGETS: "Invalid optimization targets. Allowed: devto, linkedin.",
+  AI_INVALID_OPTIMIZATION_TARGETS: "Invalid optimization targets. Allowed: devto, linkedin, google.",
   AI_EMPTY_RESPONSE: "Empty response from AI",
   AI_IMAGE_FAILED: "Failed to generate featured image",
   AI_IMAGE_UNAVAILABLE_DETAIL:
@@ -121,12 +126,14 @@ export const ERROR_MESSAGES = {
   AI_TRENDING_REQUIRES_PROVIDER: " Trending topics require Vertex AI or Studio access.",
   AI_TRENDING_FETCH_FAILED:
     "Trending topics and search keywords could not be fetched right now. Please retry in a few moments.",
-  AI_RATE_LIMITED:
-    "AI rate limit reached for this model. Wait a minute, or use Gemini 3.5 Flash / Flash-Lite.",
+  AI_KEYWORD_RESEARCH_REQUIRES_PROVIDER: " Keyword research requires Vertex AI or Studio access.",
+  AI_KEYWORD_RESEARCH_FAILED:
+    "Keyword research could not be completed right now. Please retry in a few moments.",
+  AI_RATE_LIMITED: "AI rate limit reached for this model. Wait a minute, or use Gemini 3.8 Flash / Flash-Lite.",
   /** Studio prepaid credits depleted (HTTP 402). Do not top up Studio — use Vertex AI instead. */
   AI_CREDITS_DEPLETED:
     "Google AI Studio prepayment credits are depleted. Do not top up AI Studio billing — configure Vertex AI on GCP project syncapp-ai (GOOGLE_CLOUD_PROJECT + service-account credentials). See docs/AI_SETUP.md.",
-  AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.5 Flash.",
+  AI_UNAVAILABLE: "The AI model is temporarily overloaded. Try again in a minute, or pick Gemini 3.8 Flash.",
   AI_STARTUP_NO_PROVIDER:
     "AI: not configured — set Vertex AI (GOOGLE_CLOUD_PROJECT + SA credentials) or GEMINI_API_KEY. See docs/AI_SETUP.md",
   AI_STARTUP_VERTEX_PREFIX: "AI: Vertex AI configured (project=",
@@ -142,6 +149,9 @@ export const ERROR_MESSAGES = {
     "Add a title and article content in the editor first, then generate a LinkedIn summary.",
   AI_TRENDING_TOPICS_FAILED: "Failed to fetch real-time trending topics",
   AI_DEVTO_TAGS_FAILED: "Failed to fetch high-reach tags from DEV.to",
+  AI_DEVTO_TAGS_NOT_ARRAY: "DEV.to tags response was not an array",
+  AI_DEVTO_TAGS_TOO_FEW: "DEV.to returned too few usable tags",
+  AI_DEVTO_TAGS_HTTP: (status: number) => `DEV.to tags HTTP ${status}`,
   // Analytics
   ANALYTICS_DEVTO_CREDENTIALS_MISSING:
     "Connect DEV.to in Settings to sync engagement stats (views, reactions, comments).",

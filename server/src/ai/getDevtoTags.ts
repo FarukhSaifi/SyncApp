@@ -2,14 +2,13 @@
  * High-reach DEV.to tags via the public Forem tags API (ordered by popularity).
  * No curated fallback — callers surface errors to the UI.
  */
-import { AI_CONFIG, API_URLS } from "@constants";
+import { AI_CONFIG, API_URLS, DEFAULT_VALUES, HTTP } from "@constants";
 import { AppError } from "@middleware/errorHandler";
 import type { DevtoCacheEntry, DevtoReachTagsResult } from "@types";
 import { logger } from "@utils/logger";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
 import { ERROR_MESSAGES } from "@constants/messages";
-
 
 export type { DevtoReachTagsResult };
 
@@ -21,7 +20,7 @@ type DevtoTagRow = {
 
 function parseTagNames(payload: unknown): string[] {
   if (!Array.isArray(payload)) {
-    throw new Error("DEV.to tags response was not an array");
+    throw new Error(ERROR_MESSAGES.AI_DEVTO_TAGS_NOT_ARRAY);
   }
 
   const tags = payload
@@ -42,21 +41,21 @@ async function fetchLiveDevtoTags(): Promise<string[]> {
   url.searchParams.set("per_page", String(AI_CONFIG.DEVTO_REACH_TAGS_COUNT));
 
   const response = await fetch(url.toString(), {
-    method: "GET",
+    method: HTTP.METHOD.GET,
     headers: {
-      Accept: "application/json",
-      "User-Agent": AI_CONFIG.DEVTO_API_USER_AGENT,
+      [HTTP.HEADERS.ACCEPT]: HTTP.CONTENT_TYPES.JSON,
+      [HTTP.HEADERS.USER_AGENT]: AI_CONFIG.DEVTO_API_USER_AGENT,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`DEV.to tags HTTP ${response.status}`);
+    throw new Error(ERROR_MESSAGES.AI_DEVTO_TAGS_HTTP(response.status));
   }
 
   const body: unknown = await response.json();
   const tags = parseTagNames(body);
   if (tags.length < AI_CONFIG.DEVTO_REACH_TAGS_MIN) {
-    throw new Error("DEV.to returned too few usable tags");
+    throw new Error(ERROR_MESSAGES.AI_DEVTO_TAGS_TOO_FEW);
   }
   return tags;
 }
@@ -89,7 +88,7 @@ export async function getDevtoReachTags(options: { refresh?: boolean } = {}): Pr
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logger.warn(`DEV.to reach tags failed — ${msg.slice(0, 180)}`);
+    logger.warn(`DEV.to reach tags failed — ${msg.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_LONG_CHARS)}`);
     throw new AppError(ERROR_MESSAGES.AI_DEVTO_TAGS_FAILED, HTTP_STATUS.BAD_GATEWAY);
   }
 }

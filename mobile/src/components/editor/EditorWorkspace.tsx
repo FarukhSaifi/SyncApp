@@ -11,7 +11,7 @@ import { ReviewPublishSheet } from "@components/editor/ReviewPublishSheet";
 import { WriteTab } from "@components/editor/WriteTab";
 import { ROUTES } from "@constants";
 import { BUTTON_VARIANTS } from "@constants/designTokens";
-import { ERRORS } from "@constants/messages";
+import { ERRORS, LABELS } from "@constants/messages";
 import type { OptimizationTarget, PlatformSlug } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { useThemeColors } from "@contexts/ThemeContext";
@@ -186,7 +186,7 @@ export function EditorWorkspace({
       {/* 4. Bottom Sticky Action Command Bar */}
       <View style={styles.bottomBar}>
         <Button
-          title={form.status === POST_STATUS.DRAFT ? "Save Draft" : "Save Changes"}
+          title={form.status === POST_STATUS.DRAFT ? LABELS.SAVE_DRAFT : LABELS.SAVE_CHANGES}
           variant={BUTTON_VARIANTS.OUTLINE}
           onPress={() => void handleSave(POST_STATUS.DRAFT)}
           loading={saving}
@@ -194,14 +194,14 @@ export function EditorWorkspace({
         />
         {connectedPlatforms.length === 0 ? (
           <Button
-            title={loadingPlatforms ? "Checking Channels..." : "Connect Channels"}
+            title={loadingPlatforms ? LABELS.CHECKING_CHANNELS : LABELS.CONNECT_CHANNELS}
             variant={BUTTON_VARIANTS.SECONDARY}
-            onPress={() => router.push(ROUTES.SETTINGS as any)}
+            onPress={() => router.push(ROUTES.SETTINGS)}
             style={styles.publishBtn}
           />
         ) : (
           <Button
-            title="Review & Publish"
+            title={LABELS.REVIEW_AND_PUBLISH}
             onPress={() => setReviewVisible(true)}
             disabled={!readiness.ready || !selectedPlatforms.length}
             style={styles.publishBtn}

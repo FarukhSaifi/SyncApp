@@ -244,7 +244,7 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main content */}
-      {pathname?.startsWith("/editor") ? (
+      {pathname?.startsWith(ROUTES.EDITOR) ? (
         /* Editor: full-bleed, no container, no footer */
         <main className="flex-1 overflow-hidden">{children}</main>
       ) : (

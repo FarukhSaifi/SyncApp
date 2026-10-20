@@ -70,3 +70,12 @@ export const NOTIFICATION_COPY = Object.freeze({
 export const CRON_SCHEDULE = "0 0 * * *";
 
 export const SCHEDULED_PUBLISH_MAX_PER_RUN = 10;
+
+/** Slack incoming-webhook request timeout. */
+export const SLACK_WEBHOOK_TIMEOUT_MS = 10_000;
+
+/** Truncate long error strings in Slack blocks. */
+export const SLACK_ERROR_MAX_LEN = 280;
+
+/** Synthetic platform id for scheduler/system-level publish errors (not a real credential). */
+export const PUBLISH_ERROR_PLATFORM_SYSTEM = "system";

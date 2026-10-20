@@ -201,7 +201,11 @@ export async function createPost(input: CreatePostInput) {
 /**
  * Get posts with pagination and caching
  */
-export async function getPosts({ page = 1, limit = 20, userId }: GetPostsParams = {}) {
+export async function getPosts({
+  page = DEFAULT_VALUES.DEFAULT_PAGE,
+  limit = DEFAULT_VALUES.DEFAULT_PAGE_SIZE,
+  userId,
+}: GetPostsParams = {}) {
   const safePage = Math.max(
     parseInt(String(page), 10) || DEFAULT_VALUES["DEFAULT_PAGE"],
     DEFAULT_VALUES["DEFAULT_PAGE"],

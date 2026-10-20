@@ -61,6 +61,16 @@ export const REGEX_PATTERNS = Object.freeze({
   GCS_PUBLIC_OBJECT_URL: /^https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/,
   /** GCS public URLs embedded in markdown (stops at ), whitespace, or "). */
   GCS_PUBLIC_URL_IN_MARKDOWN: /https:\/\/storage\.googleapis\.com\/([^/]+)\/([^)\s"]+)/g,
+  /** Normalize Dev.to tags: collapse whitespace and hyphens. */
+  DEVTO_TAG_NORMALIZE: /[\s-]+/g,
+  /** Detect HTML content stored in markdown field (Medium contentFormat). */
+  HTML_CONTENT_DETECT: /<[a-z][\s\S]*>/i,
+  /** Trailing LinkedIn hashtag-only lines (e.g. "#WebDev #JavaScript"). */
+  LINKEDIN_HASHTAG_LINE: /^(?:\s*#[\w-]+\s*)+$/,
+  /** Model-invented "Read the full article:" lines to strip from LinkedIn posts. */
+  LINKEDIN_READ_FULL_ARTICLE: /\n*Read\s+the\s+full\s+article:\s*\S+/gi,
+  /** Absolute http(s) URL prefix check for slug hints. */
+  ABSOLUTE_HTTP_URL_PREFIX: /^https?:\/\//i,
 } as const);
 
 // Validation error messages

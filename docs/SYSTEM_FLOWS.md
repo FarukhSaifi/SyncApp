@@ -11,23 +11,24 @@
 
 1. User creates/edits post in TipTap editor.
 2. Draft saved via `POST/PUT /api/posts`.
-3. Optional: AI generate via `/api/ai/generate` (model + `targetPlatforms`: `devto`, `linkedin`), cover via direct GCS presigned upload (`POST /api/upload/presigned-url`).
+3. Optional: AI generate via `/api/ai/generate` (model + `targetPlatforms`: `devto`, `linkedin`, `google`), cover via direct GCS presigned upload (`POST /api/upload/presigned-url`).
 4. User publishes to one platform or all connected platforms.
 5. `publishService` decrypts credentials using **AES-256-GCM**, calls external APIs, updates `platform_status`.
 6. On full success, `status` becomes `published`.
 
 ## AI Post Generation
 
-1. Editor opens **Generate Post** modal — user picks keyword, **Gemini model** (static client list), and optimization targets (DEV.to, LinkedIn, or both).
-2. Client may call `GET /api/ai/capabilities` (`textAi`, `imageAi`, `provider`).
-3. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms? }`.
-4. Server validates model against allowlist and targets against `devto` / `linkedin`.
-5. Text and image AI use **Google AI Studio** (`GEMINI_API_KEY` via `@google/genai` SDK — no Vertex required).
-6. `buildFullPostSystemPrompt(targets)` merges base rules from `AI_PROMPTS.FULL_POST_SYSTEM_BASE` in [`server/src/constants/ai.ts`](../server/src/constants/ai.ts) (humanization / anti AI-detection, anti-spam / natural keyword density, SEO E-E-A-T, conciseness) with platform-specific blocks in [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts); response is parsed as JSON (`schemas.ts`).
-7. Client fills the editor with the full article `{ title, meta_description, tags, content }`.
-8. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor persists these on the Post (`linkedin_post`, `linkedin_read_more_url`) and shows a **LinkedIn summary** panel with Copy + Publish. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
+1. Editor opens **Generate Post** modal — user picks **Gemini model** and optimization targets (DEV.to, LinkedIn, Google SEO — any combination).
+2. **Optional keyword research:** user enters a broad seed topic → `POST /api/ai/keyword-research` with `{ seed }` → Gemini + Google Search grounding returns ranked long-tail keywords with estimated `commercialIntent`, `competition`, `opportunityScore`, `intentLabel`, and `monetizationAngle`. Scores are AI estimates from Search grounding (not measured volume/KD). Selecting a card fills the keyword and stashes research context for draft generation.
+3. Client may call `GET /api/ai/capabilities` (`textAi`, `imageAi`, `provider`).
+4. Client sends `POST /api/ai/generate` with `{ keyword, model?, targetPlatforms?, researchContext? }`.
+5. Server validates model against allowlist and targets against `devto` / `linkedin` / `google`. Selecting `google` enables Search grounding for the draft when available (falls back to plain generation).
+6. Text and image AI use **Vertex AI** (preferred) or **Google AI Studio** (`GEMINI_API_KEY` via `@google/genai`).
+7. `buildFullPostSystemPrompt(targets, researchContext?)` merges base rules from `AI_PROMPTS.FULL_POST_SYSTEM_BASE` in [`server/src/constants/ai.ts`](../server/src/constants/ai.ts) (humanization / anti AI-detection, anti-spam / natural keyword density, SEO E-E-A-T, conciseness) with platform-specific blocks in [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts); when `researchContext` is present, monetization-angle rules are appended. Response is parsed as JSON (`schemas.ts`).
+8. Client fills the editor with the full article `{ title, meta_description, tags, content }`.
+9. When **LinkedIn** is selected, the response also includes `linkedin_post` (short teaser) + `read_more_url` from `CANONICAL_BASE_URL`/`SITE_URL` + slug. The editor persists these on the Post (`linkedin_post`, `linkedin_read_more_url`) and shows a **LinkedIn summary** panel with Copy + Publish. If the blog base URL is unset, the teaser is still returned with `linkedin_missing_canonical: true` (no invented domain).
 
-**Key files:** [`server/src/ai/`](../server/src/ai/), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`linkedinPost.ts`](../server/src/utils/linkedinPost.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx), [`LinkedInPostPanel.tsx`](../client/src/components/editor/LinkedInPostPanel.tsx).
+**Key files:** [`server/src/ai/`](../server/src/ai/), [`generateKeywordResearch.ts`](../server/src/ai/generateKeywordResearch.ts), [`aiController.ts`](../server/src/controllers/aiController.ts), [`platformOptimization.ts`](../server/src/constants/platformOptimization.ts), [`linkedinPost.ts`](../server/src/utils/linkedinPost.ts), [`GeneratePostModal.tsx`](../client/src/components/editor/GeneratePostModal.tsx), [`LinkedInPostPanel.tsx`](../client/src/components/editor/LinkedInPostPanel.tsx).
 
 **Setup:** see [`docs/AI_SETUP.md`](./AI_SETUP.md). Set `CANONICAL_BASE_URL` / `NEXT_PUBLIC_CANONICAL_BASE_URL` to your **public blog** (e.g. `https://www.farukh.me/blog`) for LinkedIn Read more. Keep `SITE_URL` as the **SyncApp client** for auth, editor, and OAuth return.
 

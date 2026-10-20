@@ -5,7 +5,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { Button } from "@components/Button";
 import { Spinner } from "@components/Spinner";
 import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
-import { LABELS } from "@constants/messages";
+import { EDITOR_AI_PROMPTS, LABELS, PLACEHOLDERS } from "@constants/messages";
 import { OPTIMIZATION_TARGETS, type OptimizationTarget } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 
@@ -22,13 +22,48 @@ interface AiCopilotSheetProps {
   toggleAiTargetPlatform: (target: OptimizationTarget) => void;
 }
 
-const AI_PRESETS = [
-  { id: "clarity", label: "Improve clarity", icon: "sparkles-outline", prompt: "improve clarity" },
-  { id: "punchy", label: "Make punchy & viral", icon: "flash-outline", prompt: "make it punchy and engaging" },
-  { id: "professional", label: "Professional tone", icon: "briefcase-outline", prompt: "adapt to professional tone" },
-  { id: "grammar", label: "Fix grammar & typos", icon: "checkmark-done-outline", prompt: "fix grammar and typos" },
-  { id: "shorten", label: "Shorten & condense", icon: "contract-outline", prompt: "shorten and condense" },
-  { id: "expand", label: "Expand with examples", icon: "expand-outline", prompt: "expand with actionable examples" },
+const AI_PRESETS: Array<{
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  prompt: string;
+}> = [
+  {
+    id: "clarity",
+    label: LABELS.AI_IMPROVE_CLARITY,
+    icon: "sparkles-outline",
+    prompt: EDITOR_AI_PROMPTS.IMPROVE_CLARITY,
+  },
+  {
+    id: "punchy",
+    label: LABELS.AI_MAKE_PUNCHY,
+    icon: "flash-outline",
+    prompt: EDITOR_AI_PROMPTS.MAKE_PUNCHY,
+  },
+  {
+    id: "professional",
+    label: LABELS.AI_PROFESSIONAL_TONE,
+    icon: "briefcase-outline",
+    prompt: EDITOR_AI_PROMPTS.PROFESSIONAL_TONE,
+  },
+  {
+    id: "grammar",
+    label: LABELS.AI_FIX_GRAMMAR,
+    icon: "checkmark-done-outline",
+    prompt: EDITOR_AI_PROMPTS.FIX_GRAMMAR,
+  },
+  {
+    id: "shorten",
+    label: LABELS.AI_SHORTEN,
+    icon: "contract-outline",
+    prompt: EDITOR_AI_PROMPTS.SHORTEN,
+  },
+  {
+    id: "expand",
+    label: LABELS.AI_EXPAND,
+    icon: "expand-outline",
+    prompt: EDITOR_AI_PROMPTS.EXPAND,
+  },
 ];
 
 export function AiCopilotSheet({
@@ -91,8 +126,8 @@ export function AiCopilotSheet({
                 <Ionicons name="sparkles" size={16} color="#FFFFFF" />
               </View>
               <View>
-                <Text style={styles.title}>AI Copilot Studio</Text>
-                <Text style={styles.subtitle}>Refine your message or generate drafts</Text>
+                <Text style={styles.title}>{LABELS.AI_COPILOT_TITLE}</Text>
+                <Text style={styles.subtitle}>{LABELS.AI_COPILOT_SUBTITLE}</Text>
               </View>
             </View>
             <Pressable onPress={handleClose} hitSlop={8}>
@@ -106,14 +141,12 @@ export function AiCopilotSheet({
               <View style={styles.reviewSurface}>
                 <View style={styles.reviewBanner}>
                   <Ionicons name="git-compare-outline" size={18} color={colors.primary} />
-                  <Text style={styles.reviewBannerTitle}>Review AI Changes</Text>
+                  <Text style={styles.reviewBannerTitle}>{LABELS.AI_REVIEW_CHANGES}</Text>
                 </View>
-                <Text style={styles.reviewNotice}>
-                  Review the proposed text before applying. Your existing draft will not be changed unless you confirm.
-                </Text>
+                <Text style={styles.reviewNotice}>{LABELS.AI_REVIEW_NOTICE}</Text>
 
                 <View style={styles.diffBox}>
-                  <Text style={styles.diffLabel}>AI PROPOSED VERSION</Text>
+                  <Text style={styles.diffLabel}>{LABELS.AI_PROPOSED_VERSION}</Text>
                   <ScrollView style={styles.diffScroll}>
                     <Text style={styles.diffContent}>{proposedText}</Text>
                   </ScrollView>
@@ -121,7 +154,7 @@ export function AiCopilotSheet({
 
                 <View style={styles.reviewActions}>
                   <Button
-                    title="Accept & Replace"
+                    title={LABELS.AI_ACCEPT_REPLACE}
                     onPress={() => {
                       onAcceptReplace(proposedText);
                       handleClose();
@@ -129,7 +162,7 @@ export function AiCopilotSheet({
                     style={styles.reviewButtonPrimary}
                   />
                   <Button
-                    title="Append to Story"
+                    title={LABELS.AI_APPEND_STORY}
                     variant={BUTTON_VARIANTS.OUTLINE}
                     onPress={() => {
                       onAcceptAppend(proposedText);
@@ -138,7 +171,7 @@ export function AiCopilotSheet({
                     style={styles.reviewButtonSecondary}
                   />
                   <Button
-                    title="Discard"
+                    title={LABELS.AI_DISCARD}
                     variant={BUTTON_VARIANTS.GHOST}
                     onPress={() => setProposedText(null)}
                     style={styles.reviewButtonGhost}
@@ -148,7 +181,7 @@ export function AiCopilotSheet({
             ) : (
               <>
                 {/* 1. Quick Presets */}
-                <Text style={styles.sectionLabel}>QUICK ENHANCEMENTS</Text>
+                <Text style={styles.sectionLabel}>{LABELS.AI_QUICK_ENHANCEMENTS}</Text>
                 <View style={styles.presetsGrid}>
                   {AI_PRESETS.map((preset) => (
                     <Pressable
@@ -157,25 +190,25 @@ export function AiCopilotSheet({
                       onPress={() => void handleRunPreset(preset.prompt)}
                       disabled={aiLoading}
                     >
-                      <Ionicons name={preset.icon as any} size={18} color={colors.primary} />
+                      <Ionicons name={preset.icon} size={18} color={colors.primary} />
                       <Text style={styles.presetLabel}>{preset.label}</Text>
                     </Pressable>
                   ))}
                 </View>
 
                 {/* 2. Custom Instruction */}
-                <Text style={styles.sectionLabel}>CUSTOM EDIT INSTRUCTION</Text>
+                <Text style={styles.sectionLabel}>{LABELS.AI_CUSTOM_EDIT}</Text>
                 <View style={styles.inputWrapper}>
                   <TextInput
                     style={styles.customInput}
-                    placeholder="e.g. Turn this into a Twitter thread intro..."
+                    placeholder={PLACEHOLDERS.AI_CUSTOM_PROMPT}
                     placeholderTextColor={colors.mutedForeground}
                     value={customPrompt}
                     onChangeText={setCustomPrompt}
                     multiline
                   />
                   <Button
-                    title="Apply Edit"
+                    title={LABELS.AI_APPLY_EDIT}
                     size="sm"
                     onPress={() => void handleRunCustom()}
                     loading={aiLoading}
@@ -186,13 +219,14 @@ export function AiCopilotSheet({
 
                 {/* 3. Full Story Generation */}
                 <View style={styles.divider} />
-                <Text style={styles.sectionLabel}>GENERATE FULL DRAFT FROM TOPIC</Text>
+                <Text style={styles.sectionLabel}>{LABELS.AI_GENERATE_DRAFT_SECTION}</Text>
                 <Text style={styles.optimizeLabel}>{LABELS.OPTIMIZE_FOR}</Text>
                 <View style={styles.optimizeRow}>
                   {(
                     [
                       { target: OPTIMIZATION_TARGETS.DEVTO, label: LABELS.OPTIMIZE_DEVTO },
                       { target: OPTIMIZATION_TARGETS.LINKEDIN, label: LABELS.OPTIMIZE_LINKEDIN },
+                      { target: OPTIMIZATION_TARGETS.GOOGLE, label: LABELS.OPTIMIZE_GOOGLE },
                     ] as const
                   ).map(({ target, label }) => {
                     const selected = aiTargetPlatforms.includes(target);
@@ -217,13 +251,13 @@ export function AiCopilotSheet({
                 <View style={styles.inputWrapper}>
                   <TextInput
                     style={styles.customInput}
-                    placeholder="Enter topic or angle for a fresh draft..."
+                    placeholder={PLACEHOLDERS.AI_NEW_TOPIC}
                     placeholderTextColor={colors.mutedForeground}
                     value={newTopic}
                     onChangeText={setNewTopic}
                   />
                   <Button
-                    title="Create Draft"
+                    title={LABELS.AI_CREATE_DRAFT}
                     variant={BUTTON_VARIANTS.OUTLINE}
                     size="sm"
                     onPress={() => void handleGenerateFresh()}
@@ -238,7 +272,7 @@ export function AiCopilotSheet({
             {aiLoading ? (
               <View style={styles.loadingOverlay}>
                 <Spinner size="lg" />
-                <Text style={styles.loadingText}>Gemini AI is processing your content...</Text>
+                <Text style={styles.loadingText}>{LABELS.AI_PROCESSING}</Text>
               </View>
             ) : null}
           </ScrollView>

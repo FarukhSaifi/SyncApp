@@ -2,12 +2,9 @@
 
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
-import type {
-  AiReachTagsSource,
-  AiTopicsSource,
-  GeneratePostModalProps,
-  SuggestionErrorProps,
-} from "@types";
+import KeywordResearchSection from "@components/editor/KeywordResearchSection";
+import SuggestionError from "@components/editor/SuggestionError";
+import type { AiReachTagsSource, AiTopicsSource, GeneratePostModalProps, KeywordResearchItem } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { formatDateTime } from "@utils/dateUtils";
 import { FiCheck, FiChevronDown, FiHash, FiRefreshCw, FiSearch, FiTrendingUp, FiZap } from "react-icons/fi";
@@ -43,14 +40,6 @@ function platformCheckboxClass(checked: boolean): string {
     : `${base} border-border bg-background hover:border-primary/40 hover:bg-muted/40`;
 }
 
-function SuggestionError({ message }: SuggestionErrorProps) {
-  return (
-    <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-[11px] text-destructive">
-      {message}
-    </div>
-  );
-}
-
 export default function GeneratePostModal({
   isOpen,
   onClose,
@@ -63,10 +52,20 @@ export default function GeneratePostModal({
   onTargetPlatformsChange,
   onGenerate,
   isGenerating,
+  researchContext,
+  onResearchPick,
+  onResearchClear,
 }: GeneratePostModalProps) {
   const trimmedKeyword = keyword.trim();
   const hasTargets = targetPlatforms.length > 0;
   const canGenerate = trimmedKeyword.length > 0 && hasTargets && !isGenerating;
+
+  const [seed, setSeed] = useState<string>("");
+  const [researchResults, setResearchResults] = useState<KeywordResearchItem[]>([]);
+  const [researchLoading, setResearchLoading] = useState<boolean>(false);
+  const [researchError, setResearchError] = useState<string | null>(null);
+  const [researchCached, setResearchCached] = useState<boolean>(false);
+  const [researchUpdatedAt, setResearchUpdatedAt] = useState<string | null>(null);
 
   const [topics, setTopics] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -80,6 +79,33 @@ export default function GeneratePostModal({
   const [reachTagsSource, setReachTagsSource] = useState<AiReachTagsSource | null>(null);
   const [reachTagsLoading, setReachTagsLoading] = useState<boolean>(false);
   const [reachTagsError, setReachTagsError] = useState<string | null>(null);
+
+  async function runKeywordResearch() {
+    const trimmedSeed = seed.trim();
+    if (!trimmedSeed || researchLoading || isGenerating) {
+      return;
+    }
+    setResearchLoading(true);
+    setResearchError(null);
+    try {
+      const res = await apiClient.aiKeywordResearch(trimmedSeed);
+      const next = res.data?.keywords;
+      if (!Array.isArray(next) || next.length === 0) {
+        throw new Error(EDITOR_UI["KEYWORD_RESEARCH_ERROR"]);
+      }
+      setResearchResults(next);
+      setResearchCached(Boolean(res.data?.cached));
+      setResearchUpdatedAt(typeof res.data?.updatedAt === "string" ? res.data.updatedAt : null);
+    } catch (err) {
+      setResearchResults([]);
+      setResearchCached(false);
+      setResearchUpdatedAt(null);
+      const apiMessage = err instanceof Error ? err.message.trim() : "";
+      setResearchError(apiMessage || EDITOR_UI["KEYWORD_RESEARCH_ERROR"]);
+    } finally {
+      setResearchLoading(false);
+    }
+  }
 
   async function loadTrendingTopics(refresh: boolean) {
     setTopicsLoading(true);
@@ -292,13 +318,9 @@ export default function GeneratePostModal({
                             {isSelected ? <FiCheck className="h-4 w-4 text-foreground" /> : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium leading-tight text-foreground">
-                              {model.label}
-                            </div>
+                            <div className="text-sm font-medium leading-tight text-foreground">{model.label}</div>
                             {model.description ? (
-                              <div className="text-xs text-muted-foreground mt-0.5">
-                                {model.description}
-                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{model.description}</div>
                             ) : null}
                           </div>
                         </button>
@@ -336,8 +358,20 @@ export default function GeneratePostModal({
                 />
                 {EDITOR_UI["GENERATE_POST_TARGET_LINKEDIN"]}
               </label>
+              <label className={platformCheckboxClass(targetPlatforms.includes(OPTIMIZATION_TARGETS["GOOGLE"]))}>
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40"
+                  checked={targetPlatforms.includes(OPTIMIZATION_TARGETS["GOOGLE"])}
+                  onChange={() => toggleTarget(OPTIMIZATION_TARGETS["GOOGLE"])}
+                  disabled={isGenerating}
+                />
+                {EDITOR_UI["GENERATE_POST_TARGET_GOOGLE"]}
+              </label>
             </div>
-            {!hasTargets && <p className="text-[11px] text-destructive">{EDITOR_UI["GENERATE_POST_TARGETS_REQUIRED"]}</p>}
+            {!hasTargets && (
+              <p className="text-[11px] text-destructive">{EDITOR_UI["GENERATE_POST_TARGETS_REQUIRED"]}</p>
+            )}
           </div>
         </div>
 
@@ -361,19 +395,39 @@ export default function GeneratePostModal({
           {!trimmedKeyword && (
             <p className="text-[11px] text-muted-foreground">{EDITOR_UI["GENERATE_POST_KEYWORD_REQUIRED"]}</p>
           )}
-          {selectedTopic && (
+          {researchContext?.monetizationAngle && (
+            <p className="text-[11px] text-primary">
+              <FiZap className="inline h-3 w-3 mr-1" />
+              {EDITOR_UI["KEYWORD_RESEARCH_SELECTED"]}: {researchContext.monetizationAngle}
+            </p>
+          )}
+          {!researchContext && selectedTopic && (
             <p className="text-[11px] text-primary">
               <FiTrendingUp className="inline h-3 w-3 mr-1" />
               {selectedTopic}
             </p>
           )}
-          {!selectedTopic && selectedGoogleKeyword && (
+          {!researchContext && !selectedTopic && selectedGoogleKeyword && (
             <p className="text-[11px] text-primary">
               <FiSearch className="inline h-3 w-3 mr-1" />
               {selectedGoogleKeyword}
             </p>
           )}
         </div>
+
+        <KeywordResearchSection
+          seed={seed}
+          onSeedChange={setSeed}
+          results={researchResults}
+          loading={researchLoading}
+          error={researchError}
+          cached={researchCached}
+          updatedAt={researchUpdatedAt}
+          selectedKeyword={trimmedKeyword}
+          onResearch={() => void runKeywordResearch()}
+          onPick={onResearchPick}
+          disabled={isGenerating}
+        />
 
         <section className="space-y-2.5">
           <div className="flex items-start justify-between gap-2">
@@ -429,7 +483,10 @@ export default function GeneratePostModal({
                     key={topic}
                     type="button"
                     disabled={isGenerating || topicsLoading}
-                    onClick={() => onKeywordChange(topic)}
+                    onClick={() => {
+                      onResearchClear();
+                      onKeywordChange(topic);
+                    }}
                     className={topicCardClass(isSelected)}
                     aria-pressed={isSelected}
                   >
@@ -451,7 +508,9 @@ export default function GeneratePostModal({
               {EDITOR_UI["GOOGLE_KEYWORDS_TITLE"]}
             </h3>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"] ? EDITOR_UI["GOOGLE_KEYWORDS_LIVE_HINT"] : EDITOR_UI["GOOGLE_KEYWORDS_HINT"]}
+              {topicsSource === AI_SUGGESTION_SOURCES["GOOGLE_SEARCH"]
+                ? EDITOR_UI["GOOGLE_KEYWORDS_LIVE_HINT"]
+                : EDITOR_UI["GOOGLE_KEYWORDS_HINT"]}
             </p>
           </div>
           {topicsError ? (
@@ -469,7 +528,10 @@ export default function GeneratePostModal({
                     key={kw}
                     type="button"
                     disabled={isGenerating || topicsLoading}
-                    onClick={() => onKeywordChange(kw)}
+                    onClick={() => {
+                      onResearchClear();
+                      onKeywordChange(kw);
+                    }}
                     className={keywordChipClass(isSelected)}
                     aria-pressed={isSelected}
                   >
@@ -488,11 +550,15 @@ export default function GeneratePostModal({
               {EDITOR_UI["REACH_TAGS_TITLE"]}
             </h3>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"] ? EDITOR_UI["REACH_TAGS_LIVE_HINT"] : EDITOR_UI["REACH_TAGS_HINT"]}
+              {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"]
+                ? EDITOR_UI["REACH_TAGS_LIVE_HINT"]
+                : EDITOR_UI["REACH_TAGS_HINT"]}
             </p>
           </div>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"] ? EDITOR_UI["REACH_TAGS_SOURCE_LIVE"] : EDITOR_UI["REACH_TAGS_PENDING"]}
+            {reachTagsSource === AI_SUGGESTION_SOURCES["DEVTO"]
+              ? EDITOR_UI["REACH_TAGS_SOURCE_LIVE"]
+              : EDITOR_UI["REACH_TAGS_PENDING"]}
           </p>
           {reachTagsError ? (
             <SuggestionError message={reachTagsError} />

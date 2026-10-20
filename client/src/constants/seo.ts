@@ -18,7 +18,22 @@ export const SEO_THRESHOLDS = Object.freeze({
   /** Left-sidebar SEO ring: good / mid / weak score ratios */
   RING_GOOD_RATIO: 0.7,
   RING_MID_RATIO: 0.4,
+  /** Discussion CTA: scan last N characters for a question. */
+  DISCUSSION_TAIL_CHARS: 600,
+  /** Direct-answer: scan first N characters before first H2. */
+  DIRECT_ANSWER_INTRO_CHARS: 1200,
+  DIRECT_ANSWER_BEFORE_H2_FALLBACK_CHARS: 600,
+  DIRECT_ANSWER_MIN_SENTENCE_CHARS: 20,
+  DIRECT_ANSWER_MIN_SENTENCES: 2,
+  /** DEV.to publish warning when scorecard is below this. */
+  PUBLISH_WARNING_SCORE_MIN: 60,
+  /** SeoScoreBadge color bands. */
+  BADGE_GOOD_MIN: 80,
+  BADGE_MID_MIN: 50,
 } as const);
+
+/** Prefer rebuilding canonical when the saved URL still points at the SyncApp client host. */
+export const STALE_CANONICAL_HOST_PATTERN = /sync-app-client/i;
 
 /** Circular SEO score indicator geometry (left sidebar). */
 export const SEO_RING = Object.freeze({

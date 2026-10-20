@@ -4,7 +4,17 @@
  * Typed with ApiResponse<T> and domain types from src/types.
  */
 
-import { API_BASE, API_PATHS, APP_CONFIG, ERROR_MESSAGES, HTTP_METHODS, MDX_DOWNLOAD, STORAGE_KEYS } from "@constants";
+import {
+  API_BASE,
+  API_PATHS,
+  APP_CONFIG,
+  ERROR_MESSAGES,
+  HTTP_CONTENT_TYPES,
+  HTTP_METHODS,
+  MDX_DOWNLOAD,
+  SERVER_ERROR_MESSAGES,
+  STORAGE_KEYS,
+} from "@constants";
 import type {
   AiImageSource,
   AnalyticsStats,
@@ -12,10 +22,14 @@ import type {
   DevtoEngagementSummary,
   DevtoEngagementSyncResult,
   Ga4WebsiteAnalytics,
+  GeneratedPostData,
+  GeneratePostResearchContext,
+  KeywordResearchResult,
   ListResponse,
   PaginatedResponse,
   Post,
   RequestOptions,
+  TrendingTopicsResult,
   User,
 } from "@types";
 import { devLog, logError } from "@utils/logger";
@@ -28,7 +42,7 @@ class ApiClient {
   constructor(baseURL: string = API_BASE) {
     this.client = axios.create({
       baseURL,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": HTTP_CONTENT_TYPES.JSON },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "comma", skipNulls: true }),
       withCredentials: false,
       timeout: APP_CONFIG["API_TIMEOUT"],
@@ -68,9 +82,9 @@ class ApiClient {
           return Promise.reject(new Error(message));
         }
         if (error.request) {
-          return Promise.reject(new Error("Network error: Unable to connect to server"));
+          return Promise.reject(new Error(ERROR_MESSAGES.NETWORK_ERROR_UNABLE_TO_CONNECT));
         }
-        return Promise.reject(new Error(error.message || "Request failed"));
+        return Promise.reject(new Error(error.message || SERVER_ERROR_MESSAGES.REQUEST_FAILED));
       },
     );
   }
@@ -259,21 +273,23 @@ class ApiClient {
   // AI
   aiGenerate(
     keyword: string,
-    options: { model?: string; targetPlatforms?: string[] } = {},
-  ): Promise<
-    ApiResponse<{
-      title: string;
-      meta_description: string;
-      tags: string[];
-      content: string;
-      linkedin_post?: string;
-      read_more_url?: string;
-      linkedin_missing_canonical?: boolean;
-    }>
-  > {
+    options: {
+      model?: string;
+      targetPlatforms?: string[];
+      researchContext?: GeneratePostResearchContext;
+    } = {},
+  ): Promise<ApiResponse<GeneratedPostData>> {
     return this.request(`${API_PATHS["AI"]}/generate`, {
       method: HTTP_METHODS["POST"],
       body: { keyword, ...options },
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
+    });
+  }
+
+  aiKeywordResearch(seed: string): Promise<ApiResponse<KeywordResearchResult>> {
+    return this.request(`${API_PATHS["AI"]}/keyword-research`, {
+      method: HTTP_METHODS["POST"],
+      body: { seed },
       timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }
@@ -316,15 +332,7 @@ class ApiClient {
     });
   }
 
-  aiTrendingTopics(refresh = false): Promise<
-    ApiResponse<{
-      topics: string[];
-      keywords: string[];
-      source: "google_search";
-      cached: boolean;
-      updatedAt: string;
-    }>
-  > {
+  aiTrendingTopics(refresh = false): Promise<ApiResponse<TrendingTopicsResult>> {
     const q = refresh ? "?refresh=1" : "";
     return this.request(`${API_PATHS["AI"]}/trending-topics${q}`, {
       method: HTTP_METHODS["GET"],
@@ -364,7 +372,7 @@ class ApiClient {
       body: {
         filename: file.name,
         size: file.size,
-        contentType: file.type || "application/octet-stream",
+        contentType: file.type || HTTP_CONTENT_TYPES.OCTET_STREAM,
       },
     });
 
@@ -374,7 +382,7 @@ class ApiClient {
 
     // Step 2: Directly execute PUT against Google Cloud Storage (headers bound into V4 signature)
     const uploadHeaders: Record<string, string> = {
-      "Content-Type": file.type || "application/octet-stream",
+      "Content-Type": file.type || HTTP_CONTENT_TYPES.OCTET_STREAM,
       ...(presignedRes.data.headers || {}),
     };
     const uploadRes = await fetch(presignedRes.data.presignedUrl, {

@@ -16,6 +16,7 @@ import type {
   GenerateImageRequestBody,
   GenerateLinkedInSummaryRequestBody,
   GeneratePostRequestBody,
+  KeywordResearchRequestBody,
 } from "@types";
 import type { Request, Response } from "express";
 
@@ -51,7 +52,7 @@ export const getDevtoReachTags = asyncHandler(async (req: Request, res: Response
 });
 
 export const postGenerate = asyncHandler(async (req: Request, res: Response) => {
-  const { keyword, model, targetPlatforms } = req.body as GeneratePostRequestBody;
+  const { keyword, model, targetPlatforms, researchContext } = req.body as GeneratePostRequestBody;
 
   validateRequestedModel(model);
 
@@ -68,8 +69,16 @@ export const postGenerate = asyncHandler(async (req: Request, res: Response) => 
   const result = await aiService.generatePost(keyword, {
     model: model?.trim() || undefined,
     targetPlatforms: resolvedTargets,
+    researchContext,
   });
   res.status(HTTP_STATUS.OK).json({ success: true, data: result });
+});
+
+export const postKeywordResearch = asyncHandler(async (req: Request, res: Response) => {
+  const { seed } = req.body as KeywordResearchRequestBody;
+  const data = await aiService.generateKeywordResearch(seed);
+  res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
 });
 
 export const postGenerateImage = asyncHandler(async (req: Request, res: Response) => {

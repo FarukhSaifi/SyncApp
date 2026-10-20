@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { RADIUS } from "@constants/designTokens";
+import { EDITOR_A11Y, EDITOR_FORMAT_TOOLS, EDITOR_UI, LABELS } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
 
 interface FormattingAccessoryBarProps {
@@ -22,15 +23,75 @@ interface FormatTool {
 }
 
 const TOOLS: FormatTool[] = [
-  { id: "bold", label: "B", prefix: "**", suffix: "**", defaultText: "bold text", tooltip: "Bold" },
-  { id: "italic", label: "I", prefix: "*", suffix: "*", defaultText: "italic text", tooltip: "Italic" },
-  { id: "h1", label: "H1", prefix: "# ", suffix: "\n", defaultText: "Heading 1", tooltip: "Heading 1" },
-  { id: "h2", label: "H2", prefix: "## ", suffix: "\n", defaultText: "Heading 2", tooltip: "Heading 2" },
-  { id: "bullet", icon: "list-outline", prefix: "- ", defaultText: "List item", tooltip: "Bullet list" },
-  { id: "check", icon: "checkbox-outline", prefix: "- [ ] ", defaultText: "Task item", tooltip: "Checklist" },
-  { id: "quote", icon: "chatbox-ellipses-outline", prefix: "> ", defaultText: "Quote", tooltip: "Blockquote" },
-  { id: "code", icon: "code-slash-outline", prefix: "```\n", suffix: "\n```\n", defaultText: "code", tooltip: "Code block" },
-  { id: "link", icon: "link-outline", prefix: "[", suffix: "](https://...)", defaultText: "link text", tooltip: "Link" },
+  {
+    id: "bold",
+    label: EDITOR_FORMAT_TOOLS.bold.label,
+    prefix: "**",
+    suffix: "**",
+    defaultText: EDITOR_FORMAT_TOOLS.bold.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.bold.tooltip,
+  },
+  {
+    id: "italic",
+    label: EDITOR_FORMAT_TOOLS.italic.label,
+    prefix: "*",
+    suffix: "*",
+    defaultText: EDITOR_FORMAT_TOOLS.italic.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.italic.tooltip,
+  },
+  {
+    id: "h1",
+    label: EDITOR_FORMAT_TOOLS.h1.label,
+    prefix: "# ",
+    suffix: "\n",
+    defaultText: EDITOR_FORMAT_TOOLS.h1.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.h1.tooltip,
+  },
+  {
+    id: "h2",
+    label: EDITOR_FORMAT_TOOLS.h2.label,
+    prefix: "## ",
+    suffix: "\n",
+    defaultText: EDITOR_FORMAT_TOOLS.h2.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.h2.tooltip,
+  },
+  {
+    id: "bullet",
+    icon: "list-outline",
+    prefix: "- ",
+    defaultText: EDITOR_FORMAT_TOOLS.bullet.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.bullet.tooltip,
+  },
+  {
+    id: "check",
+    icon: "checkbox-outline",
+    prefix: "- [ ] ",
+    defaultText: EDITOR_FORMAT_TOOLS.check.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.check.tooltip,
+  },
+  {
+    id: "quote",
+    icon: "chatbox-ellipses-outline",
+    prefix: "> ",
+    defaultText: EDITOR_FORMAT_TOOLS.quote.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.quote.tooltip,
+  },
+  {
+    id: "code",
+    icon: "code-slash-outline",
+    prefix: "```\n",
+    suffix: "\n```\n",
+    defaultText: EDITOR_FORMAT_TOOLS.code.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.code.tooltip,
+  },
+  {
+    id: "link",
+    icon: "link-outline",
+    prefix: "[",
+    suffix: "](https://...)",
+    defaultText: EDITOR_FORMAT_TOOLS.link.defaultText,
+    tooltip: EDITOR_FORMAT_TOOLS.link.tooltip,
+  },
 ];
 
 export function FormattingAccessoryBar({
@@ -47,10 +108,10 @@ export function FormattingAccessoryBar({
       <Pressable
         style={({ pressed }) => [styles.addBlockButton, pressed && styles.pressed]}
         onPress={onOpenBlockInserter}
-        accessibilityLabel="Insert block"
+        accessibilityLabel={EDITOR_A11Y.INSERT_BLOCK}
       >
         <Ionicons name="add" size={18} color="#FFFFFF" />
-        <Text style={styles.addBlockText}>Block</Text>
+        <Text style={styles.addBlockText}>{EDITOR_UI.FORMAT_BLOCK}</Text>
       </Pressable>
 
       <View style={styles.divider} />
@@ -91,10 +152,10 @@ export function FormattingAccessoryBar({
       <Pressable
         style={({ pressed }) => [styles.aiButton, pressed && styles.pressed]}
         onPress={onOpenAiStudio}
-        accessibilityLabel="Open AI Studio"
+        accessibilityLabel={EDITOR_A11Y.OPEN_AI_STUDIO}
       >
         <Ionicons name="sparkles" size={15} color={colors.primary} />
-        <Text style={styles.aiButtonText}>AI</Text>
+        <Text style={styles.aiButtonText}>{LABELS.AI_SECTION}</Text>
       </Pressable>
     </View>
   );

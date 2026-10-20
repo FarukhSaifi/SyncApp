@@ -78,6 +78,8 @@ export interface Credential {
   api_key_last4?: string;
   configured?: boolean;
   decrypt_failed?: boolean;
+  /** LinkedIn: access token past expiry and no refresh token stored. */
+  token_expired?: boolean;
   site_url?: string;
   platform_config?: Record<string, unknown>;
 }

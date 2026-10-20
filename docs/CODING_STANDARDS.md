@@ -4,12 +4,12 @@ Practical baseline for this monorepo. For agent workflow, validation commands, a
 
 ## Repository layout
 
-| Package | Role |
-|---------|------|
-| `client/` | Next.js App Router (Vercel root: `client`) |
+| Package   | Role                                             |
+| --------- | ------------------------------------------------ |
+| `client/` | Next.js App Router (Vercel root: `client`)       |
 | `server/` | Express + TypeScript API (Vercel root: `server`) |
-| `mobile/` | Expo Router (iOS / Android / web) |
-| `docs/` | Architecture, env, flows, features |
+| `mobile/` | Expo Router (iOS / Android / web)                |
+| `docs/`   | Architecture, env, flows, features               |
 
 Do not add new top-level apps without an explicit product decision. Prefer extending the package that already owns the concern.
 
@@ -43,32 +43,32 @@ Follow [mobile/AGENTS.md](../mobile/AGENTS.md). Keep editor persistence/publishi
 
 **Client** (`client/tsconfig.json`, Next resolves automatically):
 
-| Alias | Path |
-|-------|------|
-| `@src/*` | `src/*` |
-| `@components/*` | `src/components/*` |
-| `@constants`, `@constants/*` | `src/constants` |
-| `@hooks/*` | `src/hooks/*` |
-| `@views/*` | `src/views/*` |
-| `@types` | `src/types` (barrel only — no `@types/*`) |
-| `@utils/*` | `src/utils/*` |
-| `@contexts/*` | `src/contexts/*` |
-| `@assets/*` | `src/assets/*` |
+| Alias                        | Path                                      |
+| ---------------------------- | ----------------------------------------- |
+| `@src/*`                     | `src/*`                                   |
+| `@components/*`              | `src/components/*`                        |
+| `@constants`, `@constants/*` | `src/constants`                           |
+| `@hooks/*`                   | `src/hooks/*`                             |
+| `@views/*`                   | `src/views/*`                             |
+| `@types`                     | `src/types` (barrel only — no `@types/*`) |
+| `@utils/*`                   | `src/utils/*`                             |
+| `@contexts/*`                | `src/contexts/*`                          |
+| `@assets/*`                  | `src/assets/*`                            |
 
 **Mobile** (`mobile/tsconfig.json`; Metro reads `paths` via Expo):
 
-| Alias | Path |
-|-------|------|
-| `@/*` | project root (e.g. `app/`) |
-| `@src/*` | `src/*` |
-| `@components/*`, `@hooks/*`, `@contexts/*`, `@services/*`, `@screens/*`, `@utils/*` | matching `src/<name>/*` |
-| `@constants`, `@constants/*` | `src/constants` |
-| `@types` | `src/types` barrel |
+| Alias                                                                               | Path                       |
+| ----------------------------------------------------------------------------------- | -------------------------- |
+| `@/*`                                                                               | project root (e.g. `app/`) |
+| `@src/*`                                                                            | `src/*`                    |
+| `@components/*`, `@hooks/*`, `@contexts/*`, `@services/*`, `@screens/*`, `@utils/*` | matching `src/<name>/*`    |
+| `@constants`, `@constants/*`                                                        | `src/constants`            |
+| `@types`                                                                            | `src/types` barrel         |
 
 **Server** (`server/tsconfig.json`; `tsc && tsc-alias` for `dist/`, `tsx` + Vercel/`@vercel/node` resolve paths at runtime):
 
 | Alias | Path |
-|-------|------|
+| --- | --- |
 | `@src/*` | `src/*` |
 | `@ai/*`, `@controllers/*`, `@database/*`, `@middleware/*`, `@models/*`, `@services/*`, `@utils/*`, `@validations/*` | matching `src/<name>/*` |
 | `@ai`, `@config`, `@constants`, `@routes`, `@schemas`, `@types` | barrels under `src/` |
@@ -128,13 +128,15 @@ Do not add `@types/*` path mappings — they collide with DefinitelyTyped packag
 
 ---
 
-## User additions
+## User additions / agent quality gate
 
-1. Static values must be moved into a constants file; when using any constant in code, always wrap it in double quotes.
-2. Import file sequence, grouped with blank lines: first React imports, then Redux imports if any, then MUI imports, then common component imports, then other imports — organized hierarchically by level/depth.
-3. Types: never use `any`; always define and use proper types for everything.
-4. Act as a senior software developer in the MERN stack and AI engineer: follow standard coding practices, standardize code, prioritize reusability and robust error handling, follow the existing architecture as reference, and improve current code to match best practices.
-5. Test cases must pass with 100% coverage.
-6. Never use single-line statements — always use curly braces for if/else, loops, etc.
-7. Always type useState hooks (e.g. useState<Type>(...)).
-8. For useSelector, the any TypeScript type is allowed (exception to the no-any rule).
+Persistent agent enforcement lives in [`.cursor/rules/coding-quality.mdc`](../.cursor/rules/coding-quality.mdc) (always apply) and the review skill [`.cursor/skills/code-quality-review/SKILL.md`](../.cursor/skills/code-quality-review/SKILL.md).
+
+1. Static values must be moved into a constants file; prefer double quotes for string literals.
+2. Import sequence, blank-line groups: React → external packages → `@` aliases → relative (`./` then `../`). (SyncApp does not use Redux/MUI by default.)
+3. Types: never use `any`; always define and use proper types. Exception: `useSelector((state: any))` only if Redux is present.
+4. Act as a senior MERN + AI engineer: reusability, robust error handling, follow existing architecture, improve code to match best practices.
+5. Prefer tests with strong coverage (happy, negative, error, empty/null, API failure) when a suite exists for the module.
+6. Never use single-line control flow — always curly braces for `if`/`else`/loops.
+7. Always type `useState` hooks (e.g. `useState<Type>(...)`).
+8. No `console.log` in committed code; use the project logger.

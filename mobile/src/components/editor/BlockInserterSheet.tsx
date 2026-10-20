@@ -3,6 +3,12 @@ import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { RADIUS } from "@constants/designTokens";
+import {
+  EDITOR_A11Y,
+  EDITOR_BLOCK_CATEGORIES,
+  EDITOR_CONTENT_BLOCKS,
+  EDITOR_UI,
+} from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
 
 export interface ContentBlockDef {
@@ -15,135 +21,27 @@ export interface ContentBlockDef {
   accent?: string;
 }
 
-const CONTENT_BLOCKS: ContentBlockDef[] = [
-  // Text & Headings
-  {
-    id: "h1",
-    category: "text",
-    title: "Heading 1",
-    description: "Main section header for large topics",
-    icon: "text",
-    template: "# Section Heading\n\n",
-  },
-  {
-    id: "h2",
-    category: "text",
-    title: "Heading 2",
-    description: "Sub-section header for structure",
-    icon: "text-outline",
-    template: "## Sub-heading\n\n",
-  },
-  {
-    id: "h3",
-    category: "text",
-    title: "Heading 3",
-    description: "Minor header for grouping points",
-    icon: "text-outline",
-    template: "### Topic Detail\n\n",
-  },
-  {
-    id: "paragraph",
-    category: "text",
-    title: "Paragraph",
-    description: "Standard body text block",
-    icon: "reader-outline",
-    template: "Write your thought or explanation here...\n\n",
-  },
-  {
-    id: "quote",
-    category: "text",
-    title: "Pull Quote",
-    description: "Highlighted quote or testimonial",
-    icon: "chatbox-ellipses-outline",
-    template: "> \"A key quote or thought from your story.\"\n\n",
-  },
-  {
-    id: "callout",
-    category: "text",
-    title: "Callout Box",
-    description: "Important callout with tip or notice",
-    icon: "bulb-outline",
-    template: "> **Tip:** Here is an actionable tip or note for your readers.\n\n",
-  },
-  {
-    id: "divider",
-    category: "text",
-    title: "Divider",
-    description: "Horizontal separator between sections",
-    icon: "remove-outline",
-    template: "---\n\n",
-  },
+const BLOCK_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  h1: "text",
+  h2: "text-outline",
+  h3: "text-outline",
+  paragraph: "reader-outline",
+  quote: "chatbox-ellipses-outline",
+  callout: "bulb-outline",
+  divider: "remove-outline",
+  "bullet-list": "list-outline",
+  "numbered-list": "list-circle-outline",
+  checklist: "checkbox-outline",
+  "code-block": "code-slash-outline",
+  table: "grid-outline",
+  image: "image-outline",
+  link: "link-outline",
+};
 
-  // Lists & Tasks
-  {
-    id: "bullet-list",
-    category: "lists",
-    title: "Bullet List",
-    description: "Unordered list of points",
-    icon: "list-outline",
-    template: "- Key takeaway 1\n- Key takeaway 2\n- Key takeaway 3\n\n",
-  },
-  {
-    id: "numbered-list",
-    category: "lists",
-    title: "Numbered List",
-    description: "Step-by-step ordered sequence",
-    icon: "list-circle-outline",
-    template: "1. First step or phase\n2. Second step or phase\n3. Third step or phase\n\n",
-  },
-  {
-    id: "checklist",
-    category: "lists",
-    title: "Task Checklist",
-    description: "Interactive actionable items",
-    icon: "checkbox-outline",
-    template: "- [ ] Action item 1\n- [ ] Action item 2\n- [ ] Action item 3\n\n",
-  },
-
-  // Code & Technical
-  {
-    id: "code-block",
-    category: "code",
-    title: "Code Snippet",
-    description: "Formatted syntax code block",
-    icon: "code-slash-outline",
-    template: "```typescript\n// Example implementation\nexport function example() {\n  return true;\n}\n```\n\n",
-  },
-  {
-    id: "table",
-    category: "code",
-    title: "Comparison Table",
-    description: "Structured rows and columns",
-    icon: "grid-outline",
-    template: "| Feature | Platform A | Platform B |\n| :--- | :--- | :--- |\n| Support | Yes | Yes |\n| Status | Active | In Progress |\n\n",
-  },
-
-  // Media
-  {
-    id: "image",
-    category: "media",
-    title: "Inline Image",
-    description: "Embed markdown image link",
-    icon: "image-outline",
-    template: "![Image caption or description](https://example.com/image.png)\n\n",
-  },
-  {
-    id: "link",
-    category: "media",
-    title: "Web Link",
-    description: "Clickable hyperlink reference",
-    icon: "link-outline",
-    template: "[Read more here](https://your-domain.com)\n\n",
-  },
-];
-
-const CATEGORIES = [
-  { id: "all", label: "All Blocks" },
-  { id: "text", label: "Text" },
-  { id: "lists", label: "Lists" },
-  { id: "code", label: "Code & Data" },
-  { id: "media", label: "Media & Links" },
-] as const;
+const CONTENT_BLOCKS: ContentBlockDef[] = EDITOR_CONTENT_BLOCKS.map((block) => ({
+  ...block,
+  icon: BLOCK_ICONS[block.id] ?? "document-outline",
+}));
 
 interface BlockInserterSheetProps {
   visible: boolean;
@@ -175,10 +73,10 @@ export function BlockInserterSheet({
 
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Insert Content Block</Text>
-              <Text style={styles.subtitle}>Choose a block to add to your story</Text>
+              <Text style={styles.title}>{EDITOR_UI.INSERT_BLOCK_TITLE}</Text>
+              <Text style={styles.subtitle}>{EDITOR_UI.INSERT_BLOCK_SUBTITLE}</Text>
             </View>
-            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close block menu">
+            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel={EDITOR_A11Y.CLOSE_BLOCK_MENU}>
               <Ionicons name="close" size={24} color={colors.foreground} />
             </Pressable>
           </View>
@@ -196,8 +94,8 @@ export function BlockInserterSheet({
                 <Ionicons name="sparkles" size={18} color="#FFFFFF" />
               </View>
               <View style={styles.aiShortcutCopy}>
-                <Text style={styles.aiShortcutTitle}>Generate AI Image / Cover</Text>
-                <Text style={styles.aiShortcutSub}>Create stunning art with Gemini AI</Text>
+                <Text style={styles.aiShortcutTitle}>{EDITOR_UI.AI_IMAGE_SHORTCUT_TITLE}</Text>
+                <Text style={styles.aiShortcutSub}>{EDITOR_UI.AI_IMAGE_SHORTCUT_SUB}</Text>
               </View>
               <Ionicons name="arrow-forward" size={18} color={colors.primary} />
             </Pressable>
@@ -210,7 +108,7 @@ export function BlockInserterSheet({
             style={styles.categoryScroll}
             contentContainerStyle={styles.categoryContent}
           >
-            {CATEGORIES.map((cat) => {
+            {EDITOR_BLOCK_CATEGORIES.map((cat) => {
               const active = selectedCategory === cat.id;
               return (
                 <Pressable

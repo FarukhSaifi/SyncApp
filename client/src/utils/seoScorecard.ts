@@ -60,17 +60,20 @@ function hasTroubleshootingSection(content: string): boolean {
 function hasDiscussionQuestion(content: string): boolean {
   if (!content) return false;
   if (/(^|\n)#+\s*discussion/i.test(content)) return true;
-  const tail = content.trim().slice(-600);
+  const tail = content.trim().slice(-SEO_THRESHOLDS.DISCUSSION_TAIL_CHARS);
   return /\?\s*$/.test(tail) || /\?\s*\n/.test(tail);
 }
 
 function hasDirectAnswerBlock(content: string): boolean {
   if (!content) return false;
-  const intro = content.trim().slice(0, 1200);
+  const intro = content.trim().slice(0, SEO_THRESHOLDS.DIRECT_ANSWER_INTRO_CHARS);
   const firstH2 = intro.search(/\n##\s+/);
-  const beforeFirstSection = firstH2 > 0 ? intro.slice(0, firstH2) : intro.slice(0, 600);
-  const sentences = beforeFirstSection.split(/[.!?]+/).filter((s) => s.trim().length > 20);
-  return sentences.length >= 2;
+  const beforeFirstSection =
+    firstH2 > 0 ? intro.slice(0, firstH2) : intro.slice(0, SEO_THRESHOLDS.DIRECT_ANSWER_BEFORE_H2_FALLBACK_CHARS);
+  const sentences = beforeFirstSection
+    .split(/[.!?]+/)
+    .filter((s) => s.trim().length > SEO_THRESHOLDS.DIRECT_ANSWER_MIN_SENTENCE_CHARS);
+  return sentences.length >= SEO_THRESHOLDS.DIRECT_ANSWER_MIN_SENTENCES;
 }
 
 function isPublicCoverUrl(cover: string): boolean {
@@ -294,7 +297,9 @@ export function getDevtoPublishWarnings(post: Partial<Post>): string[] {
   else if (!isPublicCoverUrl(cover)) warnings.push(DEVTO_PUBLISH_WARNINGS.COVER_NOT_PUBLIC);
   if (tags.length !== TAG_COUNT_IDEAL) warnings.push(DEVTO_PUBLISH_WARNINGS.FEW_TAGS);
   if (!hasDiscussionQuestion(post.content_markdown || "")) warnings.push(DEVTO_PUBLISH_WARNINGS.NO_DISCUSSION);
-  if (scorecard.score < 60) warnings.push(DEVTO_PUBLISH_WARNINGS.LOW_SEO(scorecard.score));
+  if (scorecard.score < SEO_THRESHOLDS.PUBLISH_WARNING_SCORE_MIN) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.LOW_SEO(scorecard.score));
+  }
 
   return warnings;
 }

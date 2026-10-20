@@ -7,8 +7,15 @@ import { Button } from "@components/Button";
 import { Card } from "@components/Card";
 import { ROUTES } from "@constants";
 import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
-import { LABELS } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, type PlatformSlug } from "@constants/platforms";
+import {
+  EDITOR_PLATFORM_SUMMARIES,
+  EDITOR_UI,
+  LABELS,
+  PLACEHOLDERS,
+  editorLinkedInCharCount,
+  editorMockupPlatformsAppearance,
+} from "@constants/messages";
+import { PLATFORM_BRAND_COLORS, PLATFORM_DISPLAY_NAMES, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { EditorForm, Post } from "@types";
 
@@ -27,29 +34,22 @@ interface ChannelsTabProps {
   publishing: boolean;
 }
 
-const PLATFORM_THEMES: Record<
-  PlatformSlug,
-  { brandColor: string; icon: keyof typeof Ionicons.glyphMap; summary: string }
-> = {
+const PLATFORM_THEMES: Record<PlatformSlug, { brandColor: string; icon: keyof typeof Ionicons.glyphMap }> = {
   medium: {
-    brandColor: "#00AB6C",
+    brandColor: PLATFORM_BRAND_COLORS.medium,
     icon: "book-outline",
-    summary: "Long-form editorial publication format with full markdown and clean typography.",
   },
   devto: {
-    brandColor: "#0A0A0A",
+    brandColor: PLATFORM_BRAND_COLORS.devto,
     icon: "code-working-outline",
-    summary: "Developer community format with code highlighting, tags, and interactive cover banner.",
   },
   wordpress: {
-    brandColor: "#21759B",
+    brandColor: PLATFORM_BRAND_COLORS.wordpress,
     icon: "globe-outline",
-    summary: "Standard CMS blog post with category taxonomy, slug, and featured media.",
   },
   linkedin: {
-    brandColor: "#0A66C2",
+    brandColor: PLATFORM_BRAND_COLORS.linkedin,
     icon: "logo-linkedin",
-    summary: "Executive social feed post with professional hook, hashtags, and call to action.",
   },
 };
 
@@ -82,18 +82,16 @@ export function ChannelsTab({
     <View style={styles.container}>
       {/* Intro section */}
       <View style={styles.introHeader}>
-        <Text style={styles.sectionTitle}>Publishing Channels</Text>
+        <Text style={styles.sectionTitle}>{EDITOR_UI.PUBLISHING_CHANNELS}</Text>
         <Text style={styles.sectionSubtitle}>
-          {availablePlatforms.length > 0
-            ? "Your authenticated publishing channels ready for distribution."
-            : "No active publishing channels found. Connect channels in Settings to publish."}
+          {availablePlatforms.length > 0 ? EDITOR_UI.CHANNELS_READY_SUB : EDITOR_UI.CHANNELS_NONE_SUB}
         </Text>
       </View>
 
       {/* Loading state */}
       {loadingPlatforms ? (
         <Card style={styles.stateCard}>
-          <Text style={styles.stateCardText}>Checking connected channels...</Text>
+          <Text style={styles.stateCardText}>{EDITOR_UI.CHECKING_CONNECTED_CHANNELS}</Text>
         </Card>
       ) : null}
 
@@ -103,15 +101,12 @@ export function ChannelsTab({
           <View style={styles.emptyIconCircle}>
             <Ionicons name="link-outline" size={28} color={colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>No Channels Connected</Text>
-          <Text style={styles.emptySubtitle}>
-            Connect your accounts (Medium, DEV.to, WordPress, or LinkedIn) with API keys in Settings to enable one-click
-            publishing.
-          </Text>
+          <Text style={styles.emptyTitle}>{EDITOR_UI.NO_CHANNELS_CONNECTED_TITLE}</Text>
+          <Text style={styles.emptySubtitle}>{EDITOR_UI.NO_CHANNELS_CONNECTED_SUB}</Text>
           <Button
-            title="Connect Channels in Settings"
+            title={EDITOR_UI.CONNECT_CHANNELS_IN_SETTINGS}
             variant={BUTTON_VARIANTS.PRIMARY}
-            onPress={() => router.push(ROUTES.SETTINGS as any)}
+            onPress={() => router.push(ROUTES.SETTINGS)}
             style={styles.emptyBtn}
           />
         </Card>
@@ -158,18 +153,20 @@ export function ChannelsTab({
                         <Text
                           style={[
                             styles.statusPillText,
-                            isPublished || isChannelReady
-                              ? styles.statusPillTextReady
-                              : styles.statusPillTextAttention,
+                            isPublished || isChannelReady ? styles.statusPillTextReady : styles.statusPillTextAttention,
                           ]}
                         >
-                          {isPublished ? LABELS.PUBLISHED : isChannelReady ? "Ready" : "Needs Content"}
+                          {isPublished
+                            ? LABELS.PUBLISHED
+                            : isChannelReady
+                              ? LABELS.CHANNEL_READY
+                              : LABELS.CHANNEL_NEEDS_CONTENT}
                         </Text>
                       </View>
                     </View>
 
                     <Text style={styles.platformSummary} numberOfLines={2}>
-                      {theme.summary}
+                      {EDITOR_PLATFORM_SUMMARIES[platform]}
                     </Text>
                   </View>
 
@@ -204,13 +201,13 @@ export function ChannelsTab({
                 <Ionicons name="logo-linkedin" size={18} color="#0A66C2" />
               </View>
               <View>
-                <Text style={styles.cardHeading}>LinkedIn Post Adaptation</Text>
-                <Text style={styles.cardSub}>Optimized summary tailored for your professional network</Text>
+                <Text style={styles.cardHeading}>{EDITOR_UI.LINKEDIN_ADAPTATION_TITLE}</Text>
+                <Text style={styles.cardSub}>{EDITOR_UI.LINKEDIN_ADAPTATION_SUB}</Text>
               </View>
             </View>
 
             <Button
-              title="AI Summarize"
+              title={LABELS.AI_SUMMARIZE}
               variant={BUTTON_VARIANTS.OUTLINE}
               size="sm"
               onPress={() => void generateLinkedInSummary()}
@@ -223,16 +220,16 @@ export function ChannelsTab({
             value={form.linkedin_post}
             onChangeText={(val) => updateField("linkedin_post", val)}
             multiline
-            placeholder="Craft your LinkedIn hook, key takeaways, and hashtags..."
+            placeholder={PLACEHOLDERS.EDITOR_LINKEDIN_POST}
             placeholderTextColor={colors.mutedForeground}
             textAlignVertical="top"
           />
 
           <View style={styles.linkedinFooter}>
             <Text style={[styles.counterText, linkedinCharCount > 1300 && styles.counterOverlimit]}>
-              {linkedinCharCount} / 1300 characters
+              {editorLinkedInCharCount(linkedinCharCount)}
             </Text>
-            <Text style={styles.hintText}>Recommended: 600 - 1000 characters</Text>
+            <Text style={styles.hintText}>{EDITOR_UI.LINKEDIN_CHAR_RECOMMENDED}</Text>
           </View>
         </Card>
       ) : null}
@@ -240,11 +237,11 @@ export function ChannelsTab({
       {/* Live Preview Mockup Card */}
       {availablePlatforms.length > 0 ? (
         <Card style={styles.mockupCard}>
-          <Text style={styles.mockupHeading}>LIVE CHANNEL MOCKUP</Text>
+          <Text style={styles.mockupHeading}>{EDITOR_UI.LIVE_CHANNEL_MOCKUP}</Text>
           <Text style={styles.mockupSub}>
             {connectedPlatforms.includes(platforms.LINKEDIN)
-              ? "Simulated LinkedIn feed appearance"
-              : `Simulated ${availablePlatforms.map((p) => PLATFORM_DISPLAY_NAMES[p]).join(", ")} appearance`}
+              ? EDITOR_UI.MOCKUP_LINKEDIN
+              : editorMockupPlatformsAppearance(availablePlatforms.map((p) => PLATFORM_DISPLAY_NAMES[p]).join(", "))}
           </Text>
 
           <View style={styles.feedPostMock}>
@@ -253,19 +250,19 @@ export function ChannelsTab({
                 <Ionicons name="person" size={16} color={colors.primary} />
               </View>
               <View>
-                <Text style={styles.feedAuthorName}>You</Text>
-                <Text style={styles.feedTime}>Just now • Public</Text>
+                <Text style={styles.feedAuthorName}>{EDITOR_UI.MOCKUP_FEED_AUTHOR}</Text>
+                <Text style={styles.feedTime}>{EDITOR_UI.MOCKUP_FEED_TIME}</Text>
               </View>
             </View>
 
             <Text style={styles.feedTitle} numberOfLines={2}>
-              {form.title || "Your story headline"}
+              {form.title || EDITOR_UI.MOCKUP_HEADLINE_FALLBACK}
             </Text>
 
             <Text style={styles.feedSnippet} numberOfLines={3}>
               {connectedPlatforms.includes(platforms.LINKEDIN) && form.linkedin_post
                 ? form.linkedin_post
-                : form.content_markdown.slice(0, 180) || "Your story content excerpt will appear here."}
+                : form.content_markdown.slice(0, 180) || EDITOR_UI.MOCKUP_EXCERPT_FALLBACK}
             </Text>
 
             {form.cover_image ? (

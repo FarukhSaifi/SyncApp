@@ -1,7 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-import { API_PATHS, APP_CONFIG, COLOR_CLASSES, EXTERNAL_LINKS, PLATFORMS, SYNC_LABEL, TOAST_TITLES } from "@constants";
+import {
+  API_PATHS,
+  APP_CONFIG,
+  COLOR_CLASSES,
+  EXTERNAL_LINKS,
+  LINKEDIN_OAUTH_CALLBACK_FALLBACK,
+  LINKEDIN_OAUTH_QUERY,
+  PLATFORMS,
+  SYNC_LABEL,
+  TOAST_TITLES,
+  URL_SCHEME_PREFIXES,
+} from "@constants";
 import { useToast } from "@hooks/useToast";
 import type { ApiCredential, ApiResponse, SavedState } from "@types";
 import { apiClient } from "@utils/apiClient";
@@ -38,7 +49,8 @@ const Settings = () => {
   const [showDevtoKey, setShowDevtoKey] = useState<boolean>(false);
   const [showWordpressKey, setShowWordpressKey] = useState<boolean>(false);
   const [linkedinConnecting, setLinkedinConnecting] = useState(false);
-  const [linkedinRedirectUri, setLinkedinRedirectUri] = useState("http://localhost:9000/api/linkedin/oauth/callback");
+  const [linkedinTokenExpired, setLinkedinTokenExpired] = useState(false);
+  const [linkedinRedirectUri, setLinkedinRedirectUri] = useState<string>(LINKEDIN_OAUTH_CALLBACK_FALLBACK);
 
   useEffect(() => {
     const loadCredentials = async () => {
@@ -81,7 +93,8 @@ const Settings = () => {
             setWordpressApiKey("");
           }
           if (linkedin) {
-            setConnected((prev) => ({ ...prev, linkedin: Boolean(linkedin.configured ?? true) }));
+            setConnected((prev) => ({ ...prev, linkedin: Boolean(linkedin.configured) }));
+            setLinkedinTokenExpired(Boolean(linkedin.token_expired));
           }
         } else {
           devWarn((result as ApiResponse<unknown>)?.message || "No credentials found or invalid response");
@@ -95,7 +108,7 @@ const Settings = () => {
     const loadLinkedInOAuthStatus = async () => {
       try {
         const result = await apiClient.request<ApiResponse<{ configured?: boolean; redirectUri?: string }>>(
-          `${API_PATHS.LINKEDIN}/oauth/status`,
+          API_PATHS.LINKEDIN_OAUTH_STATUS,
         );
         if (result?.success && result.data?.redirectUri) {
           setLinkedinRedirectUri(result.data.redirectUri);
@@ -110,12 +123,13 @@ const Settings = () => {
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("linkedin") === "connected") {
+      if (params.get(LINKEDIN_OAUTH_QUERY.CONNECTED_KEY) === LINKEDIN_OAUTH_QUERY.CONNECTED_VALUE) {
         setConnected((prev) => ({ ...prev, linkedin: true }));
+        setLinkedinTokenExpired(false);
         toast.success(TOAST_TITLES.SUCCESS, SYNC_LABEL.LINKEDIN_CONNECTED_SUCCESS);
         window.history.replaceState({}, "", window.location.pathname);
       }
-      const linkedinError = params.get("linkedin_error");
+      const linkedinError = params.get(LINKEDIN_OAUTH_QUERY.ERROR_KEY);
       if (linkedinError) {
         toast.apiError(decodeURIComponent(linkedinError));
         window.history.replaceState({}, "", window.location.pathname);
@@ -249,7 +263,11 @@ const Settings = () => {
       return;
     }
 
-    if (!isDisconnect && !wordpressSiteUrl.startsWith("http://") && !wordpressSiteUrl.startsWith("https://")) {
+    if (
+      !isDisconnect &&
+      !wordpressSiteUrl.startsWith(URL_SCHEME_PREFIXES.HTTP) &&
+      !wordpressSiteUrl.startsWith(URL_SCHEME_PREFIXES.HTTPS)
+    ) {
       toast.validationError(SYNC_LABEL.VALID_WORDPRESS_URL);
       return;
     }
@@ -334,6 +352,7 @@ const Settings = () => {
       const result = await apiClient.deleteCredential(PLATFORMS.LINKEDIN);
       if (result?.success) {
         setConnected((prev) => ({ ...prev, linkedin: false }));
+        setLinkedinTokenExpired(false);
         toast.credentialsRemoved(SYNC_LABEL.PLATFORM_LINKEDIN);
       } else {
         toast.credentialsRemoveError(
@@ -741,7 +760,13 @@ const Settings = () => {
           <p className="text-sm text-muted-foreground">
             {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
           </p>
-          {!connected.linkedin ? (
+          {linkedinTokenExpired ? (
+            <p className="flex items-start gap-1.5 text-[11px] text-warning">
+              <FiAlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+              {SYNC_LABEL.LINKEDIN_TOKEN_EXPIRED_HINT}
+            </p>
+          ) : null}
+          {!connected.linkedin && !linkedinTokenExpired ? (
             <p className="text-[11px] text-muted-foreground">{SYNC_LABEL.LINKEDIN_OAUTH_BROWSER_HINT}</p>
           ) : null}
         </CardContent>

@@ -17,6 +17,12 @@ export const PLATFORM_TAG_LIMITS = Object.freeze({
     IDEAL: 5,
     MAX: 5,
   }),
+  /** SEO topical tags when optimizing for Google Search (no publish API cap). */
+  GOOGLE: Object.freeze({
+    MIN: 3,
+    IDEAL: 5,
+    MAX: 8,
+  }),
 } as const);
 
 export type PlatformTagLimitKey = keyof typeof PLATFORM_TAG_LIMITS;

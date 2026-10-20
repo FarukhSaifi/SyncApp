@@ -1,5 +1,5 @@
 
-import { ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES, resolveTempPassword } from "@constants";
+import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES, resolveTempPassword } from "@constants";
 import Credential from "@models/Credential";
 import Post from "@models/Post";
 import User from "@models/User";
@@ -13,7 +13,12 @@ import { USER_ROLES, VALID_USER_ROLES } from "@constants/userRoles";
 /**
  * Get all users with pagination and filtering
  */
-export async function getUsers({ page = 1, limit = 20, search = "", role = "" }: GetUsersParams = {}) {
+export async function getUsers({
+  page = DEFAULT_VALUES.DEFAULT_PAGE,
+  limit = DEFAULT_VALUES.DEFAULT_PAGE_SIZE,
+  search = "",
+  role = "",
+}: GetUsersParams = {}) {
   const pageNum = Number(page);
   const limitNum = Number(limit);
   const skip = (pageNum - 1) * limitNum;

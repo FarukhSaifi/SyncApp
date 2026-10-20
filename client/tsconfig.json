@@ -16,11 +16,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
+    ],
+    "typeRoots": [
+      "../node_modules/@types"
     ],
     "types": [
       "node",

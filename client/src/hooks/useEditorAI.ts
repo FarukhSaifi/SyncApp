@@ -2,13 +2,15 @@
  * useEditorAI — AI assistant state and handlers for the editor.
  * Extracted from the monolithic Editor.tsx to keep concerns separated.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
 import type {
   AiImageSource,
   AiLoadingKey,
   GeneratedPostData,
+  GeneratePostResearchContext,
+  KeywordResearchItem,
   UseEditorAIOptions,
   UseEditorAIReturn,
 } from "@types";
@@ -87,6 +89,9 @@ export function useEditorAI({
 }: UseEditorAIOptions): UseEditorAIReturn {
   const toast = useToast();
   const [aiKeyword, setAiKeyword] = useState<string>("");
+  const [researchContext, setResearchContext] = useState<GeneratePostResearchContext | null>(null);
+  /** Locked keyword from research pick; cleared when the user edits away from it. */
+  const selectedResearchKeywordRef = useRef<string | null>(null);
   const [aiModel, setAiModel] = useState<string>(() => readStoredAiModel());
   const [targetPlatforms, setTargetPlatforms] = useState<string[]>(() => readStoredOptimizationTargets());
   const [aiImagePrompt, setAiImagePrompt] = useState<string>("");
@@ -99,6 +104,30 @@ export function useEditorAI({
   const [linkedinMissingCanonical, setLinkedinMissingCanonical] = useState<boolean>(false);
 
   const linkedinReadMoreUrl = linkedinPost ? extractLinkedInReadMoreUrl(linkedinPost) : null;
+
+  /** Clear monetization context when the keyword no longer matches the researched pick. */
+  const handleSetAiKeyword = useCallback((value: string) => {
+    setAiKeyword(value);
+    const locked = selectedResearchKeywordRef.current;
+    if (locked && value.trim().toLowerCase() !== locked.trim().toLowerCase()) {
+      setResearchContext(null);
+      selectedResearchKeywordRef.current = null;
+    }
+  }, []);
+
+  const clearResearchContext = useCallback(() => {
+    setResearchContext(null);
+    selectedResearchKeywordRef.current = null;
+  }, []);
+
+  const applyResearchPick = useCallback((item: KeywordResearchItem) => {
+    selectedResearchKeywordRef.current = item.keyword;
+    setResearchContext({
+      monetizationAngle: item.monetizationAngle,
+      intentLabel: item.intentLabel,
+    });
+    setAiKeyword(item.keyword);
+  }, []);
 
   useEffect(() => {
     if (!linkedinPost || !preferredReadMoreUrl) {
@@ -153,6 +182,14 @@ export function useEditorAI({
       const response = await apiClient.aiGenerate(keyword, {
         model: aiModel,
         targetPlatforms,
+        ...(researchContext
+          ? {
+              researchContext: {
+                monetizationAngle: researchContext.monetizationAngle,
+                intentLabel: researchContext.intentLabel,
+              },
+            }
+          : {}),
       });
       if (response?.success && response.data) {
         const data = parseAIResponse(response.data as GeneratedPostData);
@@ -191,7 +228,16 @@ export function useEditorAI({
     } finally {
       setAiLoading(AI_LOADING["IDLE"]);
     }
-  }, [aiKeyword, aiModel, clearLinkedInPost, onDraftGenerated, preferredReadMoreUrl, targetPlatforms, toast]);
+  }, [
+    aiKeyword,
+    aiModel,
+    clearLinkedInPost,
+    onDraftGenerated,
+    preferredReadMoreUrl,
+    researchContext,
+    targetPlatforms,
+    toast,
+  ]);
 
   const handleGenerateLinkedInSummary = useCallback(async () => {
     const { title, content } = getArticleContext();
@@ -348,7 +394,7 @@ export function useEditorAI({
 
   return {
     aiKeyword,
-    setAiKeyword,
+    setAiKeyword: handleSetAiKeyword,
     aiModel,
     setAiModel: handleSetAiModel,
     aiModels: [...AI_CONTENT_MODELS],
@@ -364,6 +410,9 @@ export function useEditorAI({
     linkedinPost,
     linkedinReadMoreUrl,
     linkedinMissingCanonical,
+    researchContext,
+    applyResearchPick,
+    clearResearchContext,
     handleGeneratePost,
     handleGenerateLinkedInSummary,
     handleGenerateImage,

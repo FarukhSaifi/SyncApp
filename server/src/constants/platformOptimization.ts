@@ -1,13 +1,17 @@
 /**
- * Platform-specific AI optimization targets (Phase 1: DEV.to + LinkedIn).
+ * Platform-specific AI optimization targets (DEV.to, LinkedIn, Google Search SEO).
  * LinkedIn: short summary + Read more URL; OAuth publish posts that summary.
+ * Google: SERP / long-tail SEO structure (not a SyncApp publish destination).
  */
+import type { GeneratePostResearchContext } from "@types";
+
 import { AI_POST_LIMITS, AI_PROMPTS } from "./ai";
 import { PLATFORM_TAG_LIMITS } from "./platformTags";
 
 export const AI_OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",
   LINKEDIN: "linkedin",
+  GOOGLE: "google",
 } as const);
 
 export type OptimizationTarget = (typeof AI_OPTIMIZATION_TARGETS)[keyof typeof AI_OPTIMIZATION_TARGETS];
@@ -19,6 +23,7 @@ export const DEFAULT_OPTIMIZATION_TARGETS: OptimizationTarget[] = [AI_OPTIMIZATI
 export const OPTIMIZATION_TARGET_LABELS: Record<OptimizationTarget, string> = {
   devto: "DEV.to",
   linkedin: "LinkedIn",
+  google: "Google",
 };
 
 function normalizeTargets(targets?: string[]): OptimizationTarget[] {
@@ -52,18 +57,24 @@ export function includesDevtoTarget(targets?: string[]): boolean {
   return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS["DEVTO"]);
 }
 
+export function includesGoogleTarget(targets?: string[]): boolean {
+  return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS["GOOGLE"]);
+}
+
 /**
  * Article `tags` JSON / post.tags limit for AI generation.
- * DEV.to-involved → 4 (API hard max). LinkedIn-only → 5 (editor + hashtag source).
+ * DEV.to-involved → 4 (API hard max). LinkedIn (no DEV.to) → 5. Google-only → SEO topical tags.
  */
 export function resolveArticleTagLimit(targets?: string[]): number {
   const resolved = normalizeTargets(targets);
-  const hasDevto = resolved.includes(AI_OPTIMIZATION_TARGETS["DEVTO"]);
-  if (hasDevto) {
+  if (resolved.includes(AI_OPTIMIZATION_TARGETS["DEVTO"])) {
     return PLATFORM_TAG_LIMITS["DEVTO"]["MAX"];
   }
   if (resolved.includes(AI_OPTIMIZATION_TARGETS["LINKEDIN"])) {
     return PLATFORM_TAG_LIMITS["LINKEDIN"]["MAX"];
+  }
+  if (resolved.includes(AI_OPTIMIZATION_TARGETS["GOOGLE"])) {
+    return PLATFORM_TAG_LIMITS["GOOGLE"]["IDEAL"];
   }
   return PLATFORM_TAG_LIMITS["DEVTO"]["MAX"];
 }
@@ -93,6 +104,15 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
   - Do NOT invent a domain. Do NOT include a "Read more:" URL — the server inserts the real link before the hashtags.
 - When LinkedIn is the only target, tags JSON field: exactly ${PLATFORM_TAG_LIMITS["LINKEDIN"]["IDEAL"]} lowercase topic tags without # (source for editor + hashtags).
 - When DEV.to is also a target, tags JSON field stays at ${PLATFORM_TAG_LIMITS["DEVTO"]["IDEAL"]} DEV.to tags (no #); LinkedIn hashtags live only in linkedin_post.`,
+
+  google: `### Google Search SEO Optimization
+- Optimize content_markdown to rank for the primary long-tail query and closely related intents.
+- Title 30–60 chars with the primary keyword near the front; meta_description 120–150 chars with a clear CTR promise (no clickbait).
+- Structure for SERPs: one H1-equivalent title, scannable ##/### headings that mirror search intents, early answer / featured-snippet box (35–50 words under the first H2).
+- Natural keyword density — no stuffing. Cover people-also-ask angles with concrete steps, code, and definitions.
+- Prefer E-E-A-T: experience cues, accurate commands/versions, honest caveats.
+- tags JSON: topical SEO keywords (lowercase, no #) that match the query cluster — count is set per request tag limit.
+- Google is an SEO target only (not a SyncApp publish destination). Do not invent Search Console or Analytics claims.`,
 };
 
 const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (dual output — CRITICAL)
@@ -104,7 +124,10 @@ const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (dual output — CRITI
 - Open the full article with a strong hook; LinkedIn teaser has its own emoji-assisted hook.
 - tags JSON field: exactly ${PLATFORM_TAG_LIMITS["DEVTO"]["IDEAL"]} lowercase DEV.to tags (no #) — API max ${PLATFORM_TAG_LIMITS["DEVTO"]["MAX"]}.`;
 
-export function buildFullPostSystemPrompt(targets?: string[]): string {
+export function buildFullPostSystemPrompt(
+  targets?: string[],
+  researchContext?: GeneratePostResearchContext,
+): string {
   const resolved = normalizeTargets(targets);
   const tagLimit = resolveArticleTagLimit(resolved);
   const platformBlocks = resolved.map((t) => PLATFORM_OPTIMIZATION_RULES[t]).join("\n\n");
@@ -116,19 +139,33 @@ export function buildFullPostSystemPrompt(targets?: string[]): string {
   const tagRuleOverride = `\n\n### Tag count for this request
 - tags JSON array must contain exactly ${tagLimit} lowercase strings without #.`;
 
-  return `${AI_PROMPTS.FULL_POST_SYSTEM_BASE}\n\n${platformBlocks}${blended}${tagRuleOverride}`;
+  const angle = researchContext?.monetizationAngle?.trim();
+  const intent = researchContext?.intentLabel?.trim();
+  const monetizationBlock =
+    angle && intent ? `\n\n${AI_PROMPTS.MONETIZATION_RESEARCH_SYSTEM(angle, intent)}` : "";
+
+  return `${AI_PROMPTS.FULL_POST_SYSTEM_BASE}\n\n${platformBlocks}${blended}${tagRuleOverride}${monetizationBlock}`;
 }
 
 export function buildFullPostUserPrompt(
   keyword: string,
   targets?: string[],
-  options?: { readMoreUrl?: string },
+  options?: {
+    readMoreUrl?: string;
+    researchContext?: GeneratePostResearchContext;
+  },
 ): string {
   const resolved = normalizeTargets(targets);
   const platformLabels = resolved.map((t) => OPTIMIZATION_TARGET_LABELS[t]).join(" and ");
   const tagLimit = resolveArticleTagLimit(resolved);
   let prompt = `${AI_PROMPTS.FULL_POST_USER(keyword)}\n\nOptimize this draft primarily for: ${platformLabels}.
 Use exactly ${tagLimit} tags in the JSON tags array.`;
+
+  const angle = options?.researchContext?.monetizationAngle?.trim();
+  const intent = options?.researchContext?.intentLabel?.trim();
+  if (angle && intent) {
+    prompt += `\n\nWrite this draft for ${intent} search intent with monetization angle: ${angle}.`;
+  }
 
   if (resolved.includes(AI_OPTIMIZATION_TARGETS["LINKEDIN"])) {
     const hashtagCount = resolveLinkedInHashtagLimit();
@@ -138,6 +175,10 @@ Use exactly ${tagLimit} tags in the JSON tags array.`;
     } else {
       prompt += ` No public blog base URL is configured yet — write linkedin_post without any URL.`;
     }
+  }
+
+  if (resolved.includes(AI_OPTIMIZATION_TARGETS["GOOGLE"])) {
+    prompt += `\n\nGoogle: prioritize SERP-ready structure for the primary query — snippet answer under the first H2, intent-matched headings, and natural keyword placement in title/meta/H2s.`;
   }
 
   return prompt;

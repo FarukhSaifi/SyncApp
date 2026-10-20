@@ -5,6 +5,13 @@ import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "rea
 
 import { Button } from "@components/Button";
 import { RADIUS } from "@constants/designTokens";
+import {
+  EDITOR_A11Y,
+  EDITOR_UI,
+  editorPublishCtaTitle,
+  editorReviewStoryMeta,
+  editorScheduledFor,
+} from "@constants/messages";
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { EditorForm, EditorReadiness } from "@types";
@@ -52,10 +59,10 @@ export function ReviewPublishSheet({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.sheetTitle}>Review & Publish</Text>
-              <Text style={styles.sheetSubtitle}>Final pre-flight check before distribution</Text>
+              <Text style={styles.sheetTitle}>{EDITOR_UI.REVIEW_SHEET_TITLE}</Text>
+              <Text style={styles.sheetSubtitle}>{EDITOR_UI.REVIEW_SHEET_SUBTITLE}</Text>
             </View>
-            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close review sheet">
+            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel={EDITOR_A11Y.CLOSE_REVIEW_SHEET}>
               <Ionicons name="close" size={24} color={colors.foreground} />
             </Pressable>
           </View>
@@ -68,19 +75,21 @@ export function ReviewPublishSheet({
               ) : null}
               <View style={styles.storyCopy}>
                 <Text style={styles.storyHeadline} numberOfLines={2}>
-                  {form.title || "Untitled story"}
+                  {form.title || EDITOR_UI.UNTITLED_STORY}
                 </Text>
                 <Text style={styles.storyMeta}>
-                  {form.content_markdown.trim().split(/\s+/).filter(Boolean).length} words •{" "}
-                  {form.scheduled_for
-                    ? `Scheduled for ${dayjs(form.scheduled_for).format("MMM D, h:mm A")}`
-                    : "Instant distribution"}
+                  {editorReviewStoryMeta(
+                    form.content_markdown.trim().split(/\s+/).filter(Boolean).length,
+                    form.scheduled_for
+                      ? editorScheduledFor(dayjs(form.scheduled_for).format("MMM D, h:mm A"))
+                      : EDITOR_UI.INSTANT_DISTRIBUTION,
+                  )}
                 </Text>
               </View>
             </View>
 
             {/* Readiness Checklist */}
-            <Text style={styles.sectionLabel}>PRE-FLIGHT READINESS CHECKLIST</Text>
+            <Text style={styles.sectionLabel}>{EDITOR_UI.PREFLIGHT_CHECKLIST}</Text>
             <View style={styles.checklistCard}>
               {readiness.items.map((item) => {
                 const isItemReady = item.tone === "ready";
@@ -101,13 +110,11 @@ export function ReviewPublishSheet({
             </View>
 
             {/* Target Channels */}
-            <Text style={styles.sectionLabel}>TARGET CHANNELS ({channelCount})</Text>
+            <Text style={styles.sectionLabel}>{EDITOR_UI.TARGET_CHANNELS(channelCount)}</Text>
             {availableTargetPlatforms.length === 0 ? (
               <View style={styles.noChannelsWarning}>
                 <Ionicons name="warning-outline" size={20} color={colors.warning} />
-                <Text style={styles.noChannelsWarningText}>
-                  No publishing channels connected. Add your credentials in Settings to publish.
-                </Text>
+                <Text style={styles.noChannelsWarningText}>{EDITOR_UI.NO_CHANNELS_REVIEW_WARNING}</Text>
               </View>
             ) : (
               <View style={styles.channelsCard}>
@@ -118,7 +125,9 @@ export function ReviewPublishSheet({
                     <Pressable key={platform} style={styles.channelRow} onPress={() => togglePlatform(platform)}>
                       <View style={styles.channelInfo}>
                         <Text style={styles.channelName}>{name}</Text>
-                        <Text style={styles.channelSub}>{selected ? "Will publish" : "Skipped"}</Text>
+                        <Text style={styles.channelSub}>
+                          {selected ? EDITOR_UI.CHANNEL_WILL_PUBLISH : EDITOR_UI.CHANNEL_SKIPPED}
+                        </Text>
                       </View>
                       <Ionicons
                         name={selected ? "checkbox" : "square-outline"}
@@ -134,20 +143,14 @@ export function ReviewPublishSheet({
             {/* Notice */}
             <View style={styles.noticeBox}>
               <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
-              <Text style={styles.noticeText}>
-                Your draft is automatically saved before broadcasting to all selected destinations.
-              </Text>
+              <Text style={styles.noticeText}>{EDITOR_UI.REVIEW_AUTO_SAVE_NOTICE}</Text>
             </View>
           </ScrollView>
 
           {/* Explicit Publish CTA */}
           <View style={styles.footer}>
             <Button
-              title={
-                form.scheduled_for
-                  ? `Confirm Schedule to ${channelCount} Channel${channelCount === 1 ? "" : "s"}`
-                  : `Publish to ${channelCount} Channel${channelCount === 1 ? "" : "s"} Now`
-              }
+              title={editorPublishCtaTitle(Boolean(form.scheduled_for), channelCount)}
               onPress={onPublish}
               loading={publishing}
               disabled={!isReady || publishing}

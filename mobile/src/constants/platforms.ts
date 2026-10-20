@@ -18,6 +18,7 @@ export const PLATFORM_DISPLAY_NAMES: Record<PlatformSlug, string> = Object.freez
 export const OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",
   LINKEDIN: "linkedin",
+  GOOGLE: "google",
 } as const);
 
 export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTIMIZATION_TARGETS];
@@ -25,3 +26,11 @@ export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTI
 export const VALID_OPTIMIZATION_TARGETS = Object.freeze(Object.values(OPTIMIZATION_TARGETS)) as OptimizationTarget[];
 
 export const DEFAULT_OPTIMIZATION_TARGETS: OptimizationTarget[] = [OPTIMIZATION_TARGETS.DEVTO];
+
+/** Brand accent colors for channel cards (official platform hues). */
+export const PLATFORM_BRAND_COLORS = Object.freeze({
+  [PLATFORMS.MEDIUM]: "#00AB6C",
+  [PLATFORMS.DEVTO]: "#0A0A0A",
+  [PLATFORMS.WORDPRESS]: "#21759B",
+  [PLATFORMS.LINKEDIN]: "#0A66C2",
+} as const);

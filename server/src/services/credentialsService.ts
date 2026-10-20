@@ -26,9 +26,16 @@ function sanitizeCredentialForClient(credential: Record<string, unknown>): Recor
   const platformName = credential.platform_name;
 
   if (platformName === PLATFORMS["LINKEDIN"]) {
+    const hasToken = Boolean(credential.encrypted_payload || credential.api_key);
+    const hasRefresh = Boolean(credential.refresh_token);
+    const expiresAtRaw = credential.token_expires_at;
+    const expiresAt = expiresAtRaw ? new Date(expiresAtRaw as string | Date).getTime() : NaN;
+    const tokenExpired = Number.isFinite(expiresAt) && expiresAt < Date.now();
+
     delete credential.api_key;
     delete credential.encrypted_payload;
     delete credential.refresh_token;
+
     let personUrn: unknown;
     if (credential.platform_config && typeof credential.platform_config === "object") {
       const cfg = { ...(credential.platform_config as Record<string, unknown>) };
@@ -37,7 +44,13 @@ function sanitizeCredentialForClient(credential: Record<string, unknown>): Recor
         linkedin_person_urn: personUrn,
       };
     }
-    credential.configured = Boolean(personUrn) || Boolean(credential.is_active);
+
+    // Usable only with member URN + stored token, and either still valid or refreshable.
+    const canRefresh = hasRefresh;
+    credential.configured = Boolean(personUrn) && hasToken && (!tokenExpired || canRefresh);
+    if (tokenExpired && !canRefresh) {
+      credential.token_expired = true;
+    }
     return credential;
   }
 

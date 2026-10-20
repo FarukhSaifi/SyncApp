@@ -35,6 +35,29 @@ export const API_URLS = {
     UGC_POSTS_URL: "https://api.linkedin.com/v2/ugcPosts",
     /** Space-delimited; OpenID Connect + member share. Must match enabled LinkedIn products. */
     SCOPES: "openid profile email w_member_social",
+    PERSON_URN_PREFIX: "urn:li:person:",
+    RESTLI_PROTOCOL_VERSION: "2.0.0",
+    RESTLI_PROTOCOL_HEADER: "X-Restli-Protocol-Version",
+    OAUTH_STATE_PURPOSE: "linkedin_oauth",
+    OAUTH_STATE_JWT_EXPIRES: "10m",
+    /** Refresh a few minutes before access-token expiry. */
+    TOKEN_REFRESH_SKEW_MS: 5 * 60 * 1000,
+    OAUTH_RESPONSE_TYPE: "code",
+    OAUTH_GRANT_AUTHORIZATION_CODE: "authorization_code",
+    OAUTH_GRANT_REFRESH_TOKEN: "refresh_token",
+    UGC: {
+      LIFECYCLE_PUBLISHED: "PUBLISHED",
+      SHARE_CONTENT_TYPE: "com.linkedin.ugc.ShareContent",
+      MEMBER_NETWORK_VISIBILITY: "com.linkedin.ugc.MemberNetworkVisibility",
+      VISIBILITY_PUBLIC: "PUBLIC",
+      MEDIA_CATEGORY_NONE: "NONE",
+    },
+    /** Query params on client Settings redirect after OAuth. */
+    SETTINGS_QUERY: {
+      CONNECTED_KEY: "linkedin",
+      CONNECTED_VALUE: "connected",
+      ERROR_KEY: "linkedin_error",
+    },
     FEED_UPDATE_URL: (urn: string) => `https://www.linkedin.com/feed/update/${encodeURIComponent(urn)}`,
   },
 } as const;

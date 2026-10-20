@@ -12,7 +12,13 @@ import { BlockInserterSheet } from "@components/editor/BlockInserterSheet";
 import { FormattingAccessoryBar } from "@components/editor/FormattingAccessoryBar";
 import { VisualBlockPreview } from "@components/editor/VisualBlockPreview";
 import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
-import { ERRORS, LABELS } from "@constants/messages";
+import {
+  EDITOR_UI,
+  ERRORS,
+  LABELS,
+  PLACEHOLDERS,
+  editorBodyMetrics,
+} from "@constants/messages";
 import type { OptimizationTarget } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
@@ -56,7 +62,11 @@ export function WriteTab({
   };
 
   // Format inline or wrap text
-  const handleFormat = (prefix: string, suffix: string = "", defaultText: string = "text") => {
+  const handleFormat = (
+    prefix: string,
+    suffix: string = "",
+    defaultText: string = EDITOR_UI.FORMAT_DEFAULT_TEXT,
+  ) => {
     const current = form.content_markdown;
     const addition = `${prefix}${defaultText}${suffix}`;
     const updated = current.trim() ? `${current}\n\n${addition}` : addition;
@@ -115,7 +125,9 @@ export function WriteTab({
             size={16}
             color={viewMode === "canvas" ? colors.primary : colors.mutedForeground}
           />
-          <Text style={[styles.switchText, viewMode === "canvas" && styles.switchTextActive]}>Canvas Editor</Text>
+          <Text style={[styles.switchText, viewMode === "canvas" && styles.switchTextActive]}>
+            {EDITOR_UI.CANVAS_EDITOR}
+          </Text>
         </Pressable>
 
         <Pressable
@@ -128,7 +140,7 @@ export function WriteTab({
             color={viewMode === "preview" ? colors.primary : colors.mutedForeground}
           />
           <Text style={[styles.switchText, viewMode === "preview" && styles.switchTextActive]}>
-            Live Article Preview
+            {EDITOR_UI.LIVE_ARTICLE_PREVIEW}
           </Text>
         </Pressable>
       </View>
@@ -158,10 +170,10 @@ export function WriteTab({
       {/* 3. Headline Field */}
       <Card style={styles.headlineCard}>
         <Input
-          label="Headline"
+          label={LABELS.HEADLINE}
           value={form.title}
           onChangeText={(val) => updateField("title", val)}
-          placeholder="Catchy, high-impact story title..."
+          placeholder={PLACEHOLDERS.EDITOR_HEADLINE}
           style={styles.headlineInput}
           containerStyle={styles.headlineContainer}
         />
@@ -178,8 +190,8 @@ export function WriteTab({
       {viewMode === "canvas" ? (
         <Card style={styles.bodyCard}>
           <View style={styles.canvasHeader}>
-            <Text style={styles.canvasLabel}>STORY BODY</Text>
-            <Text style={styles.metricsLabel}>{wordCount} words • Markdown enabled</Text>
+            <Text style={styles.canvasLabel}>{EDITOR_UI.STORY_BODY}</Text>
+            <Text style={styles.metricsLabel}>{editorBodyMetrics(wordCount)}</Text>
           </View>
 
           <TextInput
@@ -187,7 +199,7 @@ export function WriteTab({
             value={form.content_markdown}
             onChangeText={(val) => updateField("content_markdown", val)}
             multiline
-            placeholder="Write freely, insert blocks (+ Block), or ask AI (✨ AI)..."
+            placeholder={PLACEHOLDERS.EDITOR_BODY}
             placeholderTextColor={colors.mutedForeground}
             textAlignVertical="top"
           />

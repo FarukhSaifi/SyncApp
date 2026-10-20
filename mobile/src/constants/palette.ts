@@ -100,3 +100,12 @@ export const darkColors: ThemeColors = {
   danger: "#ef4444",
   success: "#22c55e",
 };
+
+/** Fenced code-block mock colors in VisualBlockPreview (dark editor chrome). */
+export const CODE_BLOCK_PREVIEW = Object.freeze({
+  BACKGROUND: "#16181D",
+  BORDER: "#262B35",
+  HEADER_BORDER: "#333A48",
+  LANG: "#8B949E",
+  TEXT: "#E6EDF3",
+} as const);

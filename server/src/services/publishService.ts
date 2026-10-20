@@ -1,14 +1,15 @@
-
-
 import { config } from "@config";
 import {
+  AI_POST_LIMITS,
   API_URLS,
+  DEFAULT_VALUES,
   ERROR_MESSAGES,
   FIELDS,
   HTTP,
   PLATFORM_CONFIG,
   PLATFORMS,
   POST_STATUS,
+  REGEX_PATTERNS,
   SUCCESS_MESSAGES,
 } from "@constants";
 import type { ICredentialDocument } from "@models/Credential";
@@ -32,7 +33,7 @@ import { scheduledPublishDueFilter } from "@utils/scheduleUtils";
 import axios from "axios";
 import dayjs from "dayjs";
 
-import { SCHEDULED_PUBLISH_MAX_PER_RUN } from "@constants/notifications";
+import { PUBLISH_ERROR_PLATFORM_SYSTEM, SCHEDULED_PUBLISH_MAX_PER_RUN } from "@constants/notifications";
 
 import { resolveLinkedInAccess } from "./linkedinOAuthService";
 import { notifyScheduledPublishResult } from "./notificationService";
@@ -94,7 +95,7 @@ function prepareDevtoTags(tags: string[] | undefined): string[] {
       tag
         .trim()
         .toLowerCase()
-        .replace(/[\s-]+/g, ""),
+        .replace(REGEX_PATTERNS.DEVTO_TAG_NORMALIZE, ""),
     )
     .filter((tag) => {
       if (!tag || seen.has(tag)) {
@@ -127,12 +128,12 @@ function buildDevtoArticlePayload(post: IPostDocument): Record<string, unknown> 
   const article: Record<string, unknown> = {
     title: post.title,
     body_markdown: post.content_markdown,
-    published: true,
+    published: PLATFORM_CONFIG.devto.published,
     tags: prepareDevtoTags(post.tags),
     main_image: resolveDevtoCoverImage(post),
   };
   if (metaDescription) {
-    article.description = metaDescription.slice(0, 160);
+    article.description = metaDescription.slice(0, AI_POST_LIMITS.META_DESC_MAX);
   }
   if (canonicalUrl) {
     article.canonical_url = canonicalUrl;
@@ -153,7 +154,7 @@ function isHtmlContent(content: string): boolean {
   if (!trimmed) {
     return false;
   }
-  return trimmed.startsWith("<") && /<[a-z][\s\S]*>/i.test(trimmed);
+  return trimmed.startsWith("<") && REGEX_PATTERNS.HTML_CONTENT_DETECT.test(trimmed);
 }
 
 function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "html" | "markdown"; content: string } {
@@ -166,7 +167,10 @@ function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "htm
 
 function isDecryptFailure(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return message === ERROR_MESSAGES.FAILED_TO_DECRYPT || message.includes("bad decrypt");
+  return (
+    message === ERROR_MESSAGES.FAILED_TO_DECRYPT ||
+    message.includes(DEFAULT_VALUES.DECRYPT_OPENSSL_BAD_DECRYPT_SNIPPET)
+  );
 }
 
 /** Decrypt platform API key; surface actionable Settings guidance on key mismatch. */
@@ -245,12 +249,41 @@ function wordpressAuthHeaders(apiKey: string) {
 }
 
 function linkedinErrorMessage(error: unknown): string {
-  const axiosError = error as Error & {
-    isAxiosError?: boolean;
-    response?: { status?: number; data?: { message?: string; error?: string; error_description?: string } };
-  };
-  const data = axiosError.response?.data;
-  if (axiosError.isAxiosError && data) {
+  const known = (error as Error)?.message;
+  if (
+    known === ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN ||
+    known === ERROR_MESSAGES.LINKEDIN_PERSON_URN_MISSING ||
+    known === ERROR_MESSAGES.LINKEDIN_SUMMARY_REQUIRED
+  ) {
+    return known;
+  }
+
+  const candidates: unknown[] = [error];
+  if (error instanceof Error && error.cause) {
+    candidates.push(error.cause);
+  }
+
+  for (const candidate of candidates) {
+    const axiosError = candidate as Error & {
+      isAxiosError?: boolean;
+      response?: {
+        status?: number;
+        data?: { message?: string; error?: string; error_description?: string; code?: string };
+      };
+    };
+    if (!axiosError.isAxiosError) {
+      continue;
+    }
+
+    const status = axiosError.response?.status;
+    if (status === 401 || status === 403) {
+      return ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN;
+    }
+
+    const data = axiosError.response?.data;
+    if (!data) {
+      continue;
+    }
     if (typeof data.message === "string" && data.message.trim()) {
       return data.message;
     }
@@ -261,7 +294,8 @@ function linkedinErrorMessage(error: unknown): string {
       return data.error;
     }
   }
-  return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
+
+  return known || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
 export async function publishToMedium(
@@ -293,7 +327,7 @@ export async function publishToMedium(
       title: post.title,
       contentFormat,
       content,
-      publishStatus: "public",
+      publishStatus: PLATFORM_CONFIG.medium.publishStatus,
     },
     {
       headers: {
@@ -373,7 +407,7 @@ export async function publishToWordpress(
   const payload = {
     title: post.title,
     content: post.content_markdown,
-    status: "publish",
+    status: PLATFORM_CONFIG.wordpress.status,
     tags: post.tags || [],
   };
   const headers = wordpressAuthHeaders(apiKey);
@@ -430,17 +464,18 @@ export async function publishToLinkedin(
   try {
     const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
 
+    const { UGC, RESTLI_PROTOCOL_HEADER, RESTLI_PROTOCOL_VERSION } = API_URLS.LINKEDIN;
     const payload = {
       author: personUrn,
-      lifecycleState: "PUBLISHED",
+      lifecycleState: UGC.LIFECYCLE_PUBLISHED,
       specificContent: {
-        "com.linkedin.ugc.ShareContent": {
+        [UGC.SHARE_CONTENT_TYPE]: {
           shareCommentary: { text: commentary },
-          shareMediaCategory: "NONE",
+          shareMediaCategory: UGC.MEDIA_CATEGORY_NONE,
         },
       },
       visibility: {
-        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+        [UGC.MEMBER_NETWORK_VISIBILITY]: UGC.VISIBILITY_PUBLIC,
       },
     };
 
@@ -448,7 +483,7 @@ export async function publishToLinkedin(
       headers: {
         [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${accessToken}`,
         [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
-        "X-Restli-Protocol-Version": "2.0.0",
+        [RESTLI_PROTOCOL_HEADER]: RESTLI_PROTOCOL_VERSION,
       },
     });
 
@@ -707,7 +742,7 @@ export async function publishScheduledPosts(): Promise<PublishScheduledPostsResu
         authorEmail,
         authorName,
         outcome: "failed",
-        errors: [{ platform: "system", error: (error as Error).message }],
+        errors: [{ platform: PUBLISH_ERROR_PLATFORM_SYSTEM, error: (error as Error).message }],
         scheduledFor: post.scheduled_for ?? undefined,
       }).catch(() => ({ slack: "failed" as const, email: "failed" as const }));
 
@@ -717,7 +752,7 @@ export async function publishScheduledPosts(): Promise<PublishScheduledPostsResu
         outcome: "failed",
         reason: "ALL_PLATFORMS_FAILED",
         successes: [],
-        errors: [{ platform: "system", error: (error as Error).message }],
+        errors: [{ platform: PUBLISH_ERROR_PLATFORM_SYSTEM, error: (error as Error).message }],
         notification,
       });
     }

@@ -6,6 +6,7 @@ export { getAiClient } from "@ai/client";
 export {
   generateEdit,
   generateImageFromTopic,
+  generateKeywordResearch,
   generateLinkedInSummary,
   generatePost,
   getAiCapabilities,

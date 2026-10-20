@@ -6,6 +6,13 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Card } from "@components/Card";
 import { Input } from "@components/Input";
 import { RADIUS } from "@constants/designTokens";
+import {
+  EDITOR_A11Y,
+  EDITOR_UI,
+  LABELS,
+  PLACEHOLDERS,
+  editorMetaCharCount,
+} from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { EditorForm } from "@types";
 
@@ -55,11 +62,9 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
       <Card style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="pricetags-outline" size={18} color={colors.primary} />
-          <Text style={styles.cardTitle}>Tags & Topics</Text>
+          <Text style={styles.cardTitle}>{EDITOR_UI.TAGS_AND_TOPICS}</Text>
         </View>
-        <Text style={styles.cardSub}>
-          Categorize your post across platforms for maximum discoverability
-        </Text>
+        <Text style={styles.cardSub}>{EDITOR_UI.TAGS_AND_TOPICS_SUB}</Text>
 
         {/* Existing Tags Chips */}
         <View style={styles.tagsContainer}>
@@ -69,7 +74,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
               <Pressable
                 onPress={() => handleRemoveTag(tag)}
                 hitSlop={6}
-                accessibilityLabel={`Remove tag ${tag}`}
+                accessibilityLabel={EDITOR_A11Y.REMOVE_TAG(tag)}
               >
                 <Ionicons name="close-circle" size={16} color={colors.mutedForeground} />
               </Pressable>
@@ -84,7 +89,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
             value={newTagInput}
             onChangeText={setNewTagInput}
             onSubmitEditing={handleAddTag}
-            placeholder="Add a topic or tag (e.g. react, ai)..."
+            placeholder={PLACEHOLDERS.EDITOR_TAG}
             placeholderTextColor={colors.mutedForeground}
             returnKeyType="done"
           />
@@ -98,7 +103,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
             disabled={!newTagInput.trim()}
           >
             <Ionicons name="add" size={18} color="#FFFFFF" />
-            <Text style={styles.addTagButtonText}>Add</Text>
+            <Text style={styles.addTagButtonText}>{LABELS.ADD}</Text>
           </Pressable>
         </View>
       </Card>
@@ -107,11 +112,9 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
       <Card style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="time-outline" size={18} color={colors.primary} />
-          <Text style={styles.cardTitle}>Scheduled Delivery</Text>
+          <Text style={styles.cardTitle}>{EDITOR_UI.SCHEDULED_DELIVERY}</Text>
         </View>
-        <Text style={styles.cardSub}>
-          Choose when this post should be published, or publish immediately
-        </Text>
+        <Text style={styles.cardSub}>{EDITOR_UI.SCHEDULED_DELIVERY_SUB}</Text>
 
         {form.scheduled_for ? (
           <View style={styles.activeScheduleBox}>
@@ -121,29 +124,27 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
                 <Text style={styles.scheduleDate}>
                   {dayjs(form.scheduled_for).format("MMM D, YYYY [at] h:mm A")}
                 </Text>
-                <Text style={styles.scheduleRelative}>
-                  Scheduled for future publication
-                </Text>
+                <Text style={styles.scheduleRelative}>{EDITOR_UI.SCHEDULED_FUTURE_NOTE}</Text>
               </View>
             </View>
             <Pressable
               onPress={handleClearSchedule}
               style={styles.clearScheduleButton}
-              accessibilityLabel="Clear schedule"
+              accessibilityLabel={EDITOR_A11Y.CLEAR_SCHEDULE}
             >
-              <Text style={styles.clearScheduleText}>Publish Now Instead</Text>
+              <Text style={styles.clearScheduleText}>{EDITOR_UI.PUBLISH_NOW_INSTEAD}</Text>
             </Pressable>
           </View>
         ) : (
           <View style={styles.presetsWrapper}>
-            <Text style={styles.presetHeading}>QUICK SCHEDULE PRESETS</Text>
+            <Text style={styles.presetHeading}>{EDITOR_UI.QUICK_SCHEDULE_PRESETS}</Text>
             <View style={styles.presetButtonsRow}>
               <Pressable
                 style={({ pressed }) => [styles.presetButton, pressed && styles.pressed]}
                 onPress={() => handleSetPresetSchedule(4)}
               >
                 <Ionicons name="sunny-outline" size={15} color={colors.foreground} />
-                <Text style={styles.presetButtonText}>In 4 Hours</Text>
+                <Text style={styles.presetButtonText}>{EDITOR_UI.PRESET_IN_4_HOURS}</Text>
               </Pressable>
 
               <Pressable
@@ -151,7 +152,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
                 onPress={() => handleSetPresetSchedule(16)}
               >
                 <Ionicons name="moon-outline" size={15} color={colors.foreground} />
-                <Text style={styles.presetButtonText}>Tomorrow AM</Text>
+                <Text style={styles.presetButtonText}>{EDITOR_UI.PRESET_TOMORROW_AM}</Text>
               </Pressable>
 
               <Pressable
@@ -159,7 +160,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
                 onPress={() => handleSetPresetSchedule(72)}
               >
                 <Ionicons name="calendar-outline" size={15} color={colors.foreground} />
-                <Text style={styles.presetButtonText}>In 3 Days</Text>
+                <Text style={styles.presetButtonText}>{EDITOR_UI.PRESET_IN_3_DAYS}</Text>
               </Pressable>
             </View>
           </View>
@@ -170,15 +171,15 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
       <Card style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="search-outline" size={18} color={colors.primary} />
-          <Text style={styles.cardTitle}>Search & Social Previews</Text>
+          <Text style={styles.cardTitle}>{EDITOR_UI.SEARCH_SOCIAL_PREVIEWS}</Text>
         </View>
 
         <Input
-          label="Meta Description"
+          label={EDITOR_UI.META_DESCRIPTION_LABEL}
           value={form.meta_description}
           onChangeText={(val) => updateField("meta_description", val)}
           multiline
-          placeholder="Concise summary for Google search results and social cards..."
+          placeholder={PLACEHOLDERS.EDITOR_META}
           style={styles.metaInput}
         />
         <View style={styles.metaFooter}>
@@ -188,7 +189,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
               metaLength > 160 && styles.metaCounterWarning,
             ]}
           >
-            {metaLength} / 160 recommended characters
+            {editorMetaCharCount(metaLength)}
           </Text>
         </View>
 
@@ -197,7 +198,7 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
           style={styles.advancedToggle}
           onPress={() => setShowAdvancedSeo((prev) => !prev)}
         >
-          <Text style={styles.advancedToggleText}>Advanced SEO (Canonical URL)</Text>
+          <Text style={styles.advancedToggleText}>{EDITOR_UI.ADVANCED_SEO_TOGGLE}</Text>
           <Ionicons
             name={showAdvancedSeo ? "chevron-up" : "chevron-down"}
             size={18}
@@ -208,15 +209,13 @@ export function DetailsTab({ form, updateField }: DetailsTabProps) {
         {showAdvancedSeo ? (
           <View style={styles.advancedBox}>
             <Input
-              label="Canonical URL"
+              label={LABELS.CANONICAL}
               value={form.canonical_url}
               onChangeText={(val) => updateField("canonical_url", val)}
               autoCapitalize="none"
-              placeholder="https://original-source.com/blog/my-post"
+              placeholder={PLACEHOLDERS.EDITOR_CANONICAL}
             />
-            <Text style={styles.canonicalHint}>
-              Specify where this article was originally published to avoid search engine duplicate content penalties.
-            </Text>
+            <Text style={styles.canonicalHint}>{EDITOR_UI.CANONICAL_HINT}</Text>
           </View>
         ) : null}
       </Card>

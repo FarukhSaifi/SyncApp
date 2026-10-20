@@ -86,7 +86,7 @@ export function parseGeneratePostResponse(rawText: string, options: ParseGenerat
       const linkedinRaw = typeof parsed.linkedin_post === "string" ? parsed.linkedin_post.trim() : "";
       const rawPost =
         linkedinRaw ||
-        `${title}\n\n${result.meta_description || "Check out this in-depth guide covering key takeaways, architecture, and practical implementations."}\n\nRead more below 👇`;
+        `${title}\n\n${result.meta_description || AI_POST_LIMITS.LINKEDIN_FALLBACK_META}\n\n${AI_POST_LIMITS.LINKEDIN_FALLBACK_CTA}`;
 
       result.linkedin_post = finalizeLinkedInPost(rawPost, readMoreUrl);
       result.read_more_url = readMoreUrl;

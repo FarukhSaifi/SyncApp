@@ -24,6 +24,7 @@ import { normalizeMarkdownNewlines, toStorageMarkdown } from "@utils/contentUtil
 import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl, resolveLinkedInReadMoreUrl } from "@utils/linkedinPost";
 import dynamic from "next/dynamic";
 
+import { AI_COVER_AUTOGEN_DELAY_MS } from "@constants/editor";
 import { EDITOR_UI } from "@constants/messages";
 import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
@@ -65,7 +66,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
       if (data.tags && data.tags.length > 0) {
         state.setTagList(data.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
       }
-      setTimeout(() => ai.handleGenerateImage(), 500);
+      setTimeout(() => ai.handleGenerateImage(), AI_COVER_AUTOGEN_DELAY_MS);
     },
     onLinkedInSummaryGenerated: (data) => {
       setFormData((prev) => ({
@@ -222,6 +223,9 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         aiModels={ai.aiModels}
         targetPlatforms={ai.targetPlatforms}
         setTargetPlatforms={ai.setTargetPlatforms}
+        researchContext={ai.researchContext}
+        applyResearchPick={ai.applyResearchPick}
+        clearResearchContext={ai.clearResearchContext}
         aiImagePrompt={ai.aiImagePrompt}
         setAiImagePrompt={ai.setAiImagePrompt}
         aiLoading={ai.aiLoading}

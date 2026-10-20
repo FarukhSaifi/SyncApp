@@ -34,7 +34,7 @@ export async function generateLinkedInSummary(
   const plain = stripToPlainText(content);
   const excerptSource = [title, plain].filter(Boolean).join(". ");
 
-  if (!excerptSource || excerptSource.length < 20) {
+  if (!excerptSource || excerptSource.length < AI_POST_LIMITS.LINKEDIN_SUMMARY_CONTEXT_MIN_CHARS) {
     throw new AppError(ERROR_MESSAGES["AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED"], HTTP_STATUS["BAD_REQUEST"]);
   }
 
@@ -43,7 +43,7 @@ export async function generateLinkedInSummary(
   }
 
   const excerpt = excerptSource.slice(0, AI_CONFIG["MAX_LINKEDIN_ARTICLE_CHARS"]);
-  const displayTitle = title || excerpt.slice(0, 80);
+  const displayTitle = title || excerpt.slice(0, AI_POST_LIMITS.LINKEDIN_FALLBACK_TITLE_MAX_CHARS);
   const candidates = buildModelCandidates(getModelName(input.model));
   let lastError: unknown;
   let rawPost = "";

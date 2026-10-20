@@ -1,6 +1,5 @@
 import path from "path";
 
-
 import { getAiCapabilities } from "@ai/client";
 import { config } from "@config";
 import { AI_PROVIDERS, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP, HTTP_STATUS } from "@constants";
@@ -12,8 +11,8 @@ import { logger, requestLogger } from "@utils/logger";
 import compression from "compression";
 import cors from "cors";
 import dayjs from "dayjs";
-import express from "express";
 import type { Application, Request, Response } from "express";
+import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
@@ -162,10 +161,10 @@ if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
     } else {
       const key = config.geminiApiKey;
       const hint =
-        key.length > 12 ? `${key.slice(0, 6)}…${key.slice(-4)}` : ERROR_MESSAGES["AI_STARTUP_KEY_SET_HINT"];
-      logger.info(
-        `${ERROR_MESSAGES["AI_STARTUP_STUDIO_PREFIX"]}${hint}${ERROR_MESSAGES["AI_STARTUP_STUDIO_SUFFIX"]}`,
-      );
+        key.length > DEFAULT_VALUES.API_KEY_LOG_MASK_MIN_LEN
+          ? `${key.slice(0, DEFAULT_VALUES.API_KEY_LOG_MASK_PREFIX_LEN)}…${key.slice(-DEFAULT_VALUES.API_KEY_LOG_MASK_SUFFIX_LEN)}`
+          : ERROR_MESSAGES["AI_STARTUP_KEY_SET_HINT"];
+      logger.info(`${ERROR_MESSAGES["AI_STARTUP_STUDIO_PREFIX"]}${hint}${ERROR_MESSAGES["AI_STARTUP_STUDIO_SUFFIX"]}`);
     }
   });
 }

@@ -123,11 +123,15 @@ If Studio returns credits depleted (`402`), configure Vertex — **do not** top 
 
 ## Architecture
 
-`server/src/ai/` — unified client (`generateAiContent` / `getAiClient`), generatePost / generateImage / generateEdit / generateLinkedInSummary / trending topics. Credentials helper: `server/src/utils/googleCredentials.ts`. Constants: `server/src/constants/ai.ts`.
+`server/src/ai/` — unified client (`generateAiContent` / `getAiClient`), generatePost / generateImage / generateEdit / generateLinkedInSummary / generateKeywordResearch / trending topics. Credentials helper: `server/src/utils/googleCredentials.ts`. Constants: `server/src/constants/ai.ts`.
+
+### Keyword research (seed → scored long-tail)
+
+`POST /api/ai/keyword-research` with `{ seed }` uses Google Search grounding (plus autocomplete seeds) to return ~10 long-tail keywords ranked by estimated opportunity (high commercial intent × low competition). Each item includes `commercialIntent`, `competition`, `opportunityScore`, `intentLabel`, `monetizationAngle`, and `rationale`. **These scores are AI estimates from Search grounding — not measured search volume or keyword difficulty from SEO tools.** Selecting a keyword in the Generate Post modal passes optional `researchContext` into `POST /api/ai/generate` so the draft targets that monetization angle.
 
 ### Blog generation prompts
 
-Static prompt text lives in `AI_PROMPTS` (`server/src/constants/ai.ts`). Full-post generation uses `FULL_POST_SYSTEM_BASE` + `buildFullPostSystemPrompt()` (platform blocks). The base body requires:
+Static prompt text lives in `AI_PROMPTS` (`server/src/constants/ai.ts`). Full-post generation uses `FULL_POST_SYSTEM_BASE` + `buildFullPostSystemPrompt()` (platform blocks + optional monetization research block). The base body requires:
 
 - **Human / anti AI-detection:** varied sentence and paragraph rhythm, personal-touch phrasing, natural transitions, concrete examples, lists only when useful, banned AI clichés
 - **Anti-spam:** no keyword stuffing, natural density, no hidden/deceptive text, no doorway-page patterns, honest meta

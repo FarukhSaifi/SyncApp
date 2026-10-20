@@ -94,3 +94,9 @@ export const AI_COVER_DOWNLOAD = Object.freeze({
   PREFIX: "cover-",
   EXT: ".png",
 } as const);
+
+/** Max DEV.to publish warnings shown in a single toast. */
+export const PUBLISH_WARNING_TOAST_MAX = 3;
+
+/** Delay before auto-generating cover image after AI draft apply. */
+export const AI_COVER_AUTOGEN_DELAY_MS = 500;

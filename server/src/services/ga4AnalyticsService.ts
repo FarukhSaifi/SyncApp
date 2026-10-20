@@ -5,7 +5,16 @@
  */
 
 import { config } from "@config";
-import { AI_CONFIG, ANALYTICS_SYNC, ERROR_MESSAGES, GA4_SOURCE_CHANNEL_MAP } from "@constants";
+import {
+  AI_CONFIG,
+  ANALYTICS_SYNC,
+  DEFAULT_VALUES,
+  ERROR_MESSAGES,
+  GA4_EMPTY_TOTALS,
+  GA4_REPORT,
+  GA4_SOURCE_CHANNEL_MAP,
+  GA4_TRAFFIC_CHANNELS,
+} from "@constants";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import type { Ga4TrafficSourceRow, Ga4WebsiteAnalytics } from "@src/types/analytics";
 import { hasGoogleCloudCredentialsEnv, loadGoogleServiceAccountCredentials } from "@utils/googleCredentials";
@@ -14,7 +23,7 @@ import dayjs from "dayjs";
 
 import type { Ga4TrafficChannelId } from "@constants/analytics";
 
-const logger = createLogger("GA4_ANALYTICS");
+const logger = createLogger(GA4_REPORT.LOGGER_NAME);
 
 type DateRangeInput = {
   startDate?: string;
@@ -23,12 +32,15 @@ type DateRangeInput = {
 
 function resolveDateRange(input: DateRangeInput): { startDate: string; endDate: string } {
   const end = input.endDate && dayjs(input.endDate).isValid() ? dayjs(input.endDate) : dayjs();
-  const startDefault = end.subtract(ANALYTICS_SYNC["GA4_DEFAULT_DAYS"] - 1, "day");
+  const startDefault = end.subtract(
+    ANALYTICS_SYNC["GA4_DEFAULT_DAYS"] - GA4_REPORT.INCLUSIVE_DAY_OFFSET,
+    GA4_REPORT.DAY_UNIT,
+  );
   const start = input.startDate && dayjs(input.startDate).isValid() ? dayjs(input.startDate) : startDefault;
 
   return {
-    startDate: start.format("YYYY-MM-DD"),
-    endDate: end.format("YYYY-MM-DD"),
+    startDate: start.format(GA4_REPORT.DATE_FORMAT),
+    endDate: end.format(GA4_REPORT.DATE_FORMAT),
   };
 }
 
@@ -36,33 +48,38 @@ function mapSourceToChannel(source: string, medium: string): Ga4TrafficChannelId
   const src = source.trim().toLowerCase();
   const med = medium.trim().toLowerCase();
 
-  if (src === "(direct)" || (src === "" && med === "(none)")) {
-    return "direct";
+  if (src === GA4_REPORT.SOURCE_DIRECT || (src === "" && med === GA4_REPORT.MEDIUM_NONE)) {
+    return GA4_TRAFFIC_CHANNELS.DIRECT;
   }
 
   const mapped = GA4_SOURCE_CHANNEL_MAP[src as keyof typeof GA4_SOURCE_CHANNEL_MAP];
   if (mapped) {
-    if (mapped === "google_organic" && med && med !== "organic" && med !== "(not set)") {
+    if (
+      mapped === GA4_TRAFFIC_CHANNELS.GOOGLE_ORGANIC &&
+      med &&
+      med !== GA4_REPORT.MEDIUM_ORGANIC &&
+      med !== GA4_REPORT.MEDIUM_NOT_SET
+    ) {
       // Paid google etc. still bucket as other for organic-focused dashboard.
-      if (med.includes("organic")) {
-        return "google_organic";
+      if (med.includes(GA4_REPORT.MEDIUM_ORGANIC)) {
+        return GA4_TRAFFIC_CHANNELS.GOOGLE_ORGANIC;
       }
-      return "other";
+      return GA4_TRAFFIC_CHANNELS.OTHER;
     }
     return mapped;
   }
 
-  if (src.includes("linkedin") || src.includes("lnkd")) {
-    return "linkedin";
+  if (src.includes(GA4_REPORT.SOURCE_INCLUDES_LINKEDIN) || src.includes(GA4_REPORT.SOURCE_INCLUDES_LNKD)) {
+    return GA4_TRAFFIC_CHANNELS.LINKEDIN;
   }
-  if (src.includes("dev.to") || src.includes("devto")) {
-    return "devto";
+  if (src.includes(GA4_REPORT.SOURCE_INCLUDES_DEV_TO) || src.includes(GA4_REPORT.SOURCE_INCLUDES_DEVTO)) {
+    return GA4_TRAFFIC_CHANNELS.DEVTO;
   }
-  if (med === "organic") {
-    return "google_organic";
+  if (med === GA4_REPORT.MEDIUM_ORGANIC) {
+    return GA4_TRAFFIC_CHANNELS.GOOGLE_ORGANIC;
   }
 
-  return "other";
+  return GA4_TRAFFIC_CHANNELS.OTHER;
 }
 
 function createGa4Client(): BetaAnalyticsDataClient {
@@ -87,8 +104,8 @@ function createGa4Client(): BetaAnalyticsDataClient {
 
 function metricValue(row: { metricValues?: Array<{ value?: string | null }> | null }, index: number): number {
   const raw = row.metricValues?.[index]?.value;
-  const n = Number(raw ?? 0);
-  return Number.isFinite(n) ? n : 0;
+  const n = Number(raw ?? GA4_REPORT.EMPTY_METRIC);
+  return Number.isFinite(n) ? n : GA4_REPORT.EMPTY_METRIC;
 }
 
 export function isGa4Configured(): boolean {
@@ -118,7 +135,7 @@ export async function getWebsiteAnalytics(range: DateRangeInput = {}): Promise<G
       propertyIdSet: false,
       credentialsAvailable: status.credentialsAvailable,
       dateRange: resolveDateRange(range),
-      totals: { sessions: 0, pageviews: 0, activeUsers: 0 },
+      totals: { ...GA4_EMPTY_TOTALS },
       sources: [],
       topPages: [],
     };
@@ -132,55 +149,56 @@ export async function getWebsiteAnalytics(range: DateRangeInput = {}): Promise<G
       propertyIdSet: true,
       credentialsAvailable: false,
       dateRange: resolveDateRange(range),
-      totals: { sessions: 0, pageviews: 0, activeUsers: 0 },
+      totals: { ...GA4_EMPTY_TOTALS },
       sources: [],
       topPages: [],
     };
   }
 
   const dateRange = resolveDateRange(range);
-  const property = `properties/${config.googleAnalyticsPropertyId}`;
+  const property = `${GA4_REPORT.PROPERTY_PATH_PREFIX}${config.googleAnalyticsPropertyId}`;
   const client = createGa4Client();
+  const { METRICS, DIMENSIONS } = GA4_REPORT;
 
   try {
     const [[totalsResponse], [sourcesResponse], [pagesResponse]] = await Promise.all([
       client.runReport({
         property,
         dateRanges: [{ startDate: dateRange.startDate, endDate: dateRange.endDate }],
-        metrics: [{ name: "sessions" }, { name: "screenPageViews" }, { name: "activeUsers" }],
+        metrics: [{ name: METRICS.SESSIONS }, { name: METRICS.SCREEN_PAGE_VIEWS }, { name: METRICS.ACTIVE_USERS }],
       }),
       client.runReport({
         property,
         dateRanges: [{ startDate: dateRange.startDate, endDate: dateRange.endDate }],
-        dimensions: [{ name: "sessionSource" }, { name: "sessionMedium" }],
-        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
-        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        dimensions: [{ name: DIMENSIONS.SESSION_SOURCE }, { name: DIMENSIONS.SESSION_MEDIUM }],
+        metrics: [{ name: METRICS.SESSIONS }, { name: METRICS.SCREEN_PAGE_VIEWS }],
+        orderBys: [{ metric: { metricName: METRICS.SESSIONS }, desc: true }],
         limit: ANALYTICS_SYNC["GA4_MAX_SOURCE_ROWS"],
       }),
       client.runReport({
         property,
         dateRanges: [{ startDate: dateRange.startDate, endDate: dateRange.endDate }],
-        dimensions: [{ name: "pagePath" }],
-        metrics: [{ name: "screenPageViews" }, { name: "sessions" }],
-        orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+        dimensions: [{ name: DIMENSIONS.PAGE_PATH }],
+        metrics: [{ name: METRICS.SCREEN_PAGE_VIEWS }, { name: METRICS.SESSIONS }],
+        orderBys: [{ metric: { metricName: METRICS.SCREEN_PAGE_VIEWS }, desc: true }],
         limit: ANALYTICS_SYNC["GA4_MAX_PAGE_ROWS"],
       }),
     ]);
 
     const totalsRow = totalsResponse.rows?.[0];
     const totals = {
-      sessions: totalsRow ? metricValue(totalsRow, 0) : 0,
-      pageviews: totalsRow ? metricValue(totalsRow, 1) : 0,
-      activeUsers: totalsRow ? metricValue(totalsRow, 2) : 0,
+      sessions: totalsRow ? metricValue(totalsRow, GA4_REPORT.TOTALS_METRIC_SESSIONS) : GA4_REPORT.EMPTY_METRIC,
+      pageviews: totalsRow ? metricValue(totalsRow, GA4_REPORT.TOTALS_METRIC_PAGEVIEWS) : GA4_REPORT.EMPTY_METRIC,
+      activeUsers: totalsRow ? metricValue(totalsRow, GA4_REPORT.TOTALS_METRIC_ACTIVE_USERS) : GA4_REPORT.EMPTY_METRIC,
     };
 
     const channelBuckets = new Map<Ga4TrafficChannelId, Ga4TrafficSourceRow>();
     for (const row of sourcesResponse.rows || []) {
-      const source = row.dimensionValues?.[0]?.value || "(direct)";
-      const medium = row.dimensionValues?.[1]?.value || "(none)";
+      const source = row.dimensionValues?.[GA4_REPORT.DIMENSION_SOURCE]?.value || GA4_REPORT.SOURCE_DIRECT;
+      const medium = row.dimensionValues?.[GA4_REPORT.DIMENSION_MEDIUM]?.value || GA4_REPORT.MEDIUM_NONE;
       const channel = mapSourceToChannel(source, medium);
-      const sessions = metricValue(row, 0);
-      const pageviews = metricValue(row, 1);
+      const sessions = metricValue(row, GA4_REPORT.ROW_METRIC_PRIMARY);
+      const pageviews = metricValue(row, GA4_REPORT.ROW_METRIC_SECONDARY);
       const existing = channelBuckets.get(channel);
       if (existing) {
         existing.sessions += sessions;
@@ -199,9 +217,9 @@ export async function getWebsiteAnalytics(range: DateRangeInput = {}): Promise<G
     const sources = [...channelBuckets.values()].sort((a, b) => b.sessions - a.sessions);
 
     const topPages = (pagesResponse.rows || []).map((row) => ({
-      path: row.dimensionValues?.[0]?.value || "/",
-      pageviews: metricValue(row, 0),
-      sessions: metricValue(row, 1),
+      path: row.dimensionValues?.[GA4_REPORT.DIMENSION_PATH]?.value || GA4_REPORT.EMPTY_PATH,
+      pageviews: metricValue(row, GA4_REPORT.ROW_METRIC_PRIMARY),
+      sessions: metricValue(row, GA4_REPORT.ROW_METRIC_SECONDARY),
     }));
 
     return {
@@ -217,16 +235,18 @@ export async function getWebsiteAnalytics(range: DateRangeInput = {}): Promise<G
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.warn(`GA4 runReport failed: ${message.slice(0, 200)}`);
+    logger.warn(
+      `${GA4_REPORT.RUN_REPORT_FAILED_LOG_PREFIX}${message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_LONG_CHARS)}`,
+    );
     // Soft-fail so admin analytics dashboards still load when GA4 is misconfigured.
     return {
       configured: false,
       setupRequired: true,
-      message: `${ERROR_MESSAGES["ANALYTICS_GA4_FETCH_FAILED"]}: ${message.slice(0, 160)}`,
+      message: `${ERROR_MESSAGES["ANALYTICS_GA4_FETCH_FAILED"]}: ${message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_MEDIUM_CHARS)}`,
       propertyIdSet: true,
       credentialsAvailable: true,
       dateRange,
-      totals: { sessions: 0, pageviews: 0, activeUsers: 0 },
+      totals: { ...GA4_EMPTY_TOTALS },
       sources: [],
       topPages: [],
     };

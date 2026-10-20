@@ -13,12 +13,20 @@ import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
 import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
-import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM } from "@constants/editor";
-import { EDITOR_UI, INFO_MESSAGES, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
+import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM, PUBLISH_WARNING_TOAST_MAX } from "@constants/editor";
+import {
+  EDITOR_UI,
+  ERROR_MESSAGES,
+  INFO_MESSAGES,
+  LABELS,
+  SERVER_ERROR_MESSAGES,
+  SYNC_LABEL,
+  TOAST_TITLES,
+} from "@constants/messages";
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { ROUTES } from "@constants/routes";
-import { SEO_THRESHOLDS } from "@constants/seo";
+import { SEO_THRESHOLDS, STALE_CANONICAL_HOST_PATTERN } from "@constants/seo";
 
 /**
  * Build a canonical URL from the post slug.
@@ -35,7 +43,7 @@ function buildClientCanonicalUrl(slug?: string): string {
 function resolveCanonicalUrl(existing?: string | null, slug?: string | null): string {
   const built = buildClientCanonicalUrl(slug || undefined);
   const current = (existing || "").trim();
-  if (built.startsWith("http") && (!current || /sync-app-client/i.test(current))) {
+  if (built.startsWith("http") && (!current || STALE_CANONICAL_HOST_PATTERN.test(current))) {
     return built;
   }
   return current || built || "";
@@ -98,11 +106,11 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         suppressDirtyRef.current = true;
         setIsDirty(false);
       } else {
-        toast.apiError(response?.error || "Failed to fetch post");
+        toast.apiError(response?.error || ERROR_MESSAGES.FAILED_TO_FETCH_POST);
       }
     } catch (error) {
       devError("Error fetching post:", error);
-      toast.apiError(`Failed to fetch post: ${(error as Error).message}`);
+      toast.apiError(`${ERROR_MESSAGES.FAILED_TO_FETCH_POST}: ${(error as Error).message}`);
     } finally {
       setInitialLoading(false);
     }
@@ -136,7 +144,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           API_PATHS.CREDENTIALS,
         );
         if (result?.success && Array.isArray(result.data)) {
-          setConnectedPlatforms(result.data.map((c) => c.platform_name));
+          setConnectedPlatforms(
+            result.data.filter((c) => (c as { configured?: boolean }).configured !== false).map((c) => c.platform_name),
+          );
         }
       } catch (error) {
         devError("Failed to load connected platforms:", error);
@@ -258,14 +268,14 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           setLastSavedAt(new Date());
           const isNewPost = !id;
           if (forceStatus === POST_STATUS.DRAFT || (isNewPost && status === POST_STATUS.DRAFT)) {
-            router.push("/");
+            router.push(ROUTES.DASHBOARD);
           }
         } else {
-          toast.apiError(response?.error || "Failed to save post");
+          toast.apiError(response?.error || ERROR_MESSAGES.FAILED_TO_SAVE_POST);
         }
       } catch (error) {
         devError("Error saving post:", error);
-        toast.apiError(`Failed to save post: ${(error as Error).message}`);
+        toast.apiError(`${ERROR_MESSAGES.FAILED_TO_SAVE_POST}: ${(error as Error).message}`);
       } finally {
         setLoading(false);
       }
@@ -299,7 +309,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         devLog("Saving new post before publishing");
         const saveResponse = await apiClient.createPost(postData);
         if (!saveResponse?.success || !saveResponse.data) {
-          throw new Error(saveResponse?.error || "Failed to save post");
+          throw new Error(saveResponse?.error || ERROR_MESSAGES.FAILED_TO_SAVE_POST);
         }
         onPostCreate(saveResponse.data);
         clearScheduledForInForm();
@@ -310,7 +320,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       devLog("Saving post edits before publishing");
       const saveResponse = await apiClient.updatePost(id, postData);
       if (!saveResponse?.success) {
-        throw new Error(saveResponse?.error || "Failed to save post");
+        throw new Error(saveResponse?.error || ERROR_MESSAGES.FAILED_TO_SAVE_POST);
       }
       if (saveResponse.data) {
         onPostUpdate(saveResponse.data);
@@ -382,7 +392,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
             content_markdown: effectiveForm.content_markdown,
           });
           if (warnings.length > 0) {
-            toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+            toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, PUBLISH_WARNING_TOAST_MAX).join(" · "));
           }
         }
 
@@ -394,7 +404,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           const platformUrl = platform === PLATFORMS.LINKEDIN ? refreshed?.platform_status?.linkedin?.url : undefined;
           toast.publishSuccess(platformLabel, platformUrl ? `${message} — ${platformUrl}` : message);
         } else {
-          throw new Error(publishResponse?.error || `Failed to publish to ${platformLabel}`);
+          throw new Error(publishResponse?.error || ERROR_MESSAGES.FAILED_TO_PUBLISH_TO(platformLabel));
         }
       } catch (error) {
         devError(`Error publishing to ${platform}:`, error);
@@ -435,7 +445,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           content_markdown: effectiveForm.content_markdown,
         });
         if (warnings.length > 0) {
-          toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, 3).join(" · "));
+          toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, PUBLISH_WARNING_TOAST_MAX).join(" · "));
         }
 
         devLog("Publishing to all platforms");
@@ -449,12 +459,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
           if (errors.length > 0) {
             const failureSummary = errors.map((e) => `${e.platform}: ${e.error}`).join("; ");
-            const successSummary = successes.length > 0 ? successes.join(", ") : "none";
+            const successSummary = successes.length > 0 ? successes.join(", ") : LABELS.PUBLISH_NONE;
             toast.warning(
               TOAST_TITLES.WARNING,
               publishResponse.message ||
                 SYNC_LABEL.PUBLISH_PARTIAL_SUCCESS(
-                  successes.length ? successes : ["none"],
+                  successes.length ? successes : [LABELS.PUBLISH_NONE],
                   errors.map((e) => `${e.platform}: ${e.error}`),
                 ),
             );
@@ -489,9 +499,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         return;
       }
       await apiClient.downloadMdx(id);
-      toast.exportSuccess("MDX");
+      toast.exportSuccess(SERVER_ERROR_MESSAGES.EXPORT_FORMAT_MDX);
     } catch (e) {
-      toast.exportError("MDX", (e as Error).message || "Could not export MDX");
+      toast.exportError(
+        SERVER_ERROR_MESSAGES.EXPORT_FORMAT_MDX,
+        (e as Error).message || SERVER_ERROR_MESSAGES.COULD_NOT_EXPORT_MDX,
+      );
     }
   }, [id, toast]);
 

@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { config } from "@config";
-import { NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "@constants";
+import { DEFAULT_VALUES, NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "@constants";
 import type { IPlatformStatus, IPost } from "@types";
 import mongoose, { Document, Model, Schema } from "mongoose";
 import createSlug from "slugify";
@@ -108,12 +108,12 @@ postSchema.index(POST_INDEXES.SCHEDULED_PUBLISH);
 
 async function generateUniqueSlug(doc: IPostDocument): Promise<string> {
   const base =
-    createSlug(doc.title || "untitled-post", {
+    createSlug(doc.title || DEFAULT_VALUES.UNTITLED_POST_SLUG, {
       lower: true,
       strict: true,
       trim: true,
       locale: "en",
-    }).slice(0, STRING_LIMITS.POST_SLUG_MAX) || "untitled-post";
+    }).slice(0, STRING_LIMITS.POST_SLUG_MAX) || DEFAULT_VALUES.UNTITLED_POST_SLUG;
 
   let candidate = base;
   let suffix = 2;

@@ -52,6 +52,48 @@ export interface TrendingTopicsResult {
   updatedAt: string;
 }
 
+/** Search-intent labels from keyword research (AI estimates). */
+export type KeywordIntentLabel = "transactional" | "commercial" | "informational";
+
+export type KeywordResearchSource = "google_search";
+
+export interface KeywordResearchItem {
+  keyword: string;
+  /** Buyer / transactional intent estimate 0–100. */
+  commercialIntent: number;
+  /** Estimated SERP difficulty 0–100 (lower = easier). */
+  competition: number;
+  /** Ranked opportunity: high intent × low competition, 0–100. */
+  opportunityScore: number;
+  intentLabel: KeywordIntentLabel;
+  monetizationAngle: string;
+  rationale: string;
+}
+
+export interface KeywordResearchResult {
+  seed: string;
+  keywords: KeywordResearchItem[];
+  source: KeywordResearchSource;
+  cached: boolean;
+  updatedAt: string;
+  /** Scores are AI estimates from Search grounding, not measured volume/KD. */
+  scoresEstimated: true;
+}
+
+export type KeywordResearchCacheEntry = {
+  seed: string;
+  keywords: KeywordResearchItem[];
+  source: KeywordResearchSource;
+  fetchedAt: number;
+  expiresAt: number;
+};
+
+/** Optional monetization context passed from keyword research into draft generation. */
+export interface GeneratePostResearchContext {
+  monetizationAngle?: string;
+  intentLabel?: KeywordIntentLabel;
+}
+
 export type ParsedTrending = {
   topics: string[];
   keywords: string[];
@@ -110,6 +152,11 @@ export interface GeneratePostRequestBody {
   keyword: string;
   model?: string;
   targetPlatforms?: string[];
+  researchContext?: GeneratePostResearchContext;
+}
+
+export interface KeywordResearchRequestBody {
+  seed: string;
 }
 
 export interface GenerateImageRequestBody {

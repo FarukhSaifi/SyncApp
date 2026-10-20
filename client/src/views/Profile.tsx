@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
+import { APP_CONFIG, COLOR_CLASSES, SYNC_LABEL } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import { useToast } from "@hooks/useToast";
 import type { ProfileFormState, PasswordFormState } from "@types";
@@ -75,7 +75,7 @@ const Profile = () => {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
+    if (passwordData.newPassword.length < APP_CONFIG.VALIDATION_MIN_PASSWORD) {
       toast.validationError(SYNC_LABEL.PASSWORD_MIN_LENGTH);
       return;
     }

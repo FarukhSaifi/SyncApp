@@ -10,14 +10,14 @@ import {
   NOTIFICATION_CHANNEL_STATUS,
   NOTIFICATION_COPY,
   NOTIFICATION_LINKS,
+  SLACK_ERROR_MAX_LEN,
+  SLACK_WEBHOOK_TIMEOUT_MS,
   type NotificationChannelStatus,
   type ScheduledPublishOutcome,
 } from "@constants/notifications";
 
 
 dayjs.extend(utc);
-
-const SLACK_ERROR_MAX_LEN = 280;
 
 /** Escape text inserted into HTML email bodies. */
 function escapeHtml(value: string): string {
@@ -264,7 +264,7 @@ async function sendSlackWebhook(payload: ScheduledPublishNotificationPayload): P
   try {
     const text = `${slackHeaderText(payload.outcome)}: ${payload.title}`;
     const blocks = buildSlackBlocks(payload);
-    await axios.post(webhookUrl, { text, blocks }, { timeout: 10_000 });
+    await axios.post(webhookUrl, { text, blocks }, { timeout: SLACK_WEBHOOK_TIMEOUT_MS });
     return NOTIFICATION_CHANNEL_STATUS.SENT;
   } catch (error) {
     logger.error("Slack scheduled publish notification failed", error as Error, { postId: payload.postId });

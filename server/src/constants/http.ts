@@ -9,6 +9,8 @@ export const HTTP = Object.freeze({
     AUTHORIZATION: "Authorization",
     API_KEY: "api-key",
     CONTENT_DISPOSITION: "Content-Disposition",
+    ACCEPT: "Accept",
+    USER_AGENT: "User-Agent",
   },
 
   // Content types
@@ -16,6 +18,7 @@ export const HTTP = Object.freeze({
     JSON: "application/json",
     MARKDOWN: "text/markdown; charset=utf-8",
     TEXT_PLAIN: "text/plain",
+    FORM_URLENCODED: "application/x-www-form-urlencoded",
   },
 
   // Authorization schemes

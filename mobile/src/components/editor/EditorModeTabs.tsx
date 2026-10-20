@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RADIUS } from "@constants/designTokens";
+import { EDITOR_UI } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { EditorMode } from "@types";
 
@@ -17,9 +18,9 @@ const MODES: Array<{
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }> = [
-  { id: "write", label: "Write", icon: "create-outline" },
-  { id: "channels", label: "Channels", icon: "paper-plane-outline" },
-  { id: "details", label: "Details", icon: "options-outline" },
+  { id: "write", label: EDITOR_UI.TAB_WRITE, icon: "create-outline" },
+  { id: "channels", label: EDITOR_UI.TAB_CHANNELS, icon: "paper-plane-outline" },
+  { id: "details", label: EDITOR_UI.TAB_DETAILS, icon: "options-outline" },
 ];
 
 export function EditorModeTabs({

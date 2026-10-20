@@ -1,6 +1,5 @@
-import { DEFAULT_VALUES, ERROR_MESSAGES } from "@constants";
+import { AI_CONFIG, DEFAULT_VALUES, ERROR_MESSAGES } from "@constants";
 import { z } from "zod";
-
 
 export const presignedUrlRequestSchema = z.object({
   filename: z.string().min(1, ERROR_MESSAGES["UPLOAD_FILENAME_REQUIRED"]),
@@ -26,3 +25,13 @@ export const upsertCredentialSchema = z.object({
 });
 
 export type UpsertCredentialRequest = z.infer<typeof upsertCredentialSchema>;
+
+export const keywordResearchRequestSchema = z.object({
+  seed: z
+    .string()
+    .trim()
+    .min(AI_CONFIG["SEED_MIN_LEN"], ERROR_MESSAGES["AI_SEED_TOO_SHORT"])
+    .max(AI_CONFIG["SEED_MAX_LEN"], ERROR_MESSAGES["AI_SEED_TOO_LONG"]),
+});
+
+export type KeywordResearchRequest = z.infer<typeof keywordResearchRequestSchema>;

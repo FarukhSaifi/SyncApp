@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RADIUS } from "@constants/designTokens";
+import { EDITOR_UI } from "@constants/messages";
+import { CODE_BLOCK_PREVIEW } from "@constants/palette";
 import { useThemeColors } from "@contexts/ThemeContext";
 
 interface VisualBlockPreviewProps {
@@ -140,10 +142,8 @@ export function VisualBlockPreview({ title, markdown, coverImage, onToggleCheckb
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="document-text-outline" size={44} color={colors.mutedForeground} />
-        <Text style={styles.emptyTitle}>Live Article Preview</Text>
-        <Text style={styles.emptySub}>
-          Write in the canvas or insert blocks to see your rendered post formatted here in real time.
-        </Text>
+        <Text style={styles.emptyTitle}>{EDITOR_UI.LIVE_ARTICLE_PREVIEW}</Text>
+        <Text style={styles.emptySub}>{EDITOR_UI.PREVIEW_EMPTY_SUB}</Text>
       </View>
     );
   }
@@ -379,32 +379,32 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.foreground,
     },
     codeCard: {
-      backgroundColor: "#16181D",
+      backgroundColor: CODE_BLOCK_PREVIEW.BACKGROUND,
       borderRadius: RADIUS.MD,
       padding: 12,
       marginVertical: 10,
       borderWidth: 1,
-      borderColor: "#262B35",
+      borderColor: CODE_BLOCK_PREVIEW.BORDER,
     },
     codeHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: "#333A48",
+      borderBottomColor: CODE_BLOCK_PREVIEW.HEADER_BORDER,
       paddingBottom: 6,
       marginBottom: 8,
     },
     codeLang: {
       fontSize: 10,
       fontWeight: "700",
-      color: "#8B949E",
+      color: CODE_BLOCK_PREVIEW.LANG,
       letterSpacing: 0.5,
     },
     codeText: {
       fontFamily: "Courier",
       fontSize: 12,
-      color: "#E6EDF3",
+      color: CODE_BLOCK_PREVIEW.TEXT,
       lineHeight: 18,
     },
     bulletRow: {

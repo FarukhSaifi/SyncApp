@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 
-import { COLOR_CLASSES, SYNC_LABEL } from "@constants";
+import { COLOR_CLASSES, SEO_THRESHOLDS, SYNC_LABEL } from "@constants";
 import type { SeoScoreBadgeProps } from "@types";
 import { getSeoScorecard } from "@utils/seoScorecard";
 
@@ -14,9 +14,9 @@ const SeoScoreBadge = memo<SeoScoreBadgeProps>(({ post }) => {
   const { score, maxScore, summary } = useMemo(() => getSeoScorecard(post), [post]);
 
   const scoreColor =
-    score >= 80
+    score >= SEO_THRESHOLDS.BADGE_GOOD_MIN
       ? COLOR_CLASSES.ICON_COLOR.POSITIVE
-      : score >= 50
+      : score >= SEO_THRESHOLDS.BADGE_MID_MIN
         ? COLOR_CLASSES.ICON_COLOR.WARNING
         : COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE;
 

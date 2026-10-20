@@ -3,7 +3,7 @@
  */
 
 import { config } from "@config";
-import { API_URLS, ERROR_MESSAGES, HTTP, PLATFORMS } from "@constants";
+import { API_URLS, DEFAULT_VALUES, ERROR_MESSAGES, HTTP, PLATFORMS } from "@constants";
 import { ValidationError } from "@middleware/errorHandler";
 import Credential from "@models/Credential";
 import type { LinkedInAccessContext } from "@types";
@@ -19,14 +19,11 @@ export type { LinkedInAccessContext };
 
 const logger = createLogger("LINKEDIN_OAUTH");
 
-const OAUTH_STATE_PURPOSE = "linkedin_oauth";
-const OAUTH_STATE_EXPIRES = "10m";
-/** Refresh a few minutes before expiry. */
-const TOKEN_REFRESH_SKEW_MS = 5 * 60 * 1000;
+const LINKEDIN = API_URLS.LINKEDIN;
 
 type LinkedInOAuthState = {
   userId: string;
-  purpose: typeof OAUTH_STATE_PURPOSE;
+  purpose: typeof LINKEDIN.OAUTH_STATE_PURPOSE;
 };
 
 export function isLinkedInOAuthConfigured(): boolean {
@@ -47,26 +44,30 @@ function assertLinkedInConfigured() {
 export function buildLinkedInAuthorizeUrl(userId: string): string {
   assertLinkedInConfigured();
 
-  const state = jwt.sign({ userId, purpose: OAUTH_STATE_PURPOSE } satisfies LinkedInOAuthState, config.jwtSecret, {
-    expiresIn: OAUTH_STATE_EXPIRES,
-  });
+  const state = jwt.sign(
+    { userId, purpose: LINKEDIN.OAUTH_STATE_PURPOSE } satisfies LinkedInOAuthState,
+    config.jwtSecret,
+    {
+      expiresIn: LINKEDIN.OAUTH_STATE_JWT_EXPIRES,
+    },
+  );
 
   // LinkedIn expects space-delimited scopes as %20 (not +). Build query manually for that.
   const params = new URLSearchParams({
-    response_type: "code",
+    response_type: LINKEDIN.OAUTH_RESPONSE_TYPE,
     client_id: config.linkedinClientId,
     redirect_uri: config.linkedinRedirectUri,
     state,
   });
 
-  return `${API_URLS.LINKEDIN.AUTHORIZE_URL}?${params.toString()}&scope=${encodeURIComponent(API_URLS.LINKEDIN.SCOPES)}`;
+  return `${LINKEDIN.AUTHORIZE_URL}?${params.toString()}&scope=${encodeURIComponent(LINKEDIN.SCOPES)}`;
 }
 
 function verifyOAuthState(state: string): string {
   try {
     const decoded = jwt.verify(state, config.jwtSecret) as LinkedInOAuthState;
-    if (decoded.purpose !== OAUTH_STATE_PURPOSE || !decoded.userId) {
-      throw new Error("bad purpose");
+    if (decoded.purpose !== LINKEDIN.OAUTH_STATE_PURPOSE || !decoded.userId) {
+      throw new Error(ERROR_MESSAGES.LINKEDIN_OAUTH_STATE_INVALID);
     }
     return decoded.userId;
   } catch {
@@ -85,15 +86,15 @@ type TokenResponse = {
 async function exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
   assertLinkedInConfigured();
   const body = new URLSearchParams({
-    grant_type: "authorization_code",
+    grant_type: LINKEDIN.OAUTH_GRANT_AUTHORIZATION_CODE,
     code,
     client_id: config.linkedinClientId,
     client_secret: config.linkedinClientSecret,
     redirect_uri: config.linkedinRedirectUri,
   });
 
-  const response = await axios.post<TokenResponse>(API_URLS.LINKEDIN.TOKEN_URL, body.toString(), {
-    headers: { [HTTP.HEADERS.CONTENT_TYPE]: "application/x-www-form-urlencoded" },
+  const response = await axios.post<TokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
+    headers: { [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.FORM_URLENCODED },
   });
 
   if (!response.data?.access_token) {
@@ -106,14 +107,14 @@ async function exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
 async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
   assertLinkedInConfigured();
   const body = new URLSearchParams({
-    grant_type: "refresh_token",
+    grant_type: LINKEDIN.OAUTH_GRANT_REFRESH_TOKEN,
     refresh_token: refreshToken,
     client_id: config.linkedinClientId,
     client_secret: config.linkedinClientSecret,
   });
 
-  const response = await axios.post<TokenResponse>(API_URLS.LINKEDIN.TOKEN_URL, body.toString(), {
-    headers: { [HTTP.HEADERS.CONTENT_TYPE]: "application/x-www-form-urlencoded" },
+  const response = await axios.post<TokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
+    headers: { [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.FORM_URLENCODED },
   });
 
   if (!response.data?.access_token) {
@@ -124,7 +125,7 @@ async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> 
 }
 
 async function fetchPersonUrn(accessToken: string): Promise<string> {
-  const response = await axios.get<{ sub?: string }>(API_URLS.LINKEDIN.USERINFO_URL, {
+  const response = await axios.get<{ sub?: string }>(LINKEDIN.USERINFO_URL, {
     headers: {
       [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${accessToken}`,
     },
@@ -135,7 +136,7 @@ async function fetchPersonUrn(accessToken: string): Promise<string> {
     throw new ValidationError(ERROR_MESSAGES.LINKEDIN_PERSON_URN_MISSING);
   }
 
-  return sub.startsWith("urn:li:person:") ? sub : `urn:li:person:${sub}`;
+  return sub.startsWith(LINKEDIN.PERSON_URN_PREFIX) ? sub : `${LINKEDIN.PERSON_URN_PREFIX}${sub}`;
 }
 
 export async function upsertLinkedInCredential(userId: string, tokens: TokenResponse, personUrn: string) {
@@ -185,13 +186,22 @@ export async function completeLinkedInOAuth(code: string, state: string): Promis
   return userId;
 }
 
+function authorIdFromCredential(author: unknown): string {
+  if (typeof author === "object" && author && "toString" in author) {
+    return (author as { toString(): string }).toString();
+  }
+  return String(author || "");
+}
+
 /**
  * Decrypt LinkedIn access token, refreshing when near expiry.
+ * Expired tokens without a successful refresh fail hard — never call LinkedIn with a dead token.
  */
 export async function resolveLinkedInAccess(credential: {
   _id?: unknown;
   author?: unknown;
-  api_key: string;
+  api_key?: string;
+  encrypted_payload?: string;
   refresh_token?: string;
   token_expires_at?: Date;
   platform_config?: { linkedin_person_urn?: string };
@@ -201,44 +211,56 @@ export async function resolveLinkedInAccess(credential: {
     throw new Error(ERROR_MESSAGES.LINKEDIN_PERSON_URN_MISSING);
   }
 
-  let accessToken = decryptCredential(credential.api_key);
+  const packed = credential.encrypted_payload || credential.api_key || "";
+  let accessToken = packed ? decryptCredential(packed) : "";
   if (!accessToken) {
     throw new Error(ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN);
   }
 
   const expiresAt = credential.token_expires_at ? dayjs(credential.token_expires_at) : null;
-  const needsRefresh = !expiresAt || expiresAt.valueOf() - Date.now() < TOKEN_REFRESH_SKEW_MS;
+  const needsRefresh = !expiresAt || expiresAt.valueOf() - Date.now() < LINKEDIN.TOKEN_REFRESH_SKEW_MS;
 
-  if (needsRefresh && credential.refresh_token) {
-    try {
-      const refreshToken = decryptCredential(credential.refresh_token);
-      if (refreshToken) {
-        const tokens = await refreshAccessToken(refreshToken);
-        accessToken = tokens.access_token;
-        const authorId =
-          typeof credential.author === "object" && credential.author && "toString" in credential.author
-            ? (credential.author as { toString(): string }).toString()
-            : String(credential.author || "");
+  if (!needsRefresh) {
+    return { accessToken, personUrn };
+  }
 
-        if (authorId) {
-          await upsertLinkedInCredential(authorId, tokens, personUrn);
-        }
-      }
-    } catch (error) {
-      logger.warn("LinkedIn token refresh failed; using existing access token", {
-        error: (error as Error).message,
-      });
+  if (!credential.refresh_token) {
+    logger.warn("LinkedIn access token expired and no refresh token is stored");
+    throw new Error(ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN);
+  }
+
+  try {
+    const refreshToken = decryptCredential(credential.refresh_token);
+    if (!refreshToken) {
+      throw new Error(ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN);
     }
+
+    const tokens = await refreshAccessToken(refreshToken);
+    accessToken = tokens.access_token;
+    const authorId = authorIdFromCredential(credential.author);
+    if (authorId) {
+      await upsertLinkedInCredential(authorId, tokens, personUrn);
+    }
+  } catch (error) {
+    logger.warn("LinkedIn token refresh failed", {
+      error: (error as Error).message,
+    });
+    throw new Error(ERROR_MESSAGES.INVALID_LINKEDIN_TOKEN, { cause: error });
   }
 
   return { accessToken, personUrn };
 }
 
 export function settingsRedirectUrl(params: { connected?: boolean; error?: string }): string {
-  const base = (config.siteUrl || "http://localhost:3000").replace(/\/$/, "");
+  const base = (config.siteUrl || DEFAULT_VALUES.DEFAULT_CORS_ORIGIN).replace(/\/$/, "");
   const query = new URLSearchParams();
-  if (params.connected) {query.set("linkedin", "connected");}
-  if (params.error) {query.set("linkedin_error", params.error);}
+  const { CONNECTED_KEY, CONNECTED_VALUE, ERROR_KEY } = LINKEDIN.SETTINGS_QUERY;
+  if (params.connected) {
+    query.set(CONNECTED_KEY, CONNECTED_VALUE);
+  }
+  if (params.error) {
+    query.set(ERROR_KEY, params.error);
+  }
   const qs = query.toString();
-  return `${base}/settings${qs ? `?${qs}` : ""}`;
+  return `${base}${DEFAULT_VALUES.CLIENT_SETTINGS_PATH}${qs ? `?${qs}` : ""}`;
 }

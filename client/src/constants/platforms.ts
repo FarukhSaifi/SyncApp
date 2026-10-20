@@ -18,10 +18,11 @@ export const PLATFORM_DISPLAY_NAMES: Record<PlatformSlug, string> = Object.freez
   [PLATFORMS.LINKEDIN]: "LinkedIn",
 });
 
-/** AI optimization targets (LinkedIn summary + Read more; publish uses same summary). */
+/** AI optimization targets (DEV.to article, LinkedIn summary, Google Search SEO). */
 export const OPTIMIZATION_TARGETS = Object.freeze({
   DEVTO: "devto",
   LINKEDIN: "linkedin",
+  GOOGLE: "google",
 } as const);
 
 export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTIMIZATION_TARGETS];

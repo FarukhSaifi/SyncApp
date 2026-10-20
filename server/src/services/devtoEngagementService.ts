@@ -6,6 +6,7 @@ import {
   ANALYTICS_PLATFORMS,
   ANALYTICS_SYNC,
   API_URLS,
+  DEFAULT_VALUES,
   ERROR_MESSAGES,
   HTTP,
   HTTP_STATUS,
@@ -283,8 +284,10 @@ export async function syncDevtoEngagement(userId: string): Promise<DevtoEngageme
       synced += 1;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      errors.push({ postId, error: message.slice(0, 200) });
-      logger.warn(`DEV.to engagement sync failed for post ${postId}: ${message.slice(0, 120)}`);
+      errors.push({ postId, error: message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_LONG_CHARS) });
+      logger.warn(
+        `DEV.to engagement sync failed for post ${postId}: ${message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_SHORT_CHARS)}`,
+      );
     }
   }
 
@@ -320,8 +323,10 @@ export async function syncDevtoEngagementForAllUsers(): Promise<{
       articlesSynced += result.synced;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      userErrors.push({ userId, error: message.slice(0, 200) });
-      logger.warn(`Cron DEV.to engagement sync failed for user ${userId}: ${message.slice(0, 120)}`);
+      userErrors.push({ userId, error: message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_LONG_CHARS) });
+      logger.warn(
+        `Cron DEV.to engagement sync failed for user ${userId}: ${message.slice(0, DEFAULT_VALUES.ERROR_SNIPPET_SHORT_CHARS)}`,
+      );
     }
   }
 

@@ -24,6 +24,14 @@ export const AI_POST_LIMITS = Object.freeze({
   LINKEDIN_POST_MIN_CHARS: 400,
   LINKEDIN_POST_MAX_CHARS: 1300,
   LINKEDIN_READ_MORE_PREFIX: "Read more:",
+  /** Minimum plain-text context length before LinkedIn summary generation. */
+  LINKEDIN_SUMMARY_CONTEXT_MIN_CHARS: 20,
+  /** Fallback display title length when post title is empty. */
+  LINKEDIN_FALLBACK_TITLE_MAX_CHARS: 80,
+  /** Fallback LinkedIn body when the model omits linkedin_post. */
+  LINKEDIN_FALLBACK_META:
+    "Check out this in-depth guide covering key takeaways, architecture, and practical implementations.",
+  LINKEDIN_FALLBACK_CTA: "Read more below 👇",
 } as const);
 
 /** Curated Gemini models exposed to the client model picker. */
@@ -72,8 +80,12 @@ const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL — anti AI-det
 - **No spammy CTAs:** Avoid aggressive affiliate-style pitches, fake urgency, or link-farm language. Soft, relevant next steps only.
 - **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch.
 
-### SEO & Platform Optimization (E-E-A-T)
+### SEO & Platform Optimization (E-E-A-T + Information Gain)
 - **Search Intent:** Answer the reader's real question early. Prefer actionable, practical advice over theory dumps.
+- **Beat generic AI content:** Google penalizes interchangeable summaries. Every draft must add *information gain* — specifics a templated AI overview would miss (versions, failure modes, measured numbers, real commands).
+- **High-intent long-tail keywords:** Target phrases a practitioner would type when solving a job (e.g. "How to stream Gemini AI responses in Next.js App Router with Vercel timeouts"), not broad head terms like "What is React". Title + intro must mirror that long-tail intent without stuffing.
+- **Featured snippet box (40-word rule):** Immediately under the **first primary H2** (\`## …\`), place a concise factual answer of **2–3 sentences / 35–50 words** that directly answers the search query. Google often lifts this into position zero. Do not bury the answer in a long preamble.
+- **Real implementation artifacts (required):** Include working code fences (copy-pasteable), terminal commands, concrete benchmark or timing notes when relevant, and at least one mermaid or ASCII system/flow diagram when the topic involves architecture. Generic prose without artifacts ranks poorly.
 - **Structure:** Open with a concrete hook (problem, surprising fact, or sharp claim). Use a clear ## / ### hierarchy that mirrors how a human would outline the topic.
 - **Rich Elements:** Use Markdown where it helps — > blockquotes for one sharp callout, code fences for working examples. Lists only when scannability genuinely improves understanding.
 
@@ -110,7 +122,8 @@ ${FULL_POST_SYSTEM_BODY}`,
   FULL_POST_USER: (keyword: string) =>
     `Write one high-quality technical article about: "${keyword}".
 Follow the system rules and platform optimization blocks exactly.
-Prefer actionable depth and concrete working examples over length.
+Treat "${keyword}" as a high-intent long-tail search query — optimize title, H2s, and the 35–50 word snippet answer under the first H2 for that query.
+Prefer actionable depth, working code, commands, and diagrams over length.
 Sound naturally human (varied rhythm, personal touch, no AI clichés). No fluff, no keyword stuffing, no spam patterns.`,
 
   // Image from topic – Optimized for high-CTR blog headers
@@ -156,17 +169,50 @@ ${articleExcerpt}
 ---
 Output ONLY the LinkedIn post text.`,
 
-  TRENDING_TOPICS_SYSTEM: `You are a tech content and SEO strategist. Using current Google Search trends for developers and software engineering, propose blog topics AND primary Google search keywords.
-Return ONLY valid JSON (no markdown fences):
-{"topics":["topic 1","topic 2","topic 3","topic 4","topic 5","topic 6"],"keywords":["keyword 1","keyword 2","keyword 3","keyword 4","keyword 5","keyword 6","keyword 7","keyword 8"]}
+  TRENDING_TOPICS_SYSTEM: (liveSearchContext: string) =>
+    `You are an elite developer trends researcher and SEO strategist.
+${liveSearchContext}Using Google Search grounding and current developer search behavior, identify the top 6 high-intent long-tail blog topics and top 8 Google search keywords right now — phrases that beat generic AI content via information gain (code, constraints, versions).
+Return ONLY valid JSON matching this schema:
+{
+  "topics": ["6 long-tail practitioner topics (6-14 words; stack + constraint; NOT broad like what is react)"],
+  "keywords": ["8 high-intent Google search keywords developers type now (3-8 words each, lowercase)"]
+}
 Rules:
-- Exactly 6 topics: short phrases (4–10 words), specific and timely (tools, frameworks, practices)
-- Exactly 8 keywords: Google-search style primary keywords (2–5 words each), lowercase, high commercial/informational intent for ranking blog posts
-- Keywords should match what someone would type into Google (e.g. "next.js app router", "react server components")
-- No hashtags, no numbering, no quotes inside topics or keywords
-- Prefer developer/SEO-friendly angles (tutorials, pitfalls, production tips)`,
+- Prefer high-intent long-tail over broad head terms.
+- Be timely, relevant, and specific in Tech.
+- No markdown wrappers outside the JSON, return ONLY valid JSON.`,
 
-  TRENDING_TOPICS_USER: `Search for what developers are researching and talking about right now (web, cloud, AI tooling, TypeScript/React/Next.js, databases, DevOps). Return 6 high-reach blog topic phrases and 8 Google SEO keywords as JSON.`,
+  TRENDING_TOPICS_USER: `Search for what developers, software engineers, and tech bloggers are actively searching for and discussing on Google right now. Return 6 high-reach blog topics and 8 Google SEO keywords as JSON.`,
+
+  KEYWORD_RESEARCH_SYSTEM: `You are an elite SEO keyword researcher for technical content marketers.
+Using Google Search grounding and autocomplete evidence, expand a broad seed topic into high-commercial-intent, low-competition long-tail keywords that can monetize via comparisons, tool picks, affiliate-friendly reviews, or buyer-guide content.
+Return ONLY valid JSON (no markdown fences):
+{"keywords":[{"keyword":"long-tail phrase","commercialIntent":0,"competition":0,"opportunityScore":0,"intentLabel":"transactional|commercial|informational","monetizationAngle":"short angle","rationale":"one short sentence"}]}
+Rules:
+- Exactly 10 keywords, ranked best opportunity first
+- Prefer long-tail (3+ words), lowercase Google-style queries
+- Prefer transactional/commercial intent over pure informational
+- competition is estimated SERP difficulty 0–100 (lower = easier to rank)
+- commercialIntent is buyer intent 0–100
+- opportunityScore must favor high commercialIntent × low competition (0–100)
+- Scores are AI estimates from Search grounding — NOT measured search volume or keyword difficulty tools
+- Exclude branded mega-head terms and pure navigational queries (login, official docs home)
+- monetizationAngle: concrete angle (e.g. "compare X vs Y for startups", "best tools for …", "pricing pitfalls")
+- No hashtags, no numbering inside keyword strings`,
+
+  KEYWORD_RESEARCH_USER: (seed: string, autocompleteContext: string) =>
+    `Seed topic: "${seed}"
+${autocompleteContext}
+Search Google for related long-tail queries with high commercial intent and relatively low competition. Return exactly 10 scored keywords as JSON.`,
+
+  /** Appended to full-post system when researchContext is present. */
+  MONETIZATION_RESEARCH_SYSTEM: (monetizationAngle: string, intentLabel: string) =>
+    `### Monetization research context
+- Search intent label: ${intentLabel}
+- Monetization angle: ${monetizationAngle}
+- Optimize the draft for that angle: clear buyer criteria, honest comparisons, decision frameworks, and soft CTAs.
+- Stay E-E-A-T compliant: no keyword stuffing, no fake urgency, no spammy affiliate language.
+- Keep technical depth and working examples; monetization should feel editorial, not salesy.`,
 };
 
 export const AI_SEED_TOPIC_CATEGORIES = Object.freeze([
@@ -189,6 +235,11 @@ export const AI_IMAGE_SOURCES = Object.freeze({
   GEMINI: "gemini",
   /** Retained for older clients; SyncApp no longer produces Imagen results. */
   IMAGEN: "imagen",
+} as const);
+
+/** Suggestion / research provenance ids (keep aligned with client AI_SUGGESTION_SOURCES). */
+export const AI_SUGGESTION_SOURCES = Object.freeze({
+  GOOGLE_SEARCH: "google_search",
 } as const);
 
 export const AI_CONFIG = Object.freeze({
@@ -310,8 +361,12 @@ export const AI_CONFIG = Object.freeze({
   MAX_IMAGE_PROMPT_TOKENS: 512,
   /** Trending topics + keywords: short JSON list. */
   MAX_TRENDING_TOPICS_TOKENS: 768,
+  /** Keyword research scored list JSON. */
+  MAX_KEYWORD_RESEARCH_TOKENS: 2048,
   /** Trending topics generation temperature. */
   TEMPERATURE_TRENDING: 0.7,
+  /** Keyword research temperature — slightly lower for more consistent scoring. */
+  TEMPERATURE_KEYWORD_RESEARCH: 0.55,
   /**
    * In-memory TTL for live trending topics + keywords.
    * Keep short so Refresh / reopen stay near real-time; use `?refresh=1` to bypass.
@@ -319,6 +374,14 @@ export const AI_CONFIG = Object.freeze({
   TRENDING_TOPICS_CACHE_MS: 30 * 1000,
   TRENDING_TOPICS_COUNT: 6,
   GOOGLE_KEYWORDS_COUNT: 8,
+  /** In-memory TTL for seeded keyword research (keyed by normalized seed). */
+  KEYWORD_RESEARCH_CACHE_MS: 60 * 1000,
+  KEYWORD_RESEARCH_COUNT: 10,
+  /** Minimum keywords required after parse before accepting a live response. */
+  KEYWORD_RESEARCH_PARSE_MIN_ITEMS: 3,
+  /** Seed topic length bounds for keyword research. */
+  SEED_MIN_LEN: 2,
+  SEED_MAX_LEN: 120,
   /** Parsed topic phrase length bounds. */
   TOPIC_MIN_LEN: 8,
   TOPIC_MAX_LEN: 120,
@@ -327,6 +390,29 @@ export const AI_CONFIG = Object.freeze({
   KEYWORD_MAX_LEN: 60,
   /** Minimum items required after parse before accepting a live response. */
   TRENDING_PARSE_MIN_ITEMS: 3,
+  /** Monetization angle / rationale string caps. */
+  MONETIZATION_ANGLE_MAX_LEN: 120,
+  RATIONALE_MAX_LEN: 200,
+  /** Commercial intent / competition / opportunity score bounds (AI estimates). */
+  KEYWORD_SCORE_MIN: 0,
+  KEYWORD_SCORE_MAX: 100,
+  /** Default intent when the model omits or invents a label. */
+  KEYWORD_INTENT_DEFAULT: "informational" as const,
+  /** Allowed intent labels from keyword research. */
+  KEYWORD_INTENT_LABELS: ["transactional", "commercial", "informational"] as const,
+  /** Max autocomplete suggestions included in keyword-research prompts. */
+  KEYWORD_RESEARCH_AUTOCOMPLETE_MAX: 12,
+  /** Random seed category groups used for trending autocomplete. */
+  TRENDING_SEED_CATEGORY_COUNT: 2,
+  /** Max sampled autocomplete queries for trending context. */
+  TRENDING_AUTOCOMPLETE_SAMPLE_MAX: 10,
+  /** Truncate AI error messages in logs. */
+  AI_ERROR_LOG_MAX_CHARS: 400,
+  /** Google Suggest autocomplete endpoint. */
+  GOOGLE_SUGGEST_BASE_URL: "https://suggestqueries.google.com/complete/search",
+  GOOGLE_SUGGEST_CLIENT: "chrome",
+  GOOGLE_SUGGEST_USER_AGENT: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+  GOOGLE_SUGGEST_TIMEOUT_MS: 3000,
   /** Top popular DEV.to tags from /api/tags (ordered by reach). */
   DEVTO_REACH_TAGS_COUNT: 12,
   DEVTO_REACH_TAGS_MIN: 3,
@@ -380,6 +466,8 @@ export const AI_CONFIG = Object.freeze({
   ERR_API_KEY_PATTERN: /invalid.*api.?key/i,
   ERR_FALLBACK_WORTHY_PATTERN:
     /404|NOT_FOUND|not found|429|RESOURCE_EXHAUSTED|Resource exhausted|503|UNAVAILABLE|high demand|currently experiencing/i,
+  /** Transient transport/server errors eligible for withRetry(). */
+  ERR_RETRYABLE_PATTERN: /503|UNAVAILABLE|high demand|500|INTERNAL|ECONNRESET|ETIMEDOUT|fetch failed|network/i,
   ERR_RATE_LIMIT_PATTERN: /429|RESOURCE_EXHAUSTED|Resource exhausted/i,
   ERR_CODE_402_PATTERN: /"code"\s*:\s*402/,
 } as const);
