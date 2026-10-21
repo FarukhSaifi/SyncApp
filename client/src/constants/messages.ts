@@ -603,6 +603,7 @@ export const INFO_MESSAGES = Object.freeze({
   TOGGLE_THEME_ARIA: "Toggle theme",
   USER_MENU_ARIA: "User menu",
   OPEN_MOBILE_MENU_ARIA: "Open mobile menu",
+  APP_LOGO_ALT: "SyncApp logo",
   PROFILE_SETTINGS_LINK: "Profile Settings",
   // Toast titles (unpublish, errors)
   UNPUBLISHED: "Unpublished",
@@ -819,8 +820,7 @@ export const EDITOR_UI = Object.freeze({
   SCHEDULE_MODAL_DATETIME_LABEL: "Publish date & time",
   SCHEDULE_MODAL_PLATFORMS_LABEL: "Publish to",
   SCHEDULE_MODAL_PLATFORMS_HINT: "Only platforms with saved credentials are listed.",
-  SCHEDULE_MODAL_NO_CONNECTED:
-    "Connect at least one platform in Settings before scheduling a publication.",
+  SCHEDULE_MODAL_NO_CONNECTED: "Connect at least one platform in Settings before scheduling a publication.",
   SCHEDULE_MODAL_NO_PLATFORMS: "Select at least one platform to schedule for.",
   SCHEDULE_MODAL_BUTTON: "Schedule publication",
   SCHEDULE_MODAL_EDIT: "Edit schedule",
@@ -1018,7 +1018,7 @@ export const EDITOR_UI = Object.freeze({
   STATUS_NEW_POST: "New post",
   CHAR_COUNT_LABEL: (count: string) => `${count} chars`,
   READ_TIME_LABEL: (minutes: number) => `${minutes} min read`,
-  AI_TOOLKIT_TRIGGER: "AI Toolkit examples",
+  AI_TOOLKIT_TRIGGER: "AI Toolkit",
   AI_TOOLKIT_ADD_COMMENT: "Add AI comment",
   AI_TOOLKIT_ADD_PARAGRAPH: "Add new paragraph",
   AI_TOOLKIT_PROOFREAD: "Proofread",

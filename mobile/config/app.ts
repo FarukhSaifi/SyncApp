@@ -9,7 +9,7 @@ export const APP_IDENTITY = Object.freeze({
 /** Expo / EAS project — from expo.dev (not a secret). Override with EAS_PROJECT_ID in .env if needed. */
 export const EAS_PROJECT_ID = "fc6f629e-e523-46cd-8c38-90f3b1736067";
 
-/** Matches src/constants/palette.ts lightColors.secondary */
+/** Splash / adaptive icon shell — matches the square brand mark background. */
 export const BRAND_COLORS = Object.freeze({
-  SPLASH_BACKGROUND: "#EDE9FE",
+  SPLASH_BACKGROUND: "#000000",
 });

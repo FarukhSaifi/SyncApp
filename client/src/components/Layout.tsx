@@ -19,7 +19,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   FiBarChart2,
   FiChevronDown,
-  FiFileText,
   FiHome,
   FiLogOut,
   FiMenu,
@@ -33,6 +32,8 @@ import {
 } from "react-icons/fi";
 
 import { APP_HEADER } from "@constants/designTokens";
+
+import AppLogo from "@components/common/AppLogo";
 
 const Layout = ({ children }: LayoutProps) => {
   const pathname = usePathname();
@@ -97,7 +98,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex w-full items-center justify-between gap-2">
             {/* Logo */}
             <Link href={ROUTES.DASHBOARD} className="flex min-w-0 items-center gap-1.5 md:gap-2">
-              <FiFileText className={APP_HEADER.LOGO_ICON_CLASS} />
+              <AppLogo priority />
               <span className={`${APP_HEADER.LOGO_TEXT_CLASS} truncate`}>{APP_CONFIG.APP_NAME}</span>
             </Link>
 

@@ -66,7 +66,6 @@ const nextConfig: NextConfig = {
     const origin = getApiOrigin();
     return [{ source: "/api/:path*", destination: `${origin}/api/:path*` }];
   },
-  allowedDevOrigins: ["localhost", "192.168.1.35"],
 };
 
 export default nextConfig;

@@ -99,7 +99,12 @@ export const APP_HEADER = Object.freeze({
   ROOT_CLASS: "app-header border-b bg-card sticky top-0 z-30 shrink-0 max-md:max-h-[15dvh]",
   /** Inner padding / row height: compact on mobile, roomier on md+. */
   INNER_CLASS: "container mx-auto flex h-12 max-h-[15dvh] items-center px-3 md:h-auto md:max-h-none md:px-4 md:py-4",
-  LOGO_ICON_CLASS: "h-6 w-6 text-primary md:h-8 md:w-8",
+  /** Header mark — square brand image beside the wordmark. */
+  LOGO_IMAGE_CLASS: "h-6 w-6 shrink-0 rounded-md object-cover md:h-8 md:w-8",
+  /** Auth screens — larger centered brand mark. */
+  LOGO_AUTH_IMAGE_CLASS: "mx-auto h-14 w-14 rounded-xl object-cover shadow-sm",
+  LOGO_SIZE_PX: 32,
+  LOGO_AUTH_SIZE_PX: 56,
   LOGO_TEXT_CLASS: "text-lg font-bold text-foreground md:text-2xl",
   ACTIONS_GAP_CLASS: "flex items-center gap-2 md:gap-4",
   THEME_BUTTON_CLASS:
