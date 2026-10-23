@@ -17,8 +17,6 @@ export function iosBuildPropertiesPlugin(): [string, Record<string, unknown>] {
     {
       ios: {
         deploymentTarget: IOS_BUILD.DEPLOYMENT_TARGET,
-        // Required by the iOS 27 SDK (Xcode 27). SDK 58+ includes this in the template.
-        enableSceneSupport: true,
       },
       android: {
         compileSdkVersion: 36,

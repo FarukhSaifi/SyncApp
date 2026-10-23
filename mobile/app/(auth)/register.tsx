@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppLogo } from "@components/AppLogo";
 import { Button } from "@components/Button";
 import { Card, CardContent, CardHeader } from "@components/Card";
 import { Input } from "@components/Input";
@@ -56,6 +57,9 @@ export default function RegisterScreen() {
       style={{ flex: 1, backgroundColor: colors.groupedBackground }}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.brand}>
+          <AppLogo variant="auth" />
+        </View>
         <Text style={styles.heading}>{LABELS.REGISTER}</Text>
         <Text style={styles.subtitle}>{DESCRIPTIONS.REGISTER}</Text>
 
@@ -100,6 +104,7 @@ export default function RegisterScreen() {
 const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     container: { padding: 24, paddingBottom: 48 },
+    brand: { alignItems: "center", marginBottom: 16 },
     heading: { fontSize: 28, fontWeight: "700", color: colors.foreground, textAlign: "center" },
     subtitle: { textAlign: "center", color: colors.mutedForeground, marginBottom: 20, marginTop: 6 },
     errorBox: {

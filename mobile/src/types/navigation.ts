@@ -1,31 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { BottomTabBarProps } from "expo-router/tabs";
 import type { ElementRef, RefObject } from "react";
 import type { View } from "react-native";
 
 export type NativeView = ElementRef<typeof View>;
 export type TabIconName = keyof typeof Ionicons.glyphMap;
 
-export type TabRoute = {
-  key: string;
-  name: string;
-  params?: object;
-};
+export type TabRoute = BottomTabBarProps["state"]["routes"][number];
 
 export type TabLayout = {
   x: number;
   width: number;
 };
 
-export type FloatingTabBarProps = {
-  state: { index: number; routes: TabRoute[] };
-  descriptors: Record<string, { options: { title?: string; tabBarLabel?: unknown } }>;
-  navigation: {
-    emit: (event: { type: "tabPress"; target: string; canPreventDefault?: boolean }) => {
-      defaultPrevented: boolean;
-    };
-    navigate: (name: string, params?: object) => void;
-  };
-};
+/** Custom tab bar — matches Expo Router / React Navigation SDK 58 `tabBar` props. */
+export type FloatingTabBarProps = BottomTabBarProps;
 
 export type TabItemProps = {
   focused: boolean;

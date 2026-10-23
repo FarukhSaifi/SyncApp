@@ -2,6 +2,7 @@ import { Link, router } from "expo-router";
 import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AppLogo } from "@components/AppLogo";
 import { Button } from "@components/Button";
 import { Card, CardContent, CardHeader } from "@components/Card";
 import { Input } from "@components/Input";
@@ -32,6 +33,9 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
       <View style={styles.inner}>
+        <View style={styles.brand}>
+          <AppLogo variant="auth" />
+        </View>
         <Text style={styles.heading}>{LABELS.WELCOME_BACK}</Text>
         <Text style={styles.subtitle}>{DESCRIPTIONS.TAGLINE}</Text>
 
@@ -78,6 +82,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.groupedBackground },
     inner: { flex: 1, justifyContent: "center", padding: 24 },
+    brand: { alignItems: "center", marginBottom: 16 },
     heading: { fontSize: 34, fontWeight: "700", color: colors.foreground, textAlign: "center", letterSpacing: 0.3 },
     subtitle: { textAlign: "center", color: colors.mutedForeground, marginBottom: 24, marginTop: 6 },
     card: { width: "100%" },

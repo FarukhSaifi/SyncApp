@@ -12,6 +12,18 @@ const MIME_IMAGE_WEBP = "image/webp";
 const GCS_PUBLIC_URL_BASE = "https://storage.googleapis.com";
 const FIREBASE_STORAGE_URL_BASE = "https://firebasestorage.googleapis.com/v0/b";
 
+/**
+ * Browser auto-probes these on the API origin — answer 204 so logs stay clean.
+ * Real icons are served by the client / mobile web apps.
+ */
+export const BROWSER_ICON_PATHS = Object.freeze([
+  "/favicon.ico",
+  "/favicon.png",
+  "/apple-touch-icon.png",
+  "/apple-touch-icon-precomposed.png",
+  "/icon.png",
+] as const);
+
 export const DEFAULT_VALUES = Object.freeze({
   // Environment
   NODE_ENV_PRODUCTION: "production",

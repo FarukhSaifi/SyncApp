@@ -2,7 +2,15 @@ import path from "path";
 
 import { getAiCapabilities } from "@ai/client";
 import { config } from "@config";
-import { AI_PROVIDERS, DEFAULT_VALUES, ERROR_MESSAGES, HEALTH, HTTP, HTTP_STATUS } from "@constants";
+import {
+  AI_PROVIDERS,
+  BROWSER_ICON_PATHS,
+  DEFAULT_VALUES,
+  ERROR_MESSAGES,
+  HEALTH,
+  HTTP,
+  HTTP_STATUS,
+} from "@constants";
 import connectDB, { getDbConnectionMeta, isDbConnected } from "@database/connection";
 import { ensureDb } from "@middleware/ensureDb";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
@@ -76,7 +84,7 @@ app.get("/", (_req: Request, res: Response) => {
   });
 });
 
-app.get(["/favicon.ico", "/favicon.png"], (_req: Request, res: Response) => {
+app.get([...BROWSER_ICON_PATHS], (_req: Request, res: Response) => {
   res.status(HTTP_STATUS["NO_CONTENT"]).end();
 });
 

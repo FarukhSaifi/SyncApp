@@ -1,8 +1,6 @@
-import appleIcon from "@assets/icons/apple-icon.png";
-import favicon from "@assets/icons/favicon.png";
-import icon from "@assets/icons/icon.png";
 import type { Metadata } from "next";
 
+import { APP_ICONS } from "@constants/assets";
 import { APP_CONFIG } from "@constants/config";
 import { STORAGE_KEYS, THEME_VALUES } from "@constants/theme";
 
@@ -25,10 +23,13 @@ export const metadata: Metadata = {
   description: APP_CONFIG.APP_DESCRIPTION,
   icons: {
     icon: [
-      { url: favicon.src, type: "image/png" },
-      { url: icon.src, type: "image/png" },
+      { url: APP_ICONS["FAVICON_ICO"], type: "image/x-icon", sizes: "any" },
+      { url: APP_ICONS["FAVICON_PNG"], type: "image/png", sizes: APP_ICONS["FAVICON_SIZE"] },
+      { url: APP_ICONS["ICON_PNG"], type: "image/png", sizes: APP_ICONS["ICON_SIZE"] },
     ],
-    apple: [{ url: appleIcon.src, type: "image/png" }],
+    apple: [{ url: APP_ICONS["APPLE_TOUCH"], type: "image/png", sizes: APP_ICONS["APPLE_TOUCH_SIZE"] }],
+    // Legacy Safari probes this path even when `apple` is set.
+    other: [{ rel: "apple-touch-icon-precomposed", url: APP_ICONS["APPLE_TOUCH_PRECOMPOSED"] }],
   },
   ...(isProd && {
     robots: { index: false, follow: false },

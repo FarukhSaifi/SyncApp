@@ -1,8 +1,7 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
-import { APP_IDENTITY, BRAND_COLORS, EAS_PROJECT_ID as DEFAULT_EAS_PROJECT_ID } from "./config/app.ts";
+import { APP_IDENTITY, BRAND_COLORS, EAS_PROJECT_ID as DEFAULT_EAS_PROJECT_ID, WEB_ICONS } from "./config/app.ts";
 import { IOS_BUILD, iosBuildPropertiesPlugin } from "./config/ios.ts";
-
 
 const BUNDLE_ID = process.env.IOS_BUNDLE_IDENTIFIER || "com.farukh.syncapp";
 const ANDROID_PKG = process.env.ANDROID_PACKAGE || BUNDLE_ID;
@@ -52,13 +51,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   web: {
     bundler: "metro",
     output: "static",
-    favicon: "./assets/images/favicon.png",
+    favicon: WEB_ICONS.FAVICON,
   },
   plugins: [
     "expo-router",
     "expo-secure-store",
+    "expo-splash-screen",
+    "expo-status-bar",
     ...(IS_PRODUCTION_BUILD ? [] : ["expo-dev-client"]),
-    // enableSceneSupport (config/ios.ts) adopts UIScene lifecycle for iOS 27 / Xcode 27.
     iosBuildPropertiesPlugin(),
   ],
   experiments: {

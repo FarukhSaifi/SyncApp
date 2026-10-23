@@ -117,7 +117,10 @@ postman
 # Cursor AI files
 .agent
 .cursor
-scripts
+# Local scratch under scripts/ — keep committed utilities tracked
+scripts/*
+!scripts/generate-keys.js
+!scripts/cleanup.mjs
 .vercel
 yarn.lock
 pnpm-lock.yaml

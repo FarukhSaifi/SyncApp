@@ -6,7 +6,6 @@ import { FLOATING_TAB_BAR_STYLE, LABELS, ROUTES, tabScreenOptions } from "@const
 import { USER_ROLES } from "@constants/userRoles";
 import { useAuth } from "@contexts/AuthContext";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { FloatingTabBarProps } from "@types";
 
 const tabHeaderActions = {
   headerLeft: () => <AppHeaderLeft />,
@@ -21,8 +20,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      initialRouteName="index"
-      tabBar={(props) => <FloatingTabBar {...(props as FloatingTabBarProps)} />}
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         ...header,
         headerShown: true,

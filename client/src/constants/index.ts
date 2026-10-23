@@ -5,6 +5,7 @@
 export * from "./ai";
 export * from "./analytics";
 export * from "./api";
+export * from "./assets";
 export * from "./colorClasses";
 export * from "./config";
 export * from "./designTokens";

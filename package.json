@@ -33,15 +33,13 @@
     "env:pull:server": "cd server && vercel env pull .env.prod --environment=production",
     "env:pull:client": "cd client && vercel env pull .env.production --environment=production",
     "check": "turbo run typecheck lint",
-    "audit:all": "npm audit --audit-level=high --workspaces"
+    "audit:all": "npm audit --audit-level=high --workspaces",
+    "clean": "node scripts/cleanup.mjs",
+    "clean:deps": "node scripts/cleanup.mjs --deps",
+    "clean:native": "node scripts/cleanup.mjs --native",
+    "clean:all": "node scripts/cleanup.mjs --all"
   },
   "devDependencies": {
-    "turbo": "^2.11.9"
-  },
-  "overrides": {
-    "react-native-screens": "4.26.2",
-    "expo-router": {
-      "react-native-screens": "4.26.2"
-    }
+    "turbo": "^2.11.10"
   }
 }

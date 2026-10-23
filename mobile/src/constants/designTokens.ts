@@ -60,6 +60,22 @@ export const HEADER_ICON_BUTTON = Object.freeze({
   }),
 } as const);
 
+/**
+ * Brand mark — matches client `APP_HEADER` logo sizing.
+ * Image source: `assets/images/logo.png`.
+ */
+export const APP_LOGO = Object.freeze({
+  HEADER_SIZE: 28,
+  AUTH_SIZE: 56,
+  RADIUS_HEADER: 6,
+  RADIUS_AUTH: 12,
+  BRAND_GAP: 8,
+  BRAND_NAME_SIZE: 17,
+  BRAND_NAME_WEIGHT: "700" as const,
+  /** Left header inset so logo+name align with content. */
+  BRAND_HORIZONTAL_INSET: 8,
+} as const);
+
 /** Matches client LOADING_UI — primary ring spinner */
 export const LOADING_UI = Object.freeze({
   SPINNER_SIZE: 48,

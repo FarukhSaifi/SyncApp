@@ -30,6 +30,7 @@ export { API_URLS } from "./api";
 export { DATABASE } from "./database";
 export { DEFAULT_PASSWORDS, resolveTempPassword } from "./defaultPasswords";
 export {
+  BROWSER_ICON_PATHS,
   buildFirebaseStoragePublicUrl,
   buildGcsJsonApiMediaUploadUrl,
   buildGcsPublicObjectUrl,

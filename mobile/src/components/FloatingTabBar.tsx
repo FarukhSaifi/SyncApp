@@ -10,14 +10,7 @@ import { LABELS, ROUTES } from "@constants";
 import { IOS26, RADIUS, TAB_BAR } from "@constants/designTokens";
 import { TAB_ICONS } from "@constants/navigation";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type {
-  FloatingTabBarProps,
-  NativeView,
-  NewPostFabProps,
-  TabItemProps,
-  TabLayout,
-  TabRoute,
-} from "@types";
+import type { FloatingTabBarProps, NativeView, NewPostFabProps, TabItemProps, TabLayout, TabRoute } from "@types";
 
 const TAB_SPRING = TAB_BAR["SPRING"];
 const SLIDE_SPRING = TAB_BAR["SLIDE_SPRING"];
@@ -32,17 +25,7 @@ function tabLabel(options: { title?: string; tabBarLabel?: unknown }, routeName:
   return options.title ?? routeName;
 }
 
-function TabItem({
-  focused,
-  iconName,
-  tint,
-  muted,
-  onPress,
-  label,
-  dropRef,
-  tabKey,
-  onMeasured,
-}: TabItemProps) {
+function TabItem({ focused, iconName, tint, muted, onPress, label, dropRef, tabKey, onMeasured }: TabItemProps) {
   const scale = useSharedValue(1);
   const slotRef = useRef<NativeView>(null);
 
@@ -128,7 +111,7 @@ function NewPostFab({ label, onPress }: NewPostFabProps) {
 }
 
 /** Home | Analytics | (+) | Settings | Users — sliding pill + elevated FAB. */
-export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
+export function FloatingTabBar({ state, descriptors, emitter, navigateToTab }: FloatingTabBarProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const containerStyles = useMemo(() => createContainerStyles(colors, insets.bottom), [colors, insets.bottom]);
@@ -186,13 +169,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     const iconName = isFocused && icons ? icons.filled : (icons?.outline ?? "ellipse-outline");
 
     const onPress = () => {
-      const event = navigation.emit({
+      const event = emitter.emit({
         type: "tabPress",
         target: route.key,
         canPreventDefault: true,
       });
       if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name, route.params);
+        navigateToTab(route.key);
       }
     };
 

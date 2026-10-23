@@ -12,6 +12,8 @@ export const LABELS = Object.freeze({
   PROFILE: "Profile",
   USERS: "Users",
   TOGGLE_THEME_ARIA: "Toggle light or dark mode",
+  APP_LOGO_ALT: "SyncApp logo",
+  APP_HOME_ARIA: "SyncApp home",
   NEW_POST: "New Post",
   EDIT_POST: "Edit Post",
   SAVE: "Save",

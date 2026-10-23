@@ -1,8 +1,13 @@
-import { StyleSheet, View } from "react-native";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AppLogo } from "@components/AppLogo";
 import { ProfileHeaderButton } from "@components/ProfileHeaderButton";
 import { ThemeToggleButton } from "@components/ThemeToggleButton";
+import { APP_CONFIG, LABELS, ROUTES } from "@constants";
+import { APP_LOGO } from "@constants/designTokens";
 import { HEADER_ACTION } from "@constants/headerActions";
+import { useThemeColors } from "@contexts/ThemeContext";
 
 type HeaderActionSlotProps = {
   children: React.ReactNode;
@@ -28,6 +33,18 @@ const slotStyles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     marginLeft: "auto",
+    gap: 2,
+  },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: APP_LOGO["BRAND_GAP"],
+    marginLeft: APP_LOGO["BRAND_HORIZONTAL_INSET"],
+    maxWidth: 180,
+  },
+  brandName: {
+    fontSize: APP_LOGO["BRAND_NAME_SIZE"],
+    fontWeight: APP_LOGO["BRAND_NAME_WEIGHT"],
   },
 });
 
@@ -39,18 +56,33 @@ export function HeaderActionSlot({ children, edge }: HeaderActionSlotProps) {
   );
 }
 
+/** Brand mark + wordmark — matches client app header logo. */
 export function AppHeaderLeft() {
+  const colors = useThemeColors();
+
   return (
-    <HeaderActionSlot edge="left">
-      <ThemeToggleButton />
-    </HeaderActionSlot>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={LABELS["APP_HOME_ARIA"]}
+      onPress={() => router.push(ROUTES.TABS)}
+      style={slotStyles.brand}
+      hitSlop={8}
+    >
+      <AppLogo variant="header" />
+      <Text style={[slotStyles.brandName, { color: colors.foreground }]} numberOfLines={1}>
+        {APP_CONFIG.APP_NAME}
+      </Text>
+    </Pressable>
   );
 }
 
-/** Profile button — tabs headerRight and iOS stack headerRightItems. */
+/** Theme + profile — trailing actions (same roles as client header). */
 export function AppHeaderRight() {
   return (
     <View style={slotStyles.trailingHost}>
+      <HeaderActionSlot>
+        <ThemeToggleButton />
+      </HeaderActionSlot>
       <HeaderActionSlot edge="right">
         <ProfileHeaderButton />
       </HeaderActionSlot>
