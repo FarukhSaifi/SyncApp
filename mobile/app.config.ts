@@ -28,7 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: IOS_BUILD.SUPPORTS_TABLET,
     bundleIdentifier: BUNDLE_ID,
-    buildNumber: IOS_BUILD.BUILD_NUMBER,
+    // buildNumber is managed remotely (`eas.json` → cli.appVersionSource: "remote").
     ...(process.env.APPLE_TEAM_ID ? { appleTeamId: process.env.APPLE_TEAM_ID } : {}),
     infoPlist: {
       NSAppTransportSecurity: {
