@@ -90,13 +90,13 @@ Build and install directly to a connected iPhone using Xcode's free personal pro
 
 Native settings live in config files and are applied automatically during Expo prebuild:
 
-| Setting | Default | Config source |
-| --- | --- | --- |
-| Minimum iOS (deployment target) | **26.0** (iOS 26) | `IOS_DEPLOYMENT_TARGET` or `config/iosDefaults.ts` |
-| Android compileSdkVersion | **36** (Android 16) | `config/ios.ts` via `expo-build-properties` |
-| Android targetSdkVersion | **36** (Android 16) | `config/ios.ts` via `expo-build-properties` |
-| Device family | **iPhone only** | `IOS_SUPPORTS_TABLET=true` for iPad |
-| New Architecture | **enabled** | `newArchEnabled` in `app.config.ts` |
+| Setting                         | Default             | Config source                                      |
+| ------------------------------- | ------------------- | -------------------------------------------------- |
+| Minimum iOS (deployment target) | **26.0** (iOS 26)   | `IOS_DEPLOYMENT_TARGET` or `config/iosDefaults.ts` |
+| Android compileSdkVersion       | **36** (Android 16) | `config/ios.ts` via `expo-build-properties`        |
+| Android targetSdkVersion        | **36** (Android 16) | `config/ios.ts` via `expo-build-properties`        |
+| Device family                   | **iPhone only**     | `IOS_SUPPORTS_TABLET=true` for iPad                |
+| New Architecture                | **enabled**         | `newArchEnabled` in `app.config.ts`                |
 
 ```bash
 # Force regenerate native project from app.config
@@ -240,6 +240,23 @@ Publishing targets are strictly governed by platform authentication status:
 - **LinkedIn Studio**: The LinkedIn adaptation studio is displayed conditionally only when LinkedIn is connected.
 
 ## EAS Build (Direct Testing & App Stores)
+
+### GitHub Actions / non-interactive CI
+
+Push builds use the **`preview-simulator`** profile (no Apple signing). The **`preview`** profile (`distribution: internal`) needs Ad Hoc credentials on the Expo account; CI cannot create them interactively.
+
+One-time setup for device/internal builds:
+
+```bash
+cd mobile
+npx eas login
+npx eas credentials -p ios   # create/sync Distribution cert + Ad Hoc profile
+# optional: eas build --profile preview --platform ios   # once interactively
+```
+
+Repo secret: `EXPO_TRIGGER` (Expo access token) for `eas build --non-interactive`.
+
+The “No environment variables… preview” notice is informational when vars are already in `eas.json` `build.preview.env`.
 
 ### 1. Standalone Direct Android Testing (No Google Account Required)
 

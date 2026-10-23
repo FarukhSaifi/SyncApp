@@ -5,6 +5,10 @@ import { LATEST_IOS_DEPLOYMENT_TARGET } from "./iosDefaults.ts";
  * Consumed by app.config.ts.
  */
 export const IOS_BUILD = Object.freeze({
+  /**
+   * Local/dev hint only — EAS ignores `ios.buildNumber` when
+   * `eas.json` sets `cli.appVersionSource: "remote"` (build numbers live on Expo).
+   */
   BUILD_NUMBER: process.env.IOS_BUILD_NUMBER ?? "1",
   SUPPORTS_TABLET: process.env.IOS_SUPPORTS_TABLET !== "false",
   DEPLOYMENT_TARGET: process.env.IOS_DEPLOYMENT_TARGET ?? LATEST_IOS_DEPLOYMENT_TARGET,

@@ -17,13 +17,13 @@ on:
           - android
           - all
       profile:
-        description: EAS build profile
+        description: EAS build profile (preview/production need Apple credentials on Expo)
         required: true
-        default: preview
+        default: preview-simulator
         type: choice
         options:
-          - preview
           - preview-simulator
+          - preview
           - production
 
 permissions:
@@ -97,10 +97,29 @@ jobs:
       - name: Install workspace dependencies
         run: npm install --workspaces --include=dev
 
+      # Push → iOS simulator (no Apple signing). Device / store profiles need
+      # credentials created once via `cd mobile && npx eas credentials` (interactive).
+      - name: Resolve EAS target
+        id: eas
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+            echo "profile=${{ inputs.profile }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "platform=ios" >> "$GITHUB_OUTPUT"
+            echo "profile=preview-simulator" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run EAS build
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TRIGGER }}
-          EAS_PLATFORM: ${{ inputs.platform || 'ios' }}
-          EAS_PROFILE: ${{ inputs.profile || 'preview' }}
-        run: npx eas-cli@latest build --platform "$EAS_PLATFORM" --profile "$EAS_PROFILE" --non-interactive
+          EAS_PLATFORM: ${{ steps.eas.outputs.platform }}
+          EAS_PROFILE: ${{ steps.eas.outputs.profile }}
+        run: |
+          set -euo pipefail
+          echo "EAS build: platform=$EAS_PLATFORM profile=$EAS_PROFILE"
+          if [ "$EAS_PROFILE" = "preview" ] || [ "$EAS_PROFILE" = "production" ]; then
+            echo "::notice::Device/store profiles require remote Apple credentials on Expo. If this fails, run locally: cd mobile && npx eas credentials -p ios"
+          fi
+          npx eas-cli@latest build --platform "$EAS_PLATFORM" --profile "$EAS_PROFILE" --non-interactive
