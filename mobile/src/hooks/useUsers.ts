@@ -7,26 +7,7 @@ import { USER_ROLES, USER_VERIFIED_FILTER } from "@constants/userRoles";
 import { useDebounce } from "@hooks/useDebounce";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
-import type { User } from "@types";
-
-interface UseUsersOptions {
-  userRole?: string;
-}
-
-export interface AddUserForm {
-  username: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  isVerified: boolean;
-}
-
-export interface EditUserForm {
-  role: string;
-  isVerified: boolean;
-}
+import type { AddUserForm, EditUserForm, UseUsersOptions, User } from "@types";
 
 const initialAddForm: AddUserForm = {
   username: "",

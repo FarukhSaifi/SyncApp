@@ -6,9 +6,10 @@ import { getSeoScorecard } from "@utils/seoScorecard";
 
 import { PILL_SIZES } from "@constants/designTokens";
 
+import Tooltip from "@components/common/Tooltip";
+
 /**
  * Small badge showing SEO score (e.g. "SEO: 92/100") with tooltip listing checks.
- * Hover shows: ✅ Keyword in title, ✅ Meta description length, ⚠️ No internal links, etc.
  */
 const SeoScoreBadge = memo<SeoScoreBadgeProps>(({ post }) => {
   const { score, maxScore, summary } = useMemo(() => getSeoScorecard(post), [post]);
@@ -20,15 +21,20 @@ const SeoScoreBadge = memo<SeoScoreBadgeProps>(({ post }) => {
         ? COLOR_CLASSES.ICON_COLOR.WARNING
         : COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE;
 
+  const label = `${SYNC_LABEL.SEO_BADGE_LABEL}: ${score}/${maxScore}`;
+  const tip = summary || SYNC_LABEL.SEO_SCORE_UNKNOWN;
+
   return (
-    <span
-      className={`${PILL_SIZES.SM} bg-muted/80 text-foreground border border-border ${scoreColor}`}
-      title={summary || SYNC_LABEL.SEO_SCORE_UNKNOWN}
-      role="img"
-      aria-label={SYNC_LABEL.SEO_SCORE_ARIA(score, maxScore, summary)}
-    >
-      {SYNC_LABEL.SEO_BADGE_LABEL}: {score}/{maxScore}
-    </span>
+    <Tooltip content={<span className="whitespace-pre-wrap text-left">{tip}</span>} side="top">
+      <span
+        className={`${PILL_SIZES.SM} cursor-help border border-border bg-muted/80 text-foreground ${scoreColor}`}
+        tabIndex={0}
+        role="img"
+        aria-label={SYNC_LABEL.SEO_SCORE_ARIA(score, maxScore, summary)}
+      >
+        {label}
+      </span>
+    </Tooltip>
   );
 });
 

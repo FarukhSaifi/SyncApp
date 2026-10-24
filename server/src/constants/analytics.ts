@@ -8,11 +8,6 @@ export const ANALYTICS_PLATFORMS = Object.freeze({
 
 export type AnalyticsPlatform = (typeof ANALYTICS_PLATFORMS)[keyof typeof ANALYTICS_PLATFORMS];
 
-export const ANALYTICS_ENV = Object.freeze({
-  /** Numeric GA4 property id (Admin → Property settings), not the G-XXXXXXXX measurement id. */
-  PROPERTY_ID: "GOOGLE_ANALYTICS_PROPERTY_ID",
-} as const);
-
 export const ANALYTICS_SYNC = Object.freeze({
   /** Max published DEV.to posts to refresh per sync request. */
   DEVTO_MAX_POSTS_PER_SYNC: 50,

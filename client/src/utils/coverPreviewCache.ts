@@ -1,7 +1,7 @@
 import { COVER_UPLOAD } from "@constants/editor";
 
 /** sessionStorage key for a cached base64 cover preview of a public URL. */
-export function coverPreviewSessionKey(url: string): string {
+function coverPreviewSessionKey(url: string): string {
   return `${COVER_UPLOAD["PREVIEW_SESSION_PREFIX"]}${url}`;
 }
 

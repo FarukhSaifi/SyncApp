@@ -17,7 +17,6 @@ export {
   resolveContentModel,
 } from "./ai";
 export {
-  ANALYTICS_ENV,
   ANALYTICS_PLATFORMS,
   ANALYTICS_SYNC,
   GA4_EMPTY_TOTALS,
@@ -50,12 +49,9 @@ export {
   AI_OPTIMIZATION_TARGETS,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
-  includesDevtoTarget,
   includesGoogleTarget,
   includesLinkedInTarget,
   isValidOptimizationTargets,
-  resolveArticleTagLimit,
-  resolveLinkedInHashtagLimit,
   resolveOptimizationTargets,
 } from "./platformOptimization";
 export type { OptimizationTarget } from "./platformOptimization";
@@ -105,6 +101,12 @@ export const VALID_SCHEDULE_PLATFORMS = Object.freeze([...SCHEDULE_PLATFORMS]) a
 
 // Valid post status array
 export const VALID_POST_STATUS = Object.freeze(Object.values(POST_STATUS)) as PostStatus[];
+
+/** Extra list filters beyond Post.status (Dashboard DataTable). */
+export const POST_LIST_FILTER = Object.freeze({
+  ALL: "all",
+  SCHEDULED: "scheduled",
+} as const);
 
 // Backward-compatibility direct exports
 export const DEFAULT_PAGE_SIZE = DEFAULT_VALUES.DEFAULT_PAGE_SIZE;

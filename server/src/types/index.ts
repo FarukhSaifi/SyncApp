@@ -8,9 +8,12 @@ export * from "./auth";
 export * from "./common";
 export * from "./config";
 export * from "./credentials";
+export * from "./documents";
 export * from "./errors";
+export * from "./fromConstants";
 export * from "./posts";
 export * from "./publish";
+export * from "./services";
 export * from "./storage";
 export * from "./users";
 

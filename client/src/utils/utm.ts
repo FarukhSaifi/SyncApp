@@ -1,10 +1,15 @@
 /**
  * Append / replace UTM query params on absolute HTTP(S) URLs.
  */
-import { UTM_CAMPAIGNS, UTM_MEDIUMS, UTM_PARAM_KEYS, type UtmBuildOptions } from "@constants/utm";
+import type { UtmBuildOptions } from "@types";
+
+import { UTM_CAMPAIGNS, UTM_MEDIUMS, UTM_PARAM_KEYS } from "@constants/utm";
 
 function extractSlugForContent(url: URL): string {
-  const parts = url.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+  const parts = url.pathname
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean);
   return parts[parts.length - 1] || "";
 }
 

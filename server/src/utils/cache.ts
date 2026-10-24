@@ -124,7 +124,9 @@ export const cache = new Cache();
 
 export const cacheKeys = {
   posts: {
-    list: (userId: string, page: number, limit: number): string => `posts:list:${userId}:${page}:${limit}`,
+    list: (userId: string, page: number, limit: number, filterKey = ""): string =>
+      `posts:list:${userId}:${page}:${limit}:${filterKey}`,
+    stats: (userId: string): string => `posts:stats:${userId}`,
     single: (id: string): string => `posts:single:${id}`,
     slug: (slug: string): string => `posts:slug:${slug}`,
     all: (): RegExp => /^posts:/,

@@ -4,19 +4,7 @@ import { Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
 import { Spinner } from "@components/Spinner";
 import { BUTTON_SIZES, BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS] | "danger";
-type ButtonSize = (typeof BUTTON_SIZES)[keyof typeof BUTTON_SIZES];
-
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: ViewStyle;
-}
+import type { ButtonProps, ButtonSize, ButtonVariant } from "@types";
 
 export function Button({
   title,
@@ -99,10 +87,10 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    default: { paddingVertical: 12, paddingHorizontal: 18, minHeight: 48 },
-    sm: { paddingVertical: 8, paddingHorizontal: 14, minHeight: 36 },
-    lg: { paddingVertical: 14, paddingHorizontal: 22, minHeight: 52 },
-    text: { fontWeight: "600", fontSize: 16 },
+    default: { paddingVertical: 10, paddingHorizontal: 16, minHeight: 40 },
+    sm: { paddingVertical: 8, paddingHorizontal: 12, minHeight: 36 },
+    lg: { paddingVertical: 12, paddingHorizontal: 20, minHeight: 44 },
+    text: { fontWeight: "600", fontSize: 14 },
     textOnColor: { color: colors.primaryForeground },
     outlineText: { color: colors.foreground },
     secondaryText: { color: colors.secondaryForeground },

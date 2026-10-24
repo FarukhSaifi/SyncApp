@@ -1,6 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
+import SettingsPageHeader from "@components/settings/SettingsPageHeader";
+import SettingsSectionNav from "@components/settings/SettingsSectionNav";
 import {
   API_PATHS,
   APP_CONFIG,
@@ -8,7 +10,10 @@ import {
   EXTERNAL_LINKS,
   LINKEDIN_OAUTH_CALLBACK_FALLBACK,
   LINKEDIN_OAUTH_QUERY,
+  PAGE_DESCRIPTIONS,
   PLATFORMS,
+  PLATFORM_DISPLAY_NAMES,
+  SETTINGS_SECTION_IDS,
   SYNC_LABEL,
   TOAST_TITLES,
   URL_SCHEME_PREFIXES,
@@ -19,6 +24,8 @@ import { apiClient } from "@utils/apiClient";
 import { isCredentialConnected } from "@utils/credentials";
 import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiCopy, FiExternalLink, FiEye, FiEyeOff, FiKey, FiLinkedin, FiSave } from "react-icons/fi";
+
+import { SETTINGS_LAYOUT } from "@constants/designTokens";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
@@ -52,6 +59,27 @@ const Settings = () => {
   const [linkedinConnecting, setLinkedinConnecting] = useState(false);
   const [linkedinTokenExpired, setLinkedinTokenExpired] = useState(false);
   const [linkedinRedirectUri, setLinkedinRedirectUri] = useState<string>(LINKEDIN_OAUTH_CALLBACK_FALLBACK);
+  const [activeSectionId, setActiveSectionId] = useState<string>(SETTINGS_SECTION_IDS.MEDIUM);
+
+  const sectionNavItems = useMemo(
+    () => [
+      { id: SETTINGS_SECTION_IDS.MEDIUM, label: PLATFORM_DISPLAY_NAMES[PLATFORMS.MEDIUM] },
+      { id: SETTINGS_SECTION_IDS.DEVTO, label: PLATFORM_DISPLAY_NAMES[PLATFORMS.DEVTO] },
+      { id: SETTINGS_SECTION_IDS.WORDPRESS, label: PLATFORM_DISPLAY_NAMES[PLATFORMS.WORDPRESS] },
+      { id: SETTINGS_SECTION_IDS.LINKEDIN, label: PLATFORM_DISPLAY_NAMES[PLATFORMS.LINKEDIN] },
+      { id: SETTINGS_SECTION_IDS.STATUS, label: SYNC_LABEL.PLATFORM_STATUS },
+      { id: SETTINGS_SECTION_IDS.HELP, label: SYNC_LABEL.HELP_SUPPORT },
+    ],
+    [],
+  );
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   useEffect(() => {
     const loadCredentials = async () => {
@@ -369,573 +397,590 @@ const Settings = () => {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.SETTINGS_TITLE}</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">{SYNC_LABEL.SETTINGS_DESCRIPTION}</p>
-      </div>
+    <div className={SETTINGS_LAYOUT.PAGE_CLASS}>
+      <SettingsPageHeader title={SYNC_LABEL.SETTINGS_TITLE} description={SYNC_LABEL.SETTINGS_DESCRIPTION} />
 
-      {/* Medium Integration */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className={`p-1.5 sm:p-2 ${COLOR_CLASSES.ICON_BG.WARNING} rounded-lg shrink-0`}>
-              <FiKey className={`h-4 w-4 sm:h-6 sm:w-6 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
-            </div>
-            <div>
-              <CardTitle>{SYNC_LABEL.MEDIUM_INTEGRATION}</CardTitle>
-              <CardDescription>{SYNC_LABEL.MEDIUM_INTEGRATION_DESC}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-            <div className="flex items-start space-x-2 sm:space-x-3">
-              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
-              <div className="text-sm text-foreground">
-                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_MEDIUM_KEY}</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>
-                    {SYNC_LABEL.GO_TO}{" "}
-                    <a
-                      href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-900"
-                    >
-                      {SYNC_LABEL.MEDIUM_SETTINGS}
-                    </a>
-                  </li>
-                  <li>{SYNC_LABEL.INTEGRATION_TOKENS}</li>
-                  <li>{SYNC_LABEL.GET_INTEGRATION_TOKEN}</li>
-                  <li>{SYNC_LABEL.COPY_TOKEN}</li>
-                </ol>
-              </div>
-            </div>
-          </div>
+      <div className={SETTINGS_LAYOUT.BODY_CLASS}>
+        <SettingsSectionNav
+          items={sectionNavItems}
+          activeId={activeSectionId}
+          onSelect={scrollToSection}
+          ariaLabel={PAGE_DESCRIPTIONS.SETTINGS_SECTION_NAV_ARIA}
+        />
 
-          <div>
-            <label htmlFor="settings-medium-token" className="block text-sm font-medium text-foreground mb-2">
-              {SYNC_LABEL.MEDIUM_API_KEY_LABEL}
-            </label>
-            <div className="relative">
-              <Input
-                id="settings-medium-token"
-                name="mediumApiKey"
-                type={showMediumKey ? "text" : "password"}
-                value={mediumApiKey}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMediumApiKey(e.target.value)}
-                placeholder={connected.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
-                className="w-full pr-12 sm:pr-10"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                aria-label={showMediumKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowMediumKey((v) => !v);
-                }}
-                className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
-              >
-                {showMediumKey ? (
-                  <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                ) : (
-                  <FiEye className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                )}
-              </button>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              {connected.medium ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.TOKEN_ENCRYPTED}
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button
-            onClick={handleSaveMediumCredentials}
-            disabled={loading || (!mediumApiKey.trim() && !connected.medium)}
-            variant={!mediumApiKey.trim() && connected.medium ? "outline" : "primary"}
-            className="flex items-center space-x-1.5 sm:space-x-2"
-          >
-            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !mediumApiKey.trim() && connected.medium
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.medium
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* DEV.to Integration */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 ${COLOR_CLASSES.ICON_BG.PRIMARY} rounded-lg`}>
-              <FiKey className={`h-6 w-6 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
-            </div>
-            <div>
-              <CardTitle>{SYNC_LABEL.DEVTO_INTEGRATION}</CardTitle>
-              <CardDescription>{SYNC_LABEL.DEVTO_INTEGRATION_DESC}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {decryptFailed.devto ? (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <FiAlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
-                <p className="text-sm text-destructive">{SYNC_LABEL.CREDENTIAL_DECRYPT_FAILED_BANNER}</p>
-              </div>
-            </div>
-          ) : null}
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <FiAlertCircle className="h-5 w-5 text-purple-600 mt-0.5 shrink-0" />
-              <div className="text-sm text-purple-800">
-                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_DEVTO_KEY}</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>
-                    {SYNC_LABEL.GO_TO}{" "}
-                    <a
-                      href={EXTERNAL_LINKS.DEVTO_SETTINGS}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-primary/90"
-                    >
-                      {SYNC_LABEL.DEVTO_SETTINGS}
-                    </a>
-                  </li>
-                  <li>{SYNC_LABEL.API_KEYS_SECTION}</li>
-                  <li>{SYNC_LABEL.GENERATE_API_KEY}</li>
-                  <li>{SYNC_LABEL.COPY_KEY}</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="settings-devto-username" className="block text-sm font-medium text-foreground mb-2">
-                {SYNC_LABEL.DEVTO_USERNAME_LABEL}
-              </label>
-              <Input
-                id="settings-devto-username"
-                name="devtoUsername"
-                value={devtoUsername}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoUsername(e.target.value)}
-                placeholder={SYNC_LABEL.PLACEHOLDER_DEVTO_USERNAME}
-                className="w-full"
-                autoComplete="username"
-              />
-            </div>
-            <div>
-              <label htmlFor="settings-devto-api-key" className="block text-sm font-medium text-foreground mb-2">
-                {SYNC_LABEL.DEVTO_API_KEY_LABEL}
-              </label>
-              <div className="relative">
-                <Input
-                  id="settings-devto-api-key"
-                  name="devtoApiKey"
-                  type={showDevtoKey ? "text" : "password"}
-                  value={devtoApiKey}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoApiKey(e.target.value)}
-                  placeholder={
-                    decryptFailed.devto
-                      ? SYNC_LABEL.CREDENTIAL_REENTER_REQUIRED
-                      : connected.devto
-                        ? SYNC_LABEL.SAVED_HIDDEN
-                        : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY
-                  }
-                  className="w-full pr-12 sm:pr-10"
-                  autoComplete="off"
-                />
-                <button
-                  type="button"
-                  aria-label={showDevtoKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowDevtoKey((v) => !v);
-                  }}
-                  className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
-                >
-                  {showDevtoKey ? (
-                    <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
-                  ) : (
-                    <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {connected.devto ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_DEVTO}
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button
-            onClick={handleSaveDevtoCredentials}
-            disabled={loading || ((!devtoApiKey.trim() || !devtoUsername.trim()) && !connected.devto)}
-            variant={!devtoApiKey.trim() && !devtoUsername.trim() && connected.devto ? "outline" : "primary"}
-            className="flex items-center space-x-1.5 sm:space-x-2"
-          >
-            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !devtoApiKey.trim() && !devtoUsername.trim() && connected.devto
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.devto
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* WordPress Integration */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary/15 rounded-lg">
-              <FiKey className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle>{SYNC_LABEL.WORDPRESS_INTEGRATION}</CardTitle>
-              <CardDescription>{SYNC_LABEL.WORDPRESS_INTEGRATION_DESC}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-            <div className="flex items-start space-x-2 sm:space-x-3">
-              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
-              <div className="text-sm text-foreground">
-                <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_WORDPRESS_KEY}</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>
-                    {SYNC_LABEL.INSTALL_JWT_PLUGIN}{" "}
-                    <a
-                      href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-900"
-                    >
-                      {SYNC_LABEL.WORDPRESS_JWT_PLUGIN}
-                    </a>
-                  </li>
-                  <li>{SYNC_LABEL.WORDPRESS_ADMIN}</li>
-                  <li>{SYNC_LABEL.GENERATE_APP_PASSWORD}</li>
-                  <li>{SYNC_LABEL.USE_USERNAME_PASSWORD}</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="settings-wordpress-site-url" className="block text-sm font-medium text-foreground mb-2">
-                {SYNC_LABEL.WORDPRESS_SITE_URL_LABEL}
-              </label>
-              <Input
-                id="settings-wordpress-site-url"
-                name="wordpressSiteUrl"
-                type="url"
-                value={wordpressSiteUrl}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressSiteUrl(e.target.value)}
-                placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL}
-                className="w-full"
-                autoComplete="url"
-              />
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
-            </div>
-            <div>
-              <label htmlFor="settings-wordpress-api-key" className="block text-sm font-medium text-foreground mb-2">
-                {SYNC_LABEL.WORDPRESS_API_KEY_LABEL}
-              </label>
-              <div className="relative">
-                <Input
-                  id="settings-wordpress-api-key"
-                  name="wordpressApiKey"
-                  type={showWordpressKey ? "text" : "password"}
-                  value={wordpressApiKey}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressApiKey(e.target.value)}
-                  placeholder={connected.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY}
-                  className="w-full pr-12 sm:pr-10"
-                  autoComplete="off"
-                />
-                <button
-                  type="button"
-                  aria-label={showWordpressKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowWordpressKey((v) => !v);
-                  }}
-                  className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
-                >
-                  {showWordpressKey ? (
-                    <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
-                  ) : (
-                    <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {connected.wordpress ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button
-            onClick={handleSaveWordpressCredentials}
-            disabled={loading || ((!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) && !connected.wordpress)}
-            variant={!wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress ? "outline" : "primary"}
-            className="flex items-center space-x-1.5 sm:space-x-2"
-          >
-            <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
-            {loading
-              ? SYNC_LABEL.SAVING
-              : !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress
-                ? SYNC_LABEL.DISCONNECT_PLATFORM
-                : saved.wordpress
-                  ? SYNC_LABEL.SAVED
-                  : SYNC_LABEL.SAVE_CREDENTIALS}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* LinkedIn Integration */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary/15 rounded-lg">
-              <FiLinkedin className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle>{SYNC_LABEL.LINKEDIN_INTEGRATION}</CardTitle>
-              <CardDescription>{SYNC_LABEL.LINKEDIN_INTEGRATION_DESC}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-            <div className="flex items-start space-x-2 sm:space-x-3">
-              <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
-              <div className="text-sm text-foreground">
-                <p className="font-medium mb-1">{SYNC_LABEL.LINKEDIN_HOW_TO_CONNECT}</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_1}</li>
-                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_2}</li>
-                  <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_3}</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-foreground">{SYNC_LABEL.LINKEDIN_REDIRECT_URI_LABEL}</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <code className="flex-1 break-all rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground">
-                {linkedinRedirectUri}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLinkedInRedirectUri}
-                className="shrink-0 justify-center"
-              >
-                <FiCopy className="mr-1.5 h-3.5 w-3.5" />
-                {SYNC_LABEL.LINKEDIN_COPY_REDIRECT_URI}
-              </Button>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
-          </p>
-          {linkedinTokenExpired ? (
-            <p className="flex items-start gap-1.5 text-[11px] text-warning">
-              <FiAlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
-              {SYNC_LABEL.LINKEDIN_TOKEN_EXPIRED_HINT}
-            </p>
-          ) : null}
-          {!connected.linkedin && !linkedinTokenExpired ? (
-            <p className="text-[11px] text-muted-foreground">{SYNC_LABEL.LINKEDIN_OAUTH_BROWSER_HINT}</p>
-          ) : null}
-        </CardContent>
-        <CardFooter className="flex flex-wrap gap-2">
-          {connected.linkedin ? (
-            <Button
-              onClick={handleDisconnectLinkedIn}
-              disabled={loading || linkedinConnecting}
-              variant="outline"
-              className="flex items-center space-x-1.5 sm:space-x-2"
-            >
-              {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.DISCONNECT_LINKEDIN}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleConnectLinkedIn}
-              disabled={loading || linkedinConnecting}
-              variant="primary"
-              className="flex items-center space-x-1.5 sm:space-x-2"
-            >
-              <FiLinkedin className="h-3 w-3 sm:h-4 sm:w-4" />
-              {linkedinConnecting ? SYNC_LABEL.CONNECTING_LINKEDIN : SYNC_LABEL.CONNECT_LINKEDIN}
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-
-      {/* Platform Status */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle>{SYNC_LABEL.PLATFORM_STATUS}</CardTitle>
-          <CardDescription>{SYNC_LABEL.PLATFORM_STATUS_DESC}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+        <div className={SETTINGS_LAYOUT.SECTIONS_CLASS}>
+          {/* Medium Integration */}
+          <Card id={SETTINGS_SECTION_IDS.MEDIUM} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className={`p-1.5 sm:p-2 ${COLOR_CLASSES.ICON_BG.WARNING} rounded-lg shrink-0`}>
-                  <FiKey className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
+                  <FiKey className={`h-4 w-4 sm:h-6 sm:w-6 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
                 </div>
                 <div>
-                  <p className="font-medium">{SYNC_LABEL.PLATFORM_MEDIUM}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {connected.medium ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
-                  </p>
+                  <CardTitle>{SYNC_LABEL.MEDIUM_INTEGRATION}</CardTitle>
+                  <CardDescription>{SYNC_LABEL.MEDIUM_INTEGRATION_DESC}</CardDescription>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.medium} />
-            </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <div className="flex items-start space-x-2 sm:space-x-3">
+                  <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_MEDIUM_KEY}</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>
+                        {SYNC_LABEL.GO_TO}{" "}
+                        <a
+                          href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {SYNC_LABEL.MEDIUM_SETTINGS}
+                        </a>
+                      </li>
+                      <li>{SYNC_LABEL.INTEGRATION_TOKENS}</li>
+                      <li>{SYNC_LABEL.GET_INTEGRATION_TOKEN}</li>
+                      <li>{SYNC_LABEL.COPY_TOKEN}</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <label htmlFor="settings-medium-token" className="block text-sm font-medium text-foreground mb-2">
+                  {SYNC_LABEL.MEDIUM_API_KEY_LABEL}
+                </label>
+                <div className="relative">
+                  <Input
+                    id="settings-medium-token"
+                    name="mediumApiKey"
+                    type={showMediumKey ? "text" : "password"}
+                    value={mediumApiKey}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMediumApiKey(e.target.value)}
+                    placeholder={connected.medium ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_MEDIUM_TOKEN}
+                    className="w-full pr-12 sm:pr-10"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showMediumKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowMediumKey((v) => !v);
+                    }}
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                  >
+                    {showMediumKey ? (
+                      <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                    ) : (
+                      <FiEye className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
+                  {connected.medium ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.TOKEN_ENCRYPTED}
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSaveMediumCredentials}
+                disabled={loading || (!mediumApiKey.trim() && !connected.medium)}
+                variant={!mediumApiKey.trim() && connected.medium ? "outline" : "primary"}
+                className="flex items-center space-x-1.5 sm:space-x-2"
+              >
+                <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+                {loading
+                  ? SYNC_LABEL.SAVING
+                  : !mediumApiKey.trim() && connected.medium
+                    ? SYNC_LABEL.DISCONNECT_PLATFORM
+                    : saved.medium
+                      ? SYNC_LABEL.SAVED
+                      : SYNC_LABEL.SAVE_CREDENTIALS}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* DEV.to Integration */}
+          <Card id={SETTINGS_SECTION_IDS.DEVTO} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
               <div className="flex items-center space-x-3">
                 <div className={`p-2 ${COLOR_CLASSES.ICON_BG.PRIMARY} rounded-lg`}>
-                  <FiKey className={`h-4 w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
+                  <FiKey className={`h-6 w-6 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
                 </div>
                 <div>
-                  <p className="font-medium">{SYNC_LABEL.PLATFORM_DEVTO}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {connected.devto ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
-                  </p>
+                  <CardTitle>{SYNC_LABEL.DEVTO_INTEGRATION}</CardTitle>
+                  <CardDescription>{SYNC_LABEL.DEVTO_INTEGRATION_DESC}</CardDescription>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.devto} />
-            </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {decryptFailed.devto ? (
+                <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <FiAlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-sm text-destructive">{SYNC_LABEL.CREDENTIAL_DECRYPT_FAILED_BANNER}</p>
+                  </div>
+                </div>
+              ) : null}
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <FiAlertCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_DEVTO_KEY}</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>
+                        {SYNC_LABEL.GO_TO}{" "}
+                        <a
+                          href={EXTERNAL_LINKS.DEVTO_SETTINGS}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary/90"
+                        >
+                          {SYNC_LABEL.DEVTO_SETTINGS}
+                        </a>
+                      </li>
+                      <li>{SYNC_LABEL.API_KEYS_SECTION}</li>
+                      <li>{SYNC_LABEL.GENERATE_API_KEY}</li>
+                      <li>{SYNC_LABEL.COPY_KEY}</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="settings-devto-username" className="block text-sm font-medium text-foreground mb-2">
+                    {SYNC_LABEL.DEVTO_USERNAME_LABEL}
+                  </label>
+                  <Input
+                    id="settings-devto-username"
+                    name="devtoUsername"
+                    value={devtoUsername}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoUsername(e.target.value)}
+                    placeholder={SYNC_LABEL.PLACEHOLDER_DEVTO_USERNAME}
+                    className="w-full"
+                    autoComplete="username"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="settings-devto-api-key" className="block text-sm font-medium text-foreground mb-2">
+                    {SYNC_LABEL.DEVTO_API_KEY_LABEL}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="settings-devto-api-key"
+                      name="devtoApiKey"
+                      type={showDevtoKey ? "text" : "password"}
+                      value={devtoApiKey}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDevtoApiKey(e.target.value)}
+                      placeholder={
+                        decryptFailed.devto
+                          ? SYNC_LABEL.CREDENTIAL_REENTER_REQUIRED
+                          : connected.devto
+                            ? SYNC_LABEL.SAVED_HIDDEN
+                            : SYNC_LABEL.PLACEHOLDER_DEVTO_API_KEY
+                      }
+                      className="w-full pr-12 sm:pr-10"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showDevtoKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowDevtoKey((v) => !v);
+                      }}
+                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                    >
+                      {showDevtoKey ? (
+                        <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                      ) : (
+                        <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {connected.devto ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_DEVTO}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSaveDevtoCredentials}
+                disabled={loading || ((!devtoApiKey.trim() || !devtoUsername.trim()) && !connected.devto)}
+                variant={!devtoApiKey.trim() && !devtoUsername.trim() && connected.devto ? "outline" : "primary"}
+                className="flex items-center space-x-1.5 sm:space-x-2"
+              >
+                <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+                {loading
+                  ? SYNC_LABEL.SAVING
+                  : !devtoApiKey.trim() && !devtoUsername.trim() && connected.devto
+                    ? SYNC_LABEL.DISCONNECT_PLATFORM
+                    : saved.devto
+                      ? SYNC_LABEL.SAVED
+                      : SYNC_LABEL.SAVE_CREDENTIALS}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* WordPress Integration */}
+          <Card id={SETTINGS_SECTION_IDS.WORDPRESS} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-primary/15 rounded-lg">
-                  <FiKey className="h-4 w-4 text-primary" />
+                  <FiKey className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{SYNC_LABEL.PLATFORM_WORDPRESS}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {connected.wordpress ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
-                  </p>
+                  <CardTitle>{SYNC_LABEL.WORDPRESS_INTEGRATION}</CardTitle>
+                  <CardDescription>{SYNC_LABEL.WORDPRESS_INTEGRATION_DESC}</CardDescription>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.wordpress} />
-            </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <div className="flex items-start space-x-2 sm:space-x-3">
+                  <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_WORDPRESS_KEY}</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>
+                        {SYNC_LABEL.INSTALL_JWT_PLUGIN}{" "}
+                        <a
+                          href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {SYNC_LABEL.WORDPRESS_JWT_PLUGIN}
+                        </a>
+                      </li>
+                      <li>{SYNC_LABEL.WORDPRESS_ADMIN}</li>
+                      <li>{SYNC_LABEL.GENERATE_APP_PASSWORD}</li>
+                      <li>{SYNC_LABEL.USE_USERNAME_PASSWORD}</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="settings-wordpress-site-url"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    {SYNC_LABEL.WORDPRESS_SITE_URL_LABEL}
+                  </label>
+                  <Input
+                    id="settings-wordpress-site-url"
+                    name="wordpressSiteUrl"
+                    type="url"
+                    value={wordpressSiteUrl}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressSiteUrl(e.target.value)}
+                    placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL}
+                    className="w-full"
+                    autoComplete="url"
+                  />
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
+                </div>
+                <div>
+                  <label
+                    htmlFor="settings-wordpress-api-key"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    {SYNC_LABEL.WORDPRESS_API_KEY_LABEL}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="settings-wordpress-api-key"
+                      name="wordpressApiKey"
+                      type={showWordpressKey ? "text" : "password"}
+                      value={wordpressApiKey}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressApiKey(e.target.value)}
+                      placeholder={
+                        connected.wordpress ? SYNC_LABEL.SAVED_HIDDEN : SYNC_LABEL.PLACEHOLDER_WORDPRESS_API_KEY
+                      }
+                      className="w-full pr-12 sm:pr-10"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showWordpressKey ? SYNC_LABEL.HIDE_API_KEY : SYNC_LABEL.SHOW_API_KEY}
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowWordpressKey((v) => !v);
+                      }}
+                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                    >
+                      {showWordpressKey ? (
+                        <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                      ) : (
+                        <FiEye className="h-4 w-4 sm:h-5 sm:w-5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_API_KEY_INFO}</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {connected.wordpress ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSaveWordpressCredentials}
+                disabled={loading || ((!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) && !connected.wordpress)}
+                variant={
+                  !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress ? "outline" : "primary"
+                }
+                className="flex items-center space-x-1.5 sm:space-x-2"
+              >
+                <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
+                {loading
+                  ? SYNC_LABEL.SAVING
+                  : !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress
+                    ? SYNC_LABEL.DISCONNECT_PLATFORM
+                    : saved.wordpress
+                      ? SYNC_LABEL.SAVED
+                      : SYNC_LABEL.SAVE_CREDENTIALS}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* LinkedIn Integration */}
+          <Card id={SETTINGS_SECTION_IDS.LINKEDIN} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-primary/15 rounded-lg">
-                  <FiLinkedin className="h-4 w-4 text-primary" />
+                  <FiLinkedin className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{SYNC_LABEL.PLATFORM_LINKEDIN}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
-                  </p>
+                  <CardTitle>{SYNC_LABEL.LINKEDIN_INTEGRATION}</CardTitle>
+                  <CardDescription>{SYNC_LABEL.LINKEDIN_INTEGRATION_DESC}</CardDescription>
                 </div>
               </div>
-              <ConnectionStatusPill connected={connected.linkedin} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <div className="flex items-start space-x-2 sm:space-x-3">
+                  <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-medium mb-1">{SYNC_LABEL.LINKEDIN_HOW_TO_CONNECT}</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_1}</li>
+                      <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_2}</li>
+                      <li>{SYNC_LABEL.LINKEDIN_OAUTH_STEP_3}</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-foreground">{SYNC_LABEL.LINKEDIN_REDIRECT_URI_LABEL}</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <code className="flex-1 break-all rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground">
+                    {linkedinRedirectUri}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyLinkedInRedirectUri}
+                    className="shrink-0 justify-center"
+                  >
+                    <FiCopy className="mr-1.5 h-3.5 w-3.5" />
+                    {SYNC_LABEL.LINKEDIN_COPY_REDIRECT_URI}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+              </p>
+              {linkedinTokenExpired ? (
+                <p className="flex items-start gap-1.5 text-[11px] text-warning">
+                  <FiAlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                  {SYNC_LABEL.LINKEDIN_TOKEN_EXPIRED_HINT}
+                </p>
+              ) : null}
+              {!connected.linkedin && !linkedinTokenExpired ? (
+                <p className="text-[11px] text-muted-foreground">{SYNC_LABEL.LINKEDIN_OAUTH_BROWSER_HINT}</p>
+              ) : null}
+            </CardContent>
+            <CardFooter className="flex flex-wrap gap-2">
+              {connected.linkedin ? (
+                <Button
+                  onClick={handleDisconnectLinkedIn}
+                  disabled={loading || linkedinConnecting}
+                  variant="outline"
+                  className="flex items-center space-x-1.5 sm:space-x-2"
+                >
+                  {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.DISCONNECT_LINKEDIN}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleConnectLinkedIn}
+                  disabled={loading || linkedinConnecting}
+                  variant="primary"
+                  className="flex items-center space-x-1.5 sm:space-x-2"
+                >
+                  <FiLinkedin className="h-3 w-3 sm:h-4 sm:w-4" />
+                  {linkedinConnecting ? SYNC_LABEL.CONNECTING_LINKEDIN : SYNC_LABEL.CONNECT_LINKEDIN}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
 
-      {/* Help & Support */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{SYNC_LABEL.HELP_SUPPORT}</CardTitle>
-          <CardDescription>{SYNC_LABEL.HELP_SUPPORT_DESC}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <a
-            href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <span>{SYNC_LABEL.MEDIUM_INTEGRATION_GUIDE}</span>
-            </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-          </a>
+          {/* Platform Status */}
+          <Card id={SETTINGS_SECTION_IDS.STATUS} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
+              <CardTitle>{SYNC_LABEL.PLATFORM_STATUS}</CardTitle>
+              <CardDescription>{SYNC_LABEL.PLATFORM_STATUS_DESC}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`p-1.5 sm:p-2 ${COLOR_CLASSES.ICON_BG.WARNING} rounded-lg shrink-0`}>
+                      <FiKey className={`h-3 w-3 sm:h-4 sm:w-4 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{SYNC_LABEL.PLATFORM_MEDIUM}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {connected.medium ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                      </p>
+                    </div>
+                  </div>
+                  <ConnectionStatusPill connected={connected.medium} />
+                </div>
 
-          <a
-            href={EXTERNAL_LINKS.DEVTO_SETTINGS}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <span>{SYNC_LABEL.DEVTO_API_KEY_GUIDE}</span>
-            </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-          </a>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 ${COLOR_CLASSES.ICON_BG.PRIMARY} rounded-lg`}>
+                      <FiKey className={`h-4 w-4 ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{SYNC_LABEL.PLATFORM_DEVTO}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {connected.devto ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                      </p>
+                    </div>
+                  </div>
+                  <ConnectionStatusPill connected={connected.devto} />
+                </div>
 
-          <a
-            href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <span>{SYNC_LABEL.WORDPRESS_JWT_PLUGIN}</span>
-            </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-          </a>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-primary/15 rounded-lg">
+                      <FiKey className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{SYNC_LABEL.PLATFORM_WORDPRESS}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {connected.wordpress ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                      </p>
+                    </div>
+                  </div>
+                  <ConnectionStatusPill connected={connected.wordpress} />
+                </div>
 
-          <a
-            href={EXTERNAL_LINKS.LINKEDIN_DEVELOPER}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <span>{SYNC_LABEL.LINKEDIN_INTEGRATION}</span>
-            </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-          </a>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-primary/15 rounded-lg">
+                      <FiLinkedin className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{SYNC_LABEL.PLATFORM_LINKEDIN}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {connected.linkedin ? SYNC_LABEL.CONNECTED : SYNC_LABEL.NOT_CONNECTED}
+                      </p>
+                    </div>
+                  </div>
+                  <ConnectionStatusPill connected={connected.linkedin} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <a
-            href={EXTERNAL_LINKS.GITHUB_REPO}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <span>{SYNC_LABEL.GITHUB_REPOSITORY}</span>
-            </div>
-            <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-          </a>
-        </CardContent>
-      </Card>
+          {/* Help & Support */}
+          <Card id={SETTINGS_SECTION_IDS.HELP} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
+              <CardTitle>{SYNC_LABEL.HELP_SUPPORT}</CardTitle>
+              <CardDescription>{SYNC_LABEL.HELP_SUPPORT_DESC}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <a
+                href={EXTERNAL_LINKS.MEDIUM_SETTINGS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                  <span>{SYNC_LABEL.MEDIUM_INTEGRATION_GUIDE}</span>
+                </div>
+                <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              </a>
+
+              <a
+                href={EXTERNAL_LINKS.DEVTO_SETTINGS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                  <span>{SYNC_LABEL.DEVTO_API_KEY_GUIDE}</span>
+                </div>
+                <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              </a>
+
+              <a
+                href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                  <span>{SYNC_LABEL.WORDPRESS_JWT_PLUGIN}</span>
+                </div>
+                <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              </a>
+
+              <a
+                href={EXTERNAL_LINKS.LINKEDIN_DEVELOPER}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                  <span>{SYNC_LABEL.LINKEDIN_INTEGRATION}</span>
+                </div>
+                <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              </a>
+
+              <a
+                href={EXTERNAL_LINKS.GITHUB_REPO}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                  <span>{SYNC_LABEL.GITHUB_REPOSITORY}</span>
+                </div>
+                <FiExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

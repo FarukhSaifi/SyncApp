@@ -30,14 +30,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
     const inputSizeClass = sizeClasses[size] ?? sizeClasses[INPUT_SIZES.MD];
 
+    const isDateType =
+      type === "date" || type === "datetime-local" || type === "time" || type === "month" || type === "week";
     const inputClasses = [
-      "flex w-full rounded-lg border bg-background py-2 ring-offset-background",
+      "flex w-full min-w-0 rounded-lg border bg-background py-2 ring-offset-background shadow-sm",
       "file:border-0 file:bg-transparent file:text-sm file:font-medium",
       "placeholder:text-muted-foreground",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       "disabled:cursor-not-allowed disabled:opacity-50",
       hasError ? "border-destructive focus-visible:ring-destructive" : "border-input",
       inputSizeClass,
+      isDateType ? "appearance-none" : "",
       leftIcon ? "pl-10" : "",
       rightIcon || onRightIconClick ? "pr-10" : "",
       className,
@@ -54,9 +57,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <label htmlFor={id} className="block text-sm font-medium text-foreground">
               {label}
             </label>
-            {required ? (
-              <span className="text-xs font-medium text-muted-foreground">{LABELS.REQUIRED}</span>
-            ) : null}
+            {required ? <span className="text-xs font-medium text-muted-foreground">{LABELS.REQUIRED}</span> : null}
           </div>
         )}
         <div className="relative">

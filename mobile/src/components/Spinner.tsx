@@ -3,14 +3,7 @@ import { Animated, Easing, StyleSheet, View, type StyleProp, type ViewStyle } fr
 
 import { LOADING_UI } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-type SpinnerSize = "sm" | "md" | "lg";
-
-interface SpinnerProps {
-  size?: SpinnerSize;
-  color?: string;
-  style?: StyleProp<ViewStyle>;
-}
+import type { SpinnerProps, SpinnerSize } from "@types";
 
 const SIZE_MAP: Record<SpinnerSize, number> = {
   sm: LOADING_UI.SPINNER_SIZE_SM,

@@ -3,7 +3,7 @@
  */
 import type { Request as ExpressRequest, Response as ExpressResponse } from "express";
 
-import type { NotificationChannelStatus } from "@constants/notifications";
+import type { NotificationChannelStatus } from "./fromConstants";
 
 export interface ILogger {
   error(message: string, error?: Error | null, meta?: Record<string, unknown>): void;
@@ -36,3 +36,13 @@ export interface NormalizeScheduledForOptions {
   currentStatus?: string;
   requireFuture?: boolean;
 }
+
+/** UTM query builder options (values validated against constants at call sites). */
+export interface UtmBuildOptions {
+  source: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+}
+
+export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG";

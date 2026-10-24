@@ -5,13 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { RADIUS } from "@constants/designTokens";
 import { EDITOR_UI } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { EditorMode } from "@types";
-
-interface EditorModeTabsProps {
-  mode: EditorMode;
-  onChangeMode: (mode: EditorMode) => void;
-  channelCount: number;
-}
+import type { EditorMode, EditorModeTabsProps } from "@types";
 
 const MODES: Array<{
   id: EditorMode;

@@ -2,10 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Input, type InputProps } from "@components/Input";
+import { Input } from "@components/Input";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-type PasswordInputProps = Omit<InputProps, "secureTextEntry">;
+import type { PasswordInputProps } from "@types";
 
 export function PasswordInput(props: PasswordInputProps) {
   const colors = useThemeColors();

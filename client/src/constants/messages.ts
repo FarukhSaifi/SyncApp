@@ -492,6 +492,8 @@ export const PAGE_DESCRIPTIONS = Object.freeze({
   SIGN_IN_FORM: "Enter your credentials to access your account",
   SIGN_IN_DESCRIPTION_2: "Enter your credentials to access your account",
   SETTINGS_DESCRIPTION: "Configure your API credentials and platform settings",
+  SETTINGS_SECTION_NAV_ARIA: "Settings sections",
+  PROFILE_SECTION_NAV_ARIA: "Profile sections",
   JOIN_SYNCAPP: "Join SyncApp to start publishing your blog posts",
   FILL_DETAILS: "Fill in your details to create an account",
 } as const);
@@ -546,6 +548,20 @@ export const INFO_MESSAGES = Object.freeze({
   SHOWING_POSTS: (count: number) => `Showing ${count} post${count === 1 ? "" : "s"}`,
   NO_POSTS_TITLE: "No posts yet",
   NO_POSTS_DESCRIPTION: "Start writing your first blog post to get published on Medium and DEV.to",
+  // Shared DataTable
+  DATA_TABLE_SEARCH_PLACEHOLDER: "Search…",
+  DATA_TABLE_SEARCH_POSTS: "Search posts by title or tag…",
+  DATA_TABLE_PAGE_SIZE: "Lines Per Page",
+  DATA_TABLE_PAGE_SIZE_SHORT: "Rows",
+  DATA_TABLE_PAGE_SIZE_ARIA: "Lines per page",
+  DATA_TABLE_PAGE_SIZE_OPTION: (n: number) => `${n} rows`,
+  DATA_TABLE_SORT_ARIA: (column: string) => `Sort by ${column}`,
+  DATA_TABLE_NO_RESULTS: "No results match your filters",
+  DATA_TABLE_PAGE_ARIA: (page: number) => `Go to page ${page}`,
+  DATA_TABLE_PREV_PAGE_ARIA: "Previous page",
+  DATA_TABLE_NEXT_PAGE_ARIA: "Next page",
+  DATA_TABLE_PAGE_LABEL: (page: number) => String(page).padStart(2, "0"),
+  TAGS_OVERFLOW_TOOLTIP_ARIA: (n: number) => `Show ${n} more tag${n === 1 ? "" : "s"}`,
   // User Management
   ALL_USERS: "All Users",
   NO_USERS_FOUND: "No users found",
@@ -603,6 +619,10 @@ export const INFO_MESSAGES = Object.freeze({
   TOGGLE_THEME_ARIA: "Toggle theme",
   USER_MENU_ARIA: "User menu",
   OPEN_MOBILE_MENU_ARIA: "Open mobile menu",
+  CLOSE_MOBILE_MENU_ARIA: "Close mobile menu",
+  MAIN_NAVIGATION_ARIA: "Main navigation",
+  THEME_SWITCH_TO_LIGHT: "Light mode",
+  THEME_SWITCH_TO_DARK: "Dark mode",
   APP_LOGO_ALT: "SyncApp logo",
   PROFILE_SETTINGS_LINK: "Profile Settings",
   // Toast titles (unpublish, errors)
@@ -639,6 +659,9 @@ export const INFO_MESSAGES = Object.freeze({
   CREATED: "Created:",
   UPDATED: "Updated:",
   PUBLISHED_DATE: "Published:",
+  EDIT_POST_ARIA: "Edit post",
+  DELETE_POST_ARIA: "Delete post",
+  SCHEDULED_FOR: (formattedDate: string) => `Scheduled for ${formattedDate}`,
   HAS_COVER_IMAGE: "📷 Has cover image",
   POST_COVER_ALT: (title: string) => `Featured image for ${title}`,
   NO_TAGS: "No tags",
@@ -934,7 +957,10 @@ export const EDITOR_UI = Object.freeze({
   // Generate post modal
   GENERATE_POST_MODAL_TITLE: "Generate SEO post",
   GENERATE_POST_MODAL_DESC:
-    "Research high-intent keywords from a seed topic, pick a winner, then generate an SEO draft optimized for your platforms.",
+    "Pick a model and platforms, choose a topic, then research or browse trends before generating.",
+  GENERATE_POST_SECTION_SETUP: "1. Setup",
+  GENERATE_POST_SECTION_TOPIC: "2. Topic",
+  GENERATE_POST_SECTION_DISCOVER: "3. Discover & research",
   GENERATE_POST_MODEL_LABEL: "AI model",
   GENERATE_POST_TARGETS_LABEL: "Optimize for",
   GENERATE_POST_TARGETS_HINT:

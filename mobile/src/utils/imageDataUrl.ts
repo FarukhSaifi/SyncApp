@@ -1,5 +1,3 @@
-import { EDITOR_CONFIG } from "@constants/editor";
-
 /** React Native Image does not render SVG data URLs; use react-native-svg instead. */
 export function isSvgDataUrl(uri: string): boolean {
   return /^data:image\/svg\+xml/i.test(uri.trim());
@@ -24,8 +22,4 @@ export function decodeSvgXmlFromDataUrl(dataUrl: string): string | null {
     }
   }
   return null;
-}
-
-export function isPlaceholderImageDataUrl(uri: string): boolean {
-  return isSvgDataUrl(uri) && uri.length < EDITOR_CONFIG.PLACEHOLDER_SVG_MAX_LENGTH;
 }

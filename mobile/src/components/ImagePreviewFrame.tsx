@@ -8,14 +8,7 @@ import { Spinner } from "@components/Spinner";
 import { DESCRIPTIONS, LABELS } from "@constants";
 import { RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface ImagePreviewFrameProps {
-  generating: boolean;
-  uri: string | null;
-  emptyHint?: string;
-  style?: StyleProp<ViewStyle>;
-  minHeight?: number;
-}
+import type { ImagePreviewFrameProps } from "@types";
 
 /**
  * Image preview area — web editor pattern: dashed primary box + spinner while generating,

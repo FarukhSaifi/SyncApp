@@ -7,15 +7,40 @@ import { usePostsContext } from "../dashboard-layout";
 const Dashboard = dynamic(() => import("@views/Dashboard"), { ssr: false });
 
 export default function DashboardPage() {
-  const { posts, loading, error, onPostUpdate, onPostDelete, onRefresh } = usePostsContext();
+  const {
+    posts,
+    loading,
+    error,
+    page,
+    pages,
+    pageSize,
+    totalPosts,
+    filteredTotal,
+    stats,
+    onPostDelete,
+    onRefresh,
+    onPageChange,
+    onPageSizeChange,
+    onStatusFilterChange,
+    onSearchChange,
+  } = usePostsContext();
   return (
     <Dashboard
       posts={posts}
       loading={loading}
       error={error}
-      onPostUpdate={onPostUpdate}
+      page={page}
+      pages={pages}
+      pageSize={pageSize}
+      totalPosts={totalPosts}
+      filteredTotal={filteredTotal}
+      stats={stats}
       onPostDelete={onPostDelete}
       onRefresh={onRefresh}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onStatusFilterChange={onStatusFilterChange}
+      onSearchChange={onSearchChange}
     />
   );
 }

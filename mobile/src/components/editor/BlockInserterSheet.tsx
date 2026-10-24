@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { RADIUS } from "@constants/designTokens";
+import { EDITOR_SHEET, OVERLAY, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import {
   EDITOR_A11Y,
   EDITOR_BLOCK_CATEGORIES,
@@ -10,16 +10,7 @@ import {
   EDITOR_UI,
 } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-export interface ContentBlockDef {
-  id: string;
-  category: "text" | "lists" | "code" | "media";
-  title: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  template: string;
-  accent?: string;
-}
+import type { BlockInserterSheetProps, ContentBlockDef } from "@types";
 
 const BLOCK_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   h1: "text",
@@ -42,13 +33,6 @@ const CONTENT_BLOCKS: ContentBlockDef[] = EDITOR_CONTENT_BLOCKS.map((block) => (
   ...block,
   icon: BLOCK_ICONS[block.id] ?? "document-outline",
 }));
-
-interface BlockInserterSheetProps {
-  visible: boolean;
-  onClose: () => void;
-  onSelectBlock: (template: string) => void;
-  onTriggerAiImage?: () => void;
-}
 
 export function BlockInserterSheet({
   visible,
@@ -158,16 +142,15 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.55)",
+      backgroundColor: OVERLAY.SCRIM_STRONG,
       justifyContent: "flex-end",
     },
     sheet: {
+      flex: 1,
       backgroundColor: colors.card,
-      borderTopLeftRadius: RADIUS.XL,
-      borderTopRightRadius: RADIUS.XL,
-      maxHeight: "84%",
-      paddingTop: 12,
-      paddingBottom: 32,
+      maxHeight: EDITOR_SHEET.MAX_HEIGHT,
+      paddingTop: 8,
+      paddingBottom: 24,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
@@ -177,14 +160,17 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       borderRadius: 2,
       backgroundColor: colors.border,
       alignSelf: "center",
-      marginBottom: 12,
+      marginBottom: 8,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
+      minHeight: EDITOR_SHEET.TITLE_BAR_HEIGHT,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
       marginBottom: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
     title: {
       fontSize: 18,

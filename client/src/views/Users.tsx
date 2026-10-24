@@ -1,12 +1,15 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
+import DataTable from "@components/data-table/DataTable";
 import UserCard from "@components/users/UserCard";
 import UserTableRow from "@components/users/UserTableRow";
 import {
   APP_CONFIG,
   BUTTON_VARIANTS,
   COLOR_CLASSES,
+  DASHBOARD_LAYOUT,
+  DATA_TABLE,
   ERROR_MESSAGES,
   PLACEHOLDERS,
   SUCCESS_MESSAGES,
@@ -14,12 +17,14 @@ import {
   TOAST_TITLES,
   USER_ROLES,
   USER_ROLE_OPTIONS,
+  USER_TABLE_COLUMNS,
   USER_VERIFIED_FILTER,
   type UserRoleOption,
 } from "@constants";
+import { useDataTable } from "@hooks/useDataTable";
 import { useDebounce } from "@hooks/useDebounce";
 import { useToast } from "@hooks/useToast";
-import type { AddUserForm, EditForm, PaginationState, User, UserDeleteConfirmState } from "@types";
+import type { AddUserForm, DataTableColumn, EditForm, PaginationState, User, UserDeleteConfirmState } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { logError } from "@utils/logger";
 import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
@@ -29,7 +34,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import ConfirmationModal from "@components/common/ConfirmationModal";
 import Input from "@components/common/Input";
 import Modal from "@components/common/Modal";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/common/Table";
+import Select from "@components/common/Select";
 import Textarea from "@components/common/Textarea";
 
 const initialAddForm: AddUserForm = {
@@ -44,33 +49,13 @@ const initialAddForm: AddUserForm = {
   isVerified: false,
 };
 
-function UsersTableSkeleton({ rows = 5 }: { rows?: number }) {
+function UsersTableSkeleton({ rows = DATA_TABLE.SKELETON_ROWS }: { rows?: number }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{SYNC_LABEL.TABLE_USER}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_EMAIL}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_ROLE}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_STATUS}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_JOINED}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_UPDATED}</TableHead>
-          <TableHead>{SYNC_LABEL.TABLE_LAST_LOGIN}</TableHead>
-          <TableHead className="text-right">{SYNC_LABEL.TABLE_ACTIONS}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Array.from({ length: rows }, (_, i) => i).map((row) => (
-          <TableRow key={`users-skeleton-row-${row}`}>
-            {Array.from({ length: 8 }, (_, j) => j).map((col) => (
-              <TableCell key={`users-skeleton-${row}-${col}`}>
-                <div className="h-5 bg-muted/60 rounded animate-pulse" />
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className={DATA_TABLE.SKELETON_LIST}>
+      {Array.from({ length: rows }, (_, i) => i).map((row) => (
+        <div key={`users-skeleton-row-${row}`} className={DATA_TABLE.SKELETON_ROW} />
+      ))}
+    </div>
   );
 }
 
@@ -84,9 +69,10 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [verifiedFilter, setVerifiedFilter] = useState<string>(USER_VERIFIED_FILTER.ALL);
   const [page, setPage] = useState<number>(1);
+  const [pageLimit, setPageLimit] = useState<number>(DATA_TABLE.DEFAULT_PAGE_SIZE);
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
-    limit: APP_CONFIG.DEFAULT_LIMIT,
+    limit: DATA_TABLE.DEFAULT_PAGE_SIZE,
     total: 0,
     pages: 1,
   });
@@ -109,7 +95,7 @@ const Users = () => {
       setError(null);
       const params: Record<string, unknown> = {
         page,
-        limit: APP_CONFIG.DEFAULT_LIMIT,
+        limit: pageLimit,
         ...(debouncedSearch?.trim() && { search: debouncedSearch.trim() }),
         ...(roleFilter && { role: roleFilter }),
       };
@@ -120,7 +106,7 @@ const Users = () => {
         setPagination(
           (response.pagination as unknown as PaginationState) ?? {
             page: 1,
-            limit: APP_CONFIG.DEFAULT_LIMIT,
+            limit: pageLimit,
             total: 0,
             pages: 1,
           },
@@ -135,17 +121,56 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, roleFilter, toast]);
+  }, [page, pageLimit, debouncedSearch, roleFilter, toast]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   const filteredByVerified = useMemo(() => {
-    if (verifiedFilter === USER_VERIFIED_FILTER.ALL) return users;
-    if (verifiedFilter === USER_VERIFIED_FILTER.VERIFIED) return users.filter((u) => u.isVerified);
+    if (verifiedFilter === USER_VERIFIED_FILTER.ALL) {
+      return users;
+    }
+    if (verifiedFilter === USER_VERIFIED_FILTER.VERIFIED) {
+      return users.filter((u) => u.isVerified);
+    }
     return users.filter((u) => !u.isVerified);
   }, [users, verifiedFilter]);
+
+  const userSortFns = useMemo(
+    () => ({
+      [USER_TABLE_COLUMNS.USER]: (a: User, b: User) => (a.username || "").localeCompare(b.username || ""),
+      [USER_TABLE_COLUMNS.EMAIL]: (a: User, b: User) => (a.email || "").localeCompare(b.email || ""),
+      [USER_TABLE_COLUMNS.ROLE]: (a: User, b: User) => (a.role || "").localeCompare(b.role || ""),
+      [USER_TABLE_COLUMNS.STATUS]: (a: User, b: User) => Number(a.isVerified) - Number(b.isVerified),
+      [USER_TABLE_COLUMNS.JOINED]: (a: User, b: User) =>
+        String(a.createdAt || "").localeCompare(String(b.createdAt || "")),
+      [USER_TABLE_COLUMNS.UPDATED]: (a: User, b: User) =>
+        String(a.updatedAt || "").localeCompare(String(b.updatedAt || "")),
+      [USER_TABLE_COLUMNS.LAST_LOGIN]: (a: User, b: User) =>
+        String(a.lastLogin || "").localeCompare(String(b.lastLogin || "")),
+    }),
+    [],
+  );
+
+  const { sort, setSort, visibleRows } = useDataTable<User>({
+    rows: filteredByVerified,
+    sortFns: userSortFns,
+  });
+
+  const userColumns = useMemo<DataTableColumn<User>[]>(
+    () => [
+      { id: USER_TABLE_COLUMNS.USER, header: SYNC_LABEL.TABLE_USER, sortable: true },
+      { id: USER_TABLE_COLUMNS.EMAIL, header: SYNC_LABEL.TABLE_EMAIL, sortable: true },
+      { id: USER_TABLE_COLUMNS.ROLE, header: SYNC_LABEL.TABLE_ROLE, sortable: true },
+      { id: USER_TABLE_COLUMNS.STATUS, header: SYNC_LABEL.TABLE_STATUS, sortable: true },
+      { id: USER_TABLE_COLUMNS.JOINED, header: SYNC_LABEL.TABLE_JOINED, sortable: true },
+      { id: USER_TABLE_COLUMNS.UPDATED, header: SYNC_LABEL.TABLE_UPDATED, sortable: true },
+      { id: USER_TABLE_COLUMNS.LAST_LOGIN, header: SYNC_LABEL.TABLE_LAST_LOGIN, sortable: true },
+      { id: USER_TABLE_COLUMNS.ACTIONS, header: SYNC_LABEL.TABLE_ACTIONS, className: DATA_TABLE.ACTIONS_CELL },
+    ],
+    [],
+  );
 
   const hasActiveFilters = Boolean(searchInput?.trim() || roleFilter || verifiedFilter !== USER_VERIFIED_FILTER.ALL);
 
@@ -308,32 +333,33 @@ const Users = () => {
                 />
               </div>
               <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-                <select
+                <Select
                   value={roleFilter}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     setRoleFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full sm:w-40 px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  className="w-full sm:w-40"
                   aria-label={SYNC_LABEL.TABLE_ROLE}
-                >
-                  <option value="">{PLACEHOLDERS.ALL_ROLES}</option>
-                  {USER_ROLE_OPTIONS.map((opt: UserRoleOption) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <select
+                  options={[
+                    { value: "", label: PLACEHOLDERS.ALL_ROLES },
+                    ...USER_ROLE_OPTIONS.map((opt: UserRoleOption) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    })),
+                  ]}
+                />
+                <Select
                   value={verifiedFilter}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVerifiedFilter(e.target.value)}
-                  className="w-full sm:w-36 px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  className="w-full sm:w-36"
                   aria-label={SYNC_LABEL.TABLE_STATUS}
-                >
-                  <option value={USER_VERIFIED_FILTER.ALL}>{SYNC_LABEL.FILTER_ALL}</option>
-                  <option value={USER_VERIFIED_FILTER.VERIFIED}>{SYNC_LABEL.VERIFIED}</option>
-                  <option value={USER_VERIFIED_FILTER.UNVERIFIED}>{SYNC_LABEL.UNVERIFIED}</option>
-                </select>
+                  options={[
+                    { value: USER_VERIFIED_FILTER.ALL, label: SYNC_LABEL.FILTER_ALL },
+                    { value: USER_VERIFIED_FILTER.VERIFIED, label: SYNC_LABEL.VERIFIED },
+                    { value: USER_VERIFIED_FILTER.UNVERIFIED, label: SYNC_LABEL.UNVERIFIED },
+                  ]}
+                />
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
                     <FiX className="h-4 w-4 mr-1" />
@@ -370,11 +396,11 @@ const Users = () => {
       </Card>
 
       {/* Users Table / Cards */}
-      <Card className="border shadow-sm">
-        <CardHeader>
+      <Card className={DASHBOARD_LAYOUT.TABLE_CARD_CLASS}>
+        <CardHeader className={DASHBOARD_LAYOUT.TABLE_CARD_HEADER_CLASS}>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{SYNC_LABEL.ALL_USERS}</CardTitle>
+              <CardTitle className={DASHBOARD_LAYOUT.TABLE_CARD_TITLE_CLASS}>{SYNC_LABEL.ALL_USERS}</CardTitle>
               <CardDescription>
                 {filteredByVerified.length === 0
                   ? SYNC_LABEL.NO_USERS_FOUND
@@ -383,82 +409,61 @@ const Users = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className={DASHBOARD_LAYOUT.TABLE_CARD_CONTENT_CLASS}>
           {loading && users.length > 0 ? (
-            <UsersTableSkeleton />
-          ) : filteredByVerified.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                <FiUser className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{SYNC_LABEL.NO_USERS_FOUND}</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto mb-6">{SYNC_LABEL.NO_USERS_FOUND_DESCRIPTION}</p>
-              {hasActiveFilters ? (
-                <Button variant="outline" onClick={clearAllFilters}>
-                  {SYNC_LABEL.CLEAR_ALL_FILTERS}
-                </Button>
-              ) : (
-                <Button variant="outline" onClick={fetchUsers}>
-                  <FiRefreshCw className="h-4 w-4 mr-2" />
-                  {SYNC_LABEL.RETRY}
-                </Button>
-              )}
+            <div className="px-4 py-3 sm:px-5">
+              <UsersTableSkeleton />
             </div>
           ) : (
-            <>
-              <div className="md:hidden space-y-4">
-                {filteredByVerified.map((user) => (
-                  <UserCard key={user._id} user={user} onEdit={handleEdit} onDelete={handleDeleteClick} />
-                ))}
-              </div>
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{SYNC_LABEL.TABLE_USER}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_EMAIL}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_ROLE}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_STATUS}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_JOINED}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_UPDATED}</TableHead>
-                      <TableHead>{SYNC_LABEL.TABLE_LAST_LOGIN}</TableHead>
-                      <TableHead className="text-right">{SYNC_LABEL.TABLE_ACTIONS}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredByVerified.map((user) => (
-                      <UserTableRow key={user._id} user={user} onEdit={handleEdit} onDelete={handleDeleteClick} />
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {pagination.pages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    {SYNC_LABEL.PAGE_OF(pagination.page, pagination.pages)}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={pagination.page <= 1 || loading}
-                    >
-                      {SYNC_LABEL.PREVIOUS}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
-                      disabled={pagination.page >= pagination.pages || loading}
-                    >
-                      {SYNC_LABEL.NEXT}
-                    </Button>
+            <DataTable<User>
+              embedded
+              columns={userColumns}
+              rows={visibleRows}
+              getRowId={(row) => row._id}
+              renderRow={(row) => <UserTableRow user={row} onEdit={handleEdit} onDelete={handleDeleteClick} />}
+              mobileRow={(row) => <UserCard user={row} onEdit={handleEdit} onDelete={handleDeleteClick} />}
+              pageSize={{
+                value: pageLimit,
+                onChange: (limit) => {
+                  setPageLimit(limit);
+                  setPage(1);
+                },
+              }}
+              sort={{
+                key: sort.key,
+                direction: sort.direction,
+                onChange: setSort,
+              }}
+              loading={loading}
+              empty={
+                <div className="py-12 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
+                    <FiUser className="h-8 w-8 text-muted-foreground" />
                   </div>
+                  <h3 className="mb-2 text-lg font-semibold text-foreground">{SYNC_LABEL.NO_USERS_FOUND}</h3>
+                  <p className="mx-auto mb-6 max-w-sm text-muted-foreground">{SYNC_LABEL.NO_USERS_FOUND_DESCRIPTION}</p>
+                  {hasActiveFilters ? (
+                    <Button variant="outline" onClick={clearAllFilters}>
+                      {SYNC_LABEL.CLEAR_ALL_FILTERS}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={fetchUsers}>
+                      <FiRefreshCw className="mr-2 h-4 w-4" />
+                      {SYNC_LABEL.RETRY}
+                    </Button>
+                  )}
                 </div>
-              )}
-            </>
+              }
+              pagination={{
+                page: pagination.page,
+                pages: Math.max(1, pagination.pages || 1),
+                onPrev: () => setPage((p) => Math.max(1, p - 1)),
+                onNext: () => setPage((p) => Math.min(Math.max(1, pagination.pages || 1), p + 1)),
+                onPageChange: (nextPage) => {
+                  setPage(nextPage);
+                },
+              }}
+            />
           )}
         </CardContent>
       </Card>
@@ -573,20 +578,20 @@ const Users = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">{SYNC_LABEL.LABEL_ROLE}</label>
-              <select
+              <label className="mb-2 block text-sm font-medium" htmlFor="add-user-role">
+                {SYNC_LABEL.LABEL_ROLE}
+              </label>
+              <Select
+                id="add-user-role"
                 value={addForm.role}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setAddForm((f) => ({ ...f, role: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {USER_ROLE_OPTIONS.map((opt: UserRoleOption) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                options={USER_ROLE_OPTIONS.map((opt: UserRoleOption) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -633,20 +638,20 @@ const Users = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">{SYNC_LABEL.LABEL_ROLE}</label>
-            <select
+            <label className="mb-2 block text-sm font-medium" htmlFor="edit-user-role">
+              {SYNC_LABEL.LABEL_ROLE}
+            </label>
+            <Select
+              id="edit-user-role"
               value={editForm.role}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 setEditForm((f) => ({ ...f, role: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {USER_ROLE_OPTIONS.map((opt: UserRoleOption) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              options={USER_ROLE_OPTIONS.map((opt: UserRoleOption) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+            />
           </div>
           <div>
             <label className="flex items-center gap-2 cursor-pointer">

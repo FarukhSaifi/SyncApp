@@ -12,14 +12,21 @@ const iosHeaderBlur =
       } as const)
     : ({} as const);
 
-/** Shared navigation header chrome (tabs + stack). */
+/**
+ * Compact app header — matches client mobile shell (card bar, logo left, no large titles).
+ * Page titles live in-content via ScreenIntro, like web responsive Settings/Dashboard.
+ */
 export function screenHeaderOptions(colors: ThemeColors) {
   return {
-    headerStyle: { backgroundColor: colors.groupedBackground },
+    headerStyle: {
+      backgroundColor: colors.card,
+    },
     headerTintColor: colors.primary,
-    headerTitleStyle: { ...TYPOGRAPHY.HEADLINE, color: colors.foreground },
+    headerTitleStyle: { ...TYPOGRAPHY.HEADLINE, color: colors.foreground, fontSize: 17 },
     headerShadowVisible: false,
-    headerLargeTitle: Platform.OS === "ios",
+    headerLargeTitle: false,
+    headerTitle: "",
+    headerTitleAlign: "center" as const,
     ...iosHeaderBlur,
   };
 }

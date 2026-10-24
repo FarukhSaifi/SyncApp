@@ -5,12 +5,7 @@ import { Spinner } from "@components/Spinner";
 import { LOADING_UI } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface LoadingScreenProps {
-  message?: string;
-  inline?: boolean;
-  style?: StyleProp<ViewStyle>;
-}
+import type { LoadingScreenProps } from "@types";
 
 /** Full-page or inline loader — matches web LoadingScreen (primary ring + muted text). */
 export function LoadingScreen({ message = LABELS.LOADING, inline = false, style }: LoadingScreenProps) {

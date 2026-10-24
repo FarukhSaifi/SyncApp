@@ -65,7 +65,7 @@ import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES } from "@constants/designTok
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
-import Input from "@components/common/Input";
+import DateInput from "@components/common/DateInput";
 import Skeleton from "@components/common/Skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/common/Table";
 
@@ -345,7 +345,7 @@ const Analytics = () => {
         </div>
       </div>
 
-      <Card className={ANALYTICS_UI["CARD_SURFACE"]}>
+      <Card className={ANALYTICS_UI["DATE_CARD_SURFACE"]}>
         <CardHeader className={ANALYTICS_UI["DATE_CARD_HEADER"]}>
           <CardTitle className={ANALYTICS_UI["DATE_CARD_TITLE"]}>{ANALYTICS_LABELS["DATE_RANGE_LABEL"]}</CardTitle>
         </CardHeader>
@@ -374,26 +374,41 @@ const Analytics = () => {
               {ANALYTICS_LABELS["RANGE_CUSTOM"]}
             </button>
           </div>
-          <div className={ANALYTICS_UI["DATE_FIELDS_ROW"]}>
-            <Input
-              label={ANALYTICS_LABELS["RANGE_FROM"]}
-              type={ANALYTICS_UI["INPUT_TYPE_DATE"]}
-              size={INPUT_SIZES["SM"]}
-              value={range.start}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                handleCustomDate(ANALYTICS_DATE_FIELDS["START"], e.target.value);
-              }}
-            />
-            <Input
-              label={ANALYTICS_LABELS["RANGE_TO"]}
-              type={ANALYTICS_UI["INPUT_TYPE_DATE"]}
-              size={INPUT_SIZES["SM"]}
-              value={range.end}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                handleCustomDate(ANALYTICS_DATE_FIELDS["END"], e.target.value);
-              }}
-            />
-          </div>
+          {isCustomRange ? (
+            <div className={ANALYTICS_UI["DATE_CUSTOM_PANEL"]}>
+              <div className={ANALYTICS_UI["DATE_FIELDS_ROW"]}>
+                <div className={ANALYTICS_UI["DATE_FIELD_INPUT"]}>
+                  <DateInput
+                    id={ANALYTICS_UI["DATE_FIELD_START_ID"]}
+                    name={ANALYTICS_UI["DATE_FIELD_START_ID"]}
+                    label={ANALYTICS_LABELS["RANGE_FROM"]}
+                    size={INPUT_SIZES["MD"]}
+                    value={range.start}
+                    max={range.end || undefined}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleCustomDate(ANALYTICS_DATE_FIELDS["START"], e.target.value);
+                    }}
+                  />
+                </div>
+                <span className={ANALYTICS_UI["DATE_FIELD_SEPARATOR"]} aria-hidden>
+                  {ANALYTICS_LABELS["RANGE_SEPARATOR"]}
+                </span>
+                <div className={ANALYTICS_UI["DATE_FIELD_INPUT"]}>
+                  <DateInput
+                    id={ANALYTICS_UI["DATE_FIELD_END_ID"]}
+                    name={ANALYTICS_UI["DATE_FIELD_END_ID"]}
+                    label={ANALYTICS_LABELS["RANGE_TO"]}
+                    size={INPUT_SIZES["MD"]}
+                    value={range.end}
+                    min={range.start || undefined}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleCustomDate(ANALYTICS_DATE_FIELDS["END"], e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -8,7 +8,7 @@ import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
 import { APP_CONFIG } from "@constants";
 import { useMediaQuery } from "@hooks/useMediaQuery";
-import type { EditorSidebarRightProps } from "@types";
+import type { EditorSidebarRightProps, PlatformSlug } from "@types";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
 import dayjs from "dayjs";
 import {
@@ -21,13 +21,12 @@ import {
   FiLinkedin,
   FiSend,
   FiUpload,
-  FiX,
   FiZap,
 } from "react-icons/fi";
 
-import { AI_LOADING, EDITOR_DRAWER, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
+import { AI_LOADING, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 
 import Button from "@components/common/Button";
@@ -35,6 +34,7 @@ import Input from "@components/common/Input";
 import LazyImage from "@components/common/LazyImage";
 import Modal from "@components/common/Modal";
 
+import EditorMobileSheet from "./EditorMobileSheet";
 import EditorSidebarSection from "./EditorSidebarSection";
 import { ImagePreviewSkeleton } from "./EditorSkeletons";
 
@@ -353,38 +353,16 @@ const EditorSidebarRight = ({
     <>
       {isDesktop ? (
         <aside className="editor-sidebar-right">{panelContent}</aside>
-      ) : isOpen ? (
-        <div className="editor-drawer-root" role="presentation">
-          <button
-            type="button"
-            className="editor-drawer-backdrop"
-            aria-label={EDITOR_UI["CLOSE_PUBLISH_AI_DRAWER"]}
-            onClick={onClose}
-          />
-          <aside
-            className="editor-sidebar-right-drawer-paper editor-drawer-panel editor-drawer-panel-right"
-            style={{ maxWidth: EDITOR_LAYOUT["RIGHT_DRAWER_WIDTH_PX"] }}
-            role="dialog"
-            aria-modal="true"
-            aria-label={EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}
-          >
-            <div className="flex h-full min-h-0 flex-col">
-              <div className={EDITOR_DRAWER["TITLE_BAR_CLASS"]}>
-                <h2 className={EDITOR_DRAWER["TITLE_CLASS"]}>{EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}</h2>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={EDITOR_DRAWER["CLOSE_BUTTON_CLASS"]}
-                  aria-label={EDITOR_UI["CLOSE_PUBLISH_AI_DRAWER"]}
-                >
-                  <FiX className={EDITOR_DRAWER["CLOSE_ICON_CLASS"]} />
-                </button>
-              </div>
-              <div className={EDITOR_DRAWER["BODY_CLASS"]}>{panelContent}</div>
-            </div>
-          </aside>
-        </div>
-      ) : null}
+      ) : (
+        <EditorMobileSheet
+          isOpen={isOpen}
+          title={EDITOR_UI["PUBLISH_AI_DRAWER_TITLE"]}
+          closeAriaLabel={EDITOR_UI["CLOSE_PUBLISH_AI_DRAWER"]}
+          onClose={onClose}
+        >
+          {panelContent}
+        </EditorMobileSheet>
+      )}
 
       <GeneratePostModal
         isOpen={isGenerateModalOpen}

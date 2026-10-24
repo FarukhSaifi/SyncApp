@@ -33,6 +33,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: LABELS.DASHBOARD,
+          headerTitle: "",
           tabBarLabel: LABELS.DASHBOARD,
         }}
       />
@@ -40,6 +41,7 @@ export default function TabLayout() {
         name="analytics"
         options={{
           title: LABELS.ANALYTICS,
+          headerTitle: "",
           tabBarLabel: LABELS.ANALYTICS,
         }}
       />
@@ -47,6 +49,7 @@ export default function TabLayout() {
         name="new-post"
         options={{
           title: LABELS.TAB_NEW,
+          headerTitle: "",
           tabBarLabel: LABELS.TAB_NEW,
           href: null,
         }}
@@ -62,6 +65,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: LABELS.SETTINGS,
+          headerTitle: "",
           tabBarLabel: LABELS.SETTINGS,
         }}
       />
@@ -69,6 +73,7 @@ export default function TabLayout() {
         name="users"
         options={{
           title: LABELS.USERS,
+          headerTitle: "",
           tabBarLabel: LABELS.USERS,
           href: isAdmin ? undefined : null,
         }}

@@ -9,19 +9,7 @@ import { BUTTON_LABELS } from "@constants/messages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./Card";
 
 /**
- * Reusable Modal Component
- *
- * @param isOpen - Whether the modal is open
- * @param onClose - Function to call when modal should close
- * @param title - Modal title
- * @param description - Modal description (optional)
- * @param children - Modal content
- * @param footer - Footer content (buttons, etc.) (optional)
- * @param size - Modal size: 'sm' | 'md' | 'lg' | 'xl' | '2xl' (default: 'md')
- * @param closeOnOverlayClick - Close modal when clicking overlay (default: true)
- * @param closeOnEscape - Close modal on Escape key (default: true)
- * @param showCloseButton - Show close button in header (default: true)
- * @param className - Additional classes for the modal card
+ * Reusable Modal — sticky header/footer, scrollable body for larger sizes.
  */
 const Modal = ({
   isOpen,
@@ -84,18 +72,22 @@ const Modal = ({
       className="fixed inset-0 z-[1400] flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={handleOverlayClick}
     >
-      <Card className={`mx-auto my-4 max-h-[min(90vh,100%)] w-full overflow-y-auto sm:my-8 ${sizeClass} ${className}`}>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
+      <Card
+        className={`mx-auto my-3 flex max-h-[min(92vh,100%)] w-full flex-col overflow-hidden sm:my-6 ${sizeClass} ${className}`}
+      >
+        <CardHeader className="shrink-0 border-b border-border !pb-3 sm:!pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
               <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
-              {description ? <CardDescription className="mt-1">{description}</CardDescription> : null}
+              {description ? (
+                <CardDescription className="text-sm leading-relaxed">{description}</CardDescription>
+              ) : null}
             </div>
             {showCloseButton ? (
               <button
                 type="button"
                 onClick={onClose}
-                className="ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label={BUTTON_LABELS["CLOSE_MODAL_ARIA"]}
               >
                 <FiX className="h-5 w-5" />
@@ -103,8 +95,12 @@ const Modal = ({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent className={footer ? "space-y-4" : ""}>{children}</CardContent>
-        {footer ? <div className="px-6 pb-6 pt-0 border-t">{footer}</div> : null}
+        <CardContent className={`min-h-0 flex-1 overflow-y-auto ${footer ? "space-y-4 !pb-4" : ""}`}>
+          {children}
+        </CardContent>
+        {footer ? (
+          <div className="shrink-0 border-t border-border bg-card px-3 pb-3 pt-3 sm:px-6 sm:pb-5 sm:pt-4">{footer}</div>
+        ) : null}
       </Card>
     </div>
   );

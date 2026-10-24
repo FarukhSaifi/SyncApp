@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "@hooks/useToast";
-import type { EditorFormData, Post, PublishFormOverrides, UseEditorStateOptions } from "@types";
+import type { EditorFormData, PlatformSlug, Post, PublishFormOverrides, UseEditorStateOptions } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { toStorageMarkdown } from "@utils/contentUtils";
 import { isCredentialConnected } from "@utils/credentials";
@@ -24,7 +24,7 @@ import {
   SYNC_LABEL,
   TOAST_TITLES,
 } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { ROUTES } from "@constants/routes";
 import { SEO_THRESHOLDS, STALE_CANONICAL_HOST_PATTERN } from "@constants/seo";

@@ -44,29 +44,40 @@ export const PUBLISH_SECTIONS = Object.freeze({
 } as const);
 
 /**
- * Editor layout breakpoints / drawer sizing.
- * Matches `editor.css` desktop grid (≥1024px) vs mobile drawers.
+ * Editor layout breakpoints.
+ * Desktop: persistent sidebars. Mobile (&lt;lg): full-viewport sheets for Post Settings / Publish & AI.
  */
 export const EDITOR_LAYOUT = Object.freeze({
   /** Matches Tailwind `lg` / editor.css `@media (max-width: 1023px)` inverse */
   DESKTOP_MEDIA_QUERY: "(min-width: 1024px)",
-  /** Temporary left (post settings) drawer width on sm+ (xs uses full viewport) */
-  LEFT_DRAWER_WIDTH_PX: 360,
-  /** Temporary right (Publish & AI) drawer width on sm+ (xs uses full viewport) */
-  RIGHT_DRAWER_WIDTH_PX: 360,
 } as const);
 
 /**
- * Mobile temporary drawer chrome — keep the title bar compact (≤ ~15dvh),
- * matching the app shell header treatment.
+ * Mobile full-viewport sheet chrome — compact title bar (≤ ~15dvh).
  */
 export const EDITOR_DRAWER = Object.freeze({
-  TITLE_BAR_CLASS: "flex h-12 max-h-[15dvh] shrink-0 items-center justify-between gap-2 border-b border-border px-3",
+  TITLE_BAR_CLASS:
+    "flex h-12 max-h-[15dvh] shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3",
   TITLE_CLASS: "truncate text-sm font-semibold text-foreground",
   CLOSE_BUTTON_CLASS:
-    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors touch-manipulation hover:bg-muted hover:text-foreground",
+    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors touch-manipulation hover:bg-muted hover:text-foreground",
   CLOSE_ICON_CLASS: "h-5 w-5",
-  BODY_CLASS: "min-h-0 flex-1 overflow-y-auto",
+  BODY_CLASS: "min-h-0 flex-1 overflow-y-auto bg-background",
+} as const);
+
+/** Generate SEO post modal layout */
+export const GENERATE_POST_MODAL = Object.freeze({
+  SIZE: "3xl" as const,
+  ROOT: "space-y-5",
+  SECTION: "space-y-3",
+  SECTION_TITLE: "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+  SETUP_GRID: "grid grid-cols-1 gap-4 lg:grid-cols-2",
+  DISCOVER_GRID: "grid grid-cols-1 gap-4 lg:grid-cols-2",
+  PANEL: "space-y-2.5 rounded-xl border border-border/70 bg-muted/15 p-3.5 dark:bg-muted/10",
+  PANEL_FLAT: "space-y-2.5",
+  FOOTER: "flex flex-row items-center justify-end gap-2 pt-1",
+  CANCEL_BTN: "flex-1 sm:flex-none",
+  GENERATE_BTN: "flex-1 justify-center sm:flex-none sm:min-w-[160px]",
 } as const);
 
 /**

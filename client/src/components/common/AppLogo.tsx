@@ -1,15 +1,9 @@
 import logo from "@assets/icons/logo.png";
 import { INFO_MESSAGES } from "@constants";
+import type { AppLogoProps } from "@types";
 import Image from "next/image";
 
 import { APP_HEADER } from "@constants/designTokens";
-
-interface AppLogoProps {
-  /** Visual size variant — header (default) or auth screens. */
-  variant?: "header" | "auth";
-  className?: string;
-  priority?: boolean;
-}
 
 const AppLogo = ({ variant = "header", className, priority = false }: AppLogoProps) => {
   const isAuth = variant === "auth";

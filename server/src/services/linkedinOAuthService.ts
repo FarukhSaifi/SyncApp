@@ -6,7 +6,7 @@ import { config } from "@config";
 import { API_URLS, DEFAULT_VALUES, ERROR_MESSAGES, HTTP, PLATFORMS } from "@constants";
 import { ValidationError } from "@middleware/errorHandler";
 import Credential from "@models/Credential";
-import type { LinkedInAccessContext } from "@types";
+import type { LinkedInAccessContext, LinkedInOAuthState, LinkedInTokenResponse } from "@types";
 import { cache, cacheKeys } from "@utils/cache";
 import { decryptCredential, encryptCredential } from "@utils/encryption";
 import { createLogger } from "@utils/logger";
@@ -20,11 +20,6 @@ export type { LinkedInAccessContext };
 const logger = createLogger("LINKEDIN_OAUTH");
 
 const LINKEDIN = API_URLS.LINKEDIN;
-
-type LinkedInOAuthState = {
-  userId: string;
-  purpose: typeof LINKEDIN.OAUTH_STATE_PURPOSE;
-};
 
 export function isLinkedInOAuthConfigured(): boolean {
   return Boolean(config.linkedinClientId && config.linkedinClientSecret && config.linkedinRedirectUri);
@@ -75,15 +70,7 @@ function verifyOAuthState(state: string): string {
   }
 }
 
-type TokenResponse = {
-  access_token: string;
-  expires_in: number;
-  refresh_token?: string;
-  refresh_token_expires_in?: number;
-  scope?: string;
-};
-
-async function exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
+async function exchangeAuthorizationCode(code: string): Promise<LinkedInTokenResponse> {
   assertLinkedInConfigured();
   const body = new URLSearchParams({
     grant_type: LINKEDIN.OAUTH_GRANT_AUTHORIZATION_CODE,
@@ -93,7 +80,7 @@ async function exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
     redirect_uri: config.linkedinRedirectUri,
   });
 
-  const response = await axios.post<TokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
+  const response = await axios.post<LinkedInTokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
     headers: { [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.FORM_URLENCODED },
   });
 
@@ -104,7 +91,7 @@ async function exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
   return response.data;
 }
 
-async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
+async function refreshAccessToken(refreshToken: string): Promise<LinkedInTokenResponse> {
   assertLinkedInConfigured();
   const body = new URLSearchParams({
     grant_type: LINKEDIN.OAUTH_GRANT_REFRESH_TOKEN,
@@ -113,7 +100,7 @@ async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> 
     client_secret: config.linkedinClientSecret,
   });
 
-  const response = await axios.post<TokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
+  const response = await axios.post<LinkedInTokenResponse>(LINKEDIN.TOKEN_URL, body.toString(), {
     headers: { [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.FORM_URLENCODED },
   });
 
@@ -139,7 +126,7 @@ async function fetchPersonUrn(accessToken: string): Promise<string> {
   return sub.startsWith(LINKEDIN.PERSON_URN_PREFIX) ? sub : `${LINKEDIN.PERSON_URN_PREFIX}${sub}`;
 }
 
-export async function upsertLinkedInCredential(userId: string, tokens: TokenResponse, personUrn: string) {
+export async function upsertLinkedInCredential(userId: string, tokens: LinkedInTokenResponse, personUrn: string) {
   const author = toObjectId(userId);
   const expiresAt = dayjs()
     .add(tokens.expires_in || 0, "second")

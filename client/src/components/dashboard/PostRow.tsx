@@ -1,39 +1,32 @@
 import React, { memo } from "react";
 
-import { APP_CONFIG, COLOR_CLASSES, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
-import type { Post, PostRowProps } from "@types";
+import { APP_CONFIG, COLOR_CLASSES, DATA_TABLE, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
+import type { PostData, PostRowProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
 import { FiEdit3, FiTrash2 } from "react-icons/fi";
 
-import Button from "@components/common/Button";
 import { TableCell, TableRow } from "@components/common/Table";
+import TagChips from "@components/common/TagChips";
+import Tooltip from "@components/common/Tooltip";
 
 import PostCoverThumbnail from "./PostCoverThumbnail";
 import PostStatusPill from "./PostStatusPill";
 import SeoScoreBadge from "./SeoScoreBadge";
 
-/** API responses may include both camelCase and snake_case fields */
-type PostData = Post & {
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
-  published_at?: string;
-};
-
 /**
  * Memoized post row component for better performance
  */
 const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
-  const getPlatformStatus = (post: PostData) => {
+  const getPlatformStatus = (rowPost: PostData) => {
     const platforms: React.ReactNode[] = [];
 
-    if (post.platform_status?.medium?.published) {
+    if (rowPost.platform_status?.medium?.published) {
       platforms.push(
         <a
           key={PLATFORMS.MEDIUM}
-          href={post.platform_status.medium.url}
+          href={rowPost.platform_status.medium.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
@@ -44,11 +37,11 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       );
     }
 
-    if (post.platform_status?.devto?.published) {
+    if (rowPost.platform_status?.devto?.published) {
       platforms.push(
         <a
           key={PLATFORMS.DEVTO}
-          href={post.platform_status.devto.url}
+          href={rowPost.platform_status.devto.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
@@ -59,11 +52,11 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       );
     }
 
-    if (post.platform_status?.wordpress?.published) {
+    if (rowPost.platform_status?.wordpress?.published) {
       platforms.push(
         <a
           key={PLATFORMS.WORDPRESS}
-          href={post.platform_status.wordpress.url}
+          href={rowPost.platform_status.wordpress.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
@@ -74,11 +67,11 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       );
     }
 
-    if (post.platform_status?.linkedin?.published) {
+    if (rowPost.platform_status?.linkedin?.published) {
       platforms.push(
         <a
           key={PLATFORMS.LINKEDIN}
-          href={post.platform_status.linkedin.url}
+          href={rowPost.platform_status.linkedin.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
@@ -125,47 +118,30 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
         <SeoScoreBadge post={post} />
       </TableCell>
       <TableCell>
-        <div className="flex flex-wrap gap-1 max-w-32">
-          {post.tags && post.tags.length > 0 ? (
-            post.tags.slice(0, APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW).map((tag: string) => (
-              <span
-                key={tag}
-                className="px-2 py-1 bg-primary/15 text-primary text-xs rounded-full truncate"
-                title={tag}
-              >
-                #{tag}
-              </span>
-            ))
-          ) : (
-            <span className="text-muted-foreground text-sm">{SYNC_LABEL.NO_TAGS}</span>
-          )}
-          {post.tags && post.tags.length > APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW && (
-            <span className="text-muted-foreground text-xs">
-              {SYNC_LABEL.TAGS_MORE(post.tags.length - APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW)}
-            </span>
-          )}
-        </div>
+        <TagChips tags={post.tags ?? []} limit={APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW} className="max-w-32" />
       </TableCell>
       <TableCell>{getPlatformStatus(post)}</TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(createdAt)}</TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(updatedAt)}</TableCell>
-      <TableCell className="text-right">
-        <div className="flex items-center justify-end space-x-2">
-          <Link href={`${ROUTES.EDITOR}/${postId}`} prefetch={false}>
-            <Button variant="outline" size="sm" className="flex items-center space-x-1">
-              <FiEdit3 className="h-4 w-4" />
-              <span>{SYNC_LABEL.EDIT}</span>
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(postId)}
-            className={`flex items-center space-x-1 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ${COLOR_CLASSES.HOVER_DESTRUCTIVE}`}
-          >
-            <FiTrash2 className="h-4 w-4" />
-            <span>{SYNC_LABEL.DELETE}</span>
-          </Button>
+      <TableCell className={DATA_TABLE.ACTIONS_CELL}>
+        <div className={DATA_TABLE.ACTIONS_WRAP}>
+          <Tooltip content={SYNC_LABEL.EDIT} side="top">
+            <Link href={`${ROUTES.EDITOR}/${postId}`} prefetch={false} aria-label={SYNC_LABEL.EDIT}>
+              <span className={DATA_TABLE.ACTION_BTN}>
+                <FiEdit3 className={DATA_TABLE.ACTION_ICON} aria-hidden />
+              </span>
+            </Link>
+          </Tooltip>
+          <Tooltip content={SYNC_LABEL.DELETE} side="top">
+            <button
+              type="button"
+              onClick={() => onDelete(postId)}
+              className={DATA_TABLE.ACTION_BTN_DANGER}
+              aria-label={SYNC_LABEL.DELETE}
+            >
+              <FiTrash2 className={DATA_TABLE.ACTION_ICON} aria-hidden />
+            </button>
+          </Tooltip>
         </div>
       </TableCell>
     </TableRow>

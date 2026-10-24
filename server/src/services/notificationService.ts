@@ -1,5 +1,5 @@
 import { config } from "@config";
-import type { NotificationResult, ScheduledPublishNotificationPayload } from "@types";
+import type { NotificationResult, ScheduledPublishNotificationPayload, SlackBlock } from "@types";
 import { logger } from "@utils/logger";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -15,7 +15,6 @@ import {
   type NotificationChannelStatus,
   type ScheduledPublishOutcome,
 } from "@constants/notifications";
-
 
 dayjs.extend(utc);
 
@@ -49,8 +48,6 @@ function safeEmailHref(url: string): string {
   }
   return "#";
 }
-
-type SlackBlock = Record<string, unknown>;
 
 function getClientAppBaseUrl(): string {
   // SyncApp editor/dashboard links — never the public blog (CANONICAL_BASE_URL / farukh.me).

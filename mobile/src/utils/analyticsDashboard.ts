@@ -7,14 +7,11 @@ import {
   ANALYTICS_DATE_ISO_FORMAT,
   ANALYTICS_DATE_PRESETS,
   ANALYTICS_LABELS,
-  ANALYTICS_PLATFORM_KEYS,
   ANALYTICS_TOP_POSTS_LIMIT,
 } from "@constants/analytics";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
 import type {
   AnalyticsDailyActivity,
   AnalyticsDateRange,
-  AnalyticsStats,
   ApiResponse,
   DevtoEngagementSummary,
   Ga4WebsiteAnalytics,
@@ -62,14 +59,6 @@ export function formatMetric(value: number | null | undefined, available: boolea
   return value.toLocaleString();
 }
 
-export function buildPlatformPublishedRows(stats: AnalyticsStats | null) {
-  return ANALYTICS_PLATFORM_KEYS.map((platform) => ({
-    platform,
-    label: PLATFORM_DISPLAY_NAMES[platform] ?? platform,
-    publishedCount: stats?.platformStats[platform] ?? 0,
-  }));
-}
-
 export function topEngagementPosts(engagement: DevtoEngagementSummary | null) {
   if (!engagement) return [];
   return [...engagement.posts].sort((a, b) => b.views - a.views).slice(0, ANALYTICS_TOP_POSTS_LIMIT);
@@ -90,5 +79,3 @@ export function engagementTotals(engagement: DevtoEngagementSummary | null) {
     hasData: Boolean(engagement && engagement.articleCount > 0),
   };
 }
-
-export { PLATFORMS };

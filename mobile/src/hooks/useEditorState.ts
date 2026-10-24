@@ -17,8 +17,6 @@ import { apiClient } from "@services/apiClient";
 import type { EditorForm, EditorReadiness, PlatformStatus, Post } from "@types";
 import { isCredentialConnected } from "@utils/credentials";
 
-export type { EditorForm };
-
 const INITIAL: EditorForm = {
   title: "",
   content_markdown: "",

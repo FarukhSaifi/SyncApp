@@ -10,17 +10,9 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { RADIUS } from "@constants/designTokens";
+import { EDITOR_SHEET, OVERLAY, RADIUS, SETTINGS_LAYOUT, TYPOGRAPHY } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface ModalProps {
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  contentStyle?: StyleProp<ViewStyle>;
-}
+import type { ModalProps } from "@types";
 
 export function Modal({ visible, title, onClose, children, footer, contentStyle }: ModalProps) {
   const colors = useThemeColors();
@@ -51,11 +43,12 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: OVERLAY.SCRIM,
       justifyContent: "flex-end",
     },
     sheet: {
-      maxHeight: "88%",
+      maxHeight: EDITOR_SHEET.MAX_HEIGHT,
+      height: "92%",
       backgroundColor: colors.card,
       borderTopLeftRadius: RADIUS.XL,
       borderTopRightRadius: RADIUS.XL,
@@ -72,17 +65,17 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       marginBottom: 12,
     },
     title: {
-      fontSize: 20,
-      fontWeight: "700",
+      fontSize: TYPOGRAPHY.TITLE3.fontSize,
+      fontWeight: TYPOGRAPHY.TITLE3.fontWeight,
       color: colors.foreground,
-      textAlign: "center",
+      textAlign: "left",
       marginBottom: 8,
-      paddingHorizontal: 20,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
     },
-    scroll: { flexGrow: 0 },
-    content: { paddingHorizontal: 20, paddingBottom: 8 },
+    scroll: { flexGrow: 1 },
+    content: { paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING, paddingBottom: 8 },
     footer: {
-      padding: 20,
+      padding: SETTINGS_LAYOUT.PAGE_PADDING,
       paddingTop: 12,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,

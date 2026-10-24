@@ -1,3 +1,7 @@
+import type { UserRoleOption } from "../types/hooks";
+
+export type { UserRoleOption } from "../types/hooks";
+
 export const USER_ROLES = Object.freeze({
   USER: "user",
   ADMIN: "admin",
@@ -7,11 +11,6 @@ export const USER_ROLE_LABELS = Object.freeze({
   [USER_ROLES.USER]: "User",
   [USER_ROLES.ADMIN]: "Admin",
 } as const);
-
-export interface UserRoleOption {
-  value: string;
-  label: string;
-}
 
 export const USER_ROLE_OPTIONS: UserRoleOption[] = [
   { value: USER_ROLES.USER, label: USER_ROLE_LABELS[USER_ROLES.USER] },

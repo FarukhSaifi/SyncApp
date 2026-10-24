@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   ANALYTICS_LABELS,
@@ -18,7 +18,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   FiBarChart2,
-  FiChevronDown,
   FiHome,
   FiLogOut,
   FiMenu,
@@ -31,7 +30,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { APP_HEADER } from "@constants/designTokens";
+import { APP_SHELL } from "@constants/designTokens";
 
 import AppLogo from "@components/common/AppLogo";
 
@@ -40,10 +39,7 @@ const Layout = ({ children }: LayoutProps) => {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
   const navigation = [
     { name: PAGE_TITLES.DASHBOARD, href: ROUTES.DASHBOARD, icon: FiHome },
@@ -53,35 +49,34 @@ const Layout = ({ children }: LayoutProps) => {
     ...(user?.role === USER_ROLES.ADMIN ? [{ name: PAGE_TITLES.USERS, href: ROUTES.USERS, icon: FiUsers }] : []),
   ];
 
+  const isEditorRoute = Boolean(pathname?.startsWith(ROUTES.EDITOR));
+
   const handleLogout = () => {
-    setShowProfileMenu(false);
-    setShowMobileMenu(false);
+    setShowMobileDrawer(false);
     logout();
     router.push(ROUTES.LOGIN);
   };
 
-  // Close menus when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
-        setShowMobileMenu(false);
+    setShowMobileDrawer(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!showMobileDrawer) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowMobileDrawer(false);
       }
     };
 
-    if (showProfileMenu || showMobileMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showProfileMenu, showMobileMenu]);
-
-  // Close menus when route changes
-  useEffect(() => {
-    setShowProfileMenu(false);
-    setShowMobileMenu(false);
-  }, [pathname]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showMobileDrawer]);
 
   if (!isAuthenticated) {
     return <>{children}</>;
@@ -90,181 +85,171 @@ const Layout = ({ children }: LayoutProps) => {
   const userDisplayName =
     user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || PLACEHOLDERS.USER;
 
+  const isNavActive = (href: string) => {
+    if (href === ROUTES.DASHBOARD) {
+      return pathname === ROUTES.DASHBOARD;
+    }
+    return pathname === href || Boolean(pathname?.startsWith(`${href}/`));
+  };
+
+  const renderNavLinks = (onNavigate?: () => void) => {
+    return navigation.map((item) => {
+      const Icon = item.icon;
+      const isActive = isNavActive(item.href);
+
+      return (
+        <Link
+          key={item.name}
+          href={item.href}
+          className={`${APP_SHELL.NAV_LINK_BASE} ${isActive ? APP_SHELL.NAV_LINK_ACTIVE : APP_SHELL.NAV_LINK_IDLE}`}
+          onClick={onNavigate}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span>{item.name}</span>
+        </Link>
+      );
+    });
+  };
+
+  const renderSidebarChrome = (options?: { onNavigate?: () => void; onClose?: () => void }) => {
+    const onNavigate = options?.onNavigate;
+    const onClose = options?.onClose;
+
+    return (
+      <>
+        <div className={APP_SHELL.SIDEBAR_BRAND_CLASS}>
+          <Link href={ROUTES.DASHBOARD} className={APP_SHELL.SIDEBAR_BRAND_LINK_CLASS} onClick={onNavigate}>
+            <AppLogo priority />
+            <span className={APP_SHELL.LOGO_TEXT_CLASS}>{APP_CONFIG.APP_NAME}</span>
+          </Link>
+          {onClose ? (
+            <button
+              type="button"
+              className={APP_SHELL.MENU_BUTTON_CLASS}
+              onClick={onClose}
+              aria-label={INFO_MESSAGES.CLOSE_MOBILE_MENU_ARIA}
+            >
+              <FiX className="h-5 w-5" />
+            </button>
+          ) : null}
+        </div>
+
+        <nav className={APP_SHELL.SIDEBAR_NAV_CLASS} aria-label={INFO_MESSAGES.MAIN_NAVIGATION_ARIA}>
+          {renderNavLinks(onNavigate)}
+        </nav>
+
+        <div className={APP_SHELL.SIDEBAR_FOOTER_CLASS}>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={APP_SHELL.PROFILE_BUTTON_CLASS}
+            aria-label={INFO_MESSAGES.TOGGLE_THEME_ARIA}
+            title={INFO_MESSAGES.TOGGLE_THEME(theme === THEME_VALUES.DARK ? THEME_VALUES.LIGHT : THEME_VALUES.DARK)}
+          >
+            {theme === THEME_VALUES.DARK ? (
+              <FiSun className="h-4 w-4 shrink-0" />
+            ) : (
+              <FiMoon className="h-4 w-4 shrink-0" />
+            )}
+            <span>
+              {theme === THEME_VALUES.DARK ? INFO_MESSAGES.THEME_SWITCH_TO_LIGHT : INFO_MESSAGES.THEME_SWITCH_TO_DARK}
+            </span>
+          </button>
+
+          <Link href={ROUTES.PROFILE} className={APP_SHELL.PROFILE_BUTTON_CLASS} onClick={onNavigate}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15">
+              <FiUser className="h-4 w-4 text-primary" />
+            </div>
+            <span className="min-w-0 truncate text-left">
+              <span className="block truncate text-foreground">{userDisplayName}</span>
+              <span className="block truncate text-xs text-muted-foreground">{user?.email}</span>
+            </span>
+          </Link>
+
+          <button type="button" onClick={handleLogout} className={APP_SHELL.PROFILE_BUTTON_CLASS}>
+            <FiLogOut className="h-4 w-4 shrink-0" />
+            <span>{BUTTON_LABELS.SIGN_OUT}</span>
+          </button>
+        </div>
+      </>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header — compact on mobile (≤15dvh), full chrome on md+ */}
-      <header className={APP_HEADER.ROOT_CLASS}>
-        <div className={APP_HEADER.INNER_CLASS}>
-          <div className="flex w-full items-center justify-between gap-2">
-            {/* Logo */}
-            <Link href={ROUTES.DASHBOARD} className="flex min-w-0 items-center gap-1.5 md:gap-2">
+    <div className={isEditorRoute ? APP_SHELL.ROOT_EDITOR_CLASS : APP_SHELL.ROOT_CLASS}>
+      {/* Desktop sidebar stays off on editor — writing needs full width; toolbar has Back. */}
+      {!isEditorRoute ? <aside className={APP_SHELL.SIDEBAR_CLASS}>{renderSidebarChrome()}</aside> : null}
+
+      <div className={isEditorRoute ? APP_SHELL.CONTENT_COLUMN_EDITOR_CLASS : APP_SHELL.CONTENT_COLUMN_CLASS}>
+        <header className={APP_SHELL.MOBILE_HEADER_CLASS}>
+          <div className={APP_SHELL.MOBILE_HEADER_INNER_CLASS}>
+            <Link href={ROUTES.DASHBOARD} className="flex min-w-0 items-center gap-1.5">
               <AppLogo priority />
-              <span className={`${APP_HEADER.LOGO_TEXT_CLASS} truncate`}>{APP_CONFIG.APP_NAME}</span>
+              <span className={APP_SHELL.LOGO_TEXT_CLASS}>{APP_CONFIG.APP_NAME}</span>
             </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-primary/20"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Right Side Actions */}
-            <div className={APP_HEADER.ACTIONS_GAP_CLASS}>
-              {/* Theme Toggle */}
+            <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={toggleTheme}
-                className={APP_HEADER.THEME_BUTTON_CLASS}
+                className={APP_SHELL.THEME_BUTTON_CLASS}
                 aria-label={INFO_MESSAGES.TOGGLE_THEME_ARIA}
-                title={INFO_MESSAGES.TOGGLE_THEME(theme === THEME_VALUES.DARK ? THEME_VALUES.LIGHT : THEME_VALUES.DARK)}
               >
                 {theme === THEME_VALUES.DARK ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
               </button>
-
-              {/* Profile Menu */}
-              <div className="relative hidden md:block" ref={profileMenuRef}>
-                <button
-                  onClick={() => {
-                    setShowProfileMenu(!showProfileMenu);
-                    setShowMobileMenu(false);
-                  }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-colors"
-                  aria-label={INFO_MESSAGES.USER_MENU_ARIA}
-                  aria-expanded={showProfileMenu}
-                >
-                  <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center">
-                    <FiUser className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="hidden sm:block">{user?.firstName || user?.username || PLACEHOLDERS.USER}</span>
-                  <FiChevronDown className={`h-4 w-4 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
-                </button>
-
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-card border rounded-md shadow-lg py-1 z-50">
-                    <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium text-foreground">{userDisplayName}</p>
-                      <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-                    </div>
-                    <Link
-                      href={ROUTES.PROFILE}
-                      className="block px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 items-center touch-manipulation"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      {INFO_MESSAGES.PROFILE_SETTINGS_LINK}
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
-                    >
-                      {BUTTON_LABELS.SIGN_OUT}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Mobile Menu Button */}
-              <div className="md:hidden relative" ref={mobileMenuRef}>
-                <button
-                  className={APP_HEADER.MENU_BUTTON_CLASS}
-                  onClick={() => {
-                    setShowMobileMenu(!showMobileMenu);
-                    setShowProfileMenu(false);
-                  }}
-                  aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
-                  aria-expanded={showMobileMenu}
-                >
-                  {showMobileMenu ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
-                </button>
-
-                {showMobileMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-card border rounded-md shadow-lg py-2 z-50">
-                    {/* User Info */}
-                    <div className="px-4 py-3 border-b">
-                      <p className="text-sm font-medium text-foreground">{userDisplayName}</p>
-                      <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-                    </div>
-
-                    {/* Navigation Links */}
-                    {navigation.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = pathname === item.href;
-
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
-                            isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-primary/20"
-                          }`}
-                          onClick={() => setShowMobileMenu(false)}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span>{item.name}</span>
-                        </Link>
-                      );
-                    })}
-
-                    {/* Profile & Logout */}
-                    <div className="border-t mt-2 pt-2">
-                      <Link
-                        href={ROUTES.PROFILE}
-                        className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <FiUser className="h-4 w-4 shrink-0" />
-                        <span>{INFO_MESSAGES.PROFILE_SETTINGS_LINK}</span>
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-2 w-full text-left px-4 py-2.5 sm:py-2 text-sm text-foreground hover:bg-primary/20 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
-                      >
-                        <FiLogOut className="h-4 w-4" />
-                        <span>{BUTTON_LABELS.SIGN_OUT}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                className={APP_SHELL.MENU_BUTTON_CLASS}
+                onClick={() => {
+                  setShowMobileDrawer(true);
+                }}
+                aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
+                aria-expanded={showMobileDrawer}
+              >
+                <FiMenu className="h-5 w-5" />
+              </button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main content */}
-      {pathname?.startsWith(ROUTES.EDITOR) ? (
-        /* Editor: full-bleed, no container, no footer */
-        <main className="flex-1 overflow-hidden">{children}</main>
-      ) : (
-        <>
-          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 flex-1">{children}</main>
+        {showMobileDrawer ? (
+          <>
+            <button
+              type="button"
+              className={APP_SHELL.DRAWER_OVERLAY_CLASS}
+              aria-label={INFO_MESSAGES.CLOSE_MOBILE_MENU_ARIA}
+              onClick={() => {
+                setShowMobileDrawer(false);
+              }}
+            />
+            <div
+              className={APP_SHELL.DRAWER_PANEL_CLASS}
+              role="dialog"
+              aria-modal="true"
+              aria-label={INFO_MESSAGES.OPEN_MOBILE_MENU_ARIA}
+            >
+              {renderSidebarChrome({
+                onNavigate: () => {
+                  setShowMobileDrawer(false);
+                },
+                onClose: () => {
+                  setShowMobileDrawer(false);
+                },
+              })}
+            </div>
+          </>
+        ) : null}
 
-          {/* Footer */}
-          <footer className="border-t bg-card mt-auto">
-            <div className="container mx-auto px-4 py-6">
-              <div className="text-center text-sm text-muted-foreground">
-                <p>{APP_CONFIG.COPYRIGHT}</p>
-                <p className="mt-1">{APP_CONFIG.APP_DESCRIPTION}</p>
-              </div>
+        <main className={isEditorRoute ? APP_SHELL.MAIN_EDITOR_CLASS : APP_SHELL.MAIN_CLASS}>{children}</main>
+
+        {!isEditorRoute ? (
+          <footer className={APP_SHELL.FOOTER_CLASS}>
+            <div className={APP_SHELL.FOOTER_INNER_CLASS}>
+              <p>{APP_CONFIG.COPYRIGHT}</p>
+              <p className="mt-1">{APP_CONFIG.APP_DESCRIPTION}</p>
             </div>
           </footer>
-        </>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 };

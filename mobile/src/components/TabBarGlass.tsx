@@ -2,10 +2,7 @@ import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 
 import { GlassSurface } from "@components/GlassSurface";
 import { IOS26 } from "@constants/designTokens";
-
-interface TabBarGlassProps {
-  style?: StyleProp<ViewStyle>;
-}
+import type { TabBarGlassProps } from "@types";
 
 /** Floating tab pill surface with Liquid Glass when available. */
 export function TabBarGlass({ style }: TabBarGlassProps) {

@@ -10,13 +10,7 @@ import { EDITOR_A11Y, EDITOR_UI, editorMetaCharCount, LABELS, PLACEHOLDERS } fro
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
-import type { EditorForm } from "@types";
-
-interface DetailsTabProps {
-  form: EditorForm;
-  connectedPlatforms: PlatformSlug[];
-  updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
-}
+import type { DetailsTabProps } from "@types";
 
 const SCHEDULE_PLATFORM_ORDER: PlatformSlug[] = [
   PLATFORMS.MEDIUM,

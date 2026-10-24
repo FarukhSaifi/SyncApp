@@ -3,14 +3,9 @@ import { Image, type ImageStyle, type StyleProp } from "react-native";
 import { LABELS } from "@constants";
 import { APP_LOGO } from "@constants/designTokens";
 
+import type { AppLogoProps } from "@types";
+
 const logoSource = require("../../assets/images/logo.png");
-
-type AppLogoVariant = "header" | "auth";
-
-type AppLogoProps = {
-  variant?: AppLogoVariant;
-  style?: StyleProp<ImageStyle>;
-};
 
 /**
  * SyncApp brand mark — same asset as the web client header / auth screens.

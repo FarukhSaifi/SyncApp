@@ -16,9 +16,10 @@ import type {
 import axios, { type AxiosInstance } from "axios";
 import qs from "qs";
 
+import type { UnauthorizedHandler } from "@types";
+
 import { clearToken, getToken } from "./tokenStorage";
 
-type UnauthorizedHandler = () => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {

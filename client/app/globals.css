@@ -39,9 +39,11 @@
 
 @layer base {
   :root {
-    /* Compact mobile app header (h-12); desktop restores roomier bar in Layout. */
+    /* Mobile top chrome; desktop uses sidebar (APP_SHELL) instead of a tall header. */
     --app-header-height: 3rem;
-    --background: 0 0% 100%;
+    --app-sidebar-width: 16rem;
+    /* Soft gray page canvas (slothUI-style); cards stay elevated white. */
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -49,10 +51,10 @@
     --popover-foreground: 222 47% 11%;
     --primary: 263 70% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 270 60% 90%;
+    --secondary: 270 45% 94%;
     --secondary-foreground: 263 70% 25%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 16% 94%;
+    --muted-foreground: 215 14% 46%;
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
@@ -61,31 +63,24 @@
     --warning-foreground: 0 0% 100%;
     --positive: 142 71% 45%;
     --positive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
     --ring: 263 70% 58%;
-    --radius: 0.5rem;
-  }
-
-  @media (min-width: 768px) {
-    :root {
-      /* Matches Layout desktop header (py-4 + ~2rem logo row ≈ 73px). */
-      --app-header-height: 4.5625rem;
-    }
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 220 15% 12%;
+    --background: 220 16% 10%;
     --foreground: 0 0% 98%;
-    --card: 220 15% 14%;
+    --card: 220 14% 14%;
     --card-foreground: 0 0% 98%;
-    --popover: 220 15% 14%;
+    --popover: 220 14% 14%;
     --popover-foreground: 0 0% 98%;
     --primary: 263 70% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 263 50% 25%;
+    --secondary: 263 40% 22%;
     --secondary-foreground: 270 60% 90%;
-    --muted: 220 15% 18%;
+    --muted: 220 14% 16%;
     --muted-foreground: 0 0% 64%;
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
@@ -95,8 +90,8 @@
     --warning-foreground: 0 0% 100%;
     --positive: 142 71% 45%;
     --positive-foreground: 0 0% 100%;
-    --border: 220 15% 22%;
-    --input: 220 15% 22%;
+    --border: 220 12% 20%;
+    --input: 220 12% 20%;
     --ring: 263 70% 58%;
   }
 }

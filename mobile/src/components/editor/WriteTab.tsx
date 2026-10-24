@@ -19,22 +19,9 @@ import {
   PLACEHOLDERS,
   editorBodyMetrics,
 } from "@constants/messages";
-import type { OptimizationTarget } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
-import type { EditorForm } from "@types";
-
-interface WriteTabProps {
-  form: EditorForm;
-  updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
-  openGenerateImage: () => void;
-  uploadCoverFromUri: (uri: string, filename: string, mimeType: string) => Promise<string | null>;
-  aiEdit: (action: string) => Promise<string | void>;
-  generatePost: (topic: string) => Promise<void>;
-  aiLoading: boolean;
-  aiTargetPlatforms: OptimizationTarget[];
-  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
-}
+import type { OptimizationTarget, WriteTabProps } from "@types";
 
 export function WriteTab({
   form,

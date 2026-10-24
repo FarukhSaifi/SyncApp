@@ -25,7 +25,7 @@ export const INPUT_SIZES = Object.freeze({
   LG: "lg",
 } as const);
 
-/** iOS 26–style corner radii (continuous, larger surfaces) */
+/** Soft SaaS + iOS continuous radii (card surfaces align with web `rounded-xl` ≈ 12) */
 export const RADIUS = Object.freeze({
   SM: 8,
   MD: 12,
@@ -33,6 +33,59 @@ export const RADIUS = Object.freeze({
   XL: 20,
   XXL: 28,
   FULL: 9999,
+  /** Elevated cards / sheets — match client `--radius: 0.75rem` */
+  CARD: 12,
+} as const);
+
+/**
+ * Settings / Profile / screen section rhythm (v2 UI).
+ * Mirrors client `SETTINGS_LAYOUT` (text-2xl title, space-y-6 sections, p-3 cards on mobile).
+ */
+export const SETTINGS_LAYOUT = Object.freeze({
+  PAGE_PADDING: 16,
+  SECTION_GAP: 24,
+  CARD_PADDING: 12,
+  CARD_GAP: 12,
+  HEADER_TITLE_SIZE: 24,
+  HEADER_TITLE_WEIGHT: "600" as const,
+  HEADER_DESC_SIZE: 14,
+  HEADER_DESC_LINE_HEIGHT: 20,
+  HEADER_MARGIN_BOTTOM: 20,
+  SECTION_TITLE_SIZE: 18,
+  SECTION_TITLE_WEIGHT: "600" as const,
+  SECTION_DESC_SIZE: 13,
+  CHIP_PADDING_X: 12,
+  CHIP_PADDING_Y: 8,
+} as const);
+
+/** Dimmed overlay behind sheets / modals */
+export const OVERLAY = Object.freeze({
+  SCRIM: "rgba(15, 23, 42, 0.45)",
+  SCRIM_STRONG: "rgba(15, 23, 42, 0.55)",
+} as const);
+
+/** Press-to-show tooltip — mirrors client `TOOLTIP_UI` for tags / icon actions. */
+export const TOOLTIP_UI = Object.freeze({
+  MAX_WIDTH: 256,
+  PANEL_PADDING_X: 10,
+  PANEL_PADDING_Y: 8,
+  PANEL_GAP: 6,
+  FONT_SIZE: 12,
+  Z_INDEX: 50,
+  CHIP_PADDING_X: 8,
+  CHIP_PADDING_Y: 3,
+  CHIP_FONT_SIZE: 11,
+  ACTION_ICON_SIZE: 32,
+  ACTION_GLYPH_SIZE: 16,
+} as const);
+
+/** Full-viewport editor sheets (parity with web EditorMobileSheet) */
+export const EDITOR_SHEET = Object.freeze({
+  TITLE_BAR_HEIGHT: 52,
+  MAX_HEIGHT: "100%" as const,
+  BORDER_RADIUS: 0,
+  BODY_PADDING: 16,
+  CLOSE_HIT: 40,
 } as const);
 
 /** Header icon buttons (theme, profile) */
@@ -90,13 +143,13 @@ export const IOS26 = Object.freeze({
   SECTION_GAP: 24,
   GROUPED_GAP: 12,
   LIST_ROW_MIN_HEIGHT: 44,
-  /** Floating drop tab bar (pill above home indicator) */
+  /** Floating drop tab bar (pill above home indicator) — v2 soft SaaS chrome */
   TAB_BAR_FLOATING_HEIGHT: 64,
   TAB_BAR_HORIZONTAL_INSET: 20,
   /** Gap from physical screen bottom to the floating tab bar pill */
-  TAB_BAR_BOTTOM_GAP: 8,
+  TAB_BAR_BOTTOM_GAP: 10,
   TAB_BAR_NEW_POST_OVERHANG: 28,
-  TAB_BAR_DROP_RADIUS: 28,
+  TAB_BAR_DROP_RADIUS: 24,
   TAB_BAR_CONTENT_EXTRA: 24,
 } as const);
 

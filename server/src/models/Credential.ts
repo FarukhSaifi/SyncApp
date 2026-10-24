@@ -1,30 +1,10 @@
 import { PLATFORMS, VALID_PLATFORMS } from "@constants";
-import type { ICredential } from "@types";
-import mongoose, { Document, Model, Schema, type Types } from "mongoose";
+import type { ICredentialDocument } from "@types";
+import mongoose, { Model, Schema } from "mongoose";
 
 import { CREDENTIAL_INDEXES } from "@constants/indexes";
 
-
-export interface ICredentialDocument extends Document, Omit<ICredential, "_id" | "author" | "token_expires_at"> {
-  author: Types.ObjectId;
-  platform_name: string;
-  encrypted_payload: string; // Packed as IV:TAG:CIPHERTEXT
-  api_key: string;           // Backward-compatible alias
-  site_url?: string;
-  is_active: boolean;
-  refresh_token?: string;
-  token_expires_at?: Date;
-  platform_config?: {
-    devto_username?: string;
-    medium_user_id?: string;
-    wordpress_url?: string;
-    linkedin_person_urn?: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  created_at: Date;
-  updated_at: Date;
-}
+export type { ICredentialDocument };
 
 const credentialSchema = new Schema<ICredentialDocument>(
   {

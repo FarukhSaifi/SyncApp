@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from "@components/Card";
 import { Input } from "@components/Input";
 import { PasswordInput } from "@components/PasswordInput";
 import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, ROUTES } from "@constants";
-import { BUTTON_VARIANTS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT, TYPOGRAPHY } from "@constants/designTokens";
 import { useAuth } from "@contexts/AuthContext";
 import { useThemeColors } from "@contexts/ThemeContext";
 
@@ -52,10 +52,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ flex: 1, backgroundColor: colors.groupedBackground }}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.shell}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
           <AppLogo variant="auth" />
@@ -63,8 +60,8 @@ export default function RegisterScreen() {
         <Text style={styles.heading}>{LABELS.REGISTER}</Text>
         <Text style={styles.subtitle}>{DESCRIPTIONS.REGISTER}</Text>
 
-        <Card>
-          <CardHeader title={LABELS.CREATE_ACCOUNT} />
+        <Card style={styles.card}>
+          <CardHeader title={LABELS.CREATE_ACCOUNT} align="center" />
           <CardContent>
             {error ? (
               <View style={styles.errorBox}>
@@ -103,20 +100,32 @@ export default function RegisterScreen() {
 
 const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
-    container: { padding: 24, paddingBottom: 48 },
-    brand: { alignItems: "center", marginBottom: 16 },
-    heading: { fontSize: 28, fontWeight: "700", color: colors.foreground, textAlign: "center" },
-    subtitle: { textAlign: "center", color: colors.mutedForeground, marginBottom: 20, marginTop: 6 },
+    shell: { flex: 1, backgroundColor: colors.groupedBackground },
+    container: { padding: SETTINGS_LAYOUT.PAGE_PADDING + 8, paddingBottom: 48 },
+    brand: { alignItems: "center", marginBottom: SETTINGS_LAYOUT.CARD_GAP },
+    heading: {
+      ...TYPOGRAPHY.TITLE1,
+      color: colors.foreground,
+      textAlign: "center",
+    },
+    subtitle: {
+      textAlign: "center",
+      color: colors.mutedForeground,
+      marginBottom: SETTINGS_LAYOUT.SECTION_GAP,
+      marginTop: 6,
+      fontSize: SETTINGS_LAYOUT.HEADER_DESC_SIZE,
+    },
+    card: { borderRadius: RADIUS.CARD },
     errorBox: {
       backgroundColor: `${colors.destructive}1a`,
       borderWidth: 1,
       borderColor: `${colors.destructive}4d`,
-      borderRadius: 8,
+      borderRadius: RADIUS.MD,
       padding: 12,
       marginBottom: 12,
     },
     errorText: { color: colors.destructive, fontSize: 14 },
-    back: { marginTop: 16, alignItems: "center" },
+    back: { marginTop: SETTINGS_LAYOUT.CARD_GAP, alignItems: "center" },
     link: { color: colors.primary, fontWeight: "500" },
     footer: { textAlign: "center", color: colors.mutedForeground, fontSize: 12, marginTop: 24 },
   });

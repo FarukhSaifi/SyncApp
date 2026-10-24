@@ -70,6 +70,17 @@ export type PostData = Post & {
   published_at?: string;
 };
 
+/** Minimal post shape for schedule helpers (row/card/status pills). */
+export type SchedulablePost = {
+  status: string;
+  scheduled_for?: string | null;
+};
+
+export interface UserRoleOption {
+  value: string;
+  label: string;
+}
+
 export interface Credential {
   _id: string;
   platform: string;
