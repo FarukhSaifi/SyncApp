@@ -4,9 +4,9 @@ name: Request Copilot Review
 # Uses `gh pr edit --add-reviewer @copilot` (the documented handle). The REST
 # requested_reviewers endpoint can return 200 while silently ignoring Copilot.
 #
-# Copilot code review requires Pro / Pro+ / Business / Enterprise (not Copilot
-# Free). After requesting, we verify the reviewer actually appears — otherwise
-# the job fails with a clear upgrade hint instead of a silent green check.
+# Requires the PR author to have Copilot code review access (Pro / Pro+ / Business /
+# Enterprise, or eligible free allowance). If Copilot is unavailable, the job
+# fails loudly so the gap is visible in Checks.
 
 on:
   pull_request:
@@ -34,48 +34,15 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-
-          already_reviewed="$(
-            gh pr view "$PR" --repo "$REPO" --json reviews \
-              --jq '[.reviews[].author.login] | join("\n")' || true
-          )"
-          if printf '%s\n' "$already_reviewed" | grep -qiE 'copilot'; then
+          if gh pr view "$PR" --repo "$REPO" --json reviews --jq '.reviews[].author.login' \
+            | grep -qiE 'copilot'; then
             echo "Copilot has already reviewed this PR."
             exit 0
           fi
-
-          already_requested="$(
-            gh pr view "$PR" --repo "$REPO" --json reviewRequests \
-              --jq '[.reviewRequests[].login] | join("\n")' || true
-          )"
-          if printf '%s\n' "$already_requested" | grep -qiE 'copilot'; then
+          if gh pr view "$PR" --repo "$REPO" --json reviewRequests --jq '.reviewRequests[].login' \
+            | grep -qiE 'copilot'; then
             echo "Copilot is already requested as a reviewer."
             exit 0
           fi
-
-          # gh may exit 0 even when Copilot is not entitled on the account.
-          gh pr edit "$PR" --repo "$REPO" --add-reviewer "@copilot" || true
-
-          sleep 3
-
-          requested="$(
-            gh pr view "$PR" --repo "$REPO" --json reviewRequests \
-              --jq '[.reviewRequests[].login] | join("\n")' || true
-          )"
-          reviewed="$(
-            gh pr view "$PR" --repo "$REPO" --json reviews \
-              --jq '[.reviews[].author.login] | join("\n")' || true
-          )"
-
-          if printf '%s\n%s\n' "$requested" "$reviewed" | grep -qiE 'copilot'; then
-            echo "Copilot review requested on PR #$PR."
-            exit 0
-          fi
-
-          echo "::error::Copilot was not added as a reviewer on PR #$PR."
-          echo "Copilot code review is not included in Copilot Free (free_limited_copilot)."
-          echo "Upgrade to Copilot Pro (or Pro+/Business/Enterprise), then either:"
-          echo "  1) Open the PR → Reviewers → Copilot → Request"
-          echo "  2) Or run: gh pr edit $PR --add-reviewer @copilot"
-          echo "Also enable automatic review at: https://github.com/settings/copilot/features"
-          exit 1
+          gh pr edit "$PR" --repo "$REPO" --add-reviewer "@copilot"
+          echo "Requested Copilot review on PR #$PR."
