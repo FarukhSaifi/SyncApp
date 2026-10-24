@@ -12,7 +12,7 @@ const READ_MORE_PREFIX = LINKEDIN_POST.READ_MORE_PREFIX;
 const HASHTAG_LINE = LINKEDIN_POST.HASHTAG_LINE;
 
 /** Last path segment of a URL or path (post slug). */
-export function extractSlugFromUrlOrPath(value: string): string {
+function extractSlugFromUrlOrPath(value: string): string {
   const raw = (value || "").trim();
   if (!raw) {
     return "";
@@ -57,7 +57,7 @@ export function resolveLinkedInReadMoreUrl(canonicalUrl?: string | null, slugHin
  * Insert Read more before trailing hashtag lines so the order is:
  * body → Read more → hashtags.
  */
-export function insertReadMoreBeforeHashtags(body: string, readMoreLine: string): string {
+function insertReadMoreBeforeHashtags(body: string, readMoreLine: string): string {
   const lines = body.split("\n");
   let hashtagStart = lines.length;
 

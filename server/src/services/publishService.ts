@@ -92,12 +92,7 @@ function prepareDevtoTags(tags: string[] | undefined): string[] {
   const seen = new Set<string>();
 
   return (tags || [])
-    .map((tag) =>
-      tag
-        .trim()
-        .toLowerCase()
-        .replace(REGEX_PATTERNS.DEVTO_TAG_NORMALIZE, ""),
-    )
+    .map((tag) => tag.trim().toLowerCase().replace(REGEX_PATTERNS.DEVTO_TAG_NORMALIZE, ""))
     .filter((tag) => {
       if (!tag || seen.has(tag)) {
         return false;
@@ -169,8 +164,7 @@ function resolveMediumContentPayload(post: IPostDocument): { contentFormat: "htm
 function isDecryptFailure(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return (
-    message === ERROR_MESSAGES.FAILED_TO_DECRYPT ||
-    message.includes(DEFAULT_VALUES.DECRYPT_OPENSSL_BAD_DECRYPT_SNIPPET)
+    message === ERROR_MESSAGES.FAILED_TO_DECRYPT || message.includes(DEFAULT_VALUES.DECRYPT_OPENSSL_BAD_DECRYPT_SNIPPET)
   );
 }
 
@@ -513,7 +507,6 @@ export async function publishToLinkedin(
   }
 }
 
-
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: PublishFn }> = {
   [PLATFORMS.MEDIUM]: { name: PLATFORM_CONFIG.medium.name, publishFn: publishToMedium },
   [PLATFORMS.DEVTO]: { name: PLATFORM_CONFIG.devto.name, publishFn: publishToDevto },
@@ -578,7 +571,7 @@ export async function performPublishToAll(post: IPostDocument) {
 }
 
 /** Syndicate to active author credentials (optionally filtered by platform slug). Does not mutate post. */
-export async function publishToActivePlatforms(
+async function publishToActivePlatforms(
   post: IPostDocument,
   options?: { platforms?: string[] },
 ): Promise<PublishToActivePlatformsResult> {
@@ -643,7 +636,7 @@ async function loadAuthorForNotification(authorId: unknown) {
 }
 
 /** Publish a single scheduled draft with cron-safe rules and notifications. */
-export async function publishScheduledPost(post: IPostDocument): Promise<ScheduledPublishPostResult> {
+async function publishScheduledPost(post: IPostDocument): Promise<ScheduledPublishPostResult> {
   const freshPost = await Post.findById(post._id);
   if (!freshPost) {
     throw new Error(ERROR_MESSAGES.POST_NOT_FOUND);
@@ -658,9 +651,7 @@ export async function publishScheduledPost(post: IPostDocument): Promise<Schedul
     : [];
   const credentials = await Credential.find({ author: freshPost.author, is_active: true });
   const matchingCredentials =
-    scheduledTargets.length > 0
-      ? credentials.filter((c) => scheduledTargets.includes(c.platform_name))
-      : credentials;
+    scheduledTargets.length > 0 ? credentials.filter((c) => scheduledTargets.includes(c.platform_name)) : credentials;
 
   if (matchingCredentials.length === 0) {
     const notification = await notifyScheduledPublishResult({

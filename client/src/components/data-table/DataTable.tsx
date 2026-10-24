@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@components/
 import { DataTablePageSizeSelect } from "./DataTablePageSizeSelect";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
-import { LoadMoreSentinel } from "./LoadMoreSentinel";
 import { SortableTableHead } from "./SortableTableHead";
 
 export default function DataTable<T>({
@@ -23,9 +22,7 @@ export default function DataTable<T>({
   pageSize,
   sort,
   loading = false,
-  loadingMore = false,
   empty,
-  infiniteScroll,
   pagination,
   mobileRow,
   embedded = false,
@@ -111,15 +108,6 @@ export default function DataTable<T>({
               </Table>
             </div>
           </div>
-
-          {loadingMore ? <p className={DATA_TABLE.LOADING_MORE}>{SYNC_LABEL.DATA_TABLE_LOADING_MORE}</p> : null}
-
-          {infiniteScroll ? (
-            <LoadMoreSentinel
-              enabled={infiniteScroll.hasMore && !loading && !loadingMore}
-              onIntersect={infiniteScroll.onLoadMore}
-            />
-          ) : null}
         </>
       )}
 

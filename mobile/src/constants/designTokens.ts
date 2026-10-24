@@ -64,6 +64,21 @@ export const OVERLAY = Object.freeze({
   SCRIM_STRONG: "rgba(15, 23, 42, 0.55)",
 } as const);
 
+/** Press-to-show tooltip — mirrors client `TOOLTIP_UI` for tags / icon actions. */
+export const TOOLTIP_UI = Object.freeze({
+  MAX_WIDTH: 256,
+  PANEL_PADDING_X: 10,
+  PANEL_PADDING_Y: 8,
+  PANEL_GAP: 6,
+  FONT_SIZE: 12,
+  Z_INDEX: 50,
+  CHIP_PADDING_X: 8,
+  CHIP_PADDING_Y: 3,
+  CHIP_FONT_SIZE: 11,
+  ACTION_ICON_SIZE: 32,
+  ACTION_GLYPH_SIZE: 16,
+} as const);
+
 /** Full-viewport editor sheets (parity with web EditorMobileSheet) */
 export const EDITOR_SHEET = Object.freeze({
   TITLE_BAR_HEIGHT: 52,

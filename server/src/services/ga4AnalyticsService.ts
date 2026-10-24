@@ -17,13 +17,10 @@ import {
 } from "@constants";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import type { Ga4TrafficSourceRow, Ga4WebsiteAnalytics } from "@src/types/analytics";
+import type { DateRangeInput, Ga4TrafficChannelId } from "@types";
 import { hasGoogleCloudCredentialsEnv, loadGoogleServiceAccountCredentials } from "@utils/googleCredentials";
 import { createLogger } from "@utils/logger";
 import dayjs from "dayjs";
-
-import type { Ga4TrafficChannelId } from "@constants/analytics";
-
-import type { DateRangeInput } from "@types";
 
 const logger = createLogger(GA4_REPORT.LOGGER_NAME);
 
@@ -105,11 +102,7 @@ function metricValue(row: { metricValues?: Array<{ value?: string | null }> | nu
   return Number.isFinite(n) ? n : GA4_REPORT.EMPTY_METRIC;
 }
 
-export function isGa4Configured(): boolean {
-  return Boolean(config.googleAnalyticsPropertyId.trim());
-}
-
-export function getGa4ConfigStatus(): { configured: boolean; propertyIdSet: boolean; credentialsAvailable: boolean } {
+function getGa4ConfigStatus(): { configured: boolean; propertyIdSet: boolean; credentialsAvailable: boolean } {
   const propertyIdSet = Boolean(config.googleAnalyticsPropertyId.trim());
   const credentialsAvailable = hasGoogleCloudCredentialsEnv();
   return {

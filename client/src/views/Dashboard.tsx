@@ -43,7 +43,6 @@ const Dashboard = ({
   filteredTotal = 0,
   stats,
   onPostDelete,
-  onPostUpdate: _onPostUpdate,
   onRefresh,
   onPageChange,
   onPageSizeChange,

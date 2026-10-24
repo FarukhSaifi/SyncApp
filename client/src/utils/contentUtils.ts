@@ -45,7 +45,7 @@ export function isLikelyHtml(content: string): boolean {
 }
 
 /** True when markdown syntax is present (headings, fences, lists, etc.). */
-export function hasMarkdownSyntax(content: string): boolean {
+function hasMarkdownSyntax(content: string): boolean {
   if (!content || typeof content !== "string") return false;
   const trimmed = content.trim();
   if (!trimmed) return false;
@@ -62,7 +62,7 @@ export function hasMarkdownSyntax(content: string): boolean {
 }
 
 /** Heuristic: content looks like markdown and should be converted for TipTap. */
-export function isLikelyMarkdown(content: string): boolean {
+function isLikelyMarkdown(content: string): boolean {
   if (!content || typeof content !== "string") return false;
   const trimmed = content.trim();
   if (!trimmed) return false;

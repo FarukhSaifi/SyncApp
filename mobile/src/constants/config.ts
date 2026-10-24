@@ -9,7 +9,8 @@ export const APP_CONFIG = Object.freeze({
   API_AI_IMAGE_TIMEOUT: 65000,
   API_COVER_UPLOAD_TIMEOUT: 30000,
   DEFAULT_LIMIT: 20,
-  POSTS_LIST_LIMIT: 50,
+  /** Initial dashboard posts fetch (parity with compact mobile lists). */
+  POSTS_LIST_LIMIT: 5,
   TAGS_DISPLAY_LIMIT_CARD: 5,
   DATE_FORMAT_WITH_TIME: "DD-MM-YYYY hh:mm A",
   VALIDATION_MIN_PASSWORD: 6,

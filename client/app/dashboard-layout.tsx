@@ -19,7 +19,9 @@ const PostsContext = createContext<PostsContextValue | undefined>(undefined);
 
 export function usePostsContext(): PostsContextValue {
   const ctx = useContext(PostsContext);
-  if (!ctx) throw new Error("usePostsContext must be used within dashboard layout");
+  if (!ctx) {
+    throw new Error("usePostsContext must be used within dashboard layout");
+  }
   return ctx;
 }
 
@@ -31,15 +33,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const {
     posts,
     loading,
-    loadingMore,
     error,
-    hasMore,
     pagination,
     totalPages,
     stats,
     goToPage,
     resetAndFetch,
-    loadMore,
     updatePost,
     deletePost,
     refreshPosts,
@@ -50,7 +49,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) {
+      return;
+    }
     if (!isAuthenticated) {
       router.replace(ROUTES.LOGIN);
       return;
@@ -88,17 +89,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     [resetAndFetch],
   );
 
-  const onLoadMore = useCallback(() => {
-    void loadMore();
-  }, [loadMore]);
-
   const postsValue = useMemo<PostsContextValue>(
     () => ({
       posts,
       loading,
-      loadingMore,
       error,
-      hasMore,
       page: pagination.page,
       pages: totalPages,
       pageSize: pagination.limit,
@@ -109,7 +104,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       onPostDelete: deletePost,
       onRefresh: refreshPosts,
       onPostCreate: addPost,
-      onLoadMore,
       onPageChange,
       onPageSizeChange,
       onStatusFilterChange,
@@ -118,9 +112,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     [
       posts,
       loading,
-      loadingMore,
       error,
-      hasMore,
       pagination.page,
       pagination.limit,
       pagination.total,
@@ -130,7 +122,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       deletePost,
       refreshPosts,
       addPost,
-      onLoadMore,
       onPageChange,
       onPageSizeChange,
       onStatusFilterChange,

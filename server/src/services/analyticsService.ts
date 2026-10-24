@@ -11,7 +11,7 @@ function authorMatchStage(userId: string) {
 /**
  * Get distribution of posts by status for a user
  */
-export async function getStatusDistribution(userId: string) {
+async function getStatusDistribution(userId: string) {
   const distribution = await Post.aggregate([
     authorMatchStage(userId),
     {
@@ -31,7 +31,7 @@ export async function getStatusDistribution(userId: string) {
 /**
  * Get distribution of published posts across platforms for a user
  */
-export async function getPlatformDistribution(userId: string) {
+async function getPlatformDistribution(userId: string) {
   const results = await Post.aggregate([
     authorMatchStage(userId),
     {
@@ -56,7 +56,7 @@ export async function getPlatformDistribution(userId: string) {
 /**
  * Get post creation activity over the last 30 days for a user
  */
-export async function getDailyActivity(userId: string) {
+async function getDailyActivity(userId: string) {
   const thirtyDaysAgo = dayjs().subtract(30, "day").toDate();
 
   const activity = await Post.aggregate([

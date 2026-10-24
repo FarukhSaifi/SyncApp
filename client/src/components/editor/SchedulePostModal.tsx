@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@constants";
-import type { SchedulePostModalProps } from "@types";
+import type { PlatformSlug, SchedulePostModalProps } from "@types";
 import dayjs from "dayjs";
 import { FiClock } from "react-icons/fi";
 
 import { EDITOR_UI } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
 
 import Button from "@components/common/Button";
 import Modal from "@components/common/Modal";

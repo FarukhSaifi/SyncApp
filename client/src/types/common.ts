@@ -1,5 +1,3 @@
-import React from "react";
-
 import type { PostsStats } from "./analytics";
 import type { Pagination } from "./api";
 import type { Post, User } from "./models";
@@ -24,9 +22,7 @@ export interface UserDeleteConfirmState {
 export interface DashboardProps {
   posts: Post[];
   loading: boolean;
-  loadingMore?: boolean;
   error: string | null;
-  hasMore?: boolean;
   page: number;
   pages: number;
   pageSize?: number;
@@ -34,10 +30,8 @@ export interface DashboardProps {
   /** Count for the current list query (status/search + pagination). */
   filteredTotal?: number;
   stats?: PostsStats;
-  onPostUpdate: (post: Post) => void;
   onPostDelete: (id: string) => void;
   onRefresh: () => void;
-  onLoadMore?: () => void;
   onPageChange: (page: number) => void;
   onPageSizeChange?: (limit: number) => void;
   onStatusFilterChange?: (status: string) => void;
@@ -57,21 +51,16 @@ export interface PostsListFilters {
 export interface UsePostsReturn {
   posts: Post[];
   loading: boolean;
-  loadingMore: boolean;
   error: string | null;
   pagination: Pagination;
   stats: PostsStats;
-  hasMore: boolean;
   totalPages: number;
-  fetchPosts: (opts?: Partial<Pagination> & PostsListFilters & { append?: boolean }) => Promise<void>;
-  loadMore: () => Promise<void>;
   goToPage: (page: number) => Promise<void>;
   resetAndFetch: (opts?: Partial<Pagination> & PostsListFilters) => Promise<void>;
   refreshPosts: () => void;
   addPost: (newPost: Post) => void;
   updatePost: (updatedPost: Partial<Post> & { id?: string; _id?: string }) => void;
   deletePost: (postId: string) => void;
-  setPagination: React.Dispatch<React.SetStateAction<Pagination>>;
 }
 
 export interface UsePostsOptions {
@@ -83,9 +72,7 @@ export interface UsePostsOptions {
 export interface PostsContextValue {
   posts: Post[];
   loading: boolean;
-  loadingMore: boolean;
   error: string | null;
-  hasMore: boolean;
   page: number;
   pages: number;
   pageSize: number;
@@ -96,7 +83,6 @@ export interface PostsContextValue {
   onPostDelete: (id: string) => void;
   onRefresh: () => void;
   onPostCreate: (post: Post) => void;
-  onLoadMore: () => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (limit: number) => void;
   onStatusFilterChange: (status: string) => void;

@@ -10,19 +10,15 @@ export default function DashboardPage() {
   const {
     posts,
     loading,
-    loadingMore,
     error,
-    hasMore,
     page,
     pages,
     pageSize,
     totalPosts,
     filteredTotal,
     stats,
-    onPostUpdate,
     onPostDelete,
     onRefresh,
-    onLoadMore,
     onPageChange,
     onPageSizeChange,
     onStatusFilterChange,
@@ -32,19 +28,15 @@ export default function DashboardPage() {
     <Dashboard
       posts={posts}
       loading={loading}
-      loadingMore={loadingMore}
       error={error}
-      hasMore={hasMore}
       page={page}
       pages={pages}
       pageSize={pageSize}
       totalPosts={totalPosts}
       filteredTotal={filteredTotal}
       stats={stats}
-      onPostUpdate={onPostUpdate}
       onPostDelete={onPostDelete}
       onRefresh={onRefresh}
-      onLoadMore={onLoadMore}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       onStatusFilterChange={onStatusFilterChange}

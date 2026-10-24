@@ -8,7 +8,7 @@ import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
 import { APP_CONFIG } from "@constants";
 import { useMediaQuery } from "@hooks/useMediaQuery";
-import type { EditorSidebarRightProps } from "@types";
+import type { EditorSidebarRightProps, PlatformSlug } from "@types";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
 import dayjs from "dayjs";
 import {
@@ -26,7 +26,7 @@ import {
 
 import { AI_LOADING, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 
 import Button from "@components/common/Button";

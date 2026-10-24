@@ -1,16 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
-import type {
-  ImageStyle,
-  StyleProp,
-  TextInputProps,
-  ViewProps,
-  ViewStyle,
-} from "react-native";
+import type { ImageStyle, StyleProp, TextInputProps, ViewProps, ViewStyle } from "react-native";
 import type { ToastConfigParams } from "react-native-toast-message";
 
 import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES } from "@constants/designTokens";
-import type { OptimizationTarget, PlatformSlug, PLATFORMS } from "@constants/platforms";
+import { PLATFORMS } from "@constants/platforms";
+
+import type { OptimizationTarget, PlatformSlug } from "./fromConstants";
 
 import type { EditorForm, EditorMode, EditorReadiness, Post, User } from "./index";
 
@@ -75,6 +71,24 @@ export interface PostCardProps {
   post: Post;
   onPress: () => void;
   onDelete: () => void;
+}
+
+export type TooltipSide = "top" | "bottom";
+
+export interface TooltipProps {
+  content: ReactNode;
+  children: ReactNode;
+  side?: TooltipSide;
+  accessibilityLabel?: string;
+  /** `press` for overflow chips; `longPress` when tap should run `onPress`. */
+  openOn?: "press" | "longPress";
+  /** Used when `openOn="longPress"` — short tap action (e.g. Edit / Delete). */
+  onPress?: () => void;
+}
+
+export interface TagChipsProps {
+  tags: string[];
+  limit: number;
 }
 
 export type ThemeToggleButtonProps = {

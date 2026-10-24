@@ -4,8 +4,6 @@ import type { SettingsSectionNavProps } from "@types";
 
 import { SETTINGS_LAYOUT } from "@constants/designTokens";
 
-export type { SettingsSectionNavItem } from "@types";
-
 const SettingsSectionNav = ({ items, activeId, onSelect, ariaLabel }: SettingsSectionNavProps) => {
   return (
     <nav className={SETTINGS_LAYOUT.SECTION_NAV_CLASS} aria-label={ariaLabel}>

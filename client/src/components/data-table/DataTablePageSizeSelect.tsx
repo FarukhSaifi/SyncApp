@@ -18,6 +18,7 @@ export function DataTablePageSizeSelect({ pageSize }: DataTablePageSizeSelectPro
 
   return (
     <label className={DATA_TABLE.PAGE_SIZE_LABEL}>
+      <span className={DATA_TABLE.PAGE_SIZE_LABEL_TEXT_MOBILE}>{SYNC_LABEL.DATA_TABLE_PAGE_SIZE_SHORT}</span>
       <span className={DATA_TABLE.PAGE_SIZE_LABEL_TEXT}>{SYNC_LABEL.DATA_TABLE_PAGE_SIZE}</span>
       <Select
         fullWidth={false}

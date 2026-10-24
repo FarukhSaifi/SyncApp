@@ -2,10 +2,9 @@
  * Platform publishing, scheduling, and outcome types.
  */
 
-import type { ScheduledPublishOutcome } from "@constants/notifications";
-
 import type { NotificationResult } from "./common";
 import type { ICredentialDocument, IPostDocument } from "./documents";
+import type { ScheduledPublishOutcome } from "./fromConstants";
 
 export type PlatformPublishAction = "create" | "update" | "skip";
 

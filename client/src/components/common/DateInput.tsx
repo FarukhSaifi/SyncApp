@@ -83,7 +83,7 @@ export default function DateInput({
           ref={inputRef}
           id={fieldId}
           name={name}
-          type="date"
+          type={DATE_INPUT_UI.INPUT_TYPE}
           disabled={disabled}
           aria-invalid={hasError}
           aria-describedby={hint ? `${fieldId}-hint` : hasError ? `${fieldId}-error` : undefined}

@@ -19,10 +19,9 @@ import {
   PLACEHOLDERS,
   editorBodyMetrics,
 } from "@constants/messages";
-import type { OptimizationTarget } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
-import type { WriteTabProps } from "@types";
+import type { OptimizationTarget, WriteTabProps } from "@types";
 
 export function WriteTab({
   form,
