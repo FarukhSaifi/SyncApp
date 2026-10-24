@@ -5,7 +5,7 @@
  * Intentionally word-count-neutral: short, dense posts score the same as long posts
  * when metadata, structure, and authority signals are present.
  */
-import type { Post, SeoCheck, SeoScorecard } from "@types";
+import type { MetaDescriptionStatus, Post, SeoCheck, SeoScorecard } from "@types";
 
 import {
   AUTHORITY_LINK_HOSTS,
@@ -91,8 +91,6 @@ function hasHighReachTag(tags: string[]): boolean {
   const normalized = tags.map((t) => t.trim().toLowerCase());
   return DEVTO_HIGH_REACH_TAGS.some((tag) => normalized.includes(tag));
 }
-
-type MetaDescriptionStatus = "ok" | "too_short" | "too_long" | "missing";
 
 /** Single source of truth for meta description length — used by checks and scoring. */
 function getMetaDescriptionStatus(metaLen: number): MetaDescriptionStatus {

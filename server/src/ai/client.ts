@@ -18,9 +18,7 @@ import { logger } from "@utils/logger";
 import { HTTP_STATUS } from "@constants/httpStatus";
 import { ERROR_MESSAGES } from "@constants/messages";
 
-export type { AiCapabilities, AiGenerateOptions, AiProvider };
-/** @deprecated Prefer AiGenerateOptions — kept for existing imports. */
-export type StudioGenerateOptions = AiGenerateOptions;
+export type { AiCapabilities, AiGenerateOptions, AiProvider, StudioGenerateOptions } from "@types";
 
 let cachedClient: GoogleGenAI | null = null;
 let cachedKey = "";

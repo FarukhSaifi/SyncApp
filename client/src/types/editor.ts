@@ -156,6 +156,17 @@ export interface SeoScorecard {
   summary?: string;
 }
 
+export type MetaDescriptionStatus = "ok" | "too_short" | "too_long" | "missing";
+
+/** Full-viewport sheet for editor panels on mobile (&lt; lg). */
+export interface EditorMobileSheetProps {
+  isOpen: boolean;
+  title: string;
+  closeAriaLabel: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
 /** Collapsible section shared by left/right editor sidebars. */
 export interface EditorSidebarSectionProps {
   title: string;

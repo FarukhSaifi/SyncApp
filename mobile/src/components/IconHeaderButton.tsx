@@ -1,126 +1,48 @@
-import { useMemo, useState } from "react";
-import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useMemo } from "react";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { GlassSurface } from "@components/GlassSurface";
-import { HEADER_ICON_BUTTON, RADIUS, TAB_BAR } from "@constants/designTokens";
+import { HEADER_ICON_BUTTON, RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-import { isLiquidGlassAvailable } from "@utils/nativeGlass";
+import type { IconHeaderButtonProps } from "@types";
 
-export interface IconHeaderButtonProps {
-  accessibilityLabel: string;
-  onPress: () => void;
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}
-
-/** Circular glass header control with spring press scale + highlight. */
+/**
+ * Flat header control — matches web `APP_SHELL.THEME_BUTTON_CLASS`
+ * (rounded-lg, muted idle, soft hover/press).
+ */
 export function IconHeaderButton({ accessibilityLabel, onPress, children, style }: IconHeaderButtonProps) {
   const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(), []);
-  const hasGlass = isLiquidGlassAvailable();
-  const [pressed, setPressed] = useState(false);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    setPressed(true);
-    scale.value = withSpring(HEADER_ICON_BUTTON.PRESS_SCALE, TAB_BAR.SPRING);
-  };
-
-  const handlePressOut = () => {
-    setPressed(false);
-    scale.value = withSpring(1, TAB_BAR.SPRING);
-  };
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       hitSlop={HEADER_ICON_BUTTON.HIT_SLOP}
-      style={[styles.hitTarget, style]}
+      style={({ pressed }) => [styles.hitTarget, pressed && styles.pressed, style]}
     >
-      <Animated.View style={[styles.button, animatedStyle]}>
-        <GlassSurface borderRadius={RADIUS.FULL} interactive={pressed} />
-        <View style={styles.iconLayer} pointerEvents="none">
-          {children}
-        </View>
-        {pressed ? (
-          <View
-            style={[
-              styles.pressOverlay,
-              {
-                backgroundColor: `${colors.primary}${HEADER_ICON_BUTTON.PRESS_OVERLAY_ALPHA}`,
-              },
-            ]}
-            pointerEvents="none"
-          />
-        ) : null}
-        {!hasGlass ? (
-          <View
-            style={[
-              styles.fallbackBorder,
-              pressed && { borderColor: colors.primary },
-              {
-                borderColor: `${colors.border}${HEADER_ICON_BUTTON.FALLBACK_BORDER_ALPHA}`,
-              },
-            ]}
-            pointerEvents="none"
-          />
-        ) : null}
-      </Animated.View>
+      <View style={styles.iconLayer} pointerEvents="none">
+        {children}
+      </View>
     </Pressable>
   );
 }
 
-const createStyles = () =>
+const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     hitTarget: {
       width: HEADER_ICON_BUTTON.SIZE,
       height: HEADER_ICON_BUTTON.SIZE,
+      borderRadius: RADIUS.MD,
       alignItems: "center",
       justifyContent: "center",
-      ...Platform.select({
-        ios: {
-          shadowColor: HEADER_ICON_BUTTON.SHADOW.COLOR,
-          shadowOffset: {
-            width: 0,
-            height: HEADER_ICON_BUTTON.SHADOW.OFFSET_Y,
-          },
-          shadowOpacity: HEADER_ICON_BUTTON.SHADOW.OPACITY,
-          shadowRadius: HEADER_ICON_BUTTON.SHADOW.RADIUS,
-        },
-        android: { elevation: HEADER_ICON_BUTTON.SHADOW.ANDROID_ELEVATION },
-        default: {},
-      }),
+      backgroundColor: "transparent",
     },
-    button: {
-      width: HEADER_ICON_BUTTON.SIZE,
-      height: HEADER_ICON_BUTTON.SIZE,
-      borderRadius: RADIUS.FULL,
-      overflow: "hidden",
+    pressed: {
+      backgroundColor: colors.muted,
     },
     iconLayer: {
-      ...StyleSheet.absoluteFill,
       alignItems: "center",
       justifyContent: "center",
-      zIndex: HEADER_ICON_BUTTON.Z_INDEX.ICON,
-    },
-    pressOverlay: {
-      ...StyleSheet.absoluteFill,
-      borderRadius: RADIUS.FULL,
-      zIndex: HEADER_ICON_BUTTON.Z_INDEX.OVERLAY,
-    },
-    fallbackBorder: {
-      ...StyleSheet.absoluteFill,
-      borderRadius: RADIUS.FULL,
-      borderWidth: StyleSheet.hairlineWidth,
-      zIndex: HEADER_ICON_BUTTON.Z_INDEX.BORDER,
     },
   });

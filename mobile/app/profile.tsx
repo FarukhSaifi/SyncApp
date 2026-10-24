@@ -1,14 +1,16 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type ComponentRef } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@components/Button";
 import { Card, CardContent, CardHeader } from "@components/Card";
 import { Input } from "@components/Input";
 import { PasswordInput } from "@components/PasswordInput";
-import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, PLACEHOLDERS } from "@constants";
-import { getBadgeStyles } from "@constants/colorClasses";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { ScreenIntro } from "@components/ScreenIntro";
+import { SettingsSectionNav } from "@components/settings/SettingsSectionNav";
+import { StatusPill } from "@components/StatusPill";
+import { APP_CONFIG, DESCRIPTIONS, ERRORS, LABELS, PLACEHOLDERS, PROFILE_SECTION_IDS } from "@constants";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { USER_ROLE_LABELS } from "@constants/userRoles";
 import { useAuth } from "@contexts/AuthContext";
 import { useThemeColors } from "@contexts/ThemeContext";
@@ -17,8 +19,11 @@ import { toast } from "@hooks/useToast";
 export default function ProfileScreen() {
   const { user, updateProfile, changePassword, logout } = useAuth();
   const colors = useThemeColors();
-  const badges = useMemo(() => getBadgeStyles(colors), [colors]);
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const sectionY = useRef<Record<string, number>>({});
+
+  const [activeSectionId, setActiveSectionId] = useState<string>(PROFILE_SECTION_IDS.ACCOUNT);
   const [profile, setProfile] = useState({
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
@@ -34,7 +39,27 @@ export default function ProfileScreen() {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   const displayName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || user?.username;
-  const roleBadge = user?.role ? badges[user.role === "admin" ? "admin" : "primary"] : badges.primary;
+
+  const sectionNavItems = useMemo(
+    () => [
+      { id: PROFILE_SECTION_IDS.ACCOUNT, label: LABELS.ACCOUNT_INFO },
+      { id: PROFILE_SECTION_IDS.INFORMATION, label: LABELS.PROFILE },
+      { id: PROFILE_SECTION_IDS.PASSWORD, label: LABELS.CHANGE_PASSWORD },
+    ],
+    [],
+  );
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    const y = sectionY.current[sectionId];
+    if (typeof y === "number") {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+    }
+  };
+
+  const onSectionLayout = (sectionId: string) => (event: { nativeEvent: { layout: { y: number } } }) => {
+    sectionY.current[sectionId] = event.nativeEvent.layout.y;
+  };
 
   const saveProfile = async () => {
     setProfileLoading(true);
@@ -64,102 +89,111 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
     >
-      <Card style={styles.accountCard}>
-        <CardHeader title={LABELS.ACCOUNT_INFO} />
-        <CardContent>
-          <View style={styles.accountRow}>
-            {profile.avatar ? (
-              <Image source={{ uri: profile.avatar }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarLetter}>{(user?.username ?? "?").charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            <View style={styles.accountMeta}>
-              <Text style={styles.displayName}>{displayName}</Text>
-              <Text style={styles.email}>{user?.email}</Text>
-              <Text style={styles.username}>@{user?.username}</Text>
-              {user?.role ? (
-                <View style={[styles.roleBadge, { backgroundColor: roleBadge.backgroundColor }]}>
-                  <Text style={[styles.roleText, { color: roleBadge.color }]}>
-                    {USER_ROLE_LABELS[user.role] ?? user.role}
-                  </Text>
+      <ScreenIntro title={LABELS.PROFILE} description={DESCRIPTIONS.PROFILE} />
+      <SettingsSectionNav items={sectionNavItems} activeId={activeSectionId} onSelect={scrollToSection} />
+
+      <View onLayout={onSectionLayout(PROFILE_SECTION_IDS.ACCOUNT)}>
+        <Card>
+          <CardHeader title={LABELS.ACCOUNT_INFO} />
+          <CardContent>
+            <View style={styles.accountRow}>
+              {profile.avatar ? (
+                <Image source={{ uri: profile.avatar }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarLetter}>{(user?.username ?? "?").charAt(0).toUpperCase()}</Text>
                 </View>
-              ) : null}
+              )}
+              <View style={styles.accountMeta}>
+                <Text style={styles.displayName}>{displayName}</Text>
+                <Text style={styles.email}>{user?.email}</Text>
+                <Text style={styles.username}>@{user?.username}</Text>
+                {user?.role ? (
+                  <StatusPill
+                    label={USER_ROLE_LABELS[user.role] ?? user.role}
+                    tone={user.role === "admin" ? "warning" : "primary"}
+                  />
+                ) : null}
+              </View>
             </View>
-          </View>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </View>
 
-      <Card style={styles.section}>
-        <CardHeader title={LABELS.PROFILE} description={DESCRIPTIONS.PROFILE} />
-        <CardContent>
-          <Input
-            label={LABELS.FIRST_NAME}
-            value={profile.firstName}
-            onChangeText={(v) => setProfile((p) => ({ ...p, firstName: v }))}
-          />
-          <Input
-            label={LABELS.LAST_NAME}
-            value={profile.lastName}
-            onChangeText={(v) => setProfile((p) => ({ ...p, lastName: v }))}
-          />
-          <Input
-            label={LABELS.BIO}
-            value={profile.bio}
-            onChangeText={(v) => setProfile((p) => ({ ...p, bio: v }))}
-            multiline
-            style={{ minHeight: 80, textAlignVertical: "top" }}
-          />
-          <Input
-            label={LABELS.AVATAR_URL}
-            value={profile.avatar}
-            onChangeText={(v) => setProfile((p) => ({ ...p, avatar: v }))}
-            autoCapitalize="none"
-          />
-          <Button title={LABELS.SAVE} onPress={saveProfile} loading={profileLoading} />
-        </CardContent>
-      </Card>
+      <View onLayout={onSectionLayout(PROFILE_SECTION_IDS.INFORMATION)}>
+        <Card>
+          <CardHeader title={LABELS.PROFILE} description={DESCRIPTIONS.PROFILE} />
+          <CardContent>
+            <Input
+              label={LABELS.FIRST_NAME}
+              value={profile.firstName}
+              onChangeText={(v) => setProfile((p) => ({ ...p, firstName: v }))}
+            />
+            <Input
+              label={LABELS.LAST_NAME}
+              value={profile.lastName}
+              onChangeText={(v) => setProfile((p) => ({ ...p, lastName: v }))}
+            />
+            <Input
+              label={LABELS.BIO}
+              value={profile.bio}
+              onChangeText={(v) => setProfile((p) => ({ ...p, bio: v }))}
+              multiline
+              style={styles.bioInput}
+            />
+            <Input
+              label={LABELS.AVATAR_URL}
+              value={profile.avatar}
+              onChangeText={(v) => setProfile((p) => ({ ...p, avatar: v }))}
+              autoCapitalize="none"
+            />
+            <Button title={LABELS.SAVE} onPress={saveProfile} loading={profileLoading} />
+          </CardContent>
+        </Card>
+      </View>
 
-      <Card style={styles.section}>
-        <CardHeader title={LABELS.CHANGE_PASSWORD} />
-        <CardContent>
-          <PasswordInput
-            label={LABELS.CURRENT_PASSWORD}
-            value={passwords.currentPassword}
-            onChangeText={(v) => setPasswords((p) => ({ ...p, currentPassword: v }))}
-          />
-          <PasswordInput
-            label={LABELS.NEW_PASSWORD}
-            value={passwords.newPassword}
-            onChangeText={(v) => setPasswords((p) => ({ ...p, newPassword: v }))}
-          />
-          <PasswordInput
-            label={LABELS.CONFIRM_PASSWORD}
-            value={passwords.confirmPassword}
-            onChangeText={(v) => setPasswords((p) => ({ ...p, confirmPassword: v }))}
-            placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
-          />
-          <Button
-            title={LABELS.CHANGE_PASSWORD}
-            variant={BUTTON_VARIANTS.OUTLINE}
-            onPress={savePassword}
-            loading={passwordLoading}
-          />
-        </CardContent>
-      </Card>
+      <View onLayout={onSectionLayout(PROFILE_SECTION_IDS.PASSWORD)}>
+        <Card>
+          <CardHeader title={LABELS.CHANGE_PASSWORD} />
+          <CardContent>
+            <PasswordInput
+              label={LABELS.CURRENT_PASSWORD}
+              value={passwords.currentPassword}
+              onChangeText={(v) => setPasswords((p) => ({ ...p, currentPassword: v }))}
+            />
+            <PasswordInput
+              label={LABELS.NEW_PASSWORD}
+              value={passwords.newPassword}
+              onChangeText={(v) => setPasswords((p) => ({ ...p, newPassword: v }))}
+            />
+            <PasswordInput
+              label={LABELS.CONFIRM_PASSWORD}
+              value={passwords.confirmPassword}
+              onChangeText={(v) => setPasswords((p) => ({ ...p, confirmPassword: v }))}
+              placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
+            />
+            <Button
+              title={LABELS.CHANGE_PASSWORD}
+              variant={BUTTON_VARIANTS.OUTLINE}
+              onPress={savePassword}
+              loading={passwordLoading}
+            />
+          </CardContent>
+        </Card>
+      </View>
 
       <Button title={LABELS.LOGOUT} variant="danger" onPress={() => void logout()} style={styles.logout} />
       <Button
         title={LABELS.DASHBOARD}
         variant={BUTTON_VARIANTS.OUTLINE}
         onPress={() => router.back()}
-        style={{ marginTop: 8 }}
+        style={styles.back}
       />
     </ScrollView>
   );
@@ -168,31 +202,31 @@ export default function ProfileScreen() {
 const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.groupedBackground },
-    content: { padding: IOS26.SCREEN_PADDING, paddingBottom: 40 },
-    accountCard: { marginBottom: IOS26.GROUPED_GAP },
-    section: { marginBottom: IOS26.GROUPED_GAP },
+    content: {
+      padding: SETTINGS_LAYOUT.PAGE_PADDING,
+      paddingBottom: 40,
+      gap: SETTINGS_LAYOUT.SECTION_GAP,
+    },
     accountRow: { flexDirection: "row", gap: 14, alignItems: "center" },
-    avatarImage: { width: 72, height: 72, borderRadius: RADIUS.FULL },
+    avatarImage: { width: 64, height: 64, borderRadius: RADIUS.FULL },
     avatarFallback: {
-      width: 72,
-      height: 72,
+      width: 64,
+      height: 64,
       borderRadius: RADIUS.FULL,
-      backgroundColor: `${colors.primary}26`,
+      backgroundColor: `${colors.primary}1a`,
       alignItems: "center",
       justifyContent: "center",
     },
-    avatarLetter: { fontSize: 28, fontWeight: "700", color: colors.primary },
-    accountMeta: { flex: 1 },
-    displayName: { fontSize: 20, fontWeight: "700", color: colors.foreground },
-    email: { fontSize: 14, color: colors.mutedForeground, marginTop: 2 },
-    username: { fontSize: 14, color: colors.mutedForeground, marginTop: 2 },
-    roleBadge: {
-      alignSelf: "flex-start",
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: RADIUS.FULL,
-      marginTop: 8,
+    avatarLetter: { fontSize: 24, fontWeight: "600", color: colors.primary },
+    accountMeta: { flex: 1, gap: 2 },
+    displayName: {
+      fontSize: SETTINGS_LAYOUT.SECTION_TITLE_SIZE,
+      fontWeight: SETTINGS_LAYOUT.SECTION_TITLE_WEIGHT,
+      color: colors.foreground,
     },
-    roleText: { fontSize: 11, fontWeight: "600" },
-    logout: { marginTop: 8 },
+    email: { fontSize: 14, color: colors.mutedForeground },
+    username: { fontSize: 14, color: colors.mutedForeground },
+    bioInput: { minHeight: 80, textAlignVertical: "top" },
+    logout: { marginTop: 4 },
+    back: { marginTop: 0 },
   });

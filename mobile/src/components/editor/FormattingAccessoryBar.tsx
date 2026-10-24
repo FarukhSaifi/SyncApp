@@ -5,22 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RADIUS } from "@constants/designTokens";
 import { EDITOR_A11Y, EDITOR_FORMAT_TOOLS, EDITOR_UI, LABELS } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface FormattingAccessoryBarProps {
-  onOpenBlockInserter: () => void;
-  onOpenAiStudio: () => void;
-  onFormat: (prefix: string, suffix?: string, defaultText?: string) => void;
-}
-
-interface FormatTool {
-  id: string;
-  label?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  prefix: string;
-  suffix?: string;
-  defaultText?: string;
-  tooltip: string;
-}
+import type { FormatTool, FormattingAccessoryBarProps } from "@types";
 
 const TOOLS: FormatTool[] = [
   {

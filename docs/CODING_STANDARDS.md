@@ -100,9 +100,10 @@ Do not add `@types/*` path mappings — they collide with DefinitelyTyped packag
 ## Client / UI
 
 - Style with **Tailwind** semantic tokens from `client/app/globals.css` (`bg-primary`, `text-muted-foreground`, `border-border`, …). No hardcoded color hex in components.
-- Variants and repeated sizes: `client/src/constants/designTokens.ts` (`BUTTON_*`, `INPUT_*`, `RADIUS`, …).
+- Variants and repeated sizes: `client/src/constants/designTokens.ts` (`BUTTON_*`, `INPUT_*`, `APP_SHELL`, `SETTINGS_LAYOUT`, …).
+- **v2 UI language (slothUI pilot):** soft gray page canvas, elevated cards, desktop sidebar shell — see [ux/v2-ui-language.md](./ux/v2-ui-language.md). Prefer those tokens for new Settings-like screens; Phase 2 will restyle remaining views.
 - User-facing copy: `client/src/constants/messages.ts` (or the package’s messages module). No inline UI strings for product copy.
-- Reuse `@components/common`, dashboard, and users components before adding primitives.
+- Reuse `@components/common`, dashboard, users, and `settings/` components before adding primitives.
 - Prefer views in `src/views/` consumed by `app/` routes; keep route files thin.
 
 ## Environment and secrets

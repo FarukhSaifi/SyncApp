@@ -6,16 +6,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { RADIUS } from "@constants/designTokens";
 import { ALERTS, EDITOR_A11Y, EDITOR_UI, editorReadinessBadge, editorWordsReadTime } from "@constants/messages";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { EditorReadiness } from "@types";
-
-interface EditorHeaderProps {
-  title: string;
-  wordCount: number;
-  saving: boolean;
-  isDirty?: boolean;
-  readiness: EditorReadiness;
-  onOpenReview: () => void;
-}
+import type { EditorHeaderProps } from "@types";
 
 export function EditorHeader({
   title,

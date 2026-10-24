@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@components/Button";
-import { RADIUS } from "@constants/designTokens";
+import { EDITOR_SHEET, OVERLAY, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import {
   EDITOR_A11Y,
   EDITOR_UI,
@@ -14,19 +14,7 @@ import {
 } from "@constants/messages";
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { EditorForm, EditorReadiness } from "@types";
-
-interface ReviewPublishSheetProps {
-  visible: boolean;
-  form: EditorForm;
-  readiness: EditorReadiness;
-  connectedPlatforms: PlatformSlug[];
-  selectedPlatforms: PlatformSlug[];
-  togglePlatform: (platform: PlatformSlug) => void;
-  onClose: () => void;
-  onPublish: () => void;
-  publishing: boolean;
-}
+import type { ReviewPublishSheetProps } from "@types";
 
 export function ReviewPublishSheet({
   visible,
@@ -167,15 +155,14 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.6)",
+      backgroundColor: OVERLAY.SCRIM_STRONG,
       justifyContent: "flex-end",
     },
     sheet: {
+      flex: 1,
       backgroundColor: colors.card,
-      borderTopLeftRadius: RADIUS.XL,
-      borderTopRightRadius: RADIUS.XL,
-      maxHeight: "90%",
-      paddingTop: 12,
+      maxHeight: EDITOR_SHEET.MAX_HEIGHT,
+      paddingTop: 8,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
@@ -185,18 +172,21 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       borderRadius: 2,
       backgroundColor: colors.border,
       alignSelf: "center",
-      marginBottom: 12,
+      marginBottom: 8,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      marginBottom: 14,
+      minHeight: EDITOR_SHEET.TITLE_BAR_HEIGHT,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
+      marginBottom: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
     sheetTitle: {
-      fontSize: 19,
-      fontWeight: "800",
+      fontSize: 17,
+      fontWeight: "600",
       color: colors.foreground,
     },
     sheetSubtitle: {
@@ -205,7 +195,8 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       marginTop: 2,
     },
     scroll: {
-      paddingHorizontal: 20,
+      flex: 1,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
     },
     scrollContent: {
       paddingBottom: 24,

@@ -1,28 +1,10 @@
-import mongoose, { Document, Model, Schema, type Types } from "mongoose";
+import type { IPostAnalyticsSnapshotDocument } from "@types";
+import mongoose, { Model, Schema } from "mongoose";
 
 import { ANALYTICS_PLATFORMS } from "@constants/analytics";
 import { ANALYTICS_SNAPSHOT_INDEXES } from "@constants/indexes";
 
-export interface IPostAnalyticsSnapshot {
-  author: Types.ObjectId;
-  post: Types.ObjectId;
-  platform: string;
-  remote_post_id: string;
-  title?: string;
-  url?: string;
-  views: number;
-  reactions: number;
-  comments: number;
-  as_of: Date;
-  fetched_at: Date;
-}
-
-export interface IPostAnalyticsSnapshotDocument extends Document, Omit<IPostAnalyticsSnapshot, "author" | "post"> {
-  author: Types.ObjectId;
-  post: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { IPostAnalyticsSnapshot, IPostAnalyticsSnapshotDocument } from "@types";
 
 const VALID_ANALYTICS_PLATFORMS = Object.freeze(Object.values(ANALYTICS_PLATFORMS));
 

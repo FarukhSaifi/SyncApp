@@ -24,8 +24,13 @@ export const createPost = asyncHandler(async (req: Request, res: Response) => {
  * Get all posts with pagination
  */
 export const getPosts = asyncHandler(async (req: Request, res: Response) => {
-  const { page, limit } = req.query as { page?: string; limit?: string };
-  const result = await postsService.getPosts({ page, limit, userId: req.userId });
+  const { page, limit, status, search } = req.query as {
+    page?: string;
+    limit?: string;
+    status?: string;
+    search?: string;
+  };
+  const result = await postsService.getPosts({ page, limit, status, search, userId: req.userId });
   res.json({ success: true, ...result });
 });
 

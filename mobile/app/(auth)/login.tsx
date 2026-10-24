@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from "@components/Card";
 import { Input } from "@components/Input";
 import { PasswordInput } from "@components/PasswordInput";
 import { DESCRIPTIONS, ERRORS, LABELS, PLACEHOLDERS, ROUTES } from "@constants";
-import { BUTTON_VARIANTS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT, TYPOGRAPHY } from "@constants/designTokens";
 import { useAuth } from "@contexts/AuthContext";
 import { useThemeColors } from "@contexts/ThemeContext";
 
@@ -40,7 +40,7 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>{DESCRIPTIONS.TAGLINE}</Text>
 
         <Card style={styles.card}>
-          <CardHeader title={LABELS.LOGIN} description={DESCRIPTIONS.LOGIN} />
+          <CardHeader title={LABELS.LOGIN} description={DESCRIPTIONS.LOGIN} align="center" />
           <CardContent>
             {error ? (
               <View style={styles.errorBox}>
@@ -63,7 +63,7 @@ export default function LoginScreen() {
               onPress={onSubmit}
               loading={loading}
               variant={BUTTON_VARIANTS.PRIMARY}
-              style={{ marginTop: 8 }}
+              style={styles.submit}
             />
 
             <Link href={ROUTES.REGISTER} asChild>
@@ -81,20 +81,31 @@ export default function LoginScreen() {
 const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.groupedBackground },
-    inner: { flex: 1, justifyContent: "center", padding: 24 },
-    brand: { alignItems: "center", marginBottom: 16 },
-    heading: { fontSize: 34, fontWeight: "700", color: colors.foreground, textAlign: "center", letterSpacing: 0.3 },
-    subtitle: { textAlign: "center", color: colors.mutedForeground, marginBottom: 24, marginTop: 6 },
-    card: { width: "100%" },
+    inner: { flex: 1, justifyContent: "center", padding: SETTINGS_LAYOUT.PAGE_PADDING + 8 },
+    brand: { alignItems: "center", marginBottom: SETTINGS_LAYOUT.CARD_GAP },
+    heading: {
+      ...TYPOGRAPHY.LARGE_TITLE,
+      color: colors.foreground,
+      textAlign: "center",
+    },
+    subtitle: {
+      textAlign: "center",
+      color: colors.mutedForeground,
+      marginBottom: SETTINGS_LAYOUT.SECTION_GAP,
+      marginTop: 6,
+      fontSize: SETTINGS_LAYOUT.HEADER_DESC_SIZE,
+    },
+    card: { width: "100%", borderRadius: RADIUS.CARD },
     errorBox: {
       backgroundColor: `${colors.destructive}1a`,
       borderWidth: 1,
       borderColor: `${colors.destructive}4d`,
-      borderRadius: 8,
+      borderRadius: RADIUS.MD,
       padding: 12,
       marginBottom: 12,
     },
     errorText: { color: colors.destructive, fontSize: 14 },
-    linkWrap: { marginTop: 20, alignItems: "center" },
+    submit: { marginTop: 8 },
+    linkWrap: { marginTop: SETTINGS_LAYOUT.SECTION_GAP, alignItems: "center" },
     link: { color: colors.primary, fontSize: 15, fontWeight: "500" },
   });

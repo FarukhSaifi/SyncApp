@@ -4,16 +4,12 @@ import { IconHeaderButton } from "@components/IconHeaderButton";
 import { HEADER_ICON_BUTTON } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 import { useTheme, useThemeColors } from "@contexts/ThemeContext";
-
-type ThemeToggleButtonProps = {
-  /** Use in stack headers (default) or floating on auth screens */
-  variant?: "header" | "floating";
-};
+import type { ThemeToggleButtonProps } from "@types";
 
 export function ThemeToggleButton({ variant = "header" }: ThemeToggleButtonProps) {
   const { isDark, toggleTheme } = useTheme();
   const colors = useThemeColors();
-  const iconColor = variant === "floating" ? colors.foreground : colors.primary;
+  const iconColor = variant === "floating" ? colors.foreground : colors.mutedForeground;
 
   return (
     <IconHeaderButton accessibilityLabel={LABELS.TOGGLE_THEME_ARIA} onPress={toggleTheme}>

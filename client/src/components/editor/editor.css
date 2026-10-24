@@ -7,7 +7,11 @@
   display: grid;
   grid-template-columns: 280px 1fr 300px;
   grid-template-rows: auto 1fr auto; /* toolbar / body / status bar */
-  height: calc(100dvh - var(--app-header-height, 3rem)); /* viewport minus app header */
+  /* Fill shell main (sidebar + mobile header remain; no page footer). */
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -62,55 +66,25 @@
   }
 }
 
-/* Temporary mobile drawers (Post Settings + Publish & AI).
-   Sit below the compact app header so chrome stays consistent. */
-.editor-drawer-root {
+/* Full-viewport mobile sheets (Post Settings + Publish & AI).
+   Prefer a full page over a side drawer: panels are long forms that need focus
+   and width; a 360px drawer + backdrop peek of the editor is awkward on phones.
+   Centered dialogs are worse — they clip accordion sections. */
+.editor-mobile-sheet-root {
   position: fixed;
-  top: var(--app-header-height, 3rem);
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 40;
-}
-
-.editor-drawer-backdrop {
-  position: absolute;
   inset: 0;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  background: hsl(var(--foreground) / 0.4);
+  z-index: 50;
 }
 
-.editor-sidebar-left-drawer-paper,
-.editor-sidebar-right-drawer-paper,
-.editor-drawer-panel {
+.editor-mobile-sheet-panel {
   display: flex;
   flex-direction: column;
   position: absolute;
-  top: 0;
-  bottom: 0;
+  inset: 0;
   width: 100%;
   max-width: 100vw;
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: 0 10px 40px hsl(var(--foreground) / 0.15);
-}
-
-.editor-drawer-panel-left {
-  left: 0;
-}
-
-.editor-drawer-panel-right {
-  right: 0;
-}
-
-@media (min-width: 640px) {
-  .editor-drawer-panel-left,
-  .editor-drawer-panel-right {
-    width: 100%;
-  }
 }
 
 /* ── Sidebar accordion section ───────────────────────────────────────────── */
@@ -164,26 +138,26 @@
   padding: 16px 14px;
 }
 
-/* Compact accordion chrome inside mobile temporary drawers */
+/* Compact accordion chrome inside mobile full-viewport sheets */
 @media (max-width: 1023px) {
-  .editor-drawer-panel .sidebar-section {
+  .editor-mobile-sheet-panel .sidebar-section {
     margin: 6px;
   }
 
-  .editor-drawer-panel .sidebar-section:first-of-type {
+  .editor-mobile-sheet-panel .sidebar-section:first-of-type {
     margin-top: 8px;
   }
 
-  .editor-drawer-panel .sidebar-section:last-of-type {
+  .editor-mobile-sheet-panel .sidebar-section:last-of-type {
     margin-bottom: 8px;
   }
 
-  .editor-drawer-panel .sidebar-section-header {
+  .editor-mobile-sheet-panel .sidebar-section-header {
     min-height: 2.5rem;
     padding: 8px 12px;
   }
 
-  .editor-drawer-panel .sidebar-section-body {
+  .editor-mobile-sheet-panel .sidebar-section-body {
     padding: 10px 12px;
   }
 }

@@ -1,6 +1,7 @@
 
 import { config } from "@config";
 import { DATABASE } from "@constants";
+import type { MongooseCache } from "@types";
 import { createLogger } from "@utils/logger";
 import mongoose from "mongoose";
 
@@ -18,11 +19,6 @@ const mongooseOptions: mongoose.ConnectOptions = {
   maxIdleTimeMS: isServerless ? 10000 : 30000,
   // Vercel serverless often fails Atlas SRV lookups over IPv6; force IPv4.
   ...(isServerless ? { family: 4 } : {}),
-};
-
-type MongooseCache = {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
 };
 
 declare global {

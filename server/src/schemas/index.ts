@@ -16,15 +16,11 @@ export const presignedUrlRequestSchema = z.object({
     ),
 });
 
-export type PresignedUrlRequest = z.infer<typeof presignedUrlRequestSchema>;
-
 export const upsertCredentialSchema = z.object({
   api_key: z.string().min(1, ERROR_MESSAGES["API_KEY_REQUIRED"]),
   site_url: z.string().url(ERROR_MESSAGES["VALID_URL_REQUIRED"]).optional().or(z.literal("")),
   platform_config: z.record(z.string(), z.unknown()).optional(),
 });
-
-export type UpsertCredentialRequest = z.infer<typeof upsertCredentialSchema>;
 
 export const keywordResearchRequestSchema = z.object({
   seed: z
@@ -34,4 +30,4 @@ export const keywordResearchRequestSchema = z.object({
     .max(AI_CONFIG["SEED_MAX_LEN"], ERROR_MESSAGES["AI_SEED_TOO_LONG"]),
 });
 
-export type KeywordResearchRequest = z.infer<typeof keywordResearchRequestSchema>;
+/** Request body shapes live in `@types` (storage / credentials / ai). */

@@ -10,11 +10,8 @@ import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
+import type { GenerateImageScreenProps } from "@types";
 import { setPendingCoverUri } from "@utils/editorCoverPending";
-
-interface GenerateImageScreenProps {
-  defaultTopic?: string;
-}
 
 export default function GenerateImageScreen({ defaultTopic = "" }: GenerateImageScreenProps) {
   const colors = useThemeColors();

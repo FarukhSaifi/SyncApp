@@ -9,12 +9,14 @@ export interface PostsStats {
   total: number;
   published: number;
   drafts: number;
+  scheduled: number;
   withPlatforms: number;
 }
 
 export interface PostsCacheEntry {
   data: Post[];
   pagination: Pagination;
+  stats?: PostsStats;
   timestamp: number;
 }
 

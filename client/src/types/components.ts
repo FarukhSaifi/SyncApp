@@ -135,6 +135,48 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   size?: InputSize;
 }
 
+export interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "type"> {
+  label?: string;
+  hint?: string;
+  error?: string;
+  size?: InputSize;
+}
+
+export type TooltipSide = "top" | "bottom" | "left" | "right";
+
+export interface TooltipProps {
+  content: React.ReactNode;
+  children: React.ReactNode;
+  side?: TooltipSide;
+  className?: string;
+  contentClassName?: string;
+  /** Accessible name when the trigger is not already labeled */
+  "aria-label"?: string;
+}
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> {
+  options: SelectOption[];
+  size?: InputSize;
+  /** Stretch to parent width (forms/filters). Default true. */
+  fullWidth?: boolean;
+  className?: string;
+  selectClassName?: string;
+}
+
+export interface TagChipsProps {
+  tags: string[];
+  limit: number;
+  className?: string;
+  chipClassName?: string;
+  emptyLabel?: string;
+}
+
 export interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -224,4 +266,30 @@ export interface ThemeContextValue {
   theme: string;
   setTheme: (theme: string) => void;
   toggleTheme: () => void;
+}
+
+export type AppLogoVariant = "header" | "auth";
+
+export interface AppLogoProps {
+  /** Visual size variant — header (default) or auth screens. */
+  variant?: AppLogoVariant;
+  className?: string;
+  priority?: boolean;
+}
+
+export interface SettingsPageHeaderProps {
+  title: string;
+  description: string;
+}
+
+export interface SettingsSectionNavItem {
+  id: string;
+  label: string;
+}
+
+export interface SettingsSectionNavProps {
+  items: SettingsSectionNavItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  ariaLabel: string;
 }

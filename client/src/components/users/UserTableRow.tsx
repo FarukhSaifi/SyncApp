@@ -1,13 +1,13 @@
 import { memo } from "react";
 
-import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
+import { DATA_TABLE, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
 import type { UserTableRowProps } from "@types";
 import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
 
-import Button from "@components/common/Button";
 import StatusPill from "@components/common/StatusPill";
 import { TableCell, TableRow } from "@components/common/Table";
+import Tooltip from "@components/common/Tooltip";
 
 const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
   const userId = user._id || user.id || "";
@@ -20,9 +20,9 @@ const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
   return (
     <TableRow>
       <TableCell>
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/15 rounded-full flex items-center justify-center shrink-0">
-            <FiUser className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15">
+            <FiUser className="h-4 w-4 text-primary" />
           </div>
           <div className="min-w-0">
             <div className="font-medium truncate">{displayName}</div>
@@ -56,21 +56,28 @@ const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
         {formatLastLogin(user.lastLogin)}
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(user)} className="flex items-center gap-1">
-            <FiEdit3 className="h-4 w-4" />
-            <span className="hidden sm:inline">{SYNC_LABEL.EDIT}</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(userId, user.username)}
-            className={`flex items-center gap-1 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ${COLOR_CLASSES.HOVER_DESTRUCTIVE}`}
-          >
-            <FiTrash2 className="h-4 w-4" />
-            <span className="hidden sm:inline">{SYNC_LABEL.DELETE}</span>
-          </Button>
+      <TableCell className={DATA_TABLE.ACTIONS_CELL}>
+        <div className={DATA_TABLE.ACTIONS_WRAP}>
+          <Tooltip content={SYNC_LABEL.EDIT} side="top">
+            <button
+              type="button"
+              onClick={() => onEdit(user)}
+              className={DATA_TABLE.ACTION_BTN}
+              aria-label={SYNC_LABEL.EDIT}
+            >
+              <FiEdit3 className={DATA_TABLE.ACTION_ICON} aria-hidden />
+            </button>
+          </Tooltip>
+          <Tooltip content={SYNC_LABEL.DELETE} side="top">
+            <button
+              type="button"
+              onClick={() => onDelete(userId, user.username)}
+              className={DATA_TABLE.ACTION_BTN_DANGER}
+              aria-label={SYNC_LABEL.DELETE}
+            >
+              <FiTrash2 className={DATA_TABLE.ACTION_ICON} aria-hidden />
+            </button>
+          </Tooltip>
         </div>
       </TableCell>
     </TableRow>

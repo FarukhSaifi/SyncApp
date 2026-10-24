@@ -2,23 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ToastConfigParams } from "react-native-toast-message";
-
 import { GlassSurface } from "@components/GlassSurface";
 import { APP_CONFIG } from "@constants/config";
 import { RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
+import type { GlassToastCardProps, GlassToastVariant } from "@types";
 import { isLiquidGlassAvailable } from "@utils/nativeGlass";
-
-export type GlassToastVariant = "success" | "error" | "info";
 
 const ICONS: Record<GlassToastVariant, keyof typeof Ionicons.glyphMap> = {
   success: "checkmark-circle",
   error: "close-circle",
   info: "information-circle",
-};
-
-type GlassToastCardProps = ToastConfigParams<object> & {
-  variant: GlassToastVariant;
 };
 
 function GlassToastCard({ variant, text1, text2, onPress }: GlassToastCardProps) {

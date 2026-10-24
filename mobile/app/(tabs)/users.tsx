@@ -8,7 +8,7 @@ import { PasswordInput } from "@components/PasswordInput";
 import { ScreenIntro } from "@components/ScreenIntro";
 import { UserCard } from "@components/UserCard";
 import { UserListSkeleton } from "@components/skeletons/UserCardSkeleton";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 import { USER_ROLE_OPTIONS, USER_VERIFIED_FILTER } from "@constants/userRoles";
 import { useAuth } from "@contexts/AuthContext";
@@ -65,7 +65,7 @@ export default function UsersTabScreen() {
 
   const listHeader = (
     <>
-      <ScreenIntro description={LABELS.USER_MANAGEMENT} />
+      <ScreenIntro title={LABELS.USERS} description={LABELS.USER_MANAGEMENT} />
       <View style={styles.toolbar}>
         <Button title={LABELS.REFRESH} variant={BUTTON_VARIANTS.OUTLINE} onPress={refresh} style={styles.toolbarBtn} />
         <Button title={LABELS.ADD_USER} onPress={() => setShowAddModal(true)} style={styles.toolbarBtn} />
@@ -260,16 +260,14 @@ function FilterRow({
         },
         row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
         chip: {
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          borderRadius: RADIUS.FULL,
-          backgroundColor: colors.card,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.border,
+          paddingHorizontal: SETTINGS_LAYOUT.CHIP_PADDING_X,
+          paddingVertical: SETTINGS_LAYOUT.CHIP_PADDING_Y,
+          borderRadius: RADIUS.MD,
+          backgroundColor: "transparent",
         },
-        chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+        chipActive: { backgroundColor: `${colors.primary}1a` },
         chipText: { fontSize: 13, color: colors.mutedForeground, fontWeight: "500" },
-        chipTextActive: { color: colors.primaryForeground },
+        chipTextActive: { color: colors.primary, fontWeight: "600" },
       }),
     [colors],
   );
@@ -341,16 +339,20 @@ function VerifiedToggle({
 const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: number) =>
   StyleSheet.create({
     shell: { flex: 1, backgroundColor: colors.groupedBackground },
-    container: { flex: 1, paddingHorizontal: IOS26.SCREEN_PADDING, paddingTop: IOS26.SCREEN_PADDING },
+    container: {
+      flex: 1,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
+      paddingTop: SETTINGS_LAYOUT.PAGE_PADDING,
+    },
     list: { flex: 1 },
     listContent: {
-      paddingHorizontal: IOS26.SCREEN_PADDING,
-      paddingTop: IOS26.SCREEN_PADDING,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
+      paddingTop: SETTINGS_LAYOUT.PAGE_PADDING,
       paddingBottom: tabBarInset,
     },
-    toolbar: { flexDirection: "row", gap: 8, marginBottom: 12 },
+    toolbar: { flexDirection: "row", gap: 8, marginBottom: SETTINGS_LAYOUT.CARD_GAP },
     toolbarBtn: { flex: 1 },
-    clearFilters: { alignSelf: "flex-start", marginBottom: 12 },
+    clearFilters: { alignSelf: "flex-start", marginBottom: SETTINGS_LAYOUT.CARD_GAP },
     clearFiltersText: { color: colors.primary, fontSize: 14, fontWeight: "500" },
     empty: { textAlign: "center", color: colors.mutedForeground, marginTop: 24, fontSize: 16 },
     pagination: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, paddingVertical: 16 },

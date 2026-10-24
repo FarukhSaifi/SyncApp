@@ -8,11 +8,7 @@ import { APP_CONFIG, LABELS, ROUTES } from "@constants";
 import { APP_LOGO } from "@constants/designTokens";
 import { HEADER_ACTION } from "@constants/headerActions";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-type HeaderActionSlotProps = {
-  children: React.ReactNode;
-  edge?: "left" | "right";
-};
+import type { HeaderActionSlotProps } from "@types";
 
 const slotStyles = StyleSheet.create({
   slot: {

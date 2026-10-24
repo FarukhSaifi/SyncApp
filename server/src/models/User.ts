@@ -1,16 +1,12 @@
-import type { IUser } from "@types";
+import type { IUserDocument } from "@types";
 import bcrypt from "bcryptjs";
-import mongoose, { Document, Model, Schema } from "mongoose";
+import mongoose, { Model, Schema } from "mongoose";
 
 import { USER_INDEXES } from "@constants/indexes";
 import { USER_ROLES, VALID_USER_ROLES } from "@constants/userRoles";
 import { NUMERIC_LIMITS, REGEX_PATTERNS, STRING_LIMITS, VALIDATION_ERRORS } from "@constants/validation";
 
-export interface IUserDocument extends Document, Omit<IUser, "_id"> {
-  lastLogin?: Date;
-  comparePassword(candidatePassword: string): Promise<boolean>;
-  toJSON(): Omit<IUserDocument, "password">;
-}
+export type { IUserDocument };
 
 const userSchema = new Schema<IUserDocument>(
   {

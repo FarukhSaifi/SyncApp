@@ -21,7 +21,7 @@ import {
 } from "react-icons/fi";
 
 import { BUTTON_SIZES, BUTTON_VARIANTS } from "@constants/designTokens";
-import { COVER_UPLOAD, EDITOR_DRAWER, EDITOR_KEYS, EDITOR_LAYOUT, SIDEBAR_SECTIONS } from "@constants/editor";
+import { COVER_UPLOAD, EDITOR_KEYS, EDITOR_LAYOUT, SIDEBAR_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, ERROR_MESSAGES, SUCCESS_MESSAGES, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 import { SEO_RING, SEO_THRESHOLDS } from "@constants/seo";
 
@@ -30,6 +30,7 @@ import Input from "@components/common/Input";
 import LazyImage from "@components/common/LazyImage";
 import Skeleton from "@components/common/Skeleton";
 
+import EditorMobileSheet from "./EditorMobileSheet";
 import EditorSidebarSection from "./EditorSidebarSection";
 
 /** SEO Score ring indicator */
@@ -325,7 +326,7 @@ const EditorSidebarLeft = ({
                       <p className="text-[10px] font-semibold leading-tight text-foreground">
                         {SYNC_LABEL["PREVIEW_UNAVAILABLE"]}
                       </p>
-                      <p className="max-w-[180px] text-[9px] leading-normal text-muted-foreground">
+                      <p className="max-w-45 text-[9px] leading-normal text-muted-foreground">
                         {SYNC_LABEL["STORAGE_VIEWER_ROLE_HINT"]}
                       </p>
                     </div>
@@ -512,41 +513,15 @@ const EditorSidebarLeft = ({
     );
   }
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="editor-drawer-root" role="presentation">
-      <button
-        type="button"
-        className="editor-drawer-backdrop"
-        aria-label={EDITOR_UI["CLOSE_POST_SETTINGS_DRAWER"]}
-        onClick={onClose}
-      />
-      <aside
-        className="editor-sidebar-left-drawer-paper editor-drawer-panel editor-drawer-panel-left"
-        style={{ maxWidth: EDITOR_LAYOUT["LEFT_DRAWER_WIDTH_PX"] }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={EDITOR_UI["POST_SETTINGS_DRAWER_TITLE"]}
-      >
-        <div className="flex h-full min-h-0 flex-col">
-          <div className={EDITOR_DRAWER["TITLE_BAR_CLASS"]}>
-            <h2 className={EDITOR_DRAWER["TITLE_CLASS"]}>{EDITOR_UI["POST_SETTINGS_DRAWER_TITLE"]}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className={EDITOR_DRAWER["CLOSE_BUTTON_CLASS"]}
-              aria-label={EDITOR_UI["CLOSE_POST_SETTINGS_DRAWER"]}
-            >
-              <FiX className={EDITOR_DRAWER["CLOSE_ICON_CLASS"]} />
-            </button>
-          </div>
-          <div className={EDITOR_DRAWER["BODY_CLASS"]}>{panelContent}</div>
-        </div>
-      </aside>
-    </div>
+    <EditorMobileSheet
+      isOpen={isOpen}
+      title={EDITOR_UI["POST_SETTINGS_DRAWER_TITLE"]}
+      closeAriaLabel={EDITOR_UI["CLOSE_POST_SETTINGS_DRAWER"]}
+      onClose={onClose}
+    >
+      {panelContent}
+    </EditorMobileSheet>
   );
 };
 

@@ -1,7 +1,8 @@
 /**
  * Append / replace UTM query params on absolute HTTP(S) URLs.
  */
-import { UTM_CAMPAIGNS, UTM_MEDIUMS, UTM_PARAM_KEYS, type UtmBuildOptions } from "@constants/utm";
+import { UTM_CAMPAIGNS, UTM_MEDIUMS, UTM_PARAM_KEYS } from "@constants/utm";
+import type { UtmBuildOptions } from "@types";
 
 function extractSlugForContent(url: URL): string {
   const parts = url.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);

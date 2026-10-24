@@ -17,22 +17,12 @@ import Credential from "@models/Credential";
 import Post from "@models/Post";
 import PostAnalyticsSnapshot from "@models/PostAnalyticsSnapshot";
 import type { DevtoEngagementMetrics, DevtoEngagementSummary, DevtoEngagementSyncResult } from "@src/types/analytics";
+import type { DevtoArticlePayload } from "@types";
 import { decryptCredential } from "@utils/encryption";
 import { createLogger } from "@utils/logger";
 import { toObjectId } from "@utils/objectId";
 
 const logger = createLogger("DEVTO_ENGAGEMENT");
-
-type DevtoArticlePayload = {
-  id?: unknown;
-  title?: unknown;
-  url?: unknown;
-  page_views_count?: unknown;
-  page_views?: unknown;
-  public_reactions_count?: unknown;
-  positive_reactions_count?: unknown;
-  comments_count?: unknown;
-};
 
 function asNonNegInt(value: unknown): number {
   const n = typeof value === "number" ? value : Number(value);

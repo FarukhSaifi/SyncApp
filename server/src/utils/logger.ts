@@ -5,13 +5,12 @@
  */
 
 import { config } from "@config";
-import type { ILogger } from "@types";
+import type { ILogger, LogLevel } from "@types";
 import dayjs from "dayjs";
 import type { NextFunction, Request, Response } from "express";
 
 import { DEFAULT_VALUES } from "@constants/defaultValues";
 import { REDACT_PLACEHOLDER, SENSITIVE_KEYS } from "@constants/logging";
-
 
 const LOG_LEVELS = {
   ERROR: "ERROR",
@@ -19,8 +18,6 @@ const LOG_LEVELS = {
   INFO: "INFO",
   DEBUG: "DEBUG",
 } as const;
-
-type LogLevel = keyof typeof LOG_LEVELS;
 
 const COLORS: Record<LogLevel | "RESET", string> = {
   ERROR: "\x1b[31m", // Red
