@@ -5,12 +5,7 @@ export * from "./config";
 export * from "./designTokens";
 export * from "./editor";
 export * from "./headerActions";
-export {
-  editorProfileHeaderOptions,
-  screenHeaderOptions,
-  stackHeaderOptions,
-  tabScreenOptions,
-} from "./layout";
+export { editorProfileHeaderOptions, stackHeaderOptions, tabScreenOptions } from "./layout";
 export * from "./messages";
 export * from "./navigation";
 export * from "./palette";

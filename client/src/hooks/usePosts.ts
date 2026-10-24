@@ -64,11 +64,9 @@ export function usePosts(
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(enabled);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [pagination, setPagination] = useState<Pagination>(paginationOpt);
   const [stats, setStats] = useState<PostsStats>({ ...EMPTY_POSTS_STATS });
   const [error, setError] = useState<string | null>(null);
-  const loadingMoreLockRef = useRef(false);
   const filtersRef = useRef<PostsListFilters>({
     status: FILTER_STATUS_ALL,
     search: "",
@@ -80,8 +78,8 @@ export function usePosts(
   }, [pagination]);
 
   const fetchPosts = useCallback(
-    async (opts: Partial<Pagination> & PostsListFilters & { append?: boolean } = {}) => {
-      const { append = false, status, search, ...pageOpts } = opts;
+    async (opts: Partial<Pagination> & PostsListFilters = {}) => {
+      const { status, search, ...pageOpts } = opts;
       if (status !== undefined) {
         filtersRef.current.status = status;
       }
@@ -102,86 +100,51 @@ export function usePosts(
         params.search = currentFilters.search.trim();
       }
 
-      if (append) {
-        if (loadingMoreLockRef.current) {
-          return;
-        }
-        loadingMoreLockRef.current = true;
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
-      }
+      setLoading(true);
       setError(null);
 
       try {
         const cacheKey = JSON.stringify({ ...params, userId });
-
-        if (!append) {
-          const cached = postsCache.get(cacheKey);
-          if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-            devLog("Using cached posts for params:", params);
-            setPosts(cached.data);
-            setPagination(cached.pagination);
-            if (cached.stats) {
-              setStats(cached.stats);
-            }
-            return;
+        const cached = postsCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+          devLog("Using cached posts for params:", params);
+          setPosts(cached.data);
+          setPagination(cached.pagination);
+          if (cached.stats) {
+            setStats(cached.stats);
           }
+          return;
         }
 
-        devLog("Fetching posts with params:", params, append ? "(append)" : "");
+        devLog("Fetching posts with params:", params);
         const response = (await apiClient.getPosts(params)) as unknown as PostsApiResponse;
 
         if (response && response.success) {
           const fetchedData = response.data || [];
           const nextStats = normalizePostsStats(response.stats);
           devLog("Posts fetched:", fetchedData.length);
-          if (append) {
-            setPosts((prev) => {
-              const seen = new Set(prev.map((p) => p._id));
-              const merged = [...prev];
-              for (const post of fetchedData) {
-                if (!seen.has(post._id)) {
-                  merged.push(post);
-                }
-              }
-              return merged;
-            });
-          } else {
-            setPosts(fetchedData);
-          }
+          setPosts(fetchedData);
           setStats(nextStats);
           if (response.pagination) {
             setPagination(response.pagination);
-            if (!append) {
-              postsCache.set(cacheKey, {
-                data: fetchedData,
-                pagination: response.pagination,
-                stats: nextStats,
-                timestamp: Date.now(),
-              });
-            }
+            postsCache.set(cacheKey, {
+              data: fetchedData,
+              pagination: response.pagination,
+              stats: nextStats,
+              timestamp: Date.now(),
+            });
           }
         } else {
           devWarn("API returned unsuccessful response:", response);
           setError(response?.error || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
-          if (!append) {
-            setPosts([]);
-          }
+          setPosts([]);
         }
       } catch (err) {
         devError("Error fetching posts:", err);
         setError((err as Error)?.message || ERROR_MESSAGES.FAILED_TO_FETCH_POSTS);
-        if (!append) {
-          setPosts([]);
-        }
+        setPosts([]);
       } finally {
-        if (append) {
-          loadingMoreLockRef.current = false;
-          setLoadingMore(false);
-        } else {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     },
     [userId],
@@ -195,7 +158,6 @@ export function usePosts(
       });
     } else {
       setLoading(false);
-      setLoadingMore(false);
       setError(null);
       setPosts([]);
       setStats({ ...EMPTY_POSTS_STATS });
@@ -206,18 +168,6 @@ export function usePosts(
   }, [enabled, userId, fetchPosts]);
 
   const totalPages = resolveTotalPages(pagination);
-  const hasMore = pagination.page < totalPages;
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading || loadingMore || loadingMoreLockRef.current) {
-      return;
-    }
-    await fetchPosts({
-      page: pagination.page + 1,
-      limit: pagination.limit,
-      append: true,
-    });
-  }, [fetchPosts, hasMore, loading, loadingMore, pagination.limit, pagination.page]);
 
   const goToPage = useCallback(
     async (page: number) => {
@@ -229,7 +179,6 @@ export function usePosts(
       await fetchPosts({
         page: nextPage,
         limit: pagination.limit,
-        append: false,
       });
     },
     [fetchPosts, loading, pagination.limit, pagination.page, totalPages],
@@ -243,7 +192,6 @@ export function usePosts(
         limit: opts.limit ?? pagination.limit ?? DEFAULT_PAGINATION.limit,
         status: opts.status,
         search: opts.search,
-        append: false,
       });
     },
     [fetchPosts, pagination.limit],
@@ -282,20 +230,15 @@ export function usePosts(
   return {
     posts,
     loading,
-    loadingMore,
     error,
     pagination,
     stats,
-    hasMore,
     totalPages,
-    fetchPosts,
-    loadMore,
     goToPage,
     resetAndFetch,
     refreshPosts,
     addPost,
     updatePost,
     deletePost,
-    setPagination,
   };
 }

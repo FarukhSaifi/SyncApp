@@ -6,7 +6,7 @@ import { Toaster as HotToaster, toast, type ToastOptions } from "react-hot-toast
 import { ERROR_MESSAGES, INFO_MESSAGES, TOAST_TITLES } from "@constants/messages";
 
 const TOAST_DURATION = APP_CONFIG.TOAST_AUTO_CLOSE_DELAY;
-export const SYNCAPP_TOAST_CLASS = "syncapp-toast";
+const SYNCAPP_TOAST_CLASS = "syncapp-toast";
 
 /** Base toast surface — uses CSS variables so light/dark theme switches apply automatically. */
 const themedToastStyle: React.CSSProperties = {

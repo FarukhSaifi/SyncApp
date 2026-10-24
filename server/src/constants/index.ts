@@ -17,7 +17,6 @@ export {
   resolveContentModel,
 } from "./ai";
 export {
-  ANALYTICS_ENV,
   ANALYTICS_PLATFORMS,
   ANALYTICS_SYNC,
   GA4_EMPTY_TOTALS,
@@ -50,12 +49,9 @@ export {
   AI_OPTIMIZATION_TARGETS,
   buildFullPostSystemPrompt,
   buildFullPostUserPrompt,
-  includesDevtoTarget,
   includesGoogleTarget,
   includesLinkedInTarget,
   isValidOptimizationTargets,
-  resolveArticleTagLimit,
-  resolveLinkedInHashtagLimit,
   resolveOptimizationTargets,
 } from "./platformOptimization";
 export type { OptimizationTarget } from "./platformOptimization";

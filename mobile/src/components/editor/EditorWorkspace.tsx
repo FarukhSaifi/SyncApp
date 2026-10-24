@@ -12,13 +12,12 @@ import { WriteTab } from "@components/editor/WriteTab";
 import { ROUTES } from "@constants";
 import { BUTTON_VARIANTS } from "@constants/designTokens";
 import { ERRORS, LABELS } from "@constants/messages";
-import type { OptimizationTarget, PlatformSlug } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { useResponsiveLayout } from "@hooks/useResponsiveLayout";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
-import type { EditorMode, EditorWorkspaceProps } from "@types";
+import type { EditorMode, EditorWorkspaceProps, OptimizationTarget, PlatformSlug } from "@types";
 
 export function EditorWorkspace({
   form,

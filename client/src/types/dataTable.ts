@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
-export type DataTableSortDirection = "asc" | "desc";
+import { DATA_TABLE } from "../constants/dataTable";
+
+export type DataTableSortDirection = typeof DATA_TABLE.SORT_ASC | typeof DATA_TABLE.SORT_DESC;
 
 export type DataTablePageItem = number | "ellipsis";
 
@@ -37,11 +39,6 @@ export interface DataTableSortProps {
   onChange: (next: DataTableSortState) => void;
 }
 
-export interface DataTableInfiniteScrollProps {
-  hasMore: boolean;
-  onLoadMore: () => void;
-}
-
 export interface DataTablePaginationProps {
   page: number;
   pages: number;
@@ -62,9 +59,7 @@ export interface DataTableProps<T> {
   pageSize?: DataTablePageSizeProps;
   sort?: DataTableSortProps;
   loading?: boolean;
-  loadingMore?: boolean;
   empty?: ReactNode;
-  infiniteScroll?: DataTableInfiniteScrollProps;
   pagination?: DataTablePaginationProps;
   mobileRow?: (row: T) => ReactNode;
   /** When true, drop nested card chrome (parent Card already provides border/padding). */
@@ -96,25 +91,14 @@ export interface SortableTableHeadProps {
   className?: string;
 }
 
-export interface LoadMoreSentinelProps {
-  enabled: boolean;
-  onIntersect: () => void;
-}
-
 export interface UseDataTableOptions<T> {
   rows: T[];
-  filterFn?: (row: T, query: string) => boolean;
   sortFns?: Partial<Record<string, (a: T, b: T) => number>>;
   initialSort?: DataTableSortState;
-  debounceMs?: number;
 }
 
 export interface UseDataTableReturn<T> {
-  query: string;
-  setQuery: (value: string) => void;
-  debouncedQuery: string;
   sort: DataTableSortState;
   setSort: (next: DataTableSortState) => void;
-  toggleSort: (key: string) => void;
   visibleRows: T[];
 }

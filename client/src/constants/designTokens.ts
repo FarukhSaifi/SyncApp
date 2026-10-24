@@ -60,6 +60,7 @@ export const SELECT_UI = Object.freeze({
 
 /** Native date input with SyncApp field chrome (calendar icon + full-hit picker) */
 export const DATE_INPUT_UI = Object.freeze({
+  INPUT_TYPE: "date",
   ROOT: "w-full min-w-0 space-y-1.5",
   LABEL: "block text-xs font-semibold uppercase tracking-wide text-muted-foreground",
   FIELD:
@@ -86,7 +87,7 @@ export const DATE_INPUT_UI = Object.freeze({
 export const TOOLTIP_UI = Object.freeze({
   ROOT: "relative inline-flex max-w-full",
   PANEL:
-    "pointer-events-none absolute z-50 w-max max-w-[16rem] rounded-lg border border-border bg-popover px-2.5 py-2 text-xs text-popover-foreground shadow-md opacity-0 invisible transition-opacity duration-150 group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible",
+    "pointer-events-none absolute z-50 w-max max-w-[16rem] rounded-lg border border-border bg-popover px-2.5 py-2 text-xs text-popover-foreground shadow-md opacity-0 invisible transition-opacity duration-150 group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible group-active:opacity-100 group-active:visible",
   PANEL_TOP: "bottom-full left-1/2 mb-2 -translate-x-1/2",
   PANEL_BOTTOM: "top-full left-1/2 mt-2 -translate-x-1/2",
   PANEL_LEFT: "right-full top-1/2 mr-2 -translate-y-1/2",

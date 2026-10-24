@@ -53,10 +53,6 @@ export function includesLinkedInTarget(targets?: string[]): boolean {
   return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS["LINKEDIN"]);
 }
 
-export function includesDevtoTarget(targets?: string[]): boolean {
-  return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS["DEVTO"]);
-}
-
 export function includesGoogleTarget(targets?: string[]): boolean {
   return normalizeTargets(targets).includes(AI_OPTIMIZATION_TARGETS["GOOGLE"]);
 }
@@ -65,7 +61,7 @@ export function includesGoogleTarget(targets?: string[]): boolean {
  * Article `tags` JSON / post.tags limit for AI generation.
  * DEV.to-involved → 4 (API hard max). LinkedIn (no DEV.to) → 5. Google-only → SEO topical tags.
  */
-export function resolveArticleTagLimit(targets?: string[]): number {
+function resolveArticleTagLimit(targets?: string[]): number {
   const resolved = normalizeTargets(targets);
   if (resolved.includes(AI_OPTIMIZATION_TARGETS["DEVTO"])) {
     return PLATFORM_TAG_LIMITS["DEVTO"]["MAX"];
@@ -80,7 +76,7 @@ export function resolveArticleTagLimit(targets?: string[]): number {
 }
 
 /** Hashtag count for LinkedIn commentary (ideal = max = 5). */
-export function resolveLinkedInHashtagLimit(): number {
+function resolveLinkedInHashtagLimit(): number {
   return PLATFORM_TAG_LIMITS["LINKEDIN"]["IDEAL"];
 }
 

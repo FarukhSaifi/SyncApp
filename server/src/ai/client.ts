@@ -255,6 +255,3 @@ export async function generateAiContent(options: AiGenerateOptions): Promise<Gen
     config: generationConfig,
   });
 }
-
-/** @deprecated Prefer generateAiContent — same behavior. */
-export const studioGenerateContent = generateAiContent;
