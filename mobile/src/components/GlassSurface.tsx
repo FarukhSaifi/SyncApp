@@ -4,16 +4,10 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { useTheme } from "@contexts/ThemeContext";
 import { isNativeBlurAvailable } from "@utils/nativeBlur";
+import type { GlassSurfaceLayerProps, GlassSurfaceProps } from "@types";
 import { isLiquidGlassAvailable } from "@utils/nativeGlass";
 
-interface GlassSurfaceProps {
-  style?: StyleProp<ViewStyle>;
-  borderRadius: number;
-  /** iOS 26 Liquid Glass touch feedback when true (SDK 56+ only) */
-  interactive?: boolean;
-}
-
-function LiquidGlassLayer({ isDark, interactive }: { isDark: boolean; interactive: boolean }) {
+function LiquidGlassLayer({ isDark, interactive }: GlassSurfaceLayerProps) {
   try {
     const { GlassView } = require("expo-glass-effect") as {
       GlassView: ComponentType<{

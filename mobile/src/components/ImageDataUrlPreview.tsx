@@ -6,15 +6,8 @@ import { Skeleton } from "@components/Skeleton";
 import { LABELS } from "@constants";
 import { RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
+import type { ImageDataUrlPreviewProps } from "@types";
 import { decodeSvgXmlFromDataUrl, isSvgDataUrl } from "@utils/imageDataUrl";
-
-interface ImageDataUrlPreviewProps {
-  uri: string;
-  style?: StyleProp<ImageStyle>;
-  accessibilityLabel?: string;
-  onLoad?: () => void;
-  onError?: () => void;
-}
 
 export function ImageDataUrlPreview({ uri, style, accessibilityLabel, onLoad, onError }: ImageDataUrlPreviewProps) {
   const colors = useThemeColors();

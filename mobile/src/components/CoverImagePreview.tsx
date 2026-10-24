@@ -6,13 +6,8 @@ import { Skeleton } from "@components/Skeleton";
 import { LABELS } from "@constants";
 import { LAYOUT, RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
+import type { CoverImagePreviewProps } from "@types";
 import { isSvgDataUrl } from "@utils/imageDataUrl";
-
-interface CoverImagePreviewProps {
-  uri: string;
-  onRemove?: () => void;
-  onPress?: () => void;
-}
 
 export function CoverImagePreview({ uri, onRemove, onPress }: CoverImagePreviewProps) {
   const colors = useThemeColors();

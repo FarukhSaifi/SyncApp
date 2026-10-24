@@ -4,23 +4,11 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 
 import { Button } from "@components/Button";
 import { Spinner } from "@components/Spinner";
-import { BUTTON_VARIANTS, RADIUS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, EDITOR_SHEET, OVERLAY, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { EDITOR_AI_PROMPTS, LABELS, PLACEHOLDERS } from "@constants/messages";
 import { OPTIMIZATION_TARGETS, type OptimizationTarget } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface AiCopilotSheetProps {
-  visible: boolean;
-  onClose: () => void;
-  currentContent: string;
-  onAcceptReplace: (newContent: string) => void;
-  onAcceptAppend: (newContent: string) => void;
-  onAiEdit: (action: string) => Promise<string | void>;
-  onGeneratePost: (topic: string) => Promise<void>;
-  aiLoading: boolean;
-  aiTargetPlatforms: OptimizationTarget[];
-  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
-}
+import type { AiCopilotSheetProps } from "@types";
 
 const AI_PRESETS: Array<{
   id: string;
@@ -286,16 +274,15 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.55)",
+      backgroundColor: OVERLAY.SCRIM_STRONG,
       justifyContent: "flex-end",
     },
     sheet: {
+      flex: 1,
       backgroundColor: colors.card,
-      borderTopLeftRadius: RADIUS.XL,
-      borderTopRightRadius: RADIUS.XL,
-      maxHeight: "88%",
-      paddingTop: 12,
-      paddingBottom: 36,
+      maxHeight: EDITOR_SHEET.MAX_HEIGHT,
+      paddingTop: 8,
+      paddingBottom: 24,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
@@ -305,14 +292,17 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       borderRadius: 2,
       backgroundColor: colors.border,
       alignSelf: "center",
-      marginBottom: 12,
+      marginBottom: 8,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      marginBottom: 16,
+      minHeight: EDITOR_SHEET.TITLE_BAR_HEIGHT,
+      paddingHorizontal: SETTINGS_LAYOUT.PAGE_PADDING,
+      marginBottom: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
     headerTitleRow: {
       flexDirection: "row",

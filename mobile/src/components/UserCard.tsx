@@ -4,18 +4,12 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@components/Button";
 import { Card } from "@components/Card";
 import { getBadgeStyles } from "@constants/colorClasses";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 import { USER_ROLES, USER_ROLE_LABELS } from "@constants/userRoles";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { User } from "@types";
+import type { UserCardProps } from "@types";
 import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
-
-interface UserCardProps {
-  user: User;
-  onEdit: () => void;
-  onDelete: () => void;
-}
 
 export function UserCard({ user, onEdit, onDelete }: UserCardProps) {
   const colors = useThemeColors();
@@ -74,8 +68,8 @@ export function UserCard({ user, onEdit, onDelete }: UserCardProps) {
 
 const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
-    card: { marginBottom: IOS26.GROUPED_GAP },
-    header: { flexDirection: "row", gap: 12, marginBottom: 12 },
+    card: { marginBottom: SETTINGS_LAYOUT.CARD_GAP },
+    header: { flexDirection: "row", gap: 12, marginBottom: SETTINGS_LAYOUT.CARD_GAP },
     avatar: {
       width: 48,
       height: 48,

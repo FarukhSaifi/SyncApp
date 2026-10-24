@@ -14,7 +14,7 @@ import {
   publishToMedium,
   publishToWordpress,
 } from "@services/publishService";
-import type { IPlatformStatus, PlatformConfigWithFn } from "@types";
+import type { IPlatformStatus, PlatformConfigWithFn, PostPlatformStatus } from "@types";
 import type { Request, Response } from "express";
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, PlatformConfigWithFn> = {
@@ -75,13 +75,6 @@ function getPlatformConfigWithFn(platformName: string) {
   }
   return undefined;
 }
-
-type PostPlatformStatus = {
-  medium?: IPlatformStatus;
-  devto?: IPlatformStatus;
-  wordpress?: IPlatformStatus;
-  linkedin?: IPlatformStatus;
-};
 
 function getPlatformStatusField(
   platformStatus: PostPlatformStatus | null | undefined,

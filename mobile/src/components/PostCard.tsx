@@ -3,18 +3,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@components/Button";
 import { APP_CONFIG } from "@constants/config";
-import { BUTTON_VARIANTS, IOS26, RADIUS } from "@constants/designTokens";
+import { BUTTON_VARIANTS, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 import { POST_STATUS, STATUS_CONFIG, getStatusBadgeStyle, type StatusTone } from "@constants/postStatus";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { Post } from "@types";
+import type { PostCardProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
-
-interface PostCardProps {
-  post: Post;
-  onPress: () => void;
-  onDelete: () => void;
-}
 
 export function PostCard({ post, onPress, onDelete }: PostCardProps) {
   const colors = useThemeColors();
@@ -108,15 +102,20 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
   StyleSheet.create({
     card: {
       backgroundColor: colors.card,
-      borderRadius: RADIUS.LG,
-      padding: 16,
-      marginBottom: IOS26.GROUPED_GAP,
+      borderRadius: RADIUS.CARD,
+      padding: SETTINGS_LAYOUT.CARD_PADDING,
+      marginBottom: SETTINGS_LAYOUT.CARD_GAP,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
     pressed: { opacity: 0.94 },
     header: { flexDirection: "row", justifyContent: "space-between", gap: 8, alignItems: "flex-start" },
-    title: { flex: 1, fontSize: 17, fontWeight: "600", color: colors.foreground },
+    title: {
+      flex: 1,
+      fontSize: SETTINGS_LAYOUT.SECTION_TITLE_SIZE,
+      fontWeight: SETTINGS_LAYOUT.SECTION_TITLE_WEIGHT,
+      color: colors.foreground,
+    },
     badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.FULL },
     badgeText: { fontSize: 11, fontWeight: "600" },
     platformsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },

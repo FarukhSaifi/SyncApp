@@ -1,4 +1,7 @@
 import { LABELS } from "@constants/messages";
+import type { StatusTone, ThemeColors } from "../types/theme";
+
+export type { StatusTone } from "../types/theme";
 
 export const POST_STATUS = Object.freeze({
   DRAFT: "draft",
@@ -15,14 +18,12 @@ export const STATUS_CONFIG = Object.freeze({
   [POST_STATUS.ARCHIVED]: { label: LABELS.STATUS_ARCHIVED, tone: "warning" as const },
 });
 
-export type StatusTone = "muted" | "positive" | "warning";
-
 export function getStatusLabel(status: string): string {
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
   return cfg?.label ?? status;
 }
 
-export function getStatusBadgeStyle(colors: import("@constants/palette").ThemeColors, tone: StatusTone) {
+export function getStatusBadgeStyle(colors: ThemeColors, tone: StatusTone) {
   switch (tone) {
     case "positive":
       return { backgroundColor: `${colors.positive}26`, color: colors.positive };

@@ -57,3 +57,12 @@ export interface GetPostsParams {
   search?: string;
   userId?: string;
 }
+
+/** Unfiltered dashboard chip counts (independent of list page/status/search). */
+export interface PostListStats {
+  total: number;
+  published: number;
+  drafts: number;
+  scheduled: number;
+  withPlatforms: number;
+}

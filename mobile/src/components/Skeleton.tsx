@@ -4,13 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } fr
 
 import { RADIUS } from "@constants/designTokens";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface SkeletonProps {
-  width?: number | `${number}%`;
-  height?: number;
-  borderRadius?: number;
-  style?: StyleProp<ViewStyle>;
-}
+import type { SkeletonProps } from "@types";
 
 /** Pulse skeleton — mirrors web `animate-pulse rounded bg-muted/60` */
 export function Skeleton({ width = "100%", height = 16, borderRadius = RADIUS.MD, style }: SkeletonProps) {

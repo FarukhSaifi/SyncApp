@@ -17,22 +17,7 @@ import {
 } from "@constants/messages";
 import { PLATFORM_BRAND_COLORS, PLATFORM_DISPLAY_NAMES, type PlatformSlug } from "@constants/platforms";
 import { useThemeColors } from "@contexts/ThemeContext";
-import type { EditorForm, Post } from "@types";
-
-interface ChannelsTabProps {
-  form: EditorForm;
-  platforms: typeof import("@constants/platforms").PLATFORMS;
-  connectedPlatforms: PlatformSlug[];
-  loadingPlatforms?: boolean;
-  selectedPlatforms: PlatformSlug[];
-  togglePlatform: (platform: PlatformSlug) => void;
-  updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
-  generateLinkedInSummary: () => Promise<void>;
-  aiLoading: boolean;
-  platformStatus?: Post["platform_status"];
-  unpublish: (platform: string) => Promise<void>;
-  publishing: boolean;
-}
+import type { ChannelsTabProps } from "@types";
 
 const PLATFORM_THEMES: Record<PlatformSlug, { brandColor: string; icon: keyof typeof Ionicons.glyphMap }> = {
   medium: {

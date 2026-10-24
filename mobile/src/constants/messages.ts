@@ -178,6 +178,7 @@ export const DESCRIPTIONS = Object.freeze({
   TAGLINE: "Write once, publish everywhere",
   LOGIN: "Sign in to your SyncApp account",
   REGISTER: "Create your SyncApp account",
+  DASHBOARD: "Manage your posts and publishing status",
   PROFILE: "Update your profile information",
   GENERATE_IMAGE: "Enter a topic and optional style. Preview the image before setting it as your cover.",
   GENERATING_IMAGE_HINT: "Gemini is handcrafting your high-res blog cover. Please wait.",

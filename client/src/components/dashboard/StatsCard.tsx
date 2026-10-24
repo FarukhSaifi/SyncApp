@@ -1,9 +1,8 @@
-import React, { memo } from "react";
+import { memo } from "react";
 
 import type { StatsCardProps } from "@types";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@components/common/Card";
-
 
 /**
  * Memoized stats card component with responsive sizing for mobile
@@ -11,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@components/common/Car
 const StatsCard = memo<StatsCardProps>(({ title, value, icon: Icon, isActive, onClick }) => {
   return (
     <Card
-      className={`cursor-pointer transition-all ${isActive ? "ring-2 ring-primary" : ""} ${
-        onClick ? "" : "cursor-default"
-      }`}
+      className={`h-full cursor-pointer transition-all ${
+        isActive ? "border-primary ring-2 ring-inset ring-primary/30" : ""
+      } ${onClick ? "" : "cursor-default"}`}
       onClick={onClick}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">

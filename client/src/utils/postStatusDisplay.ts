@@ -1,10 +1,8 @@
-import type { PostStatusDisplay } from "@types";
+import type { PostStatusDisplay, SchedulablePost } from "@types";
 import dayjs from "dayjs";
 
 import { LABELS } from "@constants/messages";
 import { FILTER_STATUS_SCHEDULED, POST_STATUS, SCHEDULED_STATUS_CLASS, STATUS_CONFIG } from "@constants/postStatus";
-
-type SchedulablePost = { status: string; scheduled_for?: string | null };
 
 /** True when draft has a future scheduled_for date. */
 export function isPostScheduled(post: SchedulablePost): boolean {

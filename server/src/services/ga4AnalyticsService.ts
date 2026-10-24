@@ -23,12 +23,9 @@ import dayjs from "dayjs";
 
 import type { Ga4TrafficChannelId } from "@constants/analytics";
 
-const logger = createLogger(GA4_REPORT.LOGGER_NAME);
+import type { DateRangeInput } from "@types";
 
-type DateRangeInput = {
-  startDate?: string;
-  endDate?: string;
-};
+const logger = createLogger(GA4_REPORT.LOGGER_NAME);
 
 function resolveDateRange(input: DateRangeInput): { startDate: string; endDate: string } {
   const end = input.endDate && dayjs(input.endDate).isValid() ? dayjs(input.endDate) : dayjs();

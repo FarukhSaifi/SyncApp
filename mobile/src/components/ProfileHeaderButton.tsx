@@ -13,7 +13,11 @@ export function ProfileHeaderButton() {
 
   return (
     <IconHeaderButton accessibilityLabel={LABELS.PROFILE} onPress={() => router.push(ROUTES.PROFILE)}>
-      <Ionicons name="person-circle-outline" size={HEADER_ICON_BUTTON.PROFILE_ICON_SIZE} color={colors.primary} />
+      <Ionicons
+        name="person-circle-outline"
+        size={HEADER_ICON_BUTTON.PROFILE_ICON_SIZE}
+        color={colors.mutedForeground}
+      />
     </IconHeaderButton>
   );
 }

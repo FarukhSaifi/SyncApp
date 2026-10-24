@@ -2,23 +2,13 @@ import { randomUUID } from "crypto";
 
 import { config } from "@config";
 import { DEFAULT_VALUES, NUMERIC_LIMITS, POST_STATUS, STRING_LIMITS, VALID_POST_STATUS } from "@constants";
-import type { IPlatformStatus, IPost } from "@types";
-import mongoose, { Document, Model, Schema } from "mongoose";
+import type { IPlatformStatus, IPost, IPostDocument } from "@types";
+import mongoose, { Model, Schema } from "mongoose";
 import createSlug from "slugify";
-
 
 import { POST_INDEXES } from "@constants/indexes";
 
-
-export interface IPostDocument extends Document, Omit<IPost, "_id" | "author"> {
-  author: mongoose.Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-  created_at: Date;
-  updated_at: Date;
-  is_published_anywhere: boolean;
-  meta_description?: string | null;
-}
+export type { IPostDocument };
 
 const postSchema = new Schema<IPostDocument>(
   {

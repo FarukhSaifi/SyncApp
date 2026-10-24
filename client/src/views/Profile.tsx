@@ -1,16 +1,19 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
-import { APP_CONFIG, COLOR_CLASSES, SYNC_LABEL } from "@constants";
+import SettingsPageHeader from "@components/settings/SettingsPageHeader";
+import SettingsSectionNav from "@components/settings/SettingsSectionNav";
+import { APP_CONFIG, COLOR_CLASSES, PAGE_DESCRIPTIONS, PROFILE_SECTION_IDS, SYNC_LABEL } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import { useToast } from "@hooks/useToast";
-import type { ProfileFormState, PasswordFormState } from "@types";
+import type { PasswordFormState, ProfileFormState } from "@types";
 import { FiEye, FiEyeOff, FiLock, FiSave, FiUser } from "react-icons/fi";
+
+import { SETTINGS_LAYOUT } from "@constants/designTokens";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
-
 
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();
@@ -31,6 +34,24 @@ const Profile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [passwordLoading, setPasswordLoading] = useState<boolean>(false);
+  const [activeSectionId, setActiveSectionId] = useState<string>(PROFILE_SECTION_IDS.INFORMATION);
+
+  const sectionNavItems = useMemo(
+    () => [
+      { id: PROFILE_SECTION_IDS.INFORMATION, label: SYNC_LABEL.PROFILE_INFORMATION },
+      { id: PROFILE_SECTION_IDS.PASSWORD, label: SYNC_LABEL.CHANGE_PASSWORD },
+      { id: PROFILE_SECTION_IDS.ACCOUNT, label: SYNC_LABEL.ACCOUNT_INFORMATION },
+    ],
+    [],
+  );
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -103,16 +124,23 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">{SYNC_LABEL.PROFILE_SETTINGS_TITLE}</h1>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm">{SYNC_LABEL.PROFILE_SETTINGS_DESCRIPTION}</p>
-        </div>
+    <div className={SETTINGS_LAYOUT.PAGE_CLASS}>
+      <SettingsPageHeader
+        title={SYNC_LABEL.PROFILE_SETTINGS_TITLE}
+        description={SYNC_LABEL.PROFILE_SETTINGS_DESCRIPTION}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={SETTINGS_LAYOUT.BODY_CLASS}>
+        <SettingsSectionNav
+          items={sectionNavItems}
+          activeId={activeSectionId}
+          onSelect={scrollToSection}
+          ariaLabel={PAGE_DESCRIPTIONS.PROFILE_SECTION_NAV_ARIA}
+        />
+
+        <div className={SETTINGS_LAYOUT.SECTIONS_CLASS}>
           {/* Profile Information */}
-          <Card className="shadow-sm border">
+          <Card id={PROFILE_SECTION_IDS.INFORMATION} className={SETTINGS_LAYOUT.CARD_CLASS}>
             <CardHeader>
               <CardTitle className="flex items-center space-x-1.5 sm:space-x-2">
                 <FiUser className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
@@ -159,13 +187,13 @@ const Profile = () => {
                     value={profileData.bio}
                     onChange={handleProfileChange}
                     placeholder={SYNC_LABEL.BIO_PROFILE}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium  mb-2">{SYNC_LABEL.LABEL_AVATAR_URL}</label>
+                  <label className="block text-sm font-medium mb-2">{SYNC_LABEL.LABEL_AVATAR_URL}</label>
                   <Input
                     name="avatar"
                     value={profileData.avatar}
@@ -189,7 +217,7 @@ const Profile = () => {
           </Card>
 
           {/* Change Password */}
-          <Card className="shadow-sm border">
+          <Card id={PROFILE_SECTION_IDS.PASSWORD} className={SETTINGS_LAYOUT.CARD_CLASS}>
             <CardHeader>
               <CardTitle className="flex items-center space-x-1.5 sm:space-x-2">
                 <FiLock className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
@@ -311,55 +339,56 @@ const Profile = () => {
               </form>
             </CardContent>
           </Card>
+
+          {/* Account Information */}
+          <Card id={PROFILE_SECTION_IDS.ACCOUNT} className={SETTINGS_LAYOUT.CARD_CLASS}>
+            <CardHeader>
+              <CardTitle>{SYNC_LABEL.ACCOUNT_INFORMATION}</CardTitle>
+              <CardDescription>{SYNC_LABEL.ACCOUNT_INFORMATION_DESC}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 items-stretch">
+                <div className="flex flex-col items-center text-center space-y-3 p-4 border border-border rounded-xl bg-muted/40">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-muted flex items-center justify-center ring-2 ring-primary/20">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl sm:text-2xl font-semibold text-foreground">
+                        {(
+                          user?.firstName?.[0] ||
+                          user?.username?.[0] ||
+                          SYNC_LABEL.DEFAULT_AVATAR_LETTER
+                        ).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-lg sm:text-xl font-semibold text-primary break-all">{user?.username}</div>
+                    <div className="text-xs text-muted-foreground">{SYNC_LABEL.USERNAME_LABEL}</div>
+                  </div>
+                </div>
+
+                <div className="text-center p-4 border border-border rounded-xl bg-muted/40 wrap-break-word">
+                  <div
+                    className={`text-base sm:text-lg font-semibold ${COLOR_CLASSES.ICON_COLOR.POSITIVE} wrap-break-word`}
+                  >
+                    {user?.email}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.EMAIL_LABEL}</div>
+                </div>
+
+                <div className="text-center sm:col-span-1 p-4 border border-border rounded-xl bg-muted/40">
+                  <div
+                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${COLOR_CLASSES.ICON_BG.PRIMARY} ${COLOR_CLASSES.ICON_COLOR.PRIMARY} text-sm font-medium capitalize`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} /> {user?.role}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">{SYNC_LABEL.ROLE_LABEL}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Account Information */}
-        <Card className="mt-8 shadow-sm border">
-          <CardHeader>
-            <CardTitle>{SYNC_LABEL.ACCOUNT_INFORMATION}</CardTitle>
-            <CardDescription>{SYNC_LABEL.ACCOUNT_INFORMATION_DESC}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 items-stretch">
-              {/* Avatar + Username */}
-              <div className="flex flex-col items-center text-center space-y-3 p-4 border rounded-lg">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center ring-2 ring-primary/20">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xl sm:text-2xl font-semibold text-foreground">
-                      {(user?.firstName?.[0] || user?.username?.[0] || SYNC_LABEL.DEFAULT_AVATAR_LETTER).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <div className="text-lg sm:text-xl font-semibold text-primary break-all">{user?.username}</div>
-                  <div className="text-xs text-muted-foreground">{SYNC_LABEL.USERNAME_LABEL}</div>
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="text-center p-4 border rounded-lg wrap-break-word">
-                <div
-                  className={`text-base sm:text-lg font-semibold ${COLOR_CLASSES.ICON_COLOR.POSITIVE} wrap-break-word`}
-                >
-                  {user?.email}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">{SYNC_LABEL.EMAIL_LABEL}</div>
-              </div>
-
-              {/* Role */}
-              <div className="text-center sm:col-span-1 p-4 border rounded-lg">
-                <div
-                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${COLOR_CLASSES.ICON_BG.PRIMARY} ${COLOR_CLASSES.ICON_COLOR.PRIMARY} text-sm font-medium capitalize`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${COLOR_CLASSES.ICON_COLOR.PRIMARY}`} /> {user?.role}
-                </div>
-                <div className="text-xs text-muted-foreground mt-2">{SYNC_LABEL.ROLE_LABEL}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

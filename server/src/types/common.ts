@@ -36,3 +36,13 @@ export interface NormalizeScheduledForOptions {
   currentStatus?: string;
   requireFuture?: boolean;
 }
+
+/** UTM query builder options (values validated against constants at call sites). */
+export interface UtmBuildOptions {
+  source: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+}
+
+export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG";

@@ -4,7 +4,7 @@
  */
 import { AI_CONFIG, API_URLS, DEFAULT_VALUES, HTTP } from "@constants";
 import { AppError } from "@middleware/errorHandler";
-import type { DevtoCacheEntry, DevtoReachTagsResult } from "@types";
+import type { DevtoCacheEntry, DevtoReachTagsResult, DevtoTagRow } from "@types";
 import { logger } from "@utils/logger";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
@@ -13,10 +13,6 @@ import { ERROR_MESSAGES } from "@constants/messages";
 export type { DevtoReachTagsResult };
 
 let cache: DevtoCacheEntry | null = null;
-
-type DevtoTagRow = {
-  name?: unknown;
-};
 
 function parseTagNames(payload: unknown): string[] {
   if (!Array.isArray(payload)) {

@@ -6,26 +6,7 @@ import { RADIUS } from "@constants/designTokens";
 import { EDITOR_UI } from "@constants/messages";
 import { CODE_BLOCK_PREVIEW } from "@constants/palette";
 import { useThemeColors } from "@contexts/ThemeContext";
-
-interface VisualBlockPreviewProps {
-  title: string;
-  markdown: string;
-  coverImage?: string;
-  onToggleCheckbox?: (lineIndex: number) => void;
-}
-
-type ParsedBlock =
-  | { type: "h1"; text: string; id: string }
-  | { type: "h2"; text: string; id: string }
-  | { type: "h3"; text: string; id: string }
-  | { type: "quote"; text: string; id: string }
-  | { type: "code"; code: string; lang: string; id: string }
-  | { type: "bullet"; text: string; id: string }
-  | { type: "numbered"; num: string; text: string; id: string }
-  | { type: "checklist"; checked: boolean; text: string; lineIndex: number; id: string }
-  | { type: "divider"; id: string }
-  | { type: "image"; alt: string; url: string; id: string }
-  | { type: "paragraph"; text: string; id: string };
+import type { ParsedBlock, VisualBlockPreviewProps } from "@types";
 
 function parseMarkdownToBlocks(markdown: string): ParsedBlock[] {
   if (!markdown.trim()) return [];

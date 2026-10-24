@@ -29,9 +29,4 @@ export const UTM_CAMPAIGNS = Object.freeze({
 export type UtmSource = (typeof UTM_SOURCES)[keyof typeof UTM_SOURCES];
 export type UtmMedium = (typeof UTM_MEDIUMS)[keyof typeof UTM_MEDIUMS];
 
-export type UtmBuildOptions = {
-  source: UtmSource | string;
-  medium?: UtmMedium | string;
-  campaign?: string;
-  content?: string;
-};
+export type { UtmBuildOptions } from "../types/common";

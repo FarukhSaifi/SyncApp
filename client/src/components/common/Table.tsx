@@ -2,17 +2,13 @@ import React from "react";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className = "", ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={`w-full caption-bottom text-sm ${className}`} {...props} />
-    </div>
+    <table ref={ref} className={`w-full caption-bottom text-sm ${className}`} {...props} />
   ),
 );
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className = "", ...props }, ref) => (
-    <thead ref={ref} className={`[&_tr]:border-b ${className}`} {...props} />
-  ),
+  ({ className = "", ...props }, ref) => <thead ref={ref} className={`[&_tr]:border-b ${className}`} {...props} />,
 );
 TableHeader.displayName = "TableHeader";
 
@@ -25,11 +21,7 @@ TableBody.displayName = "TableBody";
 
 const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className = "", ...props }, ref) => (
-    <tfoot
-      ref={ref}
-      className={`border-t bg-muted/50 font-medium [&>tr]:last:border-b-0 ${className}`}
-      {...props}
-    />
+    <tfoot ref={ref} className={`border-t bg-muted/50 font-medium [&>tr]:last:border-b-0 ${className}`} {...props} />
   ),
 );
 TableFooter.displayName = "TableFooter";
@@ -38,7 +30,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
   ({ className = "", ...props }, ref) => (
     <tr
       ref={ref}
-      className={`border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${className}`}
+      className={`border-b border-border/60 transition-colors data-[state=selected]:bg-muted ${className}`}
       {...props}
     />
   ),
@@ -49,7 +41,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
   ({ className = "", ...props }, ref) => (
     <th
       ref={ref}
-      className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 ${className}`}
+      className={`h-9 px-3 text-left align-middle text-sm font-semibold text-foreground sm:px-4 [&:has([role=checkbox])]:pr-0 ${className}`}
       {...props}
     />
   ),
@@ -60,7 +52,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<
   ({ className = "", ...props }, ref) => (
     <td
       ref={ref}
-      className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}
+      className={`px-3 py-2 align-middle text-sm sm:px-4 [&:has([role=checkbox])]:pr-0 ${className}`}
       {...props}
     />
   ),

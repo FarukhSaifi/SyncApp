@@ -24,10 +24,24 @@ export interface UserDeleteConfirmState {
 export interface DashboardProps {
   posts: Post[];
   loading: boolean;
+  loadingMore?: boolean;
   error: string | null;
+  hasMore?: boolean;
+  page: number;
+  pages: number;
+  pageSize?: number;
+  totalPosts?: number;
+  /** Count for the current list query (status/search + pagination). */
+  filteredTotal?: number;
+  stats?: PostsStats;
   onPostUpdate: (post: Post) => void;
   onPostDelete: (id: string) => void;
   onRefresh: () => void;
+  onLoadMore?: () => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange?: (limit: number) => void;
+  onStatusFilterChange?: (status: string) => void;
+  onSearchChange?: (search: string) => void;
 }
 
 export interface DashboardDeleteConfirmState {
@@ -35,13 +49,24 @@ export interface DashboardDeleteConfirmState {
   postId: string | null;
 }
 
+export interface PostsListFilters {
+  status?: string;
+  search?: string;
+}
+
 export interface UsePostsReturn {
   posts: Post[];
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   pagination: Pagination;
   stats: PostsStats;
-  fetchPosts: (opts?: Partial<Pagination>) => Promise<void>;
+  hasMore: boolean;
+  totalPages: number;
+  fetchPosts: (opts?: Partial<Pagination> & PostsListFilters & { append?: boolean }) => Promise<void>;
+  loadMore: () => Promise<void>;
+  goToPage: (page: number) => Promise<void>;
+  resetAndFetch: (opts?: Partial<Pagination> & PostsListFilters) => Promise<void>;
   refreshPosts: () => void;
   addPost: (newPost: Post) => void;
   updatePost: (updatedPost: Partial<Post> & { id?: string; _id?: string }) => void;
@@ -53,6 +78,29 @@ export interface UsePostsOptions {
   enabled?: boolean;
   pagination?: Pagination;
   userId?: string | null;
+}
+
+export interface PostsContextValue {
+  posts: Post[];
+  loading: boolean;
+  loadingMore: boolean;
+  error: string | null;
+  hasMore: boolean;
+  page: number;
+  pages: number;
+  pageSize: number;
+  totalPosts: number;
+  filteredTotal: number;
+  stats: PostsStats;
+  onPostUpdate: (post: Post) => void;
+  onPostDelete: (id: string) => void;
+  onRefresh: () => void;
+  onPostCreate: (post: Post) => void;
+  onLoadMore: () => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (limit: number) => void;
+  onStatusFilterChange: (status: string) => void;
+  onSearchChange: (search: string) => void;
 }
 
 export interface AuthResult {

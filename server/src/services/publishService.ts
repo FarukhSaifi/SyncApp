@@ -21,6 +21,7 @@ import type {
   IPlatformStatus,
   PlatformPublishAction,
   PlatformPublishResult,
+  PublishFn,
   PublishScheduledPostsResult,
   PublishToActivePlatformsResult,
   ScheduledPublishPostResult,
@@ -512,7 +513,6 @@ export async function publishToLinkedin(
   }
 }
 
-type PublishFn = (post: IPostDocument, credential: ICredentialDocument) => Promise<PlatformPublishResult>;
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: PublishFn }> = {
   [PLATFORMS.MEDIUM]: { name: PLATFORM_CONFIG.medium.name, publishFn: publishToMedium },

@@ -1,3 +1,4 @@
+import type { PostsStats } from "./analytics";
 import type { Post } from "./models";
 
 /**
@@ -53,5 +54,6 @@ export interface PostsApiResponse {
   success: boolean;
   data?: Post[];
   pagination?: Pagination;
+  stats?: PostsStats;
   error?: string;
 }

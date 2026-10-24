@@ -3,15 +3,9 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useColorScheme } from "react-native";
 
 import { STORAGE_KEYS } from "@constants/config";
-import { darkColors, lightColors, type ThemeColors } from "@constants/palette";
+import { darkColors, lightColors } from "@constants/palette";
 import { THEME_VALUES } from "@constants/theme";
-
-interface ThemeContextValue {
-  colors: ThemeColors;
-  isDark: boolean;
-  theme: string;
-  toggleTheme: () => void;
-}
+import type { ThemeColors, ThemeContextValue } from "@types";
 
 const ThemeContext = createContext<ThemeContextValue>({
   colors: lightColors,

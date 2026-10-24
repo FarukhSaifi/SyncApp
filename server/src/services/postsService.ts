@@ -4,15 +4,17 @@ import {
   DEFAULT_VALUES,
   ERROR_MESSAGES,
   FIELDS,
+  POST_LIST_FILTER,
   POST_STATUS,
   REGEX_PATTERNS,
   VALIDATION_ERRORS,
+  VALID_POST_STATUS,
   buildFirebaseStoragePublicUrl,
   type PostStatus,
 } from "@constants";
 import { ForbiddenError, NotFoundError } from "@middleware/errorHandler";
 import Post from "@models/Post";
-import type { CreatePostInput, GetPostsParams } from "@types";
+import type { CreatePostInput, GetPostsParams, LeanPost, PostListStats } from "@types";
 import { cache, cacheKeys } from "@utils/cache";
 import { ensureMarkdownContent } from "@utils/contentMarkdown";
 import {
@@ -207,7 +209,52 @@ export async function createPost(input: CreatePostInput) {
   return post;
 }
 
-// Imported from central types
+const EMPTY_POST_LIST_STATS: PostListStats = Object.freeze({
+  total: 0,
+  published: 0,
+  drafts: 0,
+  scheduled: 0,
+  withPlatforms: 0,
+});
+
+/** Unfiltered dashboard chip counts (independent of list page/status/search). */
+async function getPostListStats(userId?: string): Promise<PostListStats> {
+  if (!userId) {
+    return { ...EMPTY_POST_LIST_STATS };
+  }
+
+  const cacheKey = cacheKeys.posts.stats(userId);
+  const cached = cache.get(cacheKey) as PostListStats | undefined;
+  if (cached) {
+    return cached;
+  }
+
+  const base = { author: userId };
+  const now = new Date();
+  const [total, published, drafts, scheduled, withPlatforms] = await Promise.all([
+    Post.countDocuments(base),
+    Post.countDocuments({ ...base, status: POST_STATUS.PUBLISHED }),
+    Post.countDocuments({ ...base, status: POST_STATUS.DRAFT }),
+    Post.countDocuments({
+      ...base,
+      status: POST_STATUS.DRAFT,
+      scheduled_for: { $gt: now },
+    }),
+    Post.countDocuments({
+      ...base,
+      $or: [
+        { "platform_status.medium.published": true },
+        { "platform_status.devto.published": true },
+        { "platform_status.wordpress.published": true },
+        { "platform_status.linkedin.published": true },
+      ],
+    }),
+  ]);
+
+  const stats: PostListStats = { total, published, drafts, scheduled, withPlatforms };
+  cache.set(cacheKey, stats, DEFAULT_VALUES["CACHE_TTL_POSTS_LIST_MS"]);
+  return stats;
+}
 
 /**
  * Get posts with pagination and caching
@@ -215,6 +262,8 @@ export async function createPost(input: CreatePostInput) {
 export async function getPosts({
   page = DEFAULT_VALUES.DEFAULT_PAGE,
   limit = DEFAULT_VALUES.DEFAULT_PAGE_SIZE,
+  status,
+  search,
   userId,
 }: GetPostsParams = {}) {
   const safePage = Math.max(
@@ -225,17 +274,37 @@ export async function getPosts({
     Math.max(parseInt(String(limit), 10) || DEFAULT_VALUES["DEFAULT_PAGE_SIZE"], 1),
     DEFAULT_VALUES["MAX_PAGE_SIZE"],
   );
+  const statusFilter = typeof status === "string" ? status.trim().toLowerCase() : "";
+  const searchFilter = typeof search === "string" ? search.trim() : "";
+  const filterKey = `${statusFilter || POST_LIST_FILTER.ALL}:${searchFilter.toLowerCase()}`;
 
-  const cacheKey = cacheKeys.posts.list(userId || DEFAULT_VALUES["CACHE_KEY_PUBLIC"], safePage, safeLimit);
-  const cached = cache.get(cacheKey);
+  const cacheKey = cacheKeys.posts.list(userId || DEFAULT_VALUES["CACHE_KEY_PUBLIC"], safePage, safeLimit, filterKey);
+  const cached = cache.get(cacheKey) as { data: unknown; pagination: unknown; stats?: PostListStats } | undefined;
   if (cached) {
+    if (!cached.stats) {
+      cached.stats = await getPostListStats(userId);
+    }
     return cached;
   }
 
   const skip = (safePage - 1) * safeLimit;
-  const query = userId ? { author: userId } : { status: POST_STATUS["PUBLISHED"] };
+  const query: Record<string, unknown> = userId ? { author: userId } : { status: POST_STATUS["PUBLISHED"] };
 
-  const [items, total] = await Promise.all([
+  if (userId && statusFilter && statusFilter !== POST_LIST_FILTER.ALL) {
+    if (statusFilter === POST_LIST_FILTER.SCHEDULED) {
+      query.status = POST_STATUS.DRAFT;
+      query.scheduled_for = { $gt: new Date() };
+    } else if ((VALID_POST_STATUS as readonly string[]).includes(statusFilter)) {
+      query.status = statusFilter;
+    }
+  }
+
+  if (searchFilter) {
+    const searchRegex = { $regex: searchFilter, $options: "i" };
+    query.$or = [{ title: searchRegex }, { tags: searchRegex }];
+  }
+
+  const [items, total, stats] = await Promise.all([
     Post.find(query)
       .select(FIELDS["POST_FIELDS"]["LIST_SELECT"])
       .populate(FIELDS["COMMON_FIELDS"]["AUTHOR"], FIELDS["USER_FIELDS"]["SELECT_PUBLIC"])
@@ -244,6 +313,7 @@ export async function getPosts({
       .limit(safeLimit)
       .lean(),
     Post.countDocuments(query),
+    getPostListStats(userId),
   ]);
 
   const hydratedItems = items.map((p) => hydrateLeanPost(p as unknown as LeanPost));
@@ -254,24 +324,15 @@ export async function getPosts({
       page: safePage,
       limit: safeLimit,
       total,
-      totalPages: Math.ceil(total / safeLimit),
+      totalPages: Math.ceil(total / safeLimit) || 1,
     },
+    stats,
   };
 
   cache.set(cacheKey, result, DEFAULT_VALUES["CACHE_TTL_POSTS_LIST_MS"]);
 
   return result;
 }
-
-type PopulatedAuthor = { _id: { toString(): string }; name?: string; email?: string };
-type LeanPost = {
-  _id?: unknown;
-  status?: string;
-  author?: PopulatedAuthor;
-  createdAt?: Date;
-  updatedAt?: Date;
-  platform_status?: Record<string, { published: boolean }>;
-} & Record<string, unknown>;
 
 function convertToFirebaseStorageUrl(url: string): string {
   const match = url.match(REGEX_PATTERNS["GCS_PUBLIC_OBJECT_URL"]);

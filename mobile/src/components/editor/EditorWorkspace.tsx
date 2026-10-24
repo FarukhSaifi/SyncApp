@@ -18,31 +18,7 @@ import { useThemeColors } from "@contexts/ThemeContext";
 import { useResponsiveLayout } from "@hooks/useResponsiveLayout";
 import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
-import type { EditorForm, EditorMode, EditorReadiness, Post } from "@types";
-
-export interface EditorWorkspaceProps {
-  form: EditorForm;
-  saving: boolean;
-  publishing: boolean;
-  aiLoading: boolean;
-  readiness: EditorReadiness;
-  updateField: <K extends keyof EditorForm>(key: K, value: EditorForm[K]) => void;
-  handleSave: (forceStatus?: string) => Promise<Post | null>;
-  publish: (platform: string, savedPostId?: string) => Promise<void>;
-  publishAll: (savedPostId?: string) => Promise<void>;
-  unpublish: (platform: string) => Promise<void>;
-  generatePost: (keyword: string) => Promise<void>;
-  generateLinkedInSummary: () => Promise<void>;
-  uploadCoverFromUri: (uri: string, filename: string, mimeType: string) => Promise<string | null>;
-  aiEdit: (action: string) => Promise<void>;
-  openGenerateImage: () => void;
-  platforms: typeof import("@constants/platforms").PLATFORMS;
-  connectedPlatforms: PlatformSlug[];
-  loadingPlatforms?: boolean;
-  platformStatus?: Post["platform_status"];
-  aiTargetPlatforms: OptimizationTarget[];
-  toggleAiTargetPlatform: (target: OptimizationTarget) => void;
-}
+import type { EditorMode, EditorWorkspaceProps } from "@types";
 
 export function EditorWorkspace({
   form,

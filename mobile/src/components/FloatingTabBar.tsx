@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TabBarGlass } from "@components/TabBarGlass";
 import { LABELS, ROUTES } from "@constants";
-import { IOS26, RADIUS, TAB_BAR } from "@constants/designTokens";
+import { HEADER_ICON_BUTTON, IOS26, RADIUS, TAB_BAR } from "@constants/designTokens";
 import { TAB_ICONS } from "@constants/navigation";
 import { useThemeColors } from "@contexts/ThemeContext";
 import type { FloatingTabBarProps, NativeView, NewPostFabProps, TabItemProps, TabLayout, TabRoute } from "@types";
@@ -267,12 +267,12 @@ const tabStyles = StyleSheet.create({
     marginTop: -FAB_LIFT,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
+        shadowColor: HEADER_ICON_BUTTON.SHADOW.COLOR,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.14,
+        shadowRadius: 8,
       },
-      android: { elevation: 8 },
+      android: { elevation: 4 },
       default: {},
     }),
   },
@@ -305,12 +305,12 @@ const createContainerStyles = (colors: ReturnType<typeof useThemeColors>, bottom
       overflow: "visible",
       ...Platform.select({
         ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 16,
+          shadowColor: HEADER_ICON_BUTTON.SHADOW.COLOR,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
         },
-        android: { elevation: 12 },
+        android: { elevation: 6 },
         default: {},
       }),
     },

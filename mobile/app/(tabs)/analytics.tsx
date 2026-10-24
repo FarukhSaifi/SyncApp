@@ -9,7 +9,7 @@ import { ScreenIntro } from "@components/ScreenIntro";
 import { AnalyticsSkeleton } from "@components/skeletons/AnalyticsSkeleton";
 import { ANALYTICS_DATE_PRESET_OPTIONS, ANALYTICS_LABELS, BUTTON_VARIANTS, LABELS } from "@constants";
 import { ANALYTICS_COLORS } from "@constants/colorClasses";
-import { ANALYTICS_CHART, IOS26, RADIUS } from "@constants/designTokens";
+import { ANALYTICS_CHART, RADIUS, SETTINGS_LAYOUT } from "@constants/designTokens";
 import { USER_ROLES } from "@constants/userRoles";
 import { useAuth } from "@contexts/AuthContext";
 import { useThemeColors } from "@contexts/ThemeContext";
@@ -165,7 +165,7 @@ export default function AnalyticsScreen() {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
       >
-        <ScreenIntro description={ANALYTICS_LABELS.PAGE_DESCRIPTION} />
+        <ScreenIntro title={LABELS.ANALYTICS} description={ANALYTICS_LABELS.PAGE_DESCRIPTION} />
 
         <View style={styles.actionsRow}>
           <Button
@@ -435,7 +435,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
     shell: { flex: 1, backgroundColor: colors.groupedBackground },
     scroll: { flex: 1 },
     content: {
-      padding: isCompact ? IOS26.SCREEN_PADDING - 4 : IOS26.SCREEN_PADDING,
+      padding: isCompact ? SETTINGS_LAYOUT.PAGE_PADDING - 4 : SETTINGS_LAYOUT.PAGE_PADDING,
       paddingBottom: tabBarInset,
     },
     actionsRow: {
@@ -448,36 +448,34 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>, tabBarInset: nu
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 8,
-      marginBottom: IOS26.GROUPED_GAP,
+      marginBottom: SETTINGS_LAYOUT.CARD_GAP,
     },
     presetChip: {
-      minHeight: 44,
+      minHeight: 36,
       minWidth: 56,
-      paddingHorizontal: 14,
+      paddingHorizontal: SETTINGS_LAYOUT.CHIP_PADDING_X,
+      paddingVertical: SETTINGS_LAYOUT.CHIP_PADDING_Y,
       borderRadius: RADIUS.MD,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
+      backgroundColor: "transparent",
       alignItems: "center",
       justifyContent: "center",
     },
     presetChipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: `${colors.primary}1a`,
     },
-    presetText: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground },
-    presetTextActive: { color: colors.primaryForeground },
+    presetText: { fontSize: 13, fontWeight: "500", color: colors.mutedForeground },
+    presetTextActive: { color: colors.primary, fontWeight: "600" },
     row: {
       flexDirection: "row",
-      gap: IOS26.GROUPED_GAP,
-      marginBottom: IOS26.GROUPED_GAP,
+      gap: SETTINGS_LAYOUT.CARD_GAP,
+      marginBottom: SETTINGS_LAYOUT.CARD_GAP,
     },
     statCard: {
       flex: 1,
       minWidth: 0,
       backgroundColor: colors.card,
-      borderRadius: RADIUS.LG,
-      padding: isCompact ? 12 : 16,
+      borderRadius: RADIUS.CARD,
+      padding: SETTINGS_LAYOUT.CARD_PADDING,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
