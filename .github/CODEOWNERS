@@ -1,3 +1,7 @@
 # Automatically request review from the owner on every pull request.
-# Single source of truth — do not duplicate via dependabot.yml reviewers or PR workflows.
+# Note: GitHub never requests the PR author as a reviewer, so owner-authored
+# PRs will not show this CODEOWNERS entry under Reviewers.
+# Copilot is requested by the "Enforce Copilot Review" branch ruleset and by
+# .github/workflows/request-copilot-review.yml (not via CODEOWNERS — bots are
+# not valid code owners).
 * @FarukhSaifi
