@@ -141,6 +141,28 @@ For Preview deployments to work with your API, set `CORS_ORIGIN` to include prev
 
 ---
 
+## Production deploy gate (GitHub → Vercel)
+
+Production domains for **sync-app-client** and **sync-app-server** are held until the GitHub Actions check **`Production gate`** passes on the deployed commit.
+
+| Layer | What it does |
+| --- | --- |
+| GitHub Actions (`.github/workflows/ci.yml`) | Job **`Production gate`** succeeds only when ESLint, Typecheck, Client production build, and Server production build all succeed. EAS mobile build is **not** part of this gate. |
+| Vercel Deployment Checks | Both projects wait on GitHub check name **`Production gate`**, target **production**, blocks **deployment-alias** (production domains are not assigned until the check passes). Timeout: 30 minutes. |
+| GitHub ruleset (recommended) | Require status check **`Production gate`** on `main` so failing CI cannot merge. |
+
+**Pass:** Vercel production build finishes, then aliases production domains automatically.  
+**Fail / timeout:** Production deployment is not promoted; previous production stays live. Use **Force Promote** on the deployment page only for emergencies.
+
+Settings links (team `farukh-saifis-projects`):
+
+- Client Deployment Checks: https://vercel.com/farukh-saifis-projects/sync-app-client/settings/deployment-checks
+- Server Deployment Checks: https://vercel.com/farukh-saifis-projects/sync-app-server/settings/deployment-checks
+- Repo rulesets: https://github.com/FarukhSaifi/SyncApp/rules
+- Branch protection / rules: https://github.com/FarukhSaifi/SyncApp/settings/rules
+
+---
+
 ## Troubleshooting
 
 - **MongoDB disconnected on `/health` (Vercel)** — Check:
