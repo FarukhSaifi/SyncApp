@@ -363,7 +363,10 @@ function extractFirstH2Block(content: string): string {
         break;
       }
     }
-    return lines.slice(firstH2 + 1, end).join("\n").trim();
+    return lines
+      .slice(firstH2 + 1, end)
+      .join("\n")
+      .trim();
   }
   const intro = trimmed.slice(0, SEO_THRESHOLDS.DIRECT_ANSWER_INTRO_CHARS);
   const introLines = intro.split("\n");
