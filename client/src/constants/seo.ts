@@ -53,6 +53,8 @@ export const SEO_THRESHOLDS = Object.freeze({
   BADGE_GOOD_MIN: 80,
   BADGE_MID_MIN: 50,
   META_TITLE_SIMILARITY_RATIO: 0.85,
+  /** Cap user content length before scorecard loops (CodeQL loop-bound injection). */
+  SCORECARD_CONTENT_MAX_CHARS: 200_000,
 } as const);
 
 /** Prefer rebuilding canonical when the saved URL still points at the SyncApp client host. */

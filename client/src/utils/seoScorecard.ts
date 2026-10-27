@@ -326,9 +326,10 @@ function stripMarkdownImagesAndLinks(text: string): string {
 }
 
 function collapseWhitespace(text: string): string {
+  const bound = Math.min(text.length, SEO_THRESHOLDS.SCORECARD_CONTENT_MAX_CHARS);
   let out = "";
   let prevSpace = false;
-  for (let i = 0; i < text.length; i++) {
+  for (let i = 0; i < bound; i++) {
     const ch = text[i]!;
     const isSpace = ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === "\f";
     if (isSpace) {
@@ -625,7 +626,7 @@ export function getSeoScorecard(post: Partial<Post>, context: SeoScorecardContex
   const hasCanonical = Boolean(
     (post.canonical_url && post.canonical_url.trim()) || (post.slug && String(post.slug).trim()),
   );
-  const content = post.content_markdown || "";
+  const content = (post.content_markdown || "").slice(0, SEO_THRESHOLDS.SCORECARD_CONTENT_MAX_CHARS);
   const metaRaw = (post.meta_description || "").trim();
   const metaLen = metaRaw.length;
   const metaStatus = getMetaDescriptionStatus(metaLen);
@@ -946,7 +947,7 @@ export function getPublishSeoWarnings(post: Partial<Post>, context: SeoScorecard
   const metaLen = (post.meta_description || "").trim().length;
   const tags = Array.isArray(post.tags) ? post.tags : [];
   const includesDev = resolveIncludesDev(context.platforms);
-  const content = post.content_markdown || "";
+  const content = (post.content_markdown || "").slice(0, SEO_THRESHOLDS.SCORECARD_CONTENT_MAX_CHARS);
   const imageAlts = analyzeImageAlts(content);
 
   if (metaLen === 0) {

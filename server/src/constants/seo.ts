@@ -40,6 +40,8 @@ export const SEO_THRESHOLDS = Object.freeze({
   STUFFING_SCAN_CHARS: 1200,
   PUBLISH_WARNING_SCORE_MIN: 60,
   META_TITLE_SIMILARITY_RATIO: 0.85,
+  /** Cap user content length before scorecard loops (CodeQL loop-bound injection). */
+  SCORECARD_CONTENT_MAX_CHARS: 200_000,
 } as const);
 
 export const DEVTO_HIGH_REACH_TAGS = Object.freeze([
