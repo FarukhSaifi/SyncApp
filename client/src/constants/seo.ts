@@ -203,6 +203,23 @@ export const SEO_ALT_DENYLIST = Object.freeze([
   "untitled",
 ] as const);
 
+/** Markdown / HTML markers used by scorecard parsers (avoid ReDoS-prone regex). */
+export const SEO_MARKDOWN = Object.freeze({
+  ATX_MAX_LEVEL: 6,
+  STUFFING_HEADING_MAX_LEVEL: 3,
+  H2_LEVEL: 2,
+  IMAGE_OPEN: "![",
+  LINK_CLOSE_OPEN: "](",
+  ANCHOR_TAG: "<a",
+  IMG_TAG: "<img",
+  HREF_ATTR: "href",
+  ALT_ATTR: "alt",
+  HTTP_PREFIX: "http://",
+  HTTPS_PREFIX: "https://",
+  PATH_PREFIX: "/",
+  FENCE: "```",
+} as const);
+
 export const SEO_HELPER_COPY = Object.freeze({
   DENSITY_NOTE: "Google does not use a keyword-density target; we check placement and stuffing risk.",
   SCORECARD_NOTE: "Pre-publish hygiene and helpfulness proxies — not a Google ranking predictor.",

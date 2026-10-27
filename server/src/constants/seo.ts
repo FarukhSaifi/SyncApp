@@ -162,6 +162,23 @@ export const SEO_ALT_DENYLIST = Object.freeze([
   "untitled",
 ] as const);
 
+/** Markdown / HTML markers used by scorecard parsers (avoid ReDoS-prone regex). */
+export const SEO_MARKDOWN = Object.freeze({
+  ATX_MAX_LEVEL: 6,
+  STUFFING_HEADING_MAX_LEVEL: 3,
+  H2_LEVEL: 2,
+  IMAGE_OPEN: "![",
+  LINK_CLOSE_OPEN: "](",
+  ANCHOR_TAG: "<a",
+  IMG_TAG: "<img",
+  HREF_ATTR: "href",
+  ALT_ATTR: "alt",
+  HTTP_PREFIX: "http://",
+  HTTPS_PREFIX: "https://",
+  PATH_PREFIX: "/",
+  FENCE: "```",
+} as const);
+
 /** Persisted summary line prefixes — keep in sync with client/src/constants/seo.ts */
 export const SEO_SUMMARY_PREFIX = Object.freeze({
   OK: "OK ",
