@@ -12,4 +12,5 @@ export {
   getAiCapabilities,
   getDevtoReachTags,
   getTrendingTopics,
+  improveSeoFromScorecard,
 } from "@ai";

@@ -144,6 +144,10 @@ export const ERROR_MESSAGES = {
   AI_STARTUP_KEY_SET_HINT: "(set)",
   AI_EDIT_FAILED: "Failed to perform AI edit",
   AI_EDIT_CONTEXT_REQUIRED: "Context text is required for AI edit actions",
+  AI_SEO_IMPROVE_FAILED: "Failed to generate SEO improvements",
+  AI_SEO_IMPROVE_TARGETS_REQUIRED: "At least one SEO scorecard target is required to improve",
+  AI_SEO_IMPROVE_PARSE_FAILED: "AI returned invalid SEO improve JSON. Please try again.",
+  AI_SEO_IMPROVE_EMPTY: "AI returned no usable SEO fixes. Please try again.",
   AI_LINKEDIN_SUMMARY_FAILED: "Failed to generate LinkedIn summary",
   AI_LINKEDIN_SUMMARY_CONTEXT_REQUIRED:
     "Add a title and article content in the editor first, then generate a LinkedIn summary.",

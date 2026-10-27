@@ -24,7 +24,6 @@ import { useToast } from "@hooks/useToast";
 import type { DashboardDeleteConfirmState, DashboardProps, DataTableColumn, Post } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
-import { getSeoScorecard } from "@utils/seoScorecard";
 import Link from "next/link";
 import { FiCheckCircle, FiClock, FiEdit3, FiGlobe, FiPlus, FiRefreshCw } from "react-icons/fi";
 
@@ -120,7 +119,11 @@ const Dashboard = ({
     () => ({
       [POST_TABLE_COLUMNS.TITLE]: (a: Post, b: Post) => a.title.localeCompare(b.title),
       [POST_TABLE_COLUMNS.STATUS]: (a: Post, b: Post) => a.status.localeCompare(b.status),
-      [POST_TABLE_COLUMNS.SEO]: (a: Post, b: Post) => getSeoScorecard(a).score - getSeoScorecard(b).score,
+      [POST_TABLE_COLUMNS.SEO]: (a: Post, b: Post) => {
+        const aScore = typeof a.seo_score === "number" ? a.seo_score : -1;
+        const bScore = typeof b.seo_score === "number" ? b.seo_score : -1;
+        return aScore - bScore;
+      },
       [POST_TABLE_COLUMNS.CREATED]: (a: Post, b: Post) => {
         const aDate = (a as Post & { created_at?: string }).created_at || a.createdAt || "";
         const bDate = (b as Post & { created_at?: string }).created_at || b.createdAt || "";

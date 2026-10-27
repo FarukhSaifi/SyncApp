@@ -8,6 +8,7 @@
     "dev": "APP_ENV=dev nodemon --watch src --watch .env.dev --watch .env --ext ts,js,json,dev --exec 'tsx src/index.ts'",
     "build": "tsc && tsc-alias -p tsconfig.json",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/services/seoScoreService.test.ts",
     "lint": "eslint src api --report-unused-disable-directives --max-warnings 10",
     "db:setup": "APP_ENV=dev tsx src/database/setup.ts",
     "vercel-build": "tsc && tsc-alias -p tsconfig.json",

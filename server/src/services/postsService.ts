@@ -26,7 +26,33 @@ import { logger } from "@utils/logger";
 import { buildCoverFilename, buildInlineImageFilename } from "@utils/mediaFilename";
 import { normalizeScheduledFor, normalizeScheduledPlatforms } from "@utils/scheduleUtils";
 
+import { buildPersistedSeoFields } from "./seoScoreService";
 import { uploadToGCS } from "./storage";
+
+function normalizeSeoPlatforms(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((p): p is string => typeof p === "string")
+    .map((p) => p.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function resolveSeoContext(input: {
+  seo_primary_keyword?: unknown;
+  seo_optimization_targets?: unknown;
+  fallbackKeyword?: string;
+  fallbackPlatforms?: string[];
+}): { primaryKeyword: string; platforms: string[] } {
+  const primaryKeyword =
+    typeof input.seo_primary_keyword === "string" && input.seo_primary_keyword.trim()
+      ? input.seo_primary_keyword.trim()
+      : (input.fallbackKeyword || "").trim();
+  const fromInput = normalizeSeoPlatforms(input.seo_optimization_targets);
+  const platforms = fromInput.length > 0 ? fromInput : normalizeSeoPlatforms(input.fallbackPlatforms);
+  return { primaryKeyword, platforms };
+}
 
 function isFirebaseGcsBucket(bucketName: string): boolean {
   return (
@@ -158,6 +184,8 @@ export async function createPost(input: CreatePostInput) {
     scheduled_for,
     scheduled_platforms,
     author,
+    seo_primary_keyword,
+    seo_optimization_targets,
   } = input;
 
   if (!title || !content_markdown) {
@@ -167,6 +195,22 @@ export async function createPost(input: CreatePostInput) {
   const processedCoverImage = await processBase64CoverImage(cover_image, { title });
   const markdownBody = ensureMarkdownContent(content_markdown);
   const processedContentMarkdown = await processBase64MarkdownImages(markdownBody, { title });
+
+  const seoContext = resolveSeoContext({
+    seo_primary_keyword,
+    seo_optimization_targets,
+  });
+  const seoFields = buildPersistedSeoFields(
+    {
+      title,
+      content_markdown: processedContentMarkdown,
+      meta_description: meta_description?.trim() || null,
+      cover_image: processedCoverImage,
+      canonical_url,
+      tags: tags || [],
+    },
+    seoContext,
+  );
 
   const postPayload: Record<string, unknown> = {
     title,
@@ -179,6 +223,7 @@ export async function createPost(input: CreatePostInput) {
     linkedin_post: typeof linkedin_post === "string" ? linkedin_post : "",
     linkedin_read_more_url: typeof linkedin_read_more_url === "string" ? linkedin_read_more_url.trim() : "",
     author,
+    ...seoFields,
   };
 
   if (scheduled_for !== undefined) {
@@ -555,6 +600,32 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
       mediaOpts,
     );
   }
+
+  const seoContext = resolveSeoContext({
+    seo_primary_keyword: updates.seo_primary_keyword,
+    seo_optimization_targets: updates.seo_optimization_targets,
+    fallbackKeyword: typeof post.seo_primary_keyword === "string" ? post.seo_primary_keyword : "",
+    fallbackPlatforms: Array.isArray(post.seo_optimization_targets) ? post.seo_optimization_targets : [],
+  });
+  const seoFields = buildPersistedSeoFields(
+    {
+      title: (updateData.title as string) || post.title,
+      content_markdown:
+        typeof updateData.content_markdown === "string" ? updateData.content_markdown : post.content_markdown,
+      meta_description:
+        updateData.meta_description !== undefined
+          ? (updateData.meta_description as string | null)
+          : post.meta_description,
+      cover_image:
+        typeof updateData.cover_image === "string" ? updateData.cover_image : post.cover_image,
+      canonical_url:
+        typeof updateData.canonical_url === "string" ? updateData.canonical_url : post.canonical_url,
+      slug: activeSlug,
+      tags: Array.isArray(updateData.tags) ? (updateData.tags as string[]) : post.tags || [],
+    },
+    seoContext,
+  );
+  Object.assign(updateData, seoFields);
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     returnDocument: "after",

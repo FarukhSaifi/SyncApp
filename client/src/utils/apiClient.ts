@@ -24,11 +24,13 @@ import type {
   Ga4WebsiteAnalytics,
   GeneratedPostData,
   GeneratePostResearchContext,
+  ImproveSeoResult,
   KeywordResearchResult,
   ListResponse,
   PaginatedResponse,
   Post,
   RequestOptions,
+  SeoImproveTarget,
   TrendingTopicsResult,
   User,
 } from "@types";
@@ -328,6 +330,20 @@ class ApiClient {
     return this.request(`${API_PATHS["AI"]}/edit`, {
       method: HTTP_METHODS["POST"],
       body: { action, text },
+      timeout: APP_CONFIG["API_AI_TIMEOUT"],
+    });
+  }
+
+  aiImproveSeo(payload: {
+    targets: SeoImproveTarget[];
+    model?: string;
+    primaryKeyword?: string;
+    title?: string;
+    platforms?: string[];
+  }): Promise<ApiResponse<ImproveSeoResult>> {
+    return this.request(`${API_PATHS["AI"]}/improve-seo`, {
+      method: HTTP_METHODS["POST"],
+      body: payload,
       timeout: APP_CONFIG["API_AI_TIMEOUT"],
     });
   }

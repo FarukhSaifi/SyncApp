@@ -2,7 +2,7 @@ import { APP_CONFIG } from "./config";
 
 /** Shared DataTable behavior tokens (Dashboard, Users, future lists). */
 export const DATA_TABLE = Object.freeze({
-  PAGE_SIZE_OPTIONS: Object.freeze([5, 10, 20, 50] as const),
+  PAGE_SIZE_OPTIONS: Object.freeze([10, 20, 50] as const),
   DEFAULT_PAGE_SIZE: APP_CONFIG.DEFAULT_LIMIT,
   SEARCH_DEBOUNCE_MS: APP_CONFIG.SEARCH_DEBOUNCE_MS,
   SKELETON_ROWS: 5,

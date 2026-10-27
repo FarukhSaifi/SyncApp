@@ -47,6 +47,8 @@ export const TOAST_TITLES = Object.freeze({
   EXPORT_FAILED: "Export Failed",
   // AI
   POST_GENERATED: "Post generated",
+  SEO_IMPROVE_READY: "SEO fixes ready",
+  SEO_IMPROVE_APPLIED: "SEO fixes applied",
   IMAGE_GENERATED: "Image generated",
   FEATURED_IMAGE_SET: "Featured image set",
   IMAGE_UPLOADED: "Image uploaded",
@@ -99,6 +101,9 @@ const createSuccessMessages = () => {
     AI_IMAGE_URL_COPIED: "Image URL copied to clipboard",
     AI_IMAGE_DOWNLOADED: "Image downloaded to your device",
     AI_EDIT_COMPLETE: "AI Edit Complete",
+    AI_SEO_IMPROVE_READY: "Review the proposed snippet fixes, then apply the ones you want.",
+    AI_SEO_IMPROVE_APPLIED: "Selected SEO snippet fixes were applied. Save the post when ready.",
+    AI_SEO_IMPROVE_NONE: "No failing or warning scorecard items to improve with AI.",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,
     PUBLISHED_ALL: "Post published to all platforms successfully!",
@@ -196,7 +201,10 @@ export const ERROR_MESSAGES = Object.freeze({
   FAILED_TO_DOWNLOAD_IMAGE: "Failed to download image",
   EDITOR_NOT_INITIALIZED: "Editor not initialized",
   FAILED_TO_PERFORM_AI_EDIT: "Failed to perform AI edit",
+  FAILED_TO_IMPROVE_SEO: "Failed to generate SEO improvements",
   AI_EDIT_UNKNOWN_ERROR: "Unknown error occurred",
+  AI_SEO_IMPROVE_NO_SELECTION: "Select at least one fix to apply",
+  AI_SEO_IMPROVE_COVER_HINT: "Cover image still needs a manual upload — AI cannot fix that.",
   AI_LINKEDIN_MISSING_CANONICAL:
     "LinkedIn summary is ready, but no blog base URL is set — add CANONICAL_BASE_URL / NEXT_PUBLIC_CANONICAL_BASE_URL for a Read more link.",
 } as const);
@@ -314,6 +322,7 @@ export const LABELS = Object.freeze({
   TABLE_SEO: "SEO",
   SEO_BADGE_LABEL: "SEO",
   SEO_SCORE_UNKNOWN: "—",
+  SEO_SCORE_PENDING: "Save the post to compute SEO score",
   TABLE_ACTIONS: "Actions",
   TABLE_USER: "User",
   TABLE_EMAIL: "Email",
@@ -636,6 +645,21 @@ export const INFO_MESSAGES = Object.freeze({
   // SEO
   SEO_SCORE_ARIA: (score: number, maxScore: number, summary?: string) =>
     `SEO score: ${score} out of ${maxScore}. ${summary || ""}`,
+  SEO_DENSITY_NOTE: "Google does not use a keyword-density target; we check placement and stuffing risk.",
+  SEO_SCORECARD_NOTE: "Pre-publish hygiene and helpfulness proxies — not a Google ranking predictor.",
+  SEO_WARNINGS_FROM_GENERATE: "SEO suggestions for this draft",
+  SEO_IMPROVE_WITH_AI: "Improve with AI",
+  SEO_IMPROVING: "Improving…",
+  SEO_IMPROVE_HINT: "AI rewrites only failing/warning snippets — review before applying.",
+  SEO_IMPROVE_REVIEW_TITLE: "Review SEO fixes",
+  SEO_IMPROVE_REVIEW_DESC: "Only the selected snippets will be applied. The rest of the post stays unchanged.",
+  SEO_IMPROVE_APPLY_SELECTED: "Apply selected",
+  SEO_IMPROVE_DISMISS: "Dismiss",
+  SEO_IMPROVE_CURRENT: "Current",
+  SEO_IMPROVE_PROPOSED: "Proposed",
+  SEO_IMPROVE_EMPTY_CURRENT: "(empty — will append)",
+  SEO_IMPROVE_SELECT_ALL: "Select all",
+  SEO_IMPROVE_SELECT_NONE: "Select none",
   // Profile default avatar
   DEFAULT_AVATAR_LETTER: "U",
   // Editor

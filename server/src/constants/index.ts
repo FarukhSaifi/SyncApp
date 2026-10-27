@@ -10,6 +10,7 @@ export {
   AI_PROMPTS,
   AI_PROVIDERS,
   AI_RESPONSE_SCHEMA,
+  AI_SEO_IMPROVE_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
   AI_SEED_TOPIC_CATEGORIES,
   AI_SUGGESTION_SOURCES,
@@ -57,6 +58,21 @@ export {
 export type { OptimizationTarget } from "./platformOptimization";
 export { PLATFORM_TAG_LIMITS } from "./platformTags";
 export type { PlatformTagLimitKey } from "./platformTags";
+export {
+  AUTHORITY_LINK_HOSTS,
+  DEVTO_HIGH_REACH_TAGS,
+  INTERNAL_LINK_FALLBACK_ORIGINS,
+  SEO_ALT_DENYLIST,
+  SEO_CATEGORIES,
+  SEO_CHECK_LABELS,
+  SEO_IMPROVE_APPLY,
+  SEO_IMPROVE_FIELDS,
+  SEO_IMPROVE_LIMITS,
+  SEO_PUBLISH_WARNINGS,
+  SEO_THRESHOLDS,
+  SEO_WEIGHTS,
+} from "./seo";
+export type { SeoCategoryId } from "./seo";
 export { ROUTES } from "./routes";
 export { USER_ROLE_LABELS, USER_ROLES, VALID_USER_ROLES } from "./userRoles";
 export type { UserRole } from "./userRoles";

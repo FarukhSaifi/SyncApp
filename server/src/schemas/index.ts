@@ -1,4 +1,4 @@
-import { AI_CONFIG, DEFAULT_VALUES, ERROR_MESSAGES } from "@constants";
+import { AI_CONFIG, DEFAULT_VALUES, ERROR_MESSAGES, SEO_IMPROVE_LIMITS } from "@constants";
 import { z } from "zod";
 
 export const presignedUrlRequestSchema = z.object({
@@ -28,6 +28,30 @@ export const keywordResearchRequestSchema = z.object({
     .trim()
     .min(AI_CONFIG["SEED_MIN_LEN"], ERROR_MESSAGES["AI_SEED_TOO_SHORT"])
     .max(AI_CONFIG["SEED_MAX_LEN"], ERROR_MESSAGES["AI_SEED_TOO_LONG"]),
+});
+
+const seoImproveFieldSchema = z.enum(["title", "meta_description", "tags", "canonical_url", "content"]);
+
+const seoImproveApplySchema = z.enum(["replace", "append"]);
+
+export const improveSeoRequestSchema = z.object({
+  targets: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(80),
+        field: seoImproveFieldSchema,
+        issue: z.string().trim().min(1).max(SEO_IMPROVE_LIMITS.ISSUE_MAX),
+        currentValue: z.string().max(SEO_IMPROVE_LIMITS.CURRENT_VALUE_MAX).default(""),
+        applyMode: seoImproveApplySchema.default("replace"),
+        surroundingContext: z.string().max(SEO_IMPROVE_LIMITS.SURROUNDING_CHARS).optional(),
+      }),
+    )
+    .min(1, ERROR_MESSAGES["AI_SEO_IMPROVE_TARGETS_REQUIRED"])
+    .max(SEO_IMPROVE_LIMITS.MAX_TARGETS),
+  model: z.string().trim().max(80).optional(),
+  primaryKeyword: z.string().trim().max(SEO_IMPROVE_LIMITS.PRIMARY_KEYWORD_MAX).optional(),
+  title: z.string().trim().max(SEO_IMPROVE_LIMITS.TITLE_CONTEXT_MAX).optional(),
+  platforms: z.array(z.string().trim().max(40)).max(6).optional(),
 });
 
 /** Request body shapes live in `@types` (storage / credentials / ai). */

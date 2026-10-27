@@ -11,6 +11,9 @@ import type {
   GeneratedPostData,
   GeneratePostResearchContext,
   KeywordResearchItem,
+  SeoImproveProposedFix,
+  SeoImproveReviewItem,
+  SeoImproveTarget,
   UseEditorAIOptions,
   UseEditorAIReturn,
 } from "@types";
@@ -102,6 +105,9 @@ export function useEditorAI({
   const [uploadingCover, setUploadingCover] = useState<boolean>(false);
   const [linkedinPost, setLinkedinPost] = useState<string | null>(null);
   const [linkedinMissingCanonical, setLinkedinMissingCanonical] = useState<boolean>(false);
+  const [improveReviewOpen, setImproveReviewOpen] = useState<boolean>(false);
+  const [improveReviewItems, setImproveReviewItems] = useState<SeoImproveReviewItem[]>([]);
+  const pendingImproveTargetsRef = useRef<SeoImproveTarget[]>([]);
 
   const linkedinReadMoreUrl = linkedinPost ? extractLinkedInReadMoreUrl(linkedinPost) : null;
 
@@ -402,6 +408,97 @@ export function useEditorAI({
     }
   }, [linkedinPost, toast]);
 
+  const closeImproveReview = useCallback(() => {
+    setImproveReviewOpen(false);
+  }, []);
+
+  const toggleImproveReviewItem = useCallback((id: string) => {
+    setImproveReviewItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item)),
+    );
+  }, []);
+
+  const handleImproveWithAi = useCallback(
+    async (targets: SeoImproveTarget[]) => {
+      if (!targets.length) {
+        toast.validationError(SYNC_LABEL["AI_SEO_IMPROVE_NONE"]);
+        return;
+      }
+      setAiLoading(AI_LOADING["IMPROVE"]);
+      pendingImproveTargetsRef.current = targets;
+      try {
+        const { title } = getArticleContext();
+        const response = await apiClient.aiImproveSeo({
+          targets,
+          model: aiModel,
+          primaryKeyword: aiKeyword.trim() || undefined,
+          title: title.trim() || undefined,
+          platforms: targetPlatforms,
+        });
+        if (!response?.success || !response.data?.fixes?.length) {
+          toast.apiError(response?.error || SYNC_LABEL["FAILED_TO_IMPROVE_SEO"]);
+          return;
+        }
+        const byId = new Map(response.data.fixes.map((f) => [f.id, f]));
+        const reviewItems: SeoImproveReviewItem[] = [];
+        for (const target of targets) {
+          const fix = byId.get(target.id);
+          if (!fix?.value?.trim()) {
+            continue;
+          }
+          reviewItems.push({
+            id: target.id,
+            field: target.field,
+            applyMode: target.applyMode,
+            issue: target.issue,
+            currentValue: target.currentValue,
+            value: fix.value.trim(),
+            note: fix.note,
+            selected: true,
+          });
+        }
+        if (reviewItems.length === 0) {
+          toast.apiError(SYNC_LABEL["FAILED_TO_IMPROVE_SEO"]);
+          return;
+        }
+        setImproveReviewItems(reviewItems);
+        setImproveReviewOpen(true);
+        toast.success(TOAST_TITLES["SEO_IMPROVE_READY"], SYNC_LABEL["AI_SEO_IMPROVE_READY"]);
+      } catch (error) {
+        toast.apiError((error as Error).message || SYNC_LABEL["FAILED_TO_IMPROVE_SEO"]);
+      } finally {
+        setAiLoading(AI_LOADING["IDLE"]);
+      }
+    },
+    [aiKeyword, aiModel, getArticleContext, targetPlatforms, toast],
+  );
+
+  const handleApplyImproveFixes = useCallback(
+    (apply: (fixes: SeoImproveProposedFix[]) => void) => {
+      const selected = improveReviewItems.filter((item) => item.selected);
+      if (selected.length === 0) {
+        toast.validationError(SYNC_LABEL["AI_SEO_IMPROVE_NO_SELECTION"]);
+        return;
+      }
+      apply(
+        selected.map((item) => ({
+          id: item.id,
+          field: item.field,
+          applyMode: item.applyMode,
+          currentValue: item.currentValue,
+          value: item.value,
+          issue: item.issue,
+          note: item.note,
+        })),
+      );
+      setImproveReviewOpen(false);
+      setImproveReviewItems([]);
+      pendingImproveTargetsRef.current = [];
+      toast.success(TOAST_TITLES["SEO_IMPROVE_APPLIED"], SYNC_LABEL["AI_SEO_IMPROVE_APPLIED"]);
+    },
+    [improveReviewItems, toast],
+  );
+
   return {
     aiKeyword,
     setAiKeyword: handleSetAiKeyword,
@@ -434,5 +531,11 @@ export function useEditorAI({
     handleDownloadImage,
     hydrateLinkedInPost,
     clearLinkedInPost,
+    improveReviewItems,
+    improveReviewOpen,
+    closeImproveReview,
+    toggleImproveReviewItem,
+    handleImproveWithAi,
+    handleApplyImproveFixes,
   };
 }

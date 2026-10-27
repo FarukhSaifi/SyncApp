@@ -85,7 +85,7 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
 - Write as a long-form developer article (${AI_POST_LIMITS["SOFT_WORD_GUIDANCE"]}).
 - Use Markdown with ##/### headings, code blocks, lists, and > blockquotes where helpful.
 - tags must be exactly ${PLATFORM_TAG_LIMITS["DEVTO"]["IDEAL"]} lowercase strings without # (2 high-reach + 2 stack-specific). DEV.to allows a maximum of ${PLATFORM_TAG_LIMITS["DEVTO"]["MAX"]} tags.
-- Title 30–60 chars; meta_description 120–150 chars for search CTR.
+- Title 30–60 chars; meta_description 120–160 chars for search CTR.
 - Prioritize actionable depth, working examples, and scannability for the DEV community.
 - content_markdown is the full article. Do not put LinkedIn teaser text in content_markdown.`,
 
@@ -103,10 +103,13 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
 
   google: `### Google Search SEO Optimization
 - Optimize content_markdown to rank for the primary long-tail query and closely related intents.
-- Title 30–60 chars with the primary keyword near the front; meta_description 120–150 chars with a clear CTR promise (no clickbait).
+- Title 30–60 chars with the primary keyword near the front; meta_description 120–160 chars with a clear CTR promise (no clickbait).
 - Structure for SERPs: one H1-equivalent title, scannable ##/### headings that mirror search intents, early answer / featured-snippet box (35–50 words under the first H2).
-- Natural keyword density — no stuffing. Cover people-also-ask angles with concrete steps, code, and definitions.
-- Prefer E-E-A-T: experience cues, accurate commands/versions, honest caveats.
+- Place the primary long-tail in title + first H2 + snippet box; do not repeat the exact phrase in every H2.
+- Every markdown image MUST include descriptive alt text (not generic words like "image" or "photo").
+- Natural keyword placement — no stuffing and no density targets. Cover people-also-ask angles with concrete steps, code, and definitions.
+- Prefer E-E-A-T: experience cues, accurate commands/versions, honest caveats. Never invent credentials, employers, or fake bylines.
+- Prefer FAQ / People-also-ask ### only when answers add unique value (no boilerplate).
 - tags JSON: topical SEO keywords (lowercase, no #) that match the query cluster — count is set per request tag limit.
 - Google is an SEO target only (not a SyncApp publish destination). Do not invent Search Console or Analytics claims.`,
 };
@@ -120,10 +123,7 @@ const BLENDED_BOTH_RULES = `### Blended DEV.to + LinkedIn (dual output — CRITI
 - Open the full article with a strong hook; LinkedIn teaser has its own emoji-assisted hook.
 - tags JSON field: exactly ${PLATFORM_TAG_LIMITS["DEVTO"]["IDEAL"]} lowercase DEV.to tags (no #) — API max ${PLATFORM_TAG_LIMITS["DEVTO"]["MAX"]}.`;
 
-export function buildFullPostSystemPrompt(
-  targets?: string[],
-  researchContext?: GeneratePostResearchContext,
-): string {
+export function buildFullPostSystemPrompt(targets?: string[], researchContext?: GeneratePostResearchContext): string {
   const resolved = normalizeTargets(targets);
   const tagLimit = resolveArticleTagLimit(resolved);
   const platformBlocks = resolved.map((t) => PLATFORM_OPTIMIZATION_RULES[t]).join("\n\n");
@@ -137,8 +137,7 @@ export function buildFullPostSystemPrompt(
 
   const angle = researchContext?.monetizationAngle?.trim();
   const intent = researchContext?.intentLabel?.trim();
-  const monetizationBlock =
-    angle && intent ? `\n\n${AI_PROMPTS.MONETIZATION_RESEARCH_SYSTEM(angle, intent)}` : "";
+  const monetizationBlock = angle && intent ? `\n\n${AI_PROMPTS.MONETIZATION_RESEARCH_SYSTEM(angle, intent)}` : "";
 
   return `${AI_PROMPTS.FULL_POST_SYSTEM_BASE}\n\n${platformBlocks}${blended}${tagRuleOverride}${monetizationBlock}`;
 }
