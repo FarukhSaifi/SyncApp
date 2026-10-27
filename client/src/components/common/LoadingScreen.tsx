@@ -3,7 +3,6 @@ import type { LoadingScreenProps } from "@types";
 
 import { LOADING_UI } from "@constants/designTokens";
 
-
 const DEFAULT_MESSAGE = INFO_MESSAGES.LOADING;
 
 /**

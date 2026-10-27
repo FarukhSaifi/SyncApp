@@ -8,32 +8,30 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { INFO_MESSAGES } from "@constants/messages";
 
-import ClientOnly from "@components/common/ClientOnly";
 import LoadingScreen from "@components/common/LoadingScreen";
 
-function AuthLayoutInner({ children }: { children: ReactNode }) {
+/**
+ * Auth screens (login/register) render immediately so the form can SSR and E2E
+ * can target data-testid without waiting on ClientOnly + token bootstrap.
+ */
+export function AuthLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isAuthForm = pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
 
   useEffect(() => {
-    if (loading) return;
-    if (isAuthenticated && (pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER)) {
+    if (loading) {
+      return;
+    }
+    if (isAuthenticated && isAuthForm) {
       router.replace(ROUTES.DASHBOARD);
     }
-  }, [isAuthenticated, loading, pathname, router]);
+  }, [isAuthenticated, loading, isAuthForm, router]);
 
-  if (loading) {
+  if (loading && !isAuthForm) {
     return <LoadingScreen message={INFO_MESSAGES.LOADING} />;
   }
 
   return <>{children}</>;
-}
-
-export function AuthLayout({ children }: { children: ReactNode }) {
-  return (
-    <ClientOnly>
-      <AuthLayoutInner>{children}</AuthLayoutInner>
-    </ClientOnly>
-  );
 }

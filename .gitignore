@@ -31,12 +31,20 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage directory used by tools like istanbul / Vitest
 coverage/
+coverage-worker-*/
 *.lcov
 
 # nyc test coverage
 .nyc_output
+
+# Playwright / E2E artifacts (traces, videos, HTML report)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+**/trace.zip
 
 # Dependency directories
 jspm_packages/

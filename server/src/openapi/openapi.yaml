@@ -1,0 +1,768 @@
+openapi: 3.0.3
+info:
+  title: SyncApp API
+  version: 2.0.0
+  description: |
+    REST JSON API for SyncApp (Express 5). Responses use `{ success: true, data? }` or `{ success: false, error }`.
+    Request bodies marked **Zod** are validated via `validateBody`. JWT Bearer auth where noted.
+  contact:
+    name: SyncApp
+servers:
+  - url: /api
+    description: Relative to the server origin (local or Vercel)
+tags:
+  - name: Health
+  - name: Auth
+  - name: Posts
+  - name: Credentials
+  - name: Publish
+  - name: MDX
+  - name: Users
+  - name: AI
+  - name: Upload
+  - name: Cron
+  - name: Analytics
+  - name: LinkedIn
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT from POST /auth/login or /auth/register
+    cronSecret:
+      type: http
+      scheme: bearer
+      description: CRON_SECRET (Authorization Bearer) for cron routes in production
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data: {}
+        message:
+          type: string
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+        details: {}
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        firstName: { type: string }
+        lastName: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string, minLength: 6 }
+    AuthTokenData:
+      type: object
+      properties:
+        token: { type: string }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            username: { type: string }
+            email: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            role: { type: string, enum: [user, admin] }
+    Post:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        slug: { type: string }
+        content_markdown: { type: string }
+        meta_description: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        cover_image: { type: string }
+        canonical_url: { type: string }
+        status: { type: string }
+        seo_score: { type: number }
+        seo_score_summary: { type: string }
+        linkedin_post: { type: string }
+        linkedin_read_more_url: { type: string }
+        scheduled_for: { type: string, format: date-time, nullable: true }
+        scheduled_platforms:
+          type: array
+          items: { type: string }
+    PresignedUrlRequest:
+      type: object
+      description: Zod — presignedUrlRequestSchema
+      required: [filename, size, contentType]
+      properties:
+        filename: { type: string, minLength: 1 }
+        size: { type: number, exclusiveMinimum: 0 }
+        contentType: { type: string }
+    UpsertCredentialRequest:
+      type: object
+      description: Zod — upsertCredentialSchema
+      required: [api_key]
+      properties:
+        api_key: { type: string, minLength: 1 }
+        site_url: { type: string }
+        platform_config:
+          type: object
+          additionalProperties: true
+    KeywordResearchRequest:
+      type: object
+      description: Zod — keywordResearchRequestSchema
+      required: [seed]
+      properties:
+        seed: { type: string, minLength: 2, maxLength: 120 }
+    ImproveSeoTarget:
+      type: object
+      required: [id, field, issue]
+      properties:
+        id: { type: string, maxLength: 80 }
+        field:
+          type: string
+          enum: [title, meta_description, tags, canonical_url, content]
+        issue: { type: string, maxLength: 240 }
+        currentValue: { type: string, maxLength: 4000 }
+        applyMode: { type: string, enum: [replace, append] }
+        surroundingContext: { type: string, maxLength: 400 }
+    ImproveSeoRequest:
+      type: object
+      description: Zod — improveSeoRequestSchema
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          minItems: 1
+          maxItems: 12
+          items: { $ref: "#/components/schemas/ImproveSeoTarget" }
+        model: { type: string }
+        primaryKeyword: { type: string, maxLength: 120 }
+        title: { type: string, maxLength: 200 }
+        platforms:
+          type: array
+          maxItems: 6
+          items: { type: string }
+    GeneratePostRequest:
+      type: object
+      required: [keyword]
+      properties:
+        keyword: { type: string }
+        model: { type: string }
+        targetPlatforms:
+          type: array
+          items: { type: string, enum: [devto, linkedin, google] }
+        researchContext:
+          type: object
+          properties:
+            monetizationAngle: { type: string }
+            intentLabel: { type: string, enum: [transactional, commercial, informational] }
+    GenerateEditRequest:
+      type: object
+      required: [action, text]
+      properties:
+        action: { type: string }
+        text: { type: string }
+    GenerateImageRequest:
+      type: object
+      required: [topic]
+      properties:
+        topic: { type: string }
+        additionalPrompt: { type: string }
+    GenerateLinkedInSummaryRequest:
+      type: object
+      properties:
+        title: { type: string }
+        content: { type: string }
+        model: { type: string }
+        readMoreUrl: { type: string }
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/SuccessEnvelope" }
+        "400":
+          description: Validation or user exists
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+    put:
+      tags: [Auth]
+      summary: Update profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProfileRequest" }
+      responses:
+        "200": { description: OK }
+
+  /auth/change-password:
+    put:
+      tags: [Auth]
+      summary: Change password
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePasswordRequest" }
+      responses:
+        "200": { description: OK }
+        "400": { description: Bad request }
+
+  /posts:
+    get:
+      tags: [Posts]
+      summary: List posts (paginated)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Posts]
+      summary: Create post
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Post" }
+      responses:
+        "201": { description: Created }
+        "401": { description: Unauthorized }
+
+  /posts/slug/{slug}:
+    get:
+      tags: [Posts]
+      summary: Get post by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "404": { description: Not found }
+
+  /posts/{id}:
+    get:
+      tags: [Posts]
+      summary: Get post by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "404": { description: Not found }
+    put:
+      tags: [Posts]
+      summary: Update post
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Post" }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [Posts]
+      summary: Delete post
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /posts/{id}/cover:
+    put:
+      tags: [Posts]
+      summary: Upload / set post cover (data URL or similar)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image: { type: string, description: Data URL or image payload }
+      responses:
+        "200": { description: OK }
+
+  /credentials:
+    get:
+      tags: [Credentials]
+      summary: List credentials (no plaintext secrets)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /credentials/{platform}:
+    get:
+      tags: [Credentials]
+      summary: Get credential metadata for platform
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Credentials]
+      summary: Upsert credential (Zod)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertCredentialRequest" }
+      responses:
+        "200": { description: OK }
+        "400": { description: Zod validation failed }
+    delete:
+      tags: [Credentials]
+      summary: Remove credential
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /publish/medium:
+    post:
+      tags: [Publish]
+      summary: Publish to Medium
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /publish/devto:
+    post:
+      tags: [Publish]
+      summary: Publish to DEV.to
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /publish/wordpress:
+    post:
+      tags: [Publish]
+      summary: Publish to WordPress
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /publish/linkedin:
+    post:
+      tags: [Publish]
+      summary: Publish LinkedIn summary (not full article)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /publish/all:
+    post:
+      tags: [Publish]
+      summary: Publish to all connected platforms
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /publish/medium/status/{postId}:
+    get:
+      tags: [Publish]
+      summary: Medium publish status
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /publish/{platform}/{postId}:
+    delete:
+      tags: [Publish]
+      summary: Unpublish from platform
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema: { type: string }
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /mdx/{id}:
+    get:
+      tags: [MDX]
+      summary: Export post as MDX
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: MDX payload / download }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden }
+    post:
+      tags: [Users]
+      summary: Create user (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Created }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Users]
+      summary: Update user (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [Users]
+      summary: Delete user (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /ai/capabilities:
+    get:
+      tags: [AI]
+      summary: AI provider capabilities
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /ai/trending-topics:
+    get:
+      tags: [AI]
+      summary: Trending topics
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: refresh
+          schema: { type: string, enum: ["1", "true"] }
+      responses:
+        "200": { description: OK }
+
+  /ai/devto-tags:
+    get:
+      tags: [AI]
+      summary: High-reach DEV.to tags
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: refresh
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /ai/generate:
+    post:
+      tags: [AI]
+      summary: Generate full post draft
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GeneratePostRequest" }
+      responses:
+        "200": { description: OK }
+        "400": { description: Invalid model/targets/keyword }
+
+  /ai/keyword-research:
+    post:
+      tags: [AI]
+      summary: Seeded keyword research (Zod)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KeywordResearchRequest" }
+      responses:
+        "200": { description: OK }
+        "400": { description: Zod validation failed }
+
+  /ai/generate-image:
+    post:
+      tags: [AI]
+      summary: Generate cover image
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GenerateImageRequest" }
+      responses:
+        "200": { description: OK }
+
+  /ai/generate-linkedin-summary:
+    post:
+      tags: [AI]
+      summary: LinkedIn teaser from article
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GenerateLinkedInSummaryRequest" }
+      responses:
+        "200": { description: OK }
+
+  /ai/edit:
+    post:
+      tags: [AI]
+      summary: Inline editor AI edit
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GenerateEditRequest" }
+      responses:
+        "200": { description: OK }
+
+  /ai/improve-seo:
+    post:
+      tags: [AI]
+      summary: Targeted SEO snippet fixes (Zod)
+      description: Does not rewrite the full post. Returns proposed fixes for review.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ImproveSeoRequest" }
+      responses:
+        "200":
+          description: OK — envelope data.fixes array of id, value, optional note
+        "400": { description: Zod validation failed }
+        "401": { description: Unauthorized }
+
+  /upload/presigned-url:
+    post:
+      tags: [Upload]
+      summary: GCS signed PUT URL (Zod)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PresignedUrlRequest" }
+      responses:
+        "200": { description: OK }
+        "400": { description: Zod validation failed }
+
+  /cron/publish-scheduled:
+    get:
+      tags: [Cron]
+      summary: Run scheduled publish job
+      security: [{ cronSecret: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+
+  /cron/sync-devto-engagement:
+    get:
+      tags: [Cron]
+      summary: Sync DEV.to engagement
+      security: [{ cronSecret: [] }]
+      responses:
+        "200": { description: OK }
+
+  /analytics/stats:
+    get:
+      tags: [Analytics]
+      summary: Publishing stats
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /analytics/engagement:
+    get:
+      tags: [Analytics]
+      summary: Engagement summary
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /analytics/engagement/refresh:
+    post:
+      tags: [Analytics]
+      summary: Refresh engagement
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /analytics/website:
+    get:
+      tags: [Analytics]
+      summary: Website analytics (admin / GA4)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden }
+
+  /linkedin/oauth/start:
+    get:
+      tags: [LinkedIn]
+      summary: Start LinkedIn OAuth
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Authorize URL }
+  /linkedin/oauth/callback:
+    get:
+      tags: [LinkedIn]
+      summary: OAuth callback
+      parameters:
+        - in: query
+          name: code
+          schema: { type: string }
+        - in: query
+          name: state
+          schema: { type: string }
+      responses:
+        "302": { description: Redirect to settings }
+  /linkedin/oauth/status:
+    get:
+      tags: [LinkedIn]
+      summary: LinkedIn connection status
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }

@@ -1,12 +1,12 @@
 /**
  * AI (Vertex AI primary / Google AI Studio fallback) constants: prompts, config, safety.
  */
-import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
+import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai/node";
 
 /** DEV.to + Google ranking constraints referenced by prompts and downstream validation. */
 export const AI_POST_LIMITS = Object.freeze({
   TITLE_MAX: 60,
-  META_DESC_MAX: 150,
+  META_DESC_MAX: 160,
   /**
    * Default article tag count (DEV.to hard max). Prefer PLATFORM_TAG_LIMITS +
    * resolveArticleTagLimit() when targets are known.
@@ -106,7 +106,7 @@ OUTPUT RULES:
 You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
   "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
-  "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
+  "meta_description": "A punchy summary that drives CTR in search results (120-160 characters)",
   "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
   "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')",
@@ -204,6 +204,27 @@ Rules:
     `Seed topic: "${seed}"
 ${autocompleteContext}
 Search Google for related long-tail queries with high commercial intent and relatively low competition. Return exactly 10 scored keywords as JSON.`,
+
+  /**
+   * Targeted SEO improve — rewrite ONLY the failing snippets, never the whole post.
+   */
+  SEO_IMPROVE_SYSTEM: `You are an expert technical SEO editor. You receive a post's failing or warning scorecard items as isolated snippets. Fix ONLY those snippets.
+Rules:
+- Return valid JSON only (no markdown fences): {"fixes":[{"id":"same-as-input","value":"replacement snippet","note":"one short sentence"}]}
+- Every input target id MUST appear exactly once in fixes (same id string).
+- value is ONLY the fixed snippet for that field — never the full article.
+- For field "tags", value must be a comma-separated list of lowercase tags without # (e.g. "webdev, react, typescript").
+- For field "canonical_url", value must be a URL slug or path (no spaces), not a full essay.
+- For field "content" with applyMode "append", value is markdown to append (section or paragraph only).
+- For field "content" with applyMode "replace", value replaces currentValue exactly — preserve surrounding structure (headings, fences).
+- Keep a human, peer-engineer voice. No AI clichés, no keyword stuffing, no spam CTAs.
+- Stay faithful to the post topic and primaryKeyword when provided.
+- Do not invent credentials, employers, or fake metrics.`,
+
+  SEO_IMPROVE_USER: (payloadJson: string) =>
+    `Fix these SEO scorecard targets. Return JSON fixes for each id only.
+
+${payloadJson}`,
 
   /** Appended to full-post system when researchContext is present. */
   MONETIZATION_RESEARCH_SYSTEM: (monetizationAngle: string, intentLabel: string) =>
@@ -354,6 +375,8 @@ export const AI_CONFIG = Object.freeze({
    */
   MAX_DRAFT_TOKENS: 8192,
   MAX_EDIT_TOKENS: 4096,
+  /** Targeted SEO snippet fixes (not a full rewrite). */
+  MAX_SEO_IMPROVE_TOKENS: 4096,
   /** LinkedIn teaser only — short plain text. */
   MAX_LINKEDIN_SUMMARY_TOKENS: 2048,
   /** Max source article characters to inspect when summarizing for LinkedIn. */
@@ -424,6 +447,8 @@ export const AI_CONFIG = Object.freeze({
   TEMPERATURE_POST: 0.55,
   /** Inline edits: stay close to source text. */
   TEMPERATURE_EDIT: 0.25,
+  /** Targeted SEO snippet fixes — slightly creative but grounded. */
+  TEMPERATURE_SEO_IMPROVE: 0.35,
   TOP_P: 0.95,
   /** 0 = disable Flash thinking so maxOutputTokens go to visible JSON/text, not reasoning. */
   FLASH_THINKING_BUDGET: 0,
@@ -506,6 +531,26 @@ export const AI_RESPONSE_SCHEMA = {
     linkedin_post: { type: Type.STRING },
   },
   required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
+};
+
+/** Structured output for targeted SEO improve (snippet fixes only). */
+export const AI_SEO_IMPROVE_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    fixes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          value: { type: Type.STRING },
+          note: { type: Type.STRING },
+        },
+        required: ["id", "value"],
+      },
+    },
+  },
+  required: ["fixes"],
 };
 
 /**

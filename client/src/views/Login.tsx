@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 
 import {
   APP_LOGO_VARIANTS,
@@ -8,6 +8,7 @@ import {
   KEYBOARD_KEYS,
   ROUTES,
   SYNC_LABEL,
+  TEST_IDS,
 } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import type { LoginFormState } from "@types";
@@ -29,10 +30,15 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [hydrated, setHydrated] = useState<boolean>(false);
 
   const { login } = useAuth();
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+
+  useLayoutEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -92,7 +98,17 @@ const Login = () => {
             <CardDescription>{SYNC_LABEL.SIGN_IN_DESCRIPTION_2}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              method="post"
+              action="#"
+              className="space-y-6"
+              aria-busy={loading}
+              data-testid={TEST_IDS.LOGIN_FORM}
+              data-hydrated={hydrated ? "true" : "false"}
+            >
+              {hydrated ? <span data-testid={TEST_IDS.LOGIN_READY} hidden /> : null}
               {error && (
                 <div
                   role="alert"
@@ -116,6 +132,7 @@ const Login = () => {
                 onKeyDown={handleInputKeyDown}
                 placeholder={SYNC_LABEL.PLACEHOLDER_EMAIL}
                 autoComplete="email"
+                data-testid={TEST_IDS.LOGIN_EMAIL}
               />
 
               <Input
@@ -132,6 +149,7 @@ const Login = () => {
                 onKeyDown={handleInputKeyDown}
                 placeholder={SYNC_LABEL.PLACEHOLDER_PASSWORD}
                 autoComplete="current-password"
+                data-testid={TEST_IDS.LOGIN_PASSWORD}
               />
 
               <Button
@@ -139,6 +157,7 @@ const Login = () => {
                 variant={BUTTON_VARIANTS.PRIMARY}
                 className="w-full flex items-center justify-center gap-2"
                 disabled={loading}
+                data-testid={TEST_IDS.LOGIN_SUBMIT}
               >
                 {loading ? (
                   SYNC_LABEL.SIGNING_IN

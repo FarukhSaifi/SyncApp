@@ -11,7 +11,7 @@ export interface AiContentModel {
 export type AiImageSource = "gemini" | "imagen";
 
 /** Active AI job key while a sidebar/modal generation is in flight. */
-export type AiLoadingKey = "" | "post" | "image" | "linkedin";
+export type AiLoadingKey = "" | "post" | "image" | "linkedin" | "improve";
 
 /** Suggestion feed source identifiers from AI trending / tags APIs. */
 export type AiTopicsSource = "google_search";
@@ -118,6 +118,26 @@ export interface UseEditorAIOptions {
   onCoverImageSet: (url: string) => void;
 }
 
+export interface SeoImproveReviewItem {
+  id: string;
+  field: import("./editor").SeoImproveField;
+  applyMode: import("./editor").SeoImproveApplyMode;
+  issue: string;
+  currentValue: string;
+  value: string;
+  note?: string;
+  selected: boolean;
+}
+
+export interface SeoImproveReviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  items: SeoImproveReviewItem[];
+  onToggleItem: (id: string) => void;
+  onApply: () => void;
+  isApplying?: boolean;
+}
+
 export interface UseEditorAIReturn {
   aiKeyword: string;
   setAiKeyword: (v: string) => void;
@@ -150,4 +170,11 @@ export interface UseEditorAIReturn {
   handleDownloadImage: () => void;
   hydrateLinkedInPost: (post: string | null, missingCanonical?: boolean) => void;
   clearLinkedInPost: () => void;
+  /** Targeted SEO improve: request snippet fixes, then review before apply. */
+  improveReviewItems: SeoImproveReviewItem[];
+  improveReviewOpen: boolean;
+  closeImproveReview: () => void;
+  toggleImproveReviewItem: (id: string) => void;
+  handleImproveWithAi: (targets: import("./editor").SeoImproveTarget[]) => Promise<void>;
+  handleApplyImproveFixes: (apply: (fixes: import("./editor").SeoImproveProposedFix[]) => void) => void;
 }

@@ -133,13 +133,27 @@ export interface ErrorBoundaryState {
 
 export interface SeoScoreBadgeProps {
   post: {
-    title: string;
-    content_markdown: string;
+    title?: string;
+    seo_score?: number | null;
+    seo_score_summary?: string;
+    /** Legacy list fields — unused when seo_score is present. */
+    content_markdown?: string;
     meta_description?: string;
     cover_image?: string;
     tags?: string[];
   };
   compact?: boolean;
+}
+
+/** Colored SEO checklist (editor sidebar + dashboard tooltip). */
+export interface SeoScoreBreakdownProps {
+  checks: import("./editor").SeoCheck[];
+  categories?: import("./editor").SeoScorecardCategoryGroup[];
+  score?: number;
+  maxScore?: number;
+  /** Show score header + density note (dashboard tooltip). */
+  showHeader?: boolean;
+  className?: string;
 }
 
 export interface LayoutProps {
@@ -183,6 +197,11 @@ export interface TooltipProps {
   side?: TooltipSide;
   className?: string;
   contentClassName?: string;
+  /**
+   * Render the panel in a document.body portal with fixed positioning.
+   * Use inside overflow-hidden / overflow-x-auto tables so the tip is not clipped.
+   */
+  portal?: boolean;
   /** Accessible name when the trigger is not already labeled */
   "aria-label"?: string;
 }

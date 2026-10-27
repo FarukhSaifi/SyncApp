@@ -118,7 +118,7 @@ export const DATE_INPUT_ICON_SIZE = Object.freeze({
   [INPUT_SIZES.LG]: DATE_INPUT_UI.ICON,
 } as const);
 
-/** Hover/focus tooltip panel (CSS, no portal) */
+/** Hover/focus tooltip panel (CSS default; portal mode escapes overflow:hidden ancestors) */
 export const TOOLTIP_UI = Object.freeze({
   ROOT: "relative inline-flex max-w-full",
   PANEL:
@@ -127,9 +127,18 @@ export const TOOLTIP_UI = Object.freeze({
   PANEL_BOTTOM: "top-full left-1/2 mt-2 -translate-x-1/2",
   PANEL_LEFT: "right-full top-1/2 mr-2 -translate-y-1/2",
   PANEL_RIGHT: "left-full top-1/2 ml-2 -translate-y-1/2",
+  /** Fixed portal panel (rendered on document.body — not clipped by tables). */
+  PORTAL_PANEL:
+    "pointer-events-auto fixed z-[9999] w-max max-w-[20rem] rounded-lg border border-border bg-popover px-2.5 py-2 text-xs text-popover-foreground shadow-md",
+  PORTAL_GAP_PX: 8,
+  /** Delay before closing portal tip so the cursor can cross the gap into the panel. */
+  PORTAL_DISMISS_MS: 200,
   CONTENT_LIST: "flex flex-wrap gap-1",
   CHIP: "inline-flex max-w-full items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary",
 } as const);
+
+/** Portal panel for colored SEO checklist breakdown on the dashboard. */
+export const SEO_TOOLTIP_CONTENT_CLASS = "max-w-sm max-h-[min(24rem,70vh)] overflow-y-auto text-left";
 
 /** Tooltip panel placement classes keyed by TooltipSide. */
 export const TOOLTIP_SIDE_CLASS = Object.freeze({

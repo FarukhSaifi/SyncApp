@@ -18,13 +18,13 @@ import {
   POST_TABLE_COLUMNS,
   ROUTES,
   SYNC_LABEL,
+  TEST_IDS,
 } from "@constants";
 import { useDataTable } from "@hooks/useDataTable";
 import { useToast } from "@hooks/useToast";
 import type { DashboardDeleteConfirmState, DashboardProps, DataTableColumn, Post } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { devError, devLog } from "@utils/logger";
-import { getSeoScorecard } from "@utils/seoScorecard";
 import Link from "next/link";
 import { FiCheckCircle, FiClock, FiEdit3, FiGlobe, FiPlus, FiRefreshCw } from "react-icons/fi";
 
@@ -120,7 +120,11 @@ const Dashboard = ({
     () => ({
       [POST_TABLE_COLUMNS.TITLE]: (a: Post, b: Post) => a.title.localeCompare(b.title),
       [POST_TABLE_COLUMNS.STATUS]: (a: Post, b: Post) => a.status.localeCompare(b.status),
-      [POST_TABLE_COLUMNS.SEO]: (a: Post, b: Post) => getSeoScorecard(a).score - getSeoScorecard(b).score,
+      [POST_TABLE_COLUMNS.SEO]: (a: Post, b: Post) => {
+        const aScore = typeof a.seo_score === "number" ? a.seo_score : -1;
+        const bScore = typeof b.seo_score === "number" ? b.seo_score : -1;
+        return aScore - bScore;
+      },
       [POST_TABLE_COLUMNS.CREATED]: (a: Post, b: Post) => {
         const aDate = (a as Post & { created_at?: string }).created_at || a.createdAt || "";
         const bDate = (b as Post & { created_at?: string }).created_at || b.createdAt || "";
@@ -240,7 +244,12 @@ const Dashboard = ({
             <FiRefreshCw className={`mr-1 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {SYNC_LABEL.REFRESH}
           </Button>
-          <Link href={ROUTES.EDITOR} prefetch={false} className="flex-1 sm:w-auto sm:flex-initial">
+          <Link
+            href={ROUTES.EDITOR}
+            prefetch={false}
+            className="flex-1 sm:w-auto sm:flex-initial"
+            data-testid={TEST_IDS.DASHBOARD_NEW_POST}
+          >
             <Button className="flex w-full items-center justify-center space-x-2">
               <FiPlus className="mr-1 h-4 w-4" />
               {SYNC_LABEL.NEW_POST}
@@ -327,7 +336,7 @@ const Dashboard = ({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent className={DASHBOARD_LAYOUT.TABLE_CARD_CONTENT_CLASS}>
+        <CardContent className={DASHBOARD_LAYOUT.TABLE_CARD_CONTENT_CLASS} data-testid={TEST_IDS.DASHBOARD_POST_LIST}>
           <DataTable<Post>
             embedded
             columns={postColumns}

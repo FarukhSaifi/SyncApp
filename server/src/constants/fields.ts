@@ -14,7 +14,7 @@ export const FIELDS = {
   // Post fields
   POST_FIELDS: {
     LIST_SELECT:
-      "title slug status tags cover_image canonical_url meta_description linkedin_post linkedin_read_more_url scheduled_for createdAt updatedAt author platform_status",
+      "title slug status tags cover_image canonical_url meta_description linkedin_post linkedin_read_more_url scheduled_for seo_score seo_score_summary seo_primary_keyword seo_optimization_targets createdAt updatedAt author platform_status",
     UPDATABLE_FIELDS: [
       "title",
       "content_markdown",
@@ -26,6 +26,8 @@ export const FIELDS = {
       "linkedin_post",
       "linkedin_read_more_url",
       "scheduled_for",
+      "seo_primary_keyword",
+      "seo_optimization_targets",
     ],
     PLATFORM_STATUS_PREFIX: "platform_status",
   },

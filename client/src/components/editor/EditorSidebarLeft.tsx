@@ -4,21 +4,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useMediaQuery } from "@hooks/useMediaQuery";
 import { useToast } from "@hooks/useToast";
-import type { EditorSidebarLeftProps, SeoScoreRingProps } from "@types";
+import type { EditorSidebarLeftProps } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
 import { getSeoScorecard } from "@utils/seoScorecard";
-import {
-  FiAlertCircle,
-  FiAlertTriangle,
-  FiBarChart2,
-  FiCheckCircle,
-  FiImage,
-  FiLink,
-  FiTag,
-  FiUpload,
-  FiX,
-} from "react-icons/fi";
+import { FiAlertTriangle, FiBarChart2, FiCheckCircle, FiImage, FiLink, FiTag, FiUpload, FiX } from "react-icons/fi";
 
 import { COLOR_CLASSES } from "@constants/colorClasses";
 import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES } from "@constants/designTokens";
@@ -29,54 +19,13 @@ import { SEO_RING, SEO_THRESHOLDS } from "@constants/seo";
 import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 import LazyImage from "@components/common/LazyImage";
+import SeoScoreBreakdown from "@components/common/SeoScoreBreakdown";
+import SeoScoreRing from "@components/common/SeoScoreRing";
 import Skeleton from "@components/common/Skeleton";
 import Textarea from "@components/common/Textarea";
 
 import EditorMobileSheet from "./EditorMobileSheet";
 import EditorSidebarSection from "./EditorSidebarSection";
-
-/** SEO Score ring indicator */
-const SeoRing = ({ score, maxScore }: SeoScoreRingProps) => {
-  const pct = maxScore > 0 ? score / maxScore : 0;
-  const r = SEO_RING["RADIUS"];
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference * (1 - pct);
-  const color =
-    pct >= SEO_THRESHOLDS["RING_GOOD_RATIO"]
-      ? SEO_RING["COLOR_GOOD"]
-      : pct >= SEO_THRESHOLDS["RING_MID_RATIO"]
-        ? SEO_RING["COLOR_MID"]
-        : SEO_RING["COLOR_WEAK"];
-
-  return (
-    <div className="seo-score-ring">
-      <svg width={SEO_RING["SIZE"]} height={SEO_RING["SIZE"]} viewBox={`0 0 ${SEO_RING["SIZE"]} ${SEO_RING["SIZE"]}`}>
-        <circle
-          cx={SEO_RING["CENTER"]}
-          cy={SEO_RING["CENTER"]}
-          r={r}
-          fill="none"
-          stroke={SEO_RING["TRACK_STROKE"]}
-          strokeWidth={SEO_RING["STROKE_WIDTH"]}
-        />
-        <circle
-          cx={SEO_RING["CENTER"]}
-          cy={SEO_RING["CENTER"]}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={SEO_RING["STROKE_WIDTH"]}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span className="score-label" style={{ color }}>
-        {score}
-      </span>
-    </div>
-  );
-};
 
 /** Post settings sidebar — tags, meta, cover, canonical, SEO score. */
 const EditorSidebarLeft = ({
@@ -92,6 +41,11 @@ const EditorSidebarLeft = ({
   onRemoveTag,
   onTagKeyDown,
   contentLoading = false,
+  seoPrimaryKeyword = "",
+  seoPlatforms,
+  onImproveWithAi,
+  improveWithAiLoading = false,
+  improveWithAiDisabled = false,
 }: EditorSidebarLeftProps) => {
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,14 +151,20 @@ const EditorSidebarLeft = ({
 
   const seo = useMemo(
     () =>
-      getSeoScorecard({
-        title: formData.title,
-        tags: tagList,
-        cover_image: formData.cover_image,
-        canonical_url: formData.canonical_url,
-        meta_description: formData.meta_description,
-        content_markdown: formData.content_markdown,
-      }),
+      getSeoScorecard(
+        {
+          title: formData.title,
+          tags: tagList,
+          cover_image: formData.cover_image,
+          canonical_url: formData.canonical_url,
+          meta_description: formData.meta_description,
+          content_markdown: formData.content_markdown,
+        },
+        {
+          primaryKeyword: seoPrimaryKeyword,
+          platforms: seoPlatforms,
+        },
+      ),
     [
       formData.title,
       tagList,
@@ -212,6 +172,8 @@ const EditorSidebarLeft = ({
       formData.canonical_url,
       formData.meta_description,
       formData.content_markdown,
+      seoPrimaryKeyword,
+      seoPlatforms,
     ],
   );
 
@@ -477,7 +439,7 @@ const EditorSidebarLeft = ({
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <SeoRing score={seo.score} maxScore={seo.maxScore} />
+              <SeoScoreRing score={seo.score} maxScore={seo.maxScore} />
               <div>
                 <p className="text-sm font-semibold text-foreground">
                   {seo.score}/{seo.maxScore}
@@ -485,26 +447,29 @@ const EditorSidebarLeft = ({
                 <p className="text-xs text-muted-foreground">{SIDEBAR_SECTIONS["SEO_SCORE"]}</p>
               </div>
             </div>
-            <ul className="space-y-1">
-              {seo.checks.map((check) => (
-                <li key={check.label} className="flex items-start gap-2 text-xs">
-                  <span className="mt-0.5 shrink-0">
-                    {check.ok === true ? (
-                      <FiCheckCircle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.POSITIVE}`} />
-                    ) : check.ok === false ? (
-                      check.warning ? (
-                        <FiAlertTriangle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
-                      ) : (
-                        <FiAlertCircle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}`} />
-                      )
-                    ) : (
-                      <span className="h-px w-3 bg-muted" />
-                    )}
-                  </span>
-                  <span className="text-muted-foreground">{check.label}</span>
-                </li>
-              ))}
-            </ul>
+            <SeoScoreBreakdown
+              checks={seo.checks}
+              categories={seo.categories}
+              score={seo.score}
+              maxScore={seo.maxScore}
+              showHeader={false}
+            />
+            {onImproveWithAi ? (
+              <div className="space-y-1.5">
+                <Button
+                  type="button"
+                  variant={BUTTON_VARIANTS.OUTLINE}
+                  size={BUTTON_SIZES.SM}
+                  className="w-full text-xs"
+                  onClick={onImproveWithAi}
+                  disabled={improveWithAiDisabled || improveWithAiLoading || contentLoading}
+                >
+                  {improveWithAiLoading ? SYNC_LABEL["SEO_IMPROVING"] : SYNC_LABEL["SEO_IMPROVE_WITH_AI"]}
+                </Button>
+                <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_IMPROVE_HINT"]}</p>
+              </div>
+            ) : null}
+            <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_DENSITY_NOTE"]}</p>
           </div>
         )}
       </EditorSidebarSection>

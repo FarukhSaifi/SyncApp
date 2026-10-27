@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import { memo } from "react";
 
-import { APP_CONFIG, DASHBOARD_LAYOUT, DATA_TABLE, ROUTES, SYNC_LABEL } from "@constants";
+import { APP_CONFIG, DASHBOARD_LAYOUT, DATA_TABLE, ROUTES, SYNC_LABEL, TEST_IDS } from "@constants";
 import type { PostRowProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
@@ -25,7 +25,7 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
   const updatedAt = post.updated_at || post.updatedAt;
 
   return (
-    <TableRow>
+    <TableRow data-testid={TEST_IDS.POST_ROW} data-post-title={post.title}>
       <TableCell className="font-medium">
         <div className="flex items-start gap-2 max-w-sm">
           <PostCoverThumbnail src={post.cover_image} title={post.title} />

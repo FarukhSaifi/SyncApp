@@ -136,7 +136,9 @@ async function fetchKeywordResearchFromModel(seed: string): Promise<KeywordResea
         );
         const parsed = parseKeywordResearchPayload(getText(grounded));
         if (parsed.length >= AI_CONFIG["KEYWORD_RESEARCH_PARSE_MIN_ITEMS"]) {
-          logger.info(`Keyword research via ${providerLabel} Google Search Grounding (${modelName}) for seed="${seed}"`);
+          logger.info(
+            `Keyword research via ${providerLabel} Google Search Grounding (${modelName}) for seed="${seed}"`,
+          );
           return parsed;
         }
       } catch (groundingErr) {

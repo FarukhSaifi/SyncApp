@@ -33,6 +33,9 @@ export const SIDEBAR_SECTIONS = Object.freeze({
   FEATURED_IMAGE: "Featured Image",
   CANONICAL_URL: "Canonical URL",
   SEO_SCORE: "SEO Score",
+  SEO_METADATA: "Metadata",
+  SEO_STRUCTURE: "Structure",
+  SEO_TRUST: "Trust",
 } as const);
 
 /** Right sidebar section labels */
@@ -156,6 +159,7 @@ export const AI_LOADING = Object.freeze({
   POST: "post",
   IMAGE: "image",
   LINKEDIN: "linkedin",
+  IMPROVE: "improve",
 } as const);
 
 /** AI Toolkit dropdown action ids (passed to aiEdit / onAction). */

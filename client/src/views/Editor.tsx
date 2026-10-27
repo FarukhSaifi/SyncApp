@@ -5,7 +5,7 @@
  * All business logic lives in useEditorState and useEditorAI hooks.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import "../components/editor/editor.css";
 
@@ -14,18 +14,22 @@ import EditorSidebarRight from "@components/editor/EditorSidebarRight";
 import { EditorContentSkeleton } from "@components/editor/EditorSkeletons";
 import EditorStatusBar from "@components/editor/EditorStatusBar";
 import EditorToolbar from "@components/editor/EditorToolbar";
+import SeoImproveReviewModal from "@components/editor/SeoImproveReviewModal";
 import { useEditorAI } from "@hooks/useEditorAI";
 import { useEditorState } from "@hooks/useEditorState";
 import { useKeyboardShortcuts } from "@hooks/useKeyboardShortcuts";
+import { useToast } from "@hooks/useToast";
 import { useUnsavedLeaveGuard } from "@hooks/useUnsavedLeaveGuard";
 import { useWordCount } from "@hooks/useWordCount";
 import type { EditorProps } from "@types";
 import { normalizeMarkdownNewlines, toStorageMarkdown } from "@utils/contentUtils";
 import { applyLinkedInReadMoreUrl, extractLinkedInReadMoreUrl, resolveLinkedInReadMoreUrl } from "@utils/linkedinPost";
+import { applySeoImproveFixes, buildSeoImproveTargets } from "@utils/seoImproveTargets";
+import { getSeoScorecard } from "@utils/seoScorecard";
 import dynamic from "next/dynamic";
 
-import { AI_COVER_AUTOGEN_DELAY_MS } from "@constants/editor";
-import { EDITOR_UI } from "@constants/messages";
+import { AI_COVER_AUTOGEN_DELAY_MS, AI_LOADING } from "@constants/editor";
+import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
 import { SEO_THRESHOLDS } from "@constants/seo";
@@ -38,9 +42,20 @@ const EditorContent = dynamic(() => import("@components/editor/EditorContent"), 
 });
 
 const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
-  const state = useEditorState({ onPostCreate, onPostUpdate });
+  const aiKeywordRef = useRef("");
+  const targetPlatformsRef = useRef<string[]>([]);
+
+  const state = useEditorState({
+    onPostCreate,
+    onPostUpdate,
+    getSeoContext: () => ({
+      primaryKeyword: aiKeywordRef.current,
+      platforms: targetPlatformsRef.current,
+    }),
+  });
   const preferredReadMoreUrl = resolveLinkedInReadMoreUrl(state.formData.canonical_url);
   const { setFormData } = state;
+  const toast = useToast();
   const leaveGuard = useUnsavedLeaveGuard(state.isDirty);
 
   const ai = useEditorAI({
@@ -80,6 +95,28 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     },
   });
   const wordStats = useWordCount(state.formData.content_markdown);
+
+  // Restore keyword/targets from the last persisted score so editor matches dashboard.
+  useEffect(() => {
+    if (state.initialLoading) {
+      return;
+    }
+    const { primaryKeyword, platforms } = state.persistedSeoContext;
+    if (primaryKeyword.trim() && !ai.aiKeyword.trim()) {
+      ai.setAiKeyword(primaryKeyword);
+    }
+    if (platforms.length > 0 && ai.targetPlatforms.length === 0) {
+      ai.setTargetPlatforms(platforms);
+    }
+    // Only when finishing load for a post
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.initialLoading, state.id, state.persistedSeoContext]);
+
+  // Keep SEO persist context in sync with AI targets (read at save time via refs).
+  useEffect(() => {
+    aiKeywordRef.current = ai.aiKeyword;
+    targetPlatformsRef.current = ai.targetPlatforms;
+  }, [ai.aiKeyword, ai.targetPlatforms]);
 
   const [leftSidebarOpen, setLeftSidebarOpen] = useState<boolean>(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState<boolean>(false);
@@ -187,6 +224,38 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onRemoveTag={state.handleRemoveTag}
         onTagKeyDown={state.handleTagKeyDown}
         contentLoading={state.initialLoading}
+        seoPrimaryKeyword={ai.aiKeyword}
+        seoPlatforms={ai.targetPlatforms}
+        improveWithAiLoading={ai.aiLoading === AI_LOADING["IMPROVE"]}
+        improveWithAiDisabled={!!ai.aiLoading && ai.aiLoading !== AI_LOADING["IMPROVE"]}
+        onImproveWithAi={() => {
+          const scorecard = getSeoScorecard(
+            {
+              title: state.formData.title,
+              meta_description: state.formData.meta_description,
+              tags: state.tagList,
+              cover_image: state.formData.cover_image,
+              canonical_url: state.formData.canonical_url,
+              content_markdown: state.formData.content_markdown,
+            },
+            { primaryKeyword: ai.aiKeyword, platforms: ai.targetPlatforms },
+          );
+          const targets = buildSeoImproveTargets(
+            {
+              title: state.formData.title,
+              meta_description: state.formData.meta_description,
+              tags: state.tagList,
+              canonical_url: state.formData.canonical_url,
+              content_markdown: state.formData.content_markdown,
+            },
+            scorecard.checks,
+          );
+          if (targets.length === 0) {
+            toast.validationError(SYNC_LABEL["AI_SEO_IMPROVE_NONE"]);
+            return;
+          }
+          void ai.handleImproveWithAi(targets);
+        }}
       />
 
       {state.initialLoading ? (
@@ -272,6 +341,38 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         message={EDITOR_UI.UNSAVED_LEAVE_MESSAGE}
         confirmText={EDITOR_UI.UNSAVED_LEAVE_CONFIRM}
         cancelText={EDITOR_UI.UNSAVED_LEAVE_CANCEL}
+      />
+
+      <SeoImproveReviewModal
+        isOpen={ai.improveReviewOpen}
+        onClose={ai.closeImproveReview}
+        items={ai.improveReviewItems}
+        onToggleItem={ai.toggleImproveReviewItem}
+        onApply={() => {
+          ai.handleApplyImproveFixes((fixes) => {
+            const patched = applySeoImproveFixes(
+              {
+                title: state.formData.title,
+                meta_description: state.formData.meta_description || "",
+                tags: state.tagList,
+                canonical_url: state.formData.canonical_url || "",
+                content_markdown: state.formData.content_markdown || "",
+              },
+              fixes,
+            );
+            const markdown = toStorageMarkdown(normalizeMarkdownNewlines(patched.content_markdown));
+            setFormData((prev) => ({
+              ...prev,
+              title: patched.title || prev.title,
+              meta_description: patched.meta_description,
+              canonical_url: patched.canonical_url,
+              content_markdown: markdown,
+            }));
+            if (fixes.some((f) => f.field === "tags")) {
+              state.setTagList(patched.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
+            }
+          });
+        }}
       />
     </div>
   );

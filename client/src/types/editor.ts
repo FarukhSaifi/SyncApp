@@ -28,6 +28,8 @@ export interface EditorFormData {
 export interface UseEditorStateOptions {
   onPostCreate: (post: Post) => void;
   onPostUpdate: (post: Post) => void;
+  /** Keyword + platforms for persisted SEO score (must match editor scorecard context). */
+  getSeoContext?: () => { primaryKeyword?: string; platforms?: string[] };
 }
 
 export type PublishFormOverrides = Partial<Pick<EditorFormData, "linkedin_post" | "linkedin_read_more_url">>;
@@ -53,6 +55,14 @@ export interface EditorSidebarLeftProps {
   onRemoveTag: (tag: string) => void;
   onTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   contentLoading?: boolean;
+  /** Primary keyword / AI seed used for placement checks. */
+  seoPrimaryKeyword?: string;
+  /** Active AI optimization targets (devto / linkedin / google). */
+  seoPlatforms?: string[];
+  /** Request AI snippet fixes for failing/warning scorecard items (review before apply). */
+  onImproveWithAi?: () => void;
+  improveWithAiLoading?: boolean;
+  improveWithAiDisabled?: boolean;
 }
 
 export interface EditorSidebarRightProps {
@@ -180,20 +190,70 @@ export interface EditorProps {
   onPostUpdate: (post: Post) => void;
 }
 
+export type SeoCategoryId = "metadata" | "structure" | "trust";
+
 export interface SeoCheck {
   label: string;
   ok: boolean | null;
   warning?: boolean;
+  category?: SeoCategoryId;
+}
+
+export interface SeoScorecardCategoryGroup {
+  id: SeoCategoryId;
+  checks: SeoCheck[];
 }
 
 export interface SeoScorecard {
   score: number;
   maxScore: number;
   checks: SeoCheck[];
+  categories?: SeoScorecardCategoryGroup[];
   summary?: string;
 }
 
+export interface SeoScorecardContext {
+  primaryKeyword?: string;
+  platforms?: string[];
+}
+
 export type MetaDescriptionStatus = "ok" | "too_short" | "too_long" | "missing";
+
+/** Field the SEO improve AI may rewrite (snippet-level, not full post). */
+export type SeoImproveField = "title" | "meta_description" | "tags" | "canonical_url" | "content";
+
+export type SeoImproveApplyMode = "replace" | "append";
+
+/** One failing/warning scorecard item packed as a targeted AI snippet. */
+export interface SeoImproveTarget {
+  id: string;
+  field: SeoImproveField;
+  issue: string;
+  currentValue: string;
+  applyMode: SeoImproveApplyMode;
+  surroundingContext?: string;
+}
+
+export interface SeoImproveFix {
+  id: string;
+  value: string;
+  note?: string;
+}
+
+export interface ImproveSeoResult {
+  fixes: SeoImproveFix[];
+}
+
+/** Proposed snippet ready for review/apply (target metadata + AI value). */
+export interface SeoImproveProposedFix {
+  id: string;
+  field: SeoImproveField;
+  applyMode: SeoImproveApplyMode;
+  currentValue: string;
+  value: string;
+  issue: string;
+  note?: string;
+}
 
 /** Full-viewport sheet for editor panels on mobile (&lt; lg). */
 export interface EditorMobileSheetProps {
@@ -212,7 +272,7 @@ export interface EditorSidebarSectionProps {
   children: React.ReactNode;
 }
 
-/** Circular SEO score indicator in the left sidebar. */
+/** Circular SEO score indicator (editor sidebar + dashboard table). */
 export interface SeoScoreRingProps {
   score: number;
   maxScore: number;

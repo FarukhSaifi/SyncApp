@@ -6,9 +6,9 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": [],
       "outputs": [],
-      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts"]
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "src/**/*.test.*", "e2e/**/*.ts", "vitest*.ts", "playwright.config.ts"]
     },
     "lint": {
       "dependsOn": ["^lint"]
