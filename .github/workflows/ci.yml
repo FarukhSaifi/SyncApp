@@ -53,11 +53,31 @@ jobs:
         run: npm install --workspaces --include=dev
 
       - name: Run lint
-        working-directory: client
         run: npm run lint
 
-  build:
-    name: Production build
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+          package-manager-cache: false
+
+      - name: Install workspace dependencies
+        run: npm install --workspaces --include=dev
+
+      - name: Run typecheck
+        run: npm run typecheck
+
+  build-client:
+    name: Client production build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -77,6 +97,62 @@ jobs:
       - name: Build client
         working-directory: client
         run: npm run build
+
+  build-server:
+    name: Server production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm install --workspaces --include=dev
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+  # Exact check name required by Vercel Deployment Checks on sync-app-client
+  # and sync-app-server (blocks production domain alias until this passes).
+  production-gate:
+    name: Production gate
+    needs: [lint, typecheck, build-client, build-server]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require upstream jobs to succeed
+        env:
+          LINT: ${{ needs.lint.result }}
+          TYPECHECK: ${{ needs.typecheck.result }}
+          BUILD_CLIENT: ${{ needs.build-client.result }}
+          BUILD_SERVER: ${{ needs.build-server.result }}
+        run: |
+          set -euo pipefail
+          echo "ESLint=$LINT"
+          echo "Typecheck=$TYPECHECK"
+          echo "Client production build=$BUILD_CLIENT"
+          echo "Server production build=$BUILD_SERVER"
+          ok=1
+          for result in "$LINT" "$TYPECHECK" "$BUILD_CLIENT" "$BUILD_SERVER"; do
+            if [ "$result" != "success" ]; then
+              ok=0
+            fi
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Production gate failed because one or more required CI jobs did not succeed."
+            exit 1
+          fi
+          echo "Production gate passed."
 
   eas-build:
     name: EAS mobile build
