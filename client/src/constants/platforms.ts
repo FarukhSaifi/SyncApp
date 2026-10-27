@@ -30,3 +30,11 @@ export type OptimizationTarget = (typeof OPTIMIZATION_TARGETS)[keyof typeof OPTI
 export const VALID_OPTIMIZATION_TARGETS = Object.freeze(Object.values(OPTIMIZATION_TARGETS)) as OptimizationTarget[];
 
 export const DEFAULT_OPTIMIZATION_TARGETS: OptimizationTarget[] = [OPTIMIZATION_TARGETS.DEVTO];
+
+/** Schedule modal checkbox order (Medium → DEV.to → WordPress → LinkedIn). */
+export const SCHEDULE_PLATFORM_ORDER = Object.freeze([
+  PLATFORMS.MEDIUM,
+  PLATFORMS.DEVTO,
+  PLATFORMS.WORDPRESS,
+  PLATFORMS.LINKEDIN,
+] as const satisfies readonly PlatformSlug[]);

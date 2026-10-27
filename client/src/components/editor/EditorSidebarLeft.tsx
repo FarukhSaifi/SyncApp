@@ -20,7 +20,8 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { BUTTON_SIZES, BUTTON_VARIANTS } from "@constants/designTokens";
+import { COLOR_CLASSES } from "@constants/colorClasses";
+import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES } from "@constants/designTokens";
 import { COVER_UPLOAD, EDITOR_KEYS, EDITOR_LAYOUT, SIDEBAR_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, ERROR_MESSAGES, SUCCESS_MESSAGES, SYNC_LABEL, TOAST_TITLES } from "@constants/messages";
 import { SEO_RING, SEO_THRESHOLDS } from "@constants/seo";
@@ -29,6 +30,7 @@ import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 import LazyImage from "@components/common/LazyImage";
 import Skeleton from "@components/common/Skeleton";
+import Textarea from "@components/common/Textarea";
 
 import EditorMobileSheet from "./EditorMobileSheet";
 import EditorSidebarSection from "./EditorSidebarSection";
@@ -76,6 +78,7 @@ const SeoRing = ({ score, maxScore }: SeoScoreRingProps) => {
   );
 };
 
+/** Post settings sidebar — tags, meta, cover, canonical, SEO score. */
 const EditorSidebarLeft = ({
   isOpen,
   onClose,
@@ -227,16 +230,22 @@ const EditorSidebarLeft = ({
               onKeyDown={onTagKeyDown}
               placeholder={SYNC_LABEL["ADD_TAG"]}
               className="flex-1 text-xs"
-              size="sm"
+              size={INPUT_SIZES.SM}
               disabled={tagsAtLimit}
             />
-            <Button type="button" variant="default" size="sm" onClick={onAddTag} disabled={tagsAtLimit}>
+            <Button
+              type="button"
+              variant={BUTTON_VARIANTS.DEFAULT}
+              size={BUTTON_SIZES.SM}
+              onClick={onAddTag}
+              disabled={tagsAtLimit}
+            >
               {SYNC_LABEL["ADD"]}
             </Button>
           </div>
-          {tagsAtLimit && (
-            <p className="text-[10px] text-yellow-600 dark:text-yellow-500">{SYNC_LABEL["TAGS_LIMIT_REACHED"]}</p>
-          )}
+          {tagsAtLimit ? (
+            <p className={`text-[10px] ${COLOR_CLASSES.ALERT_TEXT.WARNING}`}>{SYNC_LABEL["TAGS_LIMIT_REACHED"]}</p>
+          ) : null}
           {tagList.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {tagList.map((tag) => (
@@ -266,13 +275,13 @@ const EditorSidebarLeft = ({
         icon={<FiCheckCircle className="h-3.5 w-3.5" />}
       >
         <div className="space-y-2">
-          <textarea
+          <Textarea
             name="meta_description"
             value={formData.meta_description || ""}
             onChange={onInputChange}
             placeholder={SYNC_LABEL["META_DESCRIPTION_PLACEHOLDER"]}
             rows={3}
-            className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full resize-y px-2 py-1.5 text-xs"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>
@@ -283,8 +292,8 @@ const EditorSidebarLeft = ({
               className={
                 formData.meta_description?.length >= SEO_THRESHOLDS["META_DESC_MIN"] &&
                 formData.meta_description?.length <= SEO_THRESHOLDS["META_DESC_MAX"]
-                  ? "text-green-500"
-                  : "text-yellow-500"
+                  ? COLOR_CLASSES.ICON_COLOR.POSITIVE
+                  : COLOR_CLASSES.ICON_COLOR.WARNING
               }
             >
               {SYNC_LABEL["AIM_SEO"]}
@@ -349,7 +358,7 @@ const EditorSidebarLeft = ({
                   size={BUTTON_SIZES["SM"]}
                   onClick={openFilePicker}
                   disabled={uploadingCover}
-                  className="min-h-[44px] touch-manipulation sm:min-h-0"
+                  className="min-h-11 touch-manipulation sm:min-h-0"
                 >
                   <FiUpload className="mr-1.5 h-3.5 w-3.5" />
                   {uploadingCover ? EDITOR_UI["COVER_UPLOADING"] : EDITOR_UI["COVER_UPLOAD_CHANGE"]}
@@ -361,7 +370,7 @@ const EditorSidebarLeft = ({
                   onClick={() => onCoverImageChange("")}
                   disabled={uploadingCover}
                   aria-label={EDITOR_UI["COVER_REMOVE_ARIA"]}
-                  className="min-h-[44px] touch-manipulation sm:min-h-0"
+                  className="min-h-11 touch-manipulation sm:min-h-0"
                 >
                   {EDITOR_UI["COVER_UPLOAD_REMOVE"]}
                 </Button>
@@ -382,7 +391,7 @@ const EditorSidebarLeft = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               aria-label={EDITOR_UI["COVER_UPLOAD_DROPZONE_TITLE"]}
-              className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed px-3 py-4 text-center transition-colors touch-manipulation ${
+              className={`flex min-h-30 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed px-3 py-4 text-center transition-colors touch-manipulation ${
                 dragOver
                   ? "border-primary bg-primary/10"
                   : "border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50"
@@ -405,7 +414,7 @@ const EditorSidebarLeft = ({
                       e.stopPropagation();
                       openFilePicker();
                     }}
-                    className="mt-1 min-h-[44px] touch-manipulation sm:min-h-0"
+                    className="mt-1 min-h-11 touch-manipulation sm:min-h-0"
                   >
                     {EDITOR_UI["COVER_UPLOAD_BROWSE"]}
                   </Button>
@@ -422,7 +431,7 @@ const EditorSidebarLeft = ({
             onChange={onInputChange}
             placeholder={SYNC_LABEL["PLACEHOLDER_COVER_IMAGE"]}
             className="text-xs"
-            size="sm"
+            size={BUTTON_SIZES.SM}
             disabled={uploadingCover}
           />
         </div>
@@ -437,7 +446,7 @@ const EditorSidebarLeft = ({
           onChange={onInputChange}
           placeholder={SYNC_LABEL["PLACEHOLDER_CANONICAL_URL"]}
           className="text-xs"
-          size="sm"
+          size={BUTTON_SIZES.SM}
         />
       </EditorSidebarSection>
 
@@ -481,12 +490,12 @@ const EditorSidebarLeft = ({
                 <li key={check.label} className="flex items-start gap-2 text-xs">
                   <span className="mt-0.5 shrink-0">
                     {check.ok === true ? (
-                      <FiCheckCircle className="h-3 w-3 text-green-500" />
+                      <FiCheckCircle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.POSITIVE}`} />
                     ) : check.ok === false ? (
                       check.warning ? (
-                        <FiAlertTriangle className="h-3 w-3 text-yellow-500" />
+                        <FiAlertTriangle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
                       ) : (
-                        <FiAlertCircle className="h-3 w-3 text-red-500" />
+                        <FiAlertCircle className={`h-3 w-3 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE}`} />
                       )
                     ) : (
                       <span className="h-px w-3 bg-muted" />

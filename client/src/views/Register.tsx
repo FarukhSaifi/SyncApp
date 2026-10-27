@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-import { APP_CONFIG, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
+import { APP_CONFIG, APP_LOGO_VARIANTS, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import type { RegisterFormState } from "@types";
 import Link from "next/link";
@@ -88,7 +88,7 @@ const Register = () => {
     <div className="min-h-screen bg-background flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center">
-          <AppLogo variant="auth" priority />
+          <AppLogo variant={APP_LOGO_VARIANTS.AUTH} priority />
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.CREATE_ACCOUNT}</h1>
           <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">{SYNC_LABEL.JOIN_SYNCAPP}</p>
         </div>

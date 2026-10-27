@@ -6,7 +6,7 @@ import PostStatusPill from "@components/dashboard/PostStatusPill";
 import GeneratePostModal from "@components/editor/GeneratePostModal";
 import LinkedInPostPanel from "@components/editor/LinkedInPostPanel";
 import SchedulePostModal from "@components/editor/SchedulePostModal";
-import { APP_CONFIG } from "@constants";
+import { APP_CONFIG, BUTTON_SIZES, BUTTON_VARIANTS, MODAL_SIZES } from "@constants";
 import { useMediaQuery } from "@hooks/useMediaQuery";
 import type { EditorSidebarRightProps, PlatformSlug } from "@types";
 import { readCoverPreviewCache } from "@utils/coverPreviewCache";
@@ -24,6 +24,7 @@ import {
   FiZap,
 } from "react-icons/fi";
 
+import { COLOR_CLASSES } from "@constants/colorClasses";
 import { AI_LOADING, EDITOR_LAYOUT, PUBLISH_SECTIONS } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
@@ -33,11 +34,13 @@ import Button from "@components/common/Button";
 import Input from "@components/common/Input";
 import LazyImage from "@components/common/LazyImage";
 import Modal from "@components/common/Modal";
+import Textarea from "@components/common/Textarea";
 
 import EditorMobileSheet from "./EditorMobileSheet";
 import EditorSidebarSection from "./EditorSidebarSection";
 import { ImagePreviewSkeleton } from "./EditorSkeletons";
 
+/** Publish / AI / export sidebar (desktop panel or mobile sheet). */
 const EditorSidebarRight = ({
   isOpen,
   onClose,
@@ -186,8 +189,8 @@ const EditorSidebarRight = ({
 
             <Button
               type="button"
-              variant="outline"
-              size="sm"
+              variant={BUTTON_VARIANTS.OUTLINE}
+              size={BUTTON_SIZES.SM}
               onClick={() => {
                 onClose();
                 setIsScheduleModalOpen(true);
@@ -207,8 +210,8 @@ const EditorSidebarRight = ({
             )}
 
             <Button
-              variant="outline"
-              size="sm"
+              variant={BUTTON_VARIANTS.OUTLINE}
+              size={BUTTON_SIZES.SM}
               type="button"
               onClick={onSaveDraft}
               disabled={loading}
@@ -221,8 +224,8 @@ const EditorSidebarRight = ({
             <div className="publish-dropdown" ref={dropdownRef}>
               <Button
                 type="button"
-                variant="primary"
-                size="sm"
+                variant={BUTTON_VARIANTS.PRIMARY}
+                size={BUTTON_SIZES.SM}
                 onClick={() => setPublishDropdownOpen(!publishDropdownOpen)}
                 disabled={publishDisabled}
                 className="w-full justify-center"
@@ -280,8 +283,8 @@ const EditorSidebarRight = ({
         defaultOpen={false}
       >
         <Button
-          variant="outline"
-          size="sm"
+          variant={BUTTON_VARIANTS.OUTLINE}
+          size={BUTTON_SIZES.SM}
           onClick={onDownloadMdx}
           disabled={publishing}
           className="w-full justify-center"
@@ -301,8 +304,8 @@ const EditorSidebarRight = ({
 
           <Button
             type="button"
-            variant="primary"
-            size="sm"
+            variant={BUTTON_VARIANTS.PRIMARY}
+            size={BUTTON_SIZES.SM}
             onClick={() => {
               onClose();
               setIsGenerateModalOpen(true);
@@ -317,8 +320,8 @@ const EditorSidebarRight = ({
           <div className="pt-2 border-t border-border">
             <Button
               type="button"
-              variant="outline"
-              size="sm"
+              variant={BUTTON_VARIANTS.OUTLINE}
+              size={BUTTON_SIZES.SM}
               onClick={() => {
                 onClose();
                 setIsImageModalOpen(true);
@@ -398,7 +401,7 @@ const EditorSidebarRight = ({
         onClose={() => setIsImageModalOpen(false)}
         title={EDITOR_UI["AI_IMAGE_MODAL_TITLE"]}
         description={EDITOR_UI["AI_IMAGE_MODAL_DESC"]}
-        size="2xl"
+        size={MODAL_SIZES.TWO_XL}
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 py-2">
           {/* Settings Section (5 cols on md) */}
@@ -412,7 +415,7 @@ const EditorSidebarRight = ({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiKeyword(e.target.value)}
                 placeholder={EDITOR_UI["AI_IMAGE_TOPIC_PLACEHOLDER"]}
                 className="text-xs"
-                size="sm"
+                size={BUTTON_SIZES.SM}
               />
               <p className="text-[10px] text-muted-foreground">{EDITOR_UI["AI_IMAGE_TOPIC_HINT"]}</p>
             </div>
@@ -421,11 +424,11 @@ const EditorSidebarRight = ({
               <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
                 {EDITOR_UI["AI_IMAGE_STYLE_LABEL"]}
               </label>
-              <textarea
+              <Textarea
                 value={aiImagePrompt}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiImagePrompt(e.target.value)}
                 rows={4}
-                className="w-full text-xs rounded-md border border-border bg-background px-3 py-2 resize-none focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                className="w-full text-xs px-3 py-2 resize-none"
                 placeholder={EDITOR_UI["AI_IMAGE_STYLE_PLACEHOLDER"]}
               />
               <p className="text-[10px] text-muted-foreground">{EDITOR_UI["AI_IMAGE_STYLE_HINT"]}</p>
@@ -433,19 +436,19 @@ const EditorSidebarRight = ({
 
             <Button
               type="button"
-              variant="primary"
-              size="sm"
+              variant={BUTTON_VARIANTS.PRIMARY}
+              size={BUTTON_SIZES.SM}
               onClick={onGenerateImage}
               disabled={!!aiLoading}
               className="w-full justify-center font-medium mt-2"
             >
-              <FiZap className="h-3.5 w-3.5 mr-1.5 text-yellow-300" />
+              <FiZap className={`h-3.5 w-3.5 mr-1.5 ${COLOR_CLASSES.ICON_COLOR.WARNING}`} />
               {aiLoading === AI_LOADING["IMAGE"] ? EDITOR_UI["CREATING_MASTERPIECE"] : EDITOR_UI["GENERATE_AI_IMAGE"]}
             </Button>
           </div>
 
           {/* Preview & Actions Section (7 cols on md) */}
-          <div className="md:col-span-7 flex flex-col justify-between border border-border/60 rounded-xl p-4 bg-muted/20 dark:bg-muted/10 min-h-[300px]">
+          <div className="md:col-span-7 flex flex-col justify-between border border-border/60 rounded-xl p-4 bg-muted/20 dark:bg-muted/10 min-h-75">
             <div className="flex-1 flex flex-col justify-center items-center">
               {aiLoading === AI_LOADING["IMAGE"] ? (
                 <div className="relative w-full aspect-video rounded-lg border border-dashed border-primary/40 overflow-hidden">
@@ -453,9 +456,7 @@ const EditorSidebarRight = ({
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                     <FiZap className="h-8 w-8 text-primary mb-2 animate-pulse" />
                     <h4 className="text-sm font-semibold text-foreground">{EDITOR_UI["GENERATING_IMAGE"]}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-                      {EDITOR_UI["GENERATING_IMAGE_HINT"]}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-50">{EDITOR_UI["GENERATING_IMAGE_HINT"]}</p>
                   </div>
                 </div>
               ) : uploadingCover ? (
@@ -494,9 +495,7 @@ const EditorSidebarRight = ({
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-foreground">{EDITOR_UI["NO_IMAGE_TITLE"]}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto">
-                      {EDITOR_UI["NO_IMAGE_HINT"]}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-60 mx-auto">{EDITOR_UI["NO_IMAGE_HINT"]}</p>
                   </div>
                 </div>
               )}
@@ -508,8 +507,8 @@ const EditorSidebarRight = ({
                 <div className="flex flex-col sm:flex-row items-center gap-2">
                   <Button
                     type="button"
-                    variant="primary"
-                    size="sm"
+                    variant={BUTTON_VARIANTS.PRIMARY}
+                    size={BUTTON_SIZES.SM}
                     onClick={() => {
                       onUseAsFeaturedImage();
                       setIsImageModalOpen(false);
@@ -521,8 +520,8 @@ const EditorSidebarRight = ({
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant={BUTTON_VARIANTS.OUTLINE}
+                    size={BUTTON_SIZES.SM}
                     onClick={() => {
                       onUploadAndAttach();
                     }}
@@ -540,8 +539,8 @@ const EditorSidebarRight = ({
                   {onCopyImageUrl && (
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      variant={BUTTON_VARIANTS.OUTLINE}
+                      size={BUTTON_SIZES.SM}
                       onClick={onCopyImageUrl}
                       className="flex-1 justify-center text-xs py-2"
                       title={generatedImageUrl ? EDITOR_UI["COPY_IMAGE_URL_TITLE"] : EDITOR_UI["COPY_IMAGE_DATA_TITLE"]}
@@ -553,8 +552,8 @@ const EditorSidebarRight = ({
                   {onDownloadImage && (
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      variant={BUTTON_VARIANTS.OUTLINE}
+                      size={BUTTON_SIZES.SM}
                       onClick={onDownloadImage}
                       className="flex-1 justify-center text-xs py-2"
                     >

@@ -33,6 +33,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Mermaid pulls ESM packages that need transpilation under Next/Turbopack.
+  transpilePackages: ["mermaid"],
   experimental: {
     optimizePackageImports: [
       "react-icons",
@@ -49,6 +51,7 @@ const nextConfig: NextConfig = {
       "react-markdown",
       "react-syntax-highlighter",
       "lowlight",
+      "mermaid",
       "dayjs",
       "axios",
       "react-hot-toast",

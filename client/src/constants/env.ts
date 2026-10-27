@@ -23,16 +23,26 @@ const DEFAULT_API_PORT = "9000";
 
 /** True for RFC1918 / link-local hosts used when testing from phone on LAN. */
 export function isPrivateNetworkHostname(hostname: string): boolean {
-  if (LOCAL_DEV_HOSTS.includes(hostname as (typeof LOCAL_DEV_HOSTS)[number])) return true;
-  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (LOCAL_DEV_HOSTS.includes(hostname as (typeof LOCAL_DEV_HOSTS)[number])) {
+    return true;
+  }
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return true;
+  }
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return true;
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return true;
+  }
   return false;
 }
 
 /** True when the app runs on a local / LAN dev origin (browser or SSR). */
 export function isLocalDevRuntime(): boolean {
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL) return false;
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return false;
+  }
   if (typeof window !== "undefined") {
     return isPrivateNetworkHostname(window.location.hostname);
   }
@@ -52,10 +62,14 @@ export function resolveApiOrigin(): string {
         return `http://${host}:${DEFAULT_API_PORT}`;
       }
     }
-    if (!apiUrl) return API_ORIGINS.DEVELOPMENT;
+    if (!apiUrl) {
+      return API_ORIGINS.DEVELOPMENT;
+    }
     try {
       const origin = new URL(apiUrl).origin;
-      if (origin.includes("vercel.app")) return API_ORIGINS.DEVELOPMENT;
+      if (origin.includes("vercel.app")) {
+        return API_ORIGINS.DEVELOPMENT;
+      }
       return origin;
     } catch {
       return API_ORIGINS.DEVELOPMENT;

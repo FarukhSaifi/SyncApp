@@ -6,11 +6,13 @@ import UserCard from "@components/users/UserCard";
 import UserTableRow from "@components/users/UserTableRow";
 import {
   APP_CONFIG,
+  BUTTON_SIZES,
   BUTTON_VARIANTS,
   COLOR_CLASSES,
   DASHBOARD_LAYOUT,
   DATA_TABLE,
   ERROR_MESSAGES,
+  MODAL_SIZES,
   PLACEHOLDERS,
   SUCCESS_MESSAGES,
   SYNC_LABEL,
@@ -22,16 +24,16 @@ import {
   type UserRoleOption,
 } from "@constants";
 import { useDataTable } from "@hooks/useDataTable";
-import { useDebounce } from "@hooks/useDebounce";
 import { useToast } from "@hooks/useToast";
 import type { AddUserForm, DataTableColumn, EditForm, PaginationState, User, UserDeleteConfirmState } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { logError } from "@utils/logger";
-import { FiPlus, FiRefreshCw, FiSearch, FiUser, FiX } from "react-icons/fi";
+import { FiPlus, FiRefreshCw, FiUser, FiX } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import ConfirmationModal from "@components/common/ConfirmationModal";
+import DebouncedSearchInput from "@components/common/DebouncedSearchInput";
 import Input from "@components/common/Input";
 import Modal from "@components/common/Modal";
 import Select from "@components/common/Select";
@@ -59,13 +61,14 @@ function UsersTableSkeleton({ rows = DATA_TABLE.SKELETON_ROWS }: { rows?: number
   );
 }
 
+/** Admin users management — searchable table/cards with add/edit/delete. */
 const Users = () => {
   const toast = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState<string>("");
-  const debouncedSearch = useDebounce(searchInput, APP_CONFIG.SEARCH_DEBOUNCE_MS);
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [verifiedFilter, setVerifiedFilter] = useState<string>(USER_VERIFIED_FILTER.ALL);
   const [page, setPage] = useState<number>(1);
@@ -96,7 +99,7 @@ const Users = () => {
       const params: Record<string, unknown> = {
         page,
         limit: pageLimit,
-        ...(debouncedSearch?.trim() && { search: debouncedSearch.trim() }),
+        ...(searchInput?.trim() && { search: searchInput.trim() }),
         ...(roleFilter && { role: roleFilter }),
       };
       const response = await apiClient.getUsers(params);
@@ -121,7 +124,7 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageLimit, debouncedSearch, roleFilter, toast]);
+  }, [page, pageLimit, searchInput, roleFilter, toast]);
 
   useEffect(() => {
     fetchUsers();
@@ -187,7 +190,9 @@ const Users = () => {
 
   const handleDeleteConfirm = useCallback(async () => {
     const { userId, username } = deleteConfirm;
-    if (!userId) return;
+    if (!userId) {
+      return;
+    }
 
     setDeleting(true);
     try {
@@ -216,7 +221,9 @@ const Users = () => {
   }, []);
 
   const handleUpdate = useCallback(async () => {
-    if (!editingUser || updating) return;
+    if (!editingUser || updating) {
+      return;
+    }
 
     const username = editingUser.username;
     setUpdating(true);
@@ -264,9 +271,15 @@ const Users = () => {
     }
   }, [addForm, toast, fetchUsers]);
 
-  if (loading && users.length === 0) {
+  useEffect(() => {
+    if (!loading) {
+      setHasLoadedOnce(true);
+    }
+  }, [loading]);
+
+  if (!hasLoadedOnce && loading && users.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
           <p className="text-muted-foreground">{SYNC_LABEL.LOADING_USERS}</p>
@@ -286,7 +299,7 @@ const Users = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" onClick={fetchUsers} disabled={loading} className="flex items-center gap-2">
+          <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={fetchUsers} disabled={loading} className="flex items-center gap-2">
             <FiRefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             <span className="text-sm">{SYNC_LABEL.REFRESH}</span>
           </Button>
@@ -306,7 +319,7 @@ const Users = () => {
             <p className="font-medium">{ERROR_MESSAGES.FAILED_TO_LOAD_USERS}</p>
             <p className="text-sm truncate">{error}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchUsers} className="shrink-0">
+          <Button variant={BUTTON_VARIANTS.OUTLINE} size={BUTTON_SIZES.SM} onClick={fetchUsers} className="shrink-0">
             <FiRefreshCw className="h-4 w-4 mr-1" />
             {SYNC_LABEL.RETRY}
           </Button>
@@ -318,17 +331,15 @@ const Users = () => {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="search"
+              <div className="flex-1">
+                <DebouncedSearchInput
                   placeholder={SYNC_LABEL.PLACEHOLDER_SEARCH_USERS}
                   value={searchInput}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setSearchInput(e.target.value);
+                  onChange={(nextSearch: string) => {
+                    setSearchInput(nextSearch);
                     setPage(1);
                   }}
-                  className="pl-10"
+                  debounceMs={APP_CONFIG.SEARCH_DEBOUNCE_MS}
                   aria-label={SYNC_LABEL.PLACEHOLDER_SEARCH_USERS}
                 />
               </div>
@@ -361,7 +372,7 @@ const Users = () => {
                   ]}
                 />
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
+                  <Button variant={BUTTON_VARIANTS.GHOST} size={BUTTON_SIZES.SM} onClick={clearAllFilters} className="text-muted-foreground">
                     <FiX className="h-4 w-4 mr-1" />
                     {SYNC_LABEL.CLEAR_ALL_FILTERS}
                   </Button>
@@ -443,11 +454,11 @@ const Users = () => {
                   <h3 className="mb-2 text-lg font-semibold text-foreground">{SYNC_LABEL.NO_USERS_FOUND}</h3>
                   <p className="mx-auto mb-6 max-w-sm text-muted-foreground">{SYNC_LABEL.NO_USERS_FOUND_DESCRIPTION}</p>
                   {hasActiveFilters ? (
-                    <Button variant="outline" onClick={clearAllFilters}>
+                    <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={clearAllFilters}>
                       {SYNC_LABEL.CLEAR_ALL_FILTERS}
                     </Button>
                   ) : (
-                    <Button variant="outline" onClick={fetchUsers}>
+                    <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={fetchUsers}>
                       <FiRefreshCw className="mr-2 h-4 w-4" />
                       {SYNC_LABEL.RETRY}
                     </Button>
@@ -474,10 +485,10 @@ const Users = () => {
         onClose={() => setShowAddModal(false)}
         title={SYNC_LABEL.ADD_NEW_USER}
         description={SYNC_LABEL.CREATE_NEW_USER_ACCOUNT}
-        size="2xl"
+        size={MODAL_SIZES.TWO_XL}
         footer={
           <div className="flex items-center justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowAddModal(false)} disabled={creating}>
+            <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={() => setShowAddModal(false)} disabled={creating}>
               {SYNC_LABEL.CANCEL}
             </Button>
             <Button onClick={handleAddUser} disabled={creating || !addForm.username?.trim() || !addForm.email?.trim()}>
@@ -624,10 +635,10 @@ const Users = () => {
               )
             : ""
         }
-        size="md"
+        size={MODAL_SIZES.MD}
         footer={
           <div className="flex items-center justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditingUser(null)} disabled={updating}>
+            <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={() => setEditingUser(null)} disabled={updating}>
               {SYNC_LABEL.CANCEL}
             </Button>
             <Button onClick={handleUpdate} disabled={updating}>
@@ -679,7 +690,7 @@ const Users = () => {
         cancelText={SYNC_LABEL.CANCEL}
         variant={BUTTON_VARIANTS.DESTRUCTIVE}
         isLoading={deleting}
-        size="md"
+        size={MODAL_SIZES.MD}
       />
     </div>
   );

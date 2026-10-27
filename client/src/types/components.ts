@@ -2,8 +2,17 @@ import React from "react";
 
 import type { Editor } from "@tiptap/react";
 import type { ImageProps } from "next/image";
+import type { ToasterProps as HotToasterProps } from "react-hot-toast";
 
-import { BUTTON_SIZES, BUTTON_VARIANTS, INPUT_SIZES, PILL_SIZES } from "@constants/designTokens";
+import {
+  APP_LOGO_VARIANTS,
+  BUTTON_SIZES,
+  BUTTON_VARIANTS,
+  INPUT_SIZES,
+  MODAL_SIZES,
+  PILL_SIZES,
+  POST_COVER_THUMB,
+} from "@constants/designTokens";
 
 import type { PostData, UserData } from "./models";
 
@@ -11,9 +20,9 @@ export type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANT
 export type ButtonSize = (typeof BUTTON_SIZES)[keyof typeof BUTTON_SIZES];
 export type InputSize = (typeof INPUT_SIZES)[keyof typeof INPUT_SIZES];
 export type PillSize = keyof typeof PILL_SIZES;
-export type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
+export type ModalSize = (typeof MODAL_SIZES)[keyof typeof MODAL_SIZES];
 export type IconComponent = React.ComponentType<{ className?: string }>;
-export type PostCoverThumbSize = "sm" | "md";
+export type PostCoverThumbSize = keyof typeof POST_COVER_THUMB;
 
 /** Props forwarded to `next/image` after LazyImage handles layout/loading. */
 export type LazyImagePassthroughProps = Omit<
@@ -76,6 +85,23 @@ export interface PostCoverThumbnailProps {
   size?: PostCoverThumbSize;
 }
 
+/** Props for the shared published-platforms row on PostCard / PostRow. */
+export interface PostPlatformStatusProps {
+  post: PostData;
+  linkClassName?: string;
+  emptyClassName?: string;
+}
+
+/** Cover placeholder when thumbnail src is missing or failed. */
+export interface PostCoverPlaceholderProps {
+  size: PostCoverThumbSize;
+}
+
+/** Skeleton overlay for cover / featured image preview areas. */
+export interface ImagePreviewSkeletonProps {
+  className?: string;
+}
+
 export interface SchedulePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -133,6 +159,13 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   rightIcon?: React.ReactNode;
   onRightIconClick?: (e?: React.MouseEvent | React.KeyboardEvent) => void;
   size?: InputSize;
+}
+
+export interface DebouncedSearchInputProps extends Omit<InputProps, "value" | "onChange" | "type"> {
+  value: string;
+  onChange: (value: string) => void;
+  debounceMs?: number;
+  showSearchIcon?: boolean;
 }
 
 export interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "type"> {
@@ -213,6 +246,24 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
 }
 
+export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+
+export type CardProps = React.HTMLAttributes<HTMLDivElement>;
+export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
+export type CardTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
+export type CardDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
+export type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
+export type CardFooterProps = React.HTMLAttributes<HTMLDivElement>;
+
+export type TableProps = React.HTMLAttributes<HTMLTableElement>;
+export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableRowProps = React.HTMLAttributes<HTMLTableRowElement>;
+export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>;
+export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
+
+export type ToasterProps = HotToasterProps;
+
 export interface LoadingScreenProps {
   message?: string;
   inline?: boolean;
@@ -268,7 +319,7 @@ export interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-export type AppLogoVariant = "header" | "auth";
+export type AppLogoVariant = (typeof APP_LOGO_VARIANTS)[keyof typeof APP_LOGO_VARIANTS];
 
 export interface AppLogoProps {
   /** Visual size variant — header (default) or auth screens. */

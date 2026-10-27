@@ -1,9 +1,14 @@
 import React from "react";
 
-import { ROUTES, SYNC_LABEL } from "@constants";
+import { BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
 import type { ErrorBoundaryProps, ErrorBoundaryState } from "@types";
 import { logError } from "@utils/logger";
 
+import Button from "@components/common/Button";
+
+/**
+ * Catches render errors in the subtree and shows a recovery screen with dashboard navigation.
+ */
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -28,12 +33,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
           <div className="max-w-md w-full text-center">
             <h1 className="text-2xl font-semibold text-foreground mb-2">{SYNC_LABEL.SOMETHING_WENT_WRONG}</h1>
             <p className="text-muted-foreground mb-6">{SYNC_LABEL.UNEXPECTED_ERROR_TRY_AGAIN}</p>
-            <button
-              onClick={() => (window.location.href = ROUTES.DASHBOARD)}
-              className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium"
+            <Button
+              type="button"
+              variant={BUTTON_VARIANTS.PRIMARY}
+              onClick={() => {
+                window.location.href = ROUTES.DASHBOARD;
+              }}
             >
               {SYNC_LABEL.GO_TO_DASHBOARD}
-            </button>
+            </Button>
           </div>
         </div>
       );

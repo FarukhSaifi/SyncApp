@@ -1,5 +1,12 @@
 
-import { DEFAULT_VALUES, ERROR_MESSAGES, FIELDS, SUCCESS_MESSAGES, resolveTempPassword } from "@constants";
+import {
+  DEFAULT_VALUES,
+  ERROR_MESSAGES,
+  FIELDS,
+  REGEX_PATTERNS,
+  SUCCESS_MESSAGES,
+  resolveTempPassword,
+} from "@constants";
 import Credential from "@models/Credential";
 import Post from "@models/Post";
 import User from "@models/User";
@@ -25,11 +32,13 @@ export async function getUsers({
 
   const query: Record<string, unknown> = {};
   if (search) {
+    const escapedSearch = search.replace(REGEX_PATTERNS.REGEX_SPECIAL_CHARS, "\\$&");
+    const searchRegex = { $regex: escapedSearch, $options: "i" };
     query.$or = [
-      { username: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-      { firstName: { $regex: search, $options: "i" } },
-      { lastName: { $regex: search, $options: "i" } },
+      { username: searchRegex },
+      { email: searchRegex },
+      { firstName: searchRegex },
+      { lastName: searchRegex },
     ];
   }
   if (role) {

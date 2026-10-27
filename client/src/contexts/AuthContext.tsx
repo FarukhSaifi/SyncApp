@@ -11,7 +11,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = STORAGE_KEYS.AUTH_TOKEN;
 
 function resolveAuthErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) return error.message;
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
   return fallback;
 }
 
@@ -19,6 +21,7 @@ function isNetworkFailureMessage(message: string): boolean {
   return /network error|unable to connect|timeout/i.test(message);
 }
 
+/** Access the auth context; throws if used outside `AuthProvider`. */
 export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -28,7 +31,9 @@ export const useAuth = (): AuthContextValue => {
 };
 
 function getStoredToken(): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
   try {
     return localStorage.getItem(TOKEN_KEY);
   } catch {
@@ -36,6 +41,7 @@ function getStoredToken(): string | null {
   }
 }
 
+/** Provides login / register / logout / profile update and persisted JWT. */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -46,7 +52,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setToken(null);
     clearPostsCache();
-    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_KEY);
+    }
     toast.info(TOAST_TITLES.LOGGED_OUT, SYNC_LABEL.LOGGED_OUT_SUCCESS);
   }, [toast]);
 
@@ -100,7 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { user: userData, token: authToken } = data.data;
         setUser(userData);
         setToken(authToken);
-        if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, authToken);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(TOKEN_KEY, authToken);
+        }
         toast.success(TOAST_TITLES.WELCOME_BACK, SYNC_LABEL.WELCOME_MESSAGE(userData.firstName || userData.username));
         return { success: true };
       } else {
@@ -127,7 +137,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { user: newUser, token: authToken } = data.data;
         setUser(newUser);
         setToken(authToken);
-        if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, authToken);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(TOKEN_KEY, authToken);
+        }
         toast.success(
           TOAST_TITLES.WELCOME,
           SYNC_LABEL.ACCOUNT_CREATED_SUCCESS?.(newUser.firstName || newUser.username) ?? "",

@@ -14,7 +14,9 @@ import { SETTINGS_LAYOUT } from "@constants/designTokens";
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
+import Textarea from "@components/common/Textarea";
 
+/** Profile settings — personal info and password change sections. */
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();
   const toast = useToast();
@@ -161,7 +163,7 @@ const Profile = () => {
                       value={profileData.firstName}
                       onChange={handleProfileChange}
                       placeholder={SYNC_LABEL.FIRST_NAME_PROFILE}
-                      className="min-h-[44px] sm:min-h-0"
+                      className="min-h-11 sm:min-h-0"
                     />
                   </div>
 
@@ -175,19 +177,19 @@ const Profile = () => {
                       value={profileData.lastName}
                       onChange={handleProfileChange}
                       placeholder={SYNC_LABEL.LAST_NAME_PROFILE}
-                      className="min-h-[44px] sm:min-h-0"
+                      className="min-h-11 sm:min-h-0"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">{SYNC_LABEL.LABEL_BIO}</label>
-                  <textarea
+                  <Textarea
                     name="bio"
                     value={profileData.bio}
                     onChange={handleProfileChange}
                     placeholder={SYNC_LABEL.BIO_PROFILE}
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    className="w-full rounded-lg"
                     rows={3}
                   />
                 </div>
@@ -242,7 +244,7 @@ const Profile = () => {
                       value={passwordData.currentPassword}
                       onChange={handlePasswordChange}
                       placeholder={SYNC_LABEL.CURRENT_PASSWORD}
-                      className="pl-10 pr-12 min-h-[44px] sm:min-h-0"
+                      className="pl-10 pr-12 min-h-11 sm:min-h-0"
                       required
                     />
                     <button
@@ -275,7 +277,7 @@ const Profile = () => {
                       value={passwordData.newPassword}
                       onChange={handlePasswordChange}
                       placeholder={SYNC_LABEL.NEW_PASSWORD}
-                      className="pl-10 pr-12 min-h-[44px] sm:min-h-0"
+                      className="pl-10 pr-12 min-h-11 sm:min-h-0"
                       required
                     />
                     <button
@@ -308,7 +310,7 @@ const Profile = () => {
                       value={passwordData.confirmPassword}
                       onChange={handlePasswordChange}
                       placeholder={SYNC_LABEL.CONFIRM_PASSWORD}
-                      className="pl-10 pr-12 min-h-[44px] sm:min-h-0"
+                      className="pl-10 pr-12 min-h-11 sm:min-h-0"
                       required
                     />
                     <button

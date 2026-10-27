@@ -2,9 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
-const GUARD_STATE_KEY = "__unsavedLeaveGuard";
-/** Soft-nav / Strict Mode can leave extra same-URL history entries; cap back steps. */
-const MAX_LEAVE_HISTORY_STEPS = 5;
+import { UNSAVED_LEAVE_GUARD } from "@constants/navigation";
 
 function locationKey() {
   return window.location.pathname + window.location.search + window.location.hash;
@@ -12,11 +10,14 @@ function locationKey() {
 
 function armGuardEntry() {
   const current = window.history.state;
-  if (current && current[GUARD_STATE_KEY]) {
+  if (current && current[UNSAVED_LEAVE_GUARD.STATE_KEY]) {
     return;
   }
   window.history.pushState(
-    { ...(current && typeof current === "object" ? current : {}), [GUARD_STATE_KEY]: true },
+    {
+      ...(current && typeof current === "object" ? current : {}),
+      [UNSAVED_LEAVE_GUARD.STATE_KEY]: true,
+    },
     "",
     window.location.href,
   );
@@ -82,7 +83,7 @@ export function useUnsavedLeaveGuard(shouldBlock: boolean) {
     armGuardEntry();
     pendingActionRef.current = () => {
       allowLeaveRef.current = true;
-      stepBackThroughSameLocation(MAX_LEAVE_HISTORY_STEPS);
+      stepBackThroughSameLocation(UNSAVED_LEAVE_GUARD.MAX_HISTORY_STEPS);
     };
     setIsLeaveModalOpen(true);
   });

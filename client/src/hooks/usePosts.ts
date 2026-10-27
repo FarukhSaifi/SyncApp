@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { CACHE_TTL_MS, DEFAULT_PAGINATION, ERROR_MESSAGES, FILTER_STATUS_ALL } from "@constants";
+import { CACHE_TTL_MS, DEFAULT_PAGINATION, EMPTY_POSTS_STATS, ERROR_MESSAGES, FILTER_STATUS_ALL } from "@constants";
 import type {
   Pagination,
   Post,
@@ -16,14 +16,7 @@ import { devError, devLog, devWarn } from "@utils/logger";
 
 const postsCache = new Map<string, PostsCacheEntry>();
 
-const EMPTY_POSTS_STATS: PostsStats = Object.freeze({
-  total: 0,
-  published: 0,
-  drafts: 0,
-  scheduled: 0,
-  withPlatforms: 0,
-});
-
+/** Drop the in-memory posts list cache (e.g. after logout). */
 export function clearPostsCache(): void {
   postsCache.clear();
 }
@@ -51,6 +44,7 @@ function normalizePostsStats(stats?: PostsApiResponse["stats"]): PostsStats {
   };
 }
 
+/** Fetches and caches the paginated posts list with optional status/search filters. */
 export function usePosts(
   initialPaginationOrOptions: Pagination | UsePostsOptions = DEFAULT_PAGINATION,
 ): UsePostsReturn {

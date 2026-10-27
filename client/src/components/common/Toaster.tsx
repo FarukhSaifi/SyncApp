@@ -1,34 +1,32 @@
 import React from "react";
 
-import { APP_CONFIG } from "@constants";
-import { Toaster as HotToaster, toast, type ToastOptions } from "react-hot-toast";
+import { APP_CONFIG, TOAST_UI } from "@constants";
+import type { ToasterProps } from "@types";
+import { Toaster as HotToaster, toast, type DefaultToastOptions, type ToastOptions } from "react-hot-toast";
 
 import { ERROR_MESSAGES, INFO_MESSAGES, TOAST_TITLES } from "@constants/messages";
-
-const TOAST_DURATION = APP_CONFIG.TOAST_AUTO_CLOSE_DELAY;
-const SYNCAPP_TOAST_CLASS = "syncapp-toast";
 
 /** Base toast surface — uses CSS variables so light/dark theme switches apply automatically. */
 const themedToastStyle: React.CSSProperties = {
   minWidth: APP_CONFIG.TOAST_MIN_WIDTH,
   maxWidth: APP_CONFIG.TOAST_MAX_WIDTH,
-  background: "hsl(var(--card))",
-  color: "hsl(var(--card-foreground))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: "var(--radius)",
-  boxShadow: "0 4px 12px hsl(0 0% 0% / 0.12)",
-  fontSize: "0.875rem",
-  lineHeight: "1.25rem",
-  padding: "12px 16px",
+  background: TOAST_UI.BACKGROUND,
+  color: TOAST_UI.COLOR,
+  border: TOAST_UI.BORDER,
+  borderRadius: TOAST_UI.BORDER_RADIUS,
+  boxShadow: TOAST_UI.BOX_SHADOW,
+  fontSize: TOAST_UI.FONT_SIZE,
+  lineHeight: TOAST_UI.LINE_HEIGHT,
+  padding: TOAST_UI.PADDING,
 };
 
 const themedToastBase: ToastOptions = {
-  className: SYNCAPP_TOAST_CLASS,
+  className: TOAST_UI.CLASS_NAME,
   style: themedToastStyle,
-  duration: TOAST_DURATION,
+  duration: APP_CONFIG.TOAST_AUTO_CLOSE_DELAY,
 };
 
-const defaultToastOptions: React.ComponentProps<typeof HotToaster>["toastOptions"] = {
+const defaultToastOptions: DefaultToastOptions = {
   ...themedToastBase,
   success: {
     ...themedToastBase,
@@ -56,27 +54,28 @@ const defaultToastOptions: React.ComponentProps<typeof HotToaster>["toastOptions
   },
 };
 
-// Custom wrapper to default Toast position to top-right
+/** App-wide toast host — defaults to top-right with themed SyncApp chrome. */
 export const Toaster = ({
-  position = "top-right",
+  position = TOAST_UI.DEFAULT_POSITION,
   toastOptions,
   reverseOrder,
   gutter,
   containerStyle,
   containerClassName,
-}: React.ComponentProps<typeof HotToaster>) => {
+}: ToasterProps) => {
   return (
     <HotToaster
       position={position}
       toastOptions={{ ...defaultToastOptions, ...toastOptions }}
       reverseOrder={reverseOrder}
       gutter={gutter}
-      containerStyle={{ zIndex: 99999, ...containerStyle }}
+      containerStyle={{ zIndex: TOAST_UI.Z_INDEX, ...containerStyle }}
       containerClassName={containerClassName}
     />
   );
 };
 
+/** Imperative toast helpers (success / error / warning / info / loading / promise). */
 export const useToaster = () => {
   return React.useMemo(
     () => ({

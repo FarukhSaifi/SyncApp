@@ -42,7 +42,7 @@ export const APP_CONFIG = Object.freeze({
   VALIDATION_MIN_USERNAME: 3,
 
   // Search
-  SEARCH_DEBOUNCE_MS: 300,
+  SEARCH_DEBOUNCE_MS: 1000,
 
   // Date Format
   DATE_FORMAT: "DD-MM-YYYY",

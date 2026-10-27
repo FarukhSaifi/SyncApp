@@ -5,25 +5,13 @@ import { useRef } from "react";
 import type { DateInputProps } from "@types";
 import { FiCalendar } from "react-icons/fi";
 
-import { DATE_INPUT_UI, INPUT_SIZES } from "@constants/designTokens";
-
-const FIELD_SIZE = {
-  [INPUT_SIZES.SM]: DATE_INPUT_UI.FIELD_SM,
-  [INPUT_SIZES.MD]: DATE_INPUT_UI.FIELD_MD,
-  [INPUT_SIZES.LG]: DATE_INPUT_UI.FIELD_LG,
-} as const;
-
-const INPUT_SIZE = {
-  [INPUT_SIZES.SM]: DATE_INPUT_UI.INPUT_SM,
-  [INPUT_SIZES.MD]: DATE_INPUT_UI.INPUT_MD,
-  [INPUT_SIZES.LG]: DATE_INPUT_UI.INPUT_LG,
-} as const;
-
-const ICON_SIZE = {
-  [INPUT_SIZES.SM]: DATE_INPUT_UI.ICON_SM,
-  [INPUT_SIZES.MD]: DATE_INPUT_UI.ICON,
-  [INPUT_SIZES.LG]: DATE_INPUT_UI.ICON,
-} as const;
+import {
+  DATE_INPUT_FIELD_SIZE,
+  DATE_INPUT_ICON_SIZE,
+  DATE_INPUT_TEXT_SIZE,
+  DATE_INPUT_UI,
+  INPUT_SIZES,
+} from "@constants/designTokens";
 
 /**
  * Polished native date field: calendar icon, full-field hit target, Select-matching chrome.
@@ -42,9 +30,9 @@ export default function DateInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const fieldId = id ?? name;
   const hasError = Boolean(error);
-  const fieldSize = FIELD_SIZE[size] ?? DATE_INPUT_UI.FIELD_MD;
-  const inputSize = INPUT_SIZE[size] ?? DATE_INPUT_UI.INPUT_MD;
-  const iconClass = ICON_SIZE[size] ?? DATE_INPUT_UI.ICON;
+  const fieldSize = DATE_INPUT_FIELD_SIZE[size] ?? DATE_INPUT_UI.FIELD_MD;
+  const inputSize = DATE_INPUT_TEXT_SIZE[size] ?? DATE_INPUT_UI.INPUT_MD;
+  const iconClass = DATE_INPUT_ICON_SIZE[size] ?? DATE_INPUT_UI.ICON;
 
   const openPicker = () => {
     if (disabled) {

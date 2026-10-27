@@ -3,6 +3,7 @@
 import type { LinkedInPostPanelProps } from "@types";
 import { FiCopy, FiLinkedin, FiRefreshCw, FiSend, FiZap } from "react-icons/fi";
 
+import { BUTTON_VARIANTS, BUTTON_SIZES } from "@constants/designTokens";
 import { BUTTON_LABELS, EDITOR_UI, INFO_MESSAGES } from "@constants/messages";
 
 import Button from "@components/common/Button";
@@ -29,8 +30,8 @@ export default function LinkedInPostPanel({
         <p className="text-[11px] text-muted-foreground">{EDITOR_UI["LINKEDIN_POST_EMPTY"]}</p>
         <Button
           type="button"
-          variant="primary"
-          size="sm"
+          variant={BUTTON_VARIANTS.PRIMARY}
+          size={BUTTON_SIZES.SM}
           onClick={onGenerate}
           disabled={disabled || generating}
           className="w-full justify-center"
@@ -83,8 +84,8 @@ export default function LinkedInPostPanel({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Button
           type="button"
-          variant="outline"
-          size="sm"
+          variant={BUTTON_VARIANTS.OUTLINE}
+          size={BUTTON_SIZES.SM}
           onClick={onCopy}
           disabled={disabled || publishing || generating}
           className="w-full justify-center"
@@ -94,8 +95,8 @@ export default function LinkedInPostPanel({
         </Button>
         <Button
           type="button"
-          variant="primary"
-          size="sm"
+          variant={BUTTON_VARIANTS.PRIMARY}
+          size={BUTTON_SIZES.SM}
           onClick={onPublish}
           disabled={disabled || publishing || generating || !linkedinConnected}
           className="w-full justify-center"
@@ -107,8 +108,8 @@ export default function LinkedInPostPanel({
 
       <Button
         type="button"
-        variant="outline"
-        size="sm"
+        variant={BUTTON_VARIANTS.OUTLINE}
+        size={BUTTON_SIZES.SM}
         onClick={onGenerate}
         disabled={disabled || publishing || generating}
         className="w-full justify-center"

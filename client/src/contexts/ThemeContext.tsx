@@ -10,11 +10,17 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 function getInitialTheme(): string {
-  if (typeof window === "undefined") return THEME_VALUES.LIGHT;
+  if (typeof window === "undefined") {
+    return THEME_VALUES.LIGHT;
+  }
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.THEME);
-    if (stored === THEME_VALUES.DARK || stored === THEME_VALUES.LIGHT) return stored;
-  } catch {}
+    if (stored === THEME_VALUES.DARK || stored === THEME_VALUES.LIGHT) {
+      return stored;
+    }
+  } catch {
+    // localStorage may be unavailable (private mode / SSR edge cases)
+  }
   return THEME_VALUES.LIGHT;
 }
 
@@ -22,7 +28,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<string>(() => getInitialTheme());
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (typeof document === "undefined") {
+      return;
+    }
     const root = document.documentElement;
     if (theme === THEME_VALUES.DARK) {
       root.classList.add("dark");
@@ -30,8 +38,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       root.classList.remove("dark");
     }
     try {
-      if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEYS.THEME, theme);
-    } catch {}
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(STORAGE_KEYS.THEME, theme);
+      }
+    } catch {
+      // Ignore persistence failures; theme still applies to the document.
+    }
     root.style.colorScheme = theme;
   }, [theme]);
 

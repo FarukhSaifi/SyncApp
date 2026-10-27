@@ -58,6 +58,20 @@ export const SELECT_UI = Object.freeze({
   CHEVRON_SM: "pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground",
 } as const);
 
+/** Select size → padding/height class map (keyed by INPUT_SIZES). */
+export const SELECT_SIZE_CLASS = Object.freeze({
+  [INPUT_SIZES.SM]: SELECT_UI.SELECT_SM,
+  [INPUT_SIZES.MD]: SELECT_UI.SELECT_MD,
+  [INPUT_SIZES.LG]: SELECT_UI.SELECT_LG,
+} as const);
+
+/** Select chevron size map (keyed by INPUT_SIZES). */
+export const SELECT_CHEVRON_CLASS = Object.freeze({
+  [INPUT_SIZES.SM]: SELECT_UI.CHEVRON_SM,
+  [INPUT_SIZES.MD]: SELECT_UI.CHEVRON,
+  [INPUT_SIZES.LG]: SELECT_UI.CHEVRON,
+} as const);
+
 /** Native date input with SyncApp field chrome (calendar icon + full-hit picker) */
 export const DATE_INPUT_UI = Object.freeze({
   INPUT_TYPE: "date",
@@ -83,6 +97,27 @@ export const DATE_INPUT_UI = Object.freeze({
   HINT: "text-xs text-muted-foreground",
 } as const);
 
+/** DateInput field height classes keyed by INPUT_SIZES. */
+export const DATE_INPUT_FIELD_SIZE = Object.freeze({
+  [INPUT_SIZES.SM]: DATE_INPUT_UI.FIELD_SM,
+  [INPUT_SIZES.MD]: DATE_INPUT_UI.FIELD_MD,
+  [INPUT_SIZES.LG]: DATE_INPUT_UI.FIELD_LG,
+} as const);
+
+/** DateInput text padding classes keyed by INPUT_SIZES. */
+export const DATE_INPUT_TEXT_SIZE = Object.freeze({
+  [INPUT_SIZES.SM]: DATE_INPUT_UI.INPUT_SM,
+  [INPUT_SIZES.MD]: DATE_INPUT_UI.INPUT_MD,
+  [INPUT_SIZES.LG]: DATE_INPUT_UI.INPUT_LG,
+} as const);
+
+/** DateInput calendar icon classes keyed by INPUT_SIZES. */
+export const DATE_INPUT_ICON_SIZE = Object.freeze({
+  [INPUT_SIZES.SM]: DATE_INPUT_UI.ICON_SM,
+  [INPUT_SIZES.MD]: DATE_INPUT_UI.ICON,
+  [INPUT_SIZES.LG]: DATE_INPUT_UI.ICON,
+} as const);
+
 /** Hover/focus tooltip panel (CSS, no portal) */
 export const TOOLTIP_UI = Object.freeze({
   ROOT: "relative inline-flex max-w-full",
@@ -94,6 +129,29 @@ export const TOOLTIP_UI = Object.freeze({
   PANEL_RIGHT: "left-full top-1/2 ml-2 -translate-y-1/2",
   CONTENT_LIST: "flex flex-wrap gap-1",
   CHIP: "inline-flex max-w-full items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary",
+} as const);
+
+/** Tooltip panel placement classes keyed by TooltipSide. */
+export const TOOLTIP_SIDE_CLASS = Object.freeze({
+  top: TOOLTIP_UI.PANEL_TOP,
+  bottom: TOOLTIP_UI.PANEL_BOTTOM,
+  left: TOOLTIP_UI.PANEL_LEFT,
+  right: TOOLTIP_UI.PANEL_RIGHT,
+} as const);
+
+/** react-hot-toast surface tokens (CSS variables for theme switching). */
+export const TOAST_UI = Object.freeze({
+  CLASS_NAME: "syncapp-toast",
+  Z_INDEX: 99999,
+  BOX_SHADOW: "0 4px 12px hsl(0 0% 0% / 0.12)",
+  FONT_SIZE: "0.875rem",
+  LINE_HEIGHT: "1.25rem",
+  PADDING: "12px 16px",
+  BACKGROUND: "hsl(var(--card))",
+  COLOR: "hsl(var(--card-foreground))",
+  BORDER: "1px solid hsl(var(--border))",
+  BORDER_RADIUS: "var(--radius)",
+  DEFAULT_POSITION: "top-right" as const,
 } as const);
 
 /** Pill badge base classes — use with semantic color classes from STATUS_CONFIG, ROLE_CONFIG, etc. */
@@ -109,22 +167,39 @@ export const LOADING_UI = Object.freeze({
   INLINE_MIN_HEIGHT_CLASS: "min-h-[300px]",
 } as const);
 
+/** Modal size keys for Modal / ConfirmationModal */
+export const MODAL_SIZES = Object.freeze({
+  SM: "sm",
+  MD: "md",
+  LG: "lg",
+  XL: "xl",
+  TWO_XL: "2xl",
+  THREE_XL: "3xl",
+  FOUR_XL: "4xl",
+} as const);
+
+/** AppLogo visual variants (header chrome vs auth screens) */
+export const APP_LOGO_VARIANTS = Object.freeze({
+  HEADER: "header",
+  AUTH: "auth",
+} as const);
+
 /** Modal sizes and their max-width styling classes */
 export const MODAL_SIZE_CLASSES = Object.freeze({
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  "2xl": "max-w-2xl",
-  "3xl": "max-w-3xl",
-  "4xl": "max-w-4xl",
+  [MODAL_SIZES.SM]: "max-w-sm",
+  [MODAL_SIZES.MD]: "max-w-md",
+  [MODAL_SIZES.LG]: "max-w-lg",
+  [MODAL_SIZES.XL]: "max-w-xl",
+  [MODAL_SIZES.TWO_XL]: "max-w-2xl",
+  [MODAL_SIZES.THREE_XL]: "max-w-3xl",
+  [MODAL_SIZES.FOUR_XL]: "max-w-4xl",
 } as const);
 
 /** Modal / overlay body scroll lock values */
 export const MODAL_BODY_OVERFLOW = Object.freeze({
   HIDDEN: "hidden",
   UNSET: "unset",
-  DEFAULT_SIZE: "md",
+  DEFAULT_SIZE: MODAL_SIZES.MD,
 } as const);
 
 /** Shared keyboard key names for UI handlers. */
@@ -188,20 +263,6 @@ export const APP_SHELL = Object.freeze({
     "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
 } as const);
 
-/** @deprecated Prefer APP_SHELL — kept for AppLogo auth sizing compatibility. */
-export const APP_HEADER = Object.freeze({
-  ROOT_CLASS: APP_SHELL.MOBILE_HEADER_CLASS,
-  INNER_CLASS: APP_SHELL.MOBILE_HEADER_INNER_CLASS,
-  LOGO_IMAGE_CLASS: APP_SHELL.LOGO_IMAGE_CLASS,
-  LOGO_AUTH_IMAGE_CLASS: APP_SHELL.LOGO_AUTH_IMAGE_CLASS,
-  LOGO_SIZE_PX: APP_SHELL.LOGO_SIZE_PX,
-  LOGO_AUTH_SIZE_PX: APP_SHELL.LOGO_AUTH_SIZE_PX,
-  LOGO_TEXT_CLASS: APP_SHELL.LOGO_TEXT_CLASS,
-  ACTIONS_GAP_CLASS: "flex items-center gap-2",
-  THEME_BUTTON_CLASS: APP_SHELL.THEME_BUTTON_CLASS,
-  MENU_BUTTON_CLASS: APP_SHELL.MENU_BUTTON_CLASS,
-} as const);
-
 /** Settings / Profile page layout (slothUI-style section hierarchy). */
 export const SETTINGS_LAYOUT = Object.freeze({
   PAGE_CLASS: "space-y-8",
@@ -232,4 +293,33 @@ export const DASHBOARD_LAYOUT = Object.freeze({
   TABLE_CARD_HEADER_CLASS: "space-y-1 border-b border-border p-4 pb-3 sm:px-5",
   TABLE_CARD_TITLE_CLASS: "text-base font-semibold leading-none tracking-tight sm:text-lg",
   TABLE_CARD_CONTENT_CLASS: "p-0",
+  /** Published-platform link row (PostCard / PostRow / PostPlatformStatus). */
+  PLATFORM_LINK_CLASS: "inline-flex items-center gap-1 text-primary hover:text-primary/90",
+  PLATFORM_LINK_ROW_CLASS: "inline-flex items-center space-x-1 text-primary hover:text-primary/90",
+  PLATFORM_EMPTY_CLASS: "text-muted-foreground text-xs",
+  PLATFORM_EMPTY_ROW_CLASS: "text-muted-foreground",
+  PLATFORM_WRAP_CLASS: "flex flex-wrap gap-x-2.5 gap-y-1",
+} as const);
+
+/** Dashboard post cover thumbnail dimensions by size key. */
+export const POST_COVER_THUMB = Object.freeze({
+  sm: { width: 56, height: 40, container: "h-10 w-14 shrink-0" },
+  md: { width: 72, height: 48, container: "h-12 w-[4.5rem] shrink-0" },
+} as const);
+
+/**
+ * Shared Card subcomponent padding.
+ * ALL_SIDES_PADDING_CLASS matches uniform `p-*` / `!p-*` only — directional
+ * tokens (`px-`, `py-`, `pt-`, …) do not contain `p-` after the optional `!`.
+ */
+export const CARD_UI = Object.freeze({
+  HEADER_PADDING_CLASS: "p-3 sm:p-6",
+  CONTENT_PADDING_CLASS: "p-3 sm:p-6 lg:pt-4",
+  FOOTER_PADDING_CLASS: "p-3 sm:p-6 pt-0",
+  ALL_SIDES_PADDING_CLASS: /^!?p-/,
+} as const);
+
+/** Primitive Table chrome (scroll host for wide tables on small viewports). */
+export const TABLE_UI = Object.freeze({
+  SCROLL_WRAP_CLASS: "relative w-full overflow-x-auto",
 } as const);

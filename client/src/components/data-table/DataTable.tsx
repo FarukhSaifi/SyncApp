@@ -32,6 +32,7 @@ export default function DataTable<T>({
   const showPagination = Boolean(pagination && pagination.pages >= 1);
   const showFooter = Boolean(pageSize || showPagination);
   const isEmpty = !loading && rows.length === 0;
+  const showLoadingSkeleton = loading && rows.length === 0;
   const rootClass = embedded ? DATA_TABLE.ROOT_EMBEDDED : DATA_TABLE.ROOT;
   const toolbarClass = embedded ? DATA_TABLE.TOOLBAR_EMBEDDED : undefined;
   const tableShellClass = embedded ? DATA_TABLE.TABLE_SHELL_EMBEDDED : DATA_TABLE.TABLE_SHELL;
@@ -61,7 +62,15 @@ export default function DataTable<T>({
         </div>
       ) : null}
 
-      {isEmpty ? (
+      {showLoadingSkeleton ? (
+        <div className={embedded ? DATA_TABLE.MOBILE_LIST_EMBEDDED : undefined}>
+          <div className={DATA_TABLE.SKELETON_LIST}>
+            {Array.from({ length: DATA_TABLE.SKELETON_ROWS }, (_, i) => (
+              <div key={`data-table-skeleton-${i}`} className={DATA_TABLE.SKELETON_ROW} />
+            ))}
+          </div>
+        </div>
+      ) : isEmpty ? (
         (empty ?? <div className={DATA_TABLE.EMPTY_DEFAULT}>{SYNC_LABEL.DATA_TABLE_NO_RESULTS}</div>)
       ) : (
         <>

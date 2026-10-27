@@ -114,7 +114,7 @@ export const HEADER_ICON_BUTTON = Object.freeze({
 } as const);
 
 /**
- * Brand mark — matches client `APP_HEADER` logo sizing.
+ * Brand mark — matches client `APP_SHELL` logo sizing.
  * Image source: `assets/images/logo.png`.
  */
 export const APP_LOGO = Object.freeze({

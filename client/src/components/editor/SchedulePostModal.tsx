@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { APP_CONFIG } from "@constants";
+import { APP_CONFIG, BUTTON_SIZES, BUTTON_VARIANTS, MODAL_SIZES } from "@constants";
 import type { PlatformSlug, SchedulePostModalProps } from "@types";
 import dayjs from "dayjs";
 import { FiClock } from "react-icons/fi";
 
 import { EDITOR_UI } from "@constants/messages";
-import { PLATFORM_DISPLAY_NAMES, PLATFORMS } from "@constants/platforms";
+import { PLATFORM_DISPLAY_NAMES, SCHEDULE_PLATFORM_ORDER } from "@constants/platforms";
 
 import Button from "@components/common/Button";
 import Modal from "@components/common/Modal";
@@ -20,13 +20,7 @@ function platformCheckboxClass(checked: boolean): string {
     : `${base} border-border bg-background hover:border-primary/40 hover:bg-muted/40`;
 }
 
-const SCHEDULE_PLATFORM_ORDER: PlatformSlug[] = [
-  PLATFORMS.MEDIUM,
-  PLATFORMS.DEVTO,
-  PLATFORMS.WORDPRESS,
-  PLATFORMS.LINKEDIN,
-];
-
+/** Modal to pick schedule datetime + destination platforms for a post. */
 export default function SchedulePostModal({
   isOpen,
   onClose,
@@ -129,21 +123,21 @@ export default function SchedulePostModal({
       onClose={onClose}
       title={EDITOR_UI.SCHEDULE_MODAL_TITLE}
       description={EDITOR_UI.SCHEDULE_MODAL_DESC}
-      size="md"
+      size={MODAL_SIZES.MD}
       footer={
         <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-between sm:items-center">
           {scheduledFor ? (
-            <Button type="button" variant="ghost" size="sm" onClick={handleClear} disabled={isPublished || busy}>
+            <Button type="button" variant={BUTTON_VARIANTS.GHOST} size={BUTTON_SIZES.SM} onClick={handleClear} disabled={isPublished || busy}>
               {EDITOR_UI.SCHEDULE_MODAL_CLEAR}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={busy}>
+            <Button type="button" variant={BUTTON_VARIANTS.OUTLINE} size={BUTTON_SIZES.SM} onClick={onClose} disabled={busy}>
               {EDITOR_UI.SCHEDULE_MODAL_CANCEL}
             </Button>
-            <Button type="button" variant="primary" size="sm" onClick={handleConfirm} disabled={isPublished || busy}>
+            <Button type="button" variant={BUTTON_VARIANTS.PRIMARY} size={BUTTON_SIZES.SM} onClick={handleConfirm} disabled={isPublished || busy}>
               <FiClock className="h-3.5 w-3.5 mr-1.5" />
               {busy ? EDITOR_UI.SCHEDULE_MODAL_SAVING : EDITOR_UI.SCHEDULE_MODAL_CONFIRM}
             </Button>

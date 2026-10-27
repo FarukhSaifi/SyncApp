@@ -29,7 +29,9 @@ const {
 
 /** Count internal links (relative or same-origin) in HTML or markdown */
 function countInternalLinks(content: string): number {
-  if (!content || typeof content !== "string") return 0;
+  if (!content || typeof content !== "string") {
+    return 0;
+  }
   const html = content.trim();
   const mdRe = /\[[^\]]*\]\((https?:\/\/[^)]+|\/[^)]*)\)/g;
   const aRe = /<a\s[^>]*href=["'](https?:\/\/[^"']+|\/[^"']*)["']/gi;
@@ -38,34 +40,48 @@ function countInternalLinks(content: string): number {
   const isInternal = (url: string): boolean =>
     url.startsWith("/") || INTERNAL_LINK_ORIGINS.some((origin) => url.includes(origin));
   while ((m = mdRe.exec(html)) !== null) {
-    if (isInternal(m[1])) count++;
+    if (isInternal(m[1])) {
+      count++;
+    }
   }
   while ((m = aRe.exec(html)) !== null) {
-    if (isInternal(m[1])) count++;
+    if (isInternal(m[1])) {
+      count++;
+    }
   }
   return count;
 }
 
 function hasAuthorityLink(content: string): boolean {
-  if (!content) return false;
+  if (!content) {
+    return false;
+  }
   const lower = content.toLowerCase();
   return AUTHORITY_LINK_HOSTS.some((host) => lower.includes(host));
 }
 
 function hasTroubleshootingSection(content: string): boolean {
-  if (!content) return false;
+  if (!content) {
+    return false;
+  }
   return /(^|\n)#+\s*(troubleshooting|common\s+errors?|debugging|pitfalls)/i.test(content);
 }
 
 function hasDiscussionQuestion(content: string): boolean {
-  if (!content) return false;
-  if (/(^|\n)#+\s*discussion/i.test(content)) return true;
+  if (!content) {
+    return false;
+  }
+  if (/(^|\n)#+\s*discussion/i.test(content)) {
+    return true;
+  }
   const tail = content.trim().slice(-SEO_THRESHOLDS.DISCUSSION_TAIL_CHARS);
   return /\?\s*$/.test(tail) || /\?\s*\n/.test(tail);
 }
 
 function hasDirectAnswerBlock(content: string): boolean {
-  if (!content) return false;
+  if (!content) {
+    return false;
+  }
   const intro = content.trim().slice(0, SEO_THRESHOLDS.DIRECT_ANSWER_INTRO_CHARS);
   const firstH2 = intro.search(/\n##\s+/);
   const beforeFirstSection =
@@ -78,7 +94,9 @@ function hasDirectAnswerBlock(content: string): boolean {
 
 function isPublicCoverUrl(cover: string): boolean {
   const trimmed = cover.trim();
-  if (!trimmed || trimmed.startsWith("data:")) return false;
+  if (!trimmed || trimmed.startsWith("data:")) {
+    return false;
+  }
   try {
     const parsed = new URL(trimmed);
     return parsed.protocol === "http:" || parsed.protocol === "https:";
@@ -94,20 +112,32 @@ function hasHighReachTag(tags: string[]): boolean {
 
 /** Single source of truth for meta description length — used by checks and scoring. */
 function getMetaDescriptionStatus(metaLen: number): MetaDescriptionStatus {
-  if (metaLen === 0) return "missing";
-  if (metaLen >= META_DESC_MIN && metaLen <= META_DESC_MAX) return "ok";
-  if (metaLen > META_DESC_MAX) return "too_long";
+  if (metaLen === 0) {
+    return "missing";
+  }
+  if (metaLen >= META_DESC_MIN && metaLen <= META_DESC_MAX) {
+    return "ok";
+  }
+  if (metaLen > META_DESC_MAX) {
+    return "too_long";
+  }
   return "too_short";
 }
 
 function getMetaDescriptionScore(status: MetaDescriptionStatus): number {
-  if (status === "ok") return SEO_WEIGHTS.META_FULL;
-  if (status === "too_short") return SEO_WEIGHTS.META_PARTIAL;
+  if (status === "ok") {
+    return SEO_WEIGHTS.META_FULL;
+  }
+  if (status === "too_short") {
+    return SEO_WEIGHTS.META_PARTIAL;
+  }
   return 0;
 }
 
 export function getSeoScorecard(post: Partial<Post>): SeoScorecard {
-  if (!post) return { score: 0, maxScore: SCORE_MAX, checks: [] };
+  if (!post) {
+    return { score: 0, maxScore: SCORE_MAX, checks: [] };
+  }
 
   const title = (post.title || "").trim();
   const titleLen = title.length;
@@ -290,11 +320,20 @@ export function getDevtoPublishWarnings(post: Partial<Post>): string[] {
   const metaLen = (post.meta_description || "").trim().length;
   const tags = Array.isArray(post.tags) ? post.tags : [];
 
-  if (metaLen === 0) warnings.push(DEVTO_PUBLISH_WARNINGS.NO_META);
-  if (!cover) warnings.push(DEVTO_PUBLISH_WARNINGS.NO_COVER);
-  else if (!isPublicCoverUrl(cover)) warnings.push(DEVTO_PUBLISH_WARNINGS.COVER_NOT_PUBLIC);
-  if (tags.length !== TAG_COUNT_IDEAL) warnings.push(DEVTO_PUBLISH_WARNINGS.FEW_TAGS);
-  if (!hasDiscussionQuestion(post.content_markdown || "")) warnings.push(DEVTO_PUBLISH_WARNINGS.NO_DISCUSSION);
+  if (metaLen === 0) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.NO_META);
+  }
+  if (!cover) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.NO_COVER);
+  } else if (!isPublicCoverUrl(cover)) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.COVER_NOT_PUBLIC);
+  }
+  if (tags.length !== TAG_COUNT_IDEAL) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.FEW_TAGS);
+  }
+  if (!hasDiscussionQuestion(post.content_markdown || "")) {
+    warnings.push(DEVTO_PUBLISH_WARNINGS.NO_DISCUSSION);
+  }
   if (scorecard.score < SEO_THRESHOLDS.PUBLISH_WARNING_SCORE_MIN) {
     warnings.push(DEVTO_PUBLISH_WARNINGS.LOW_SEO(scorecard.score));
   }

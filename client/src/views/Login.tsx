@@ -1,7 +1,14 @@
 "use client";
 import React, { useRef, useState } from "react";
 
-import { BUTTON_LABELS, BUTTON_VARIANTS, ROUTES, SYNC_LABEL } from "@constants";
+import {
+  APP_LOGO_VARIANTS,
+  BUTTON_LABELS,
+  BUTTON_VARIANTS,
+  KEYBOARD_KEYS,
+  ROUTES,
+  SYNC_LABEL,
+} from "@constants";
 import { useAuth } from "@contexts/AuthContext";
 import type { LoginFormState } from "@types";
 import Link from "next/link";
@@ -13,6 +20,7 @@ import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/common/Card";
 import Input from "@components/common/Input";
 
+/** Sign-in screen — email/password form with show-password and Enter-to-submit. */
 const Login = () => {
   const [formData, setFormData] = useState<LoginFormState>({
     email: "",
@@ -35,7 +43,9 @@ const Login = () => {
   };
 
   const submitLogin = async () => {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setError("");
     setLoading(true);
@@ -61,7 +71,7 @@ const Login = () => {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !loading) {
+    if (e.key === KEYBOARD_KEYS.ENTER && !loading) {
       e.preventDefault();
       formRef.current?.requestSubmit();
     }
@@ -71,7 +81,7 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center">
-          <AppLogo variant="auth" priority />
+          <AppLogo variant={APP_LOGO_VARIANTS.AUTH} priority />
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-foreground">{SYNC_LABEL.WELCOME_BACK}</h1>
           <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">{SYNC_LABEL.SIGN_IN_DESCRIPTION}</p>
         </div>

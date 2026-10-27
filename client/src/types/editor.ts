@@ -1,5 +1,7 @@
 import React from "react";
 
+import type { Editor } from "@tiptap/react";
+
 import type {
   AiContentModel,
   AiImageSource,
@@ -128,6 +130,41 @@ export interface EditorPreviewProps {
   coverImage?: string;
   previewContent: string;
   tagList: string[];
+}
+
+/** Markdown/HTML image node rendered via LazyImage in the preview tab. */
+export interface MarkdownImageProps {
+  src?: string | null;
+  alt?: string | null;
+}
+
+/** Featured cover block in the editor Preview tab. */
+export interface PreviewCoverImageProps {
+  coverImage: string;
+}
+
+/** HTML body preview that promotes Mermaid fences before `mermaid.run`. */
+export interface HtmlPreviewWithMermaidProps {
+  html: string;
+}
+
+/** TipTap formatting toolbar button. */
+export interface ToolbarButtonProps {
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
+  title: string;
+  children: React.ReactNode;
+}
+
+/** TipTap toolbar bar (headings, marks, lists, link/image, history). */
+export interface EditorToolbarBarProps {
+  editor: Editor | null;
+}
+
+export interface MermaidDiagramProps {
+  source: string;
+  className?: string;
 }
 
 export interface EditorContentProps {
