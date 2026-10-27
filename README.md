@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/) [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)](https://www.mongodb.com/cloud/atlas)
 
-**Production**
+## Production
 
 - Frontend: [sync-app-client.vercel.app](https://sync-app-client.vercel.app) (or your Vercel URL)
 - Backend API: [sync-app-server.vercel.app](https://sync-app-server.vercel.app)
@@ -16,14 +16,14 @@
 
 ### Tech stack
 
-**Frontend (`client/`)**
+#### Frontend (`client/`)
 
 - Next.js 16 (App Router), React 19, TypeScript
 - Tailwind CSS v4, design tokens in `client/src/constants/`
 - TipTap rich-text editor, React Markdown preview
 - Recharts (analytics), react-hot-toast, react-icons
 
-**Backend (`server/`)**
+#### Backend (`server/`)
 
 - Node.js 22+, Express 5, TypeScript, Zod schema validation
 - MongoDB Atlas + Mongoose ODM
@@ -33,7 +33,7 @@
 - Google Cloud Storage Direct V4 Presigned PUT URLs for image uploads
 - Axios for external platform APIs
 
-**Infrastructure & Tooling**
+#### Infrastructure & Tooling
 
 - Turborepo monorepo orchestration (`client`, `server`, `mobile`)
 - MongoDB Atlas
@@ -210,6 +210,9 @@ Dashboard → Analytics: total posts, publish rate, per-platform counts, 30-day 
 | **MDX** | `GET /api/mdx/:id` |
 | **Cron** | `GET /api/cron/publish-scheduled` (Bearer `CRON_SECRET`) |
 | **Health** | `GET /health` — returns 200 when DB connected, **503** when disconnected |
+| **Docs** | Swagger UI: **`/api/docs`** · OpenAPI JSON: **`/api/openapi.json`** (spec: `server/src/openapi/openapi.yaml`) |
+
+Interactive docs: with the API running, open **<http://localhost:9000/api/docs>**. Use **Authorize** for JWT Bearer routes. Keep `openapi.yaml` in sync when adding or changing routes/Zod schemas.
 
 Full request/response examples: import **`SyncApp_Postman_Collection.json`** into Postman.
 

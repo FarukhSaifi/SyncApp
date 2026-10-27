@@ -32,6 +32,7 @@
     "env:pull": "npm run env:pull:server && npm run env:pull:client",
     "env:pull:server": "cd server && vercel env pull .env.prod --environment=production",
     "env:pull:client": "cd client && vercel env pull .env.production --environment=production",
+    "test": "turbo run test --filter=server --filter=client",
     "check": "turbo run typecheck lint",
     "audit:all": "npm audit --audit-level=high --workspaces",
     "clean": "node scripts/cleanup.mjs",

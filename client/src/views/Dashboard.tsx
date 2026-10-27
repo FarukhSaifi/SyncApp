@@ -18,6 +18,7 @@ import {
   POST_TABLE_COLUMNS,
   ROUTES,
   SYNC_LABEL,
+  TEST_IDS,
 } from "@constants";
 import { useDataTable } from "@hooks/useDataTable";
 import { useToast } from "@hooks/useToast";
@@ -243,7 +244,12 @@ const Dashboard = ({
             <FiRefreshCw className={`mr-1 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {SYNC_LABEL.REFRESH}
           </Button>
-          <Link href={ROUTES.EDITOR} prefetch={false} className="flex-1 sm:w-auto sm:flex-initial">
+          <Link
+            href={ROUTES.EDITOR}
+            prefetch={false}
+            className="flex-1 sm:w-auto sm:flex-initial"
+            data-testid={TEST_IDS.DASHBOARD_NEW_POST}
+          >
             <Button className="flex w-full items-center justify-center space-x-2">
               <FiPlus className="mr-1 h-4 w-4" />
               {SYNC_LABEL.NEW_POST}
@@ -330,7 +336,7 @@ const Dashboard = ({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent className={DASHBOARD_LAYOUT.TABLE_CARD_CONTENT_CLASS}>
+        <CardContent className={DASHBOARD_LAYOUT.TABLE_CARD_CONTENT_CLASS} data-testid={TEST_IDS.DASHBOARD_POST_LIST}>
           <DataTable<Post>
             embedded
             columns={postColumns}

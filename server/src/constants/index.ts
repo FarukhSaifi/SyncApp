@@ -10,9 +10,9 @@ export {
   AI_PROMPTS,
   AI_PROVIDERS,
   AI_RESPONSE_SCHEMA,
-  AI_SEO_IMPROVE_RESPONSE_SCHEMA,
   AI_SAFETY_SETTINGS,
   AI_SEED_TOPIC_CATEGORIES,
+  AI_SEO_IMPROVE_RESPONSE_SCHEMA,
   AI_SUGGESTION_SOURCES,
   isAllowedContentModel,
   resolveContentModel,
@@ -58,6 +58,7 @@ export {
 export type { OptimizationTarget } from "./platformOptimization";
 export { PLATFORM_TAG_LIMITS } from "./platformTags";
 export type { PlatformTagLimitKey } from "./platformTags";
+export { OPENAPI_UI, ROUTES } from "./routes";
 export {
   AUTHORITY_LINK_HOSTS,
   DEVTO_HIGH_REACH_TAGS,
@@ -73,7 +74,6 @@ export {
   SEO_WEIGHTS,
 } from "./seo";
 export type { SeoCategoryId } from "./seo";
-export { ROUTES } from "./routes";
 export { USER_ROLE_LABELS, USER_ROLES, VALID_USER_ROLES } from "./userRoles";
 export type { UserRole } from "./userRoles";
 export { UTM_CAMPAIGNS, UTM_MEDIUMS, UTM_PARAM_KEYS, UTM_SOURCES } from "./utm";

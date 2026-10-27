@@ -44,12 +44,7 @@ const PostPlatformStatus = memo<PostPlatformStatusProps>(
       );
     }
     if (status?.linkedin?.published) {
-      pushLink(
-        PLATFORMS.LINKEDIN,
-        status.linkedin.url,
-        SYNC_LABEL.PLATFORM_LINKEDIN,
-        COLOR_CLASSES.STATUS_DOT.ACCENT,
-      );
+      pushLink(PLATFORMS.LINKEDIN, status.linkedin.url, SYNC_LABEL.PLATFORM_LINKEDIN, COLOR_CLASSES.STATUS_DOT.ACCENT);
     }
 
     if (platforms.length === 0) {

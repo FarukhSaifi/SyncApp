@@ -152,7 +152,9 @@ async function tryGeminiImageModel(model: string, prompt: string, providerLabel:
       return dataUrl;
     }
   } catch (err) {
-    logger.warn(`${providerLabel} (${model}) failed: ${(err as Error).message.slice(0, AI_CONFIG.IMAGE_ERROR_LOG_MAX_CHARS)}`);
+    logger.warn(
+      `${providerLabel} (${model}) failed: ${(err as Error).message.slice(0, AI_CONFIG.IMAGE_ERROR_LOG_MAX_CHARS)}`,
+    );
   }
   return null;
 }
@@ -173,17 +175,12 @@ async function tryGeminiImageModels(prompt: string): Promise<string | null> {
 /**
  * Main entry point: generate a 16:9 featured blog image from topic.
  */
-export async function generateImageFromTopic(
-  topic: string,
-  additionalPrompt?: string,
-): Promise<GenerateImageResult> {
+export async function generateImageFromTopic(topic: string, additionalPrompt?: string): Promise<GenerateImageResult> {
   if (!topic || typeof topic !== "string" || !topic.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_KEYWORD_REQUIRED, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const prompt = (
-    additionalPrompt?.trim() || (await generatePrompt(topic, additionalPrompt))
-  ).trim();
+  const prompt = (additionalPrompt?.trim() || (await generatePrompt(topic, additionalPrompt))).trim();
 
   const imageData = await tryGeminiImageModels(prompt);
   if (imageData) {

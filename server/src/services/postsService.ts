@@ -14,7 +14,7 @@ import {
 } from "@constants";
 import { ForbiddenError, NotFoundError } from "@middleware/errorHandler";
 import Post from "@models/Post";
-import type { CreatePostInput, GetPostsParams, LeanPost, PostListStats } from "@types";
+import type { CreatePostInput, GetPostsParams, GetPostsResult, LeanPost, PostListStats } from "@types";
 import { cache, cacheKeys } from "@utils/cache";
 import { ensureMarkdownContent } from "@utils/contentMarkdown";
 import {
@@ -310,7 +310,7 @@ export async function getPosts({
   status,
   search,
   userId,
-}: GetPostsParams = {}) {
+}: GetPostsParams = {}): Promise<GetPostsResult> {
   const safePage = Math.max(
     parseInt(String(page), 10) || DEFAULT_VALUES["DEFAULT_PAGE"],
     DEFAULT_VALUES["DEFAULT_PAGE"],
@@ -324,12 +324,10 @@ export async function getPosts({
   const filterKey = `${statusFilter || POST_LIST_FILTER.ALL}:${searchFilter.toLowerCase()}`;
 
   const cacheKey = cacheKeys.posts.list(userId || DEFAULT_VALUES["CACHE_KEY_PUBLIC"], safePage, safeLimit, filterKey);
-  const cached = cache.get(cacheKey) as { data: unknown; pagination: unknown; stats?: PostListStats } | undefined;
+  const cached = cache.get(cacheKey) as (Omit<GetPostsResult, "stats"> & { stats?: PostListStats }) | undefined;
   if (cached) {
-    if (!cached.stats) {
-      cached.stats = await getPostListStats(userId);
-    }
-    return cached;
+    const stats = cached.stats ?? (await getPostListStats(userId));
+    return { data: cached.data, pagination: cached.pagination, stats };
   }
 
   const skip = (safePage - 1) * safeLimit;
@@ -369,7 +367,7 @@ export async function getPosts({
 
   const hydratedItems = items.map((p) => hydrateLeanPost(p as unknown as LeanPost));
 
-  const result = {
+  const result: GetPostsResult = {
     data: hydratedItems,
     pagination: {
       page: safePage,
@@ -616,10 +614,8 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
         updateData.meta_description !== undefined
           ? (updateData.meta_description as string | null)
           : post.meta_description,
-      cover_image:
-        typeof updateData.cover_image === "string" ? updateData.cover_image : post.cover_image,
-      canonical_url:
-        typeof updateData.canonical_url === "string" ? updateData.canonical_url : post.canonical_url,
+      cover_image: typeof updateData.cover_image === "string" ? updateData.cover_image : post.cover_image,
+      canonical_url: typeof updateData.canonical_url === "string" ? updateData.canonical_url : post.canonical_url,
       slug: activeSlug,
       tags: Array.isArray(updateData.tags) ? (updateData.tags as string[]) : post.tags || [],
     },

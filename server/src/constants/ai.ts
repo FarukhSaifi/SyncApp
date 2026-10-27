@@ -1,7 +1,7 @@
 /**
  * AI (Vertex AI primary / Google AI Studio fallback) constants: prompts, config, safety.
  */
-import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
+import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai/node";
 
 /** DEV.to + Google ranking constraints referenced by prompts and downstream validation. */
 export const AI_POST_LIMITS = Object.freeze({

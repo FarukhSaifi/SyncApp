@@ -1,7 +1,7 @@
 /**
  * AI module domain types, interfaces, and DTOs.
  */
-import type { GenerateContentConfig } from "@google/genai";
+import type { GenerateContentConfig } from "@google/genai/node";
 
 import type { SeoScorecard } from "./posts";
 

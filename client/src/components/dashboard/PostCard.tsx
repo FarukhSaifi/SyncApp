@@ -1,13 +1,6 @@
-import React, { memo } from "react";
+import { memo } from "react";
 
-import {
-  APP_CONFIG,
-  BUTTON_SIZES,
-  BUTTON_VARIANTS,
-  DASHBOARD_LAYOUT,
-  ROUTES,
-  SYNC_LABEL,
-} from "@constants";
+import { APP_CONFIG, BUTTON_SIZES, BUTTON_VARIANTS, DASHBOARD_LAYOUT, ROUTES, SYNC_LABEL } from "@constants";
 import type { PostCardProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";

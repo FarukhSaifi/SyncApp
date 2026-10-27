@@ -56,10 +56,17 @@ server/src/
 ├── middleware/      # ensureDb, auth, validation (Zod), errorHandler
 ├── models/          # User, Post, Credential (Mongoose)
 ├── routes/          # Mounted under /api
+├── openapi/         # OpenAPI YAML + Swagger UI mount (`/api/docs`)
 ├── schemas/         # Zod request validation schemas
 ├── services/        # publishService, aiService, storage (presigned URLs), etc.
 └── utils/           # auth, AES-256-GCM encryption, cache, scheduleUtils
 ```
+
+### API documentation
+
+- Spec: [`server/src/openapi/openapi.yaml`](../server/src/openapi/openapi.yaml)
+- UI: `GET /api/docs` · raw JSON: `GET /api/openapi.json` (mounted before `ensureDb`)
+- Update the YAML whenever routes or Zod request schemas change.
 
 ### Standards
 
@@ -71,9 +78,9 @@ server/src/
 
 ## Deployment
 
-| App    | Vercel project    | Root Directory | Notes |
-| ------ | ----------------- | -------------- | ----- |
-| Client | `sync-app-client` | `client`       | Next.js frontend |
+| App    | Vercel project    | Root Directory | Notes                                     |
+| ------ | ----------------- | -------------- | ----------------------------------------- |
+| Client | `sync-app-client` | `client`       | Next.js frontend                          |
 | Server | `sync-app-server` | `server`       | Express API + daily cron (`api/index.ts`) |
 
 Cron: `GET /api/cron/publish-scheduled` at `0 0 * * *` UTC ([`server/vercel.json`](../server/vercel.json)).

@@ -1,9 +1,10 @@
 "use client";
 
+import { TEST_IDS } from "@constants";
 import type { EditorToolbarProps } from "@types";
 import { FiArrowLeft, FiEdit2, FiEye, FiSave, FiSend, FiSettings } from "react-icons/fi";
 
-import { BUTTON_VARIANTS, BUTTON_SIZES } from "@constants/designTokens";
+import { BUTTON_SIZES, BUTTON_VARIANTS } from "@constants/designTokens";
 import { BUTTON_LABELS, EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 
 import Button from "@components/common/Button";
@@ -99,7 +100,14 @@ const EditorToolbar = ({
 
         <div className="flex items-center gap-2">
           {isDirty ? <span className="unsaved-dot" title={EDITOR_UI["UNSAVED_CHANGES_TITLE"]} /> : null}
-          <Button variant={BUTTON_VARIANTS.PRIMARY} size={BUTTON_SIZES.SM} onClick={onSave} disabled={loading} className="flex items-center gap-1.5">
+          <Button
+            variant={BUTTON_VARIANTS.PRIMARY}
+            size={BUTTON_SIZES.SM}
+            onClick={onSave}
+            disabled={loading}
+            className="flex items-center gap-1.5"
+            data-testid={TEST_IDS.EDITOR_SAVE}
+          >
             <FiSave className="h-3.5 w-3.5" />
             {loading ? SYNC_LABEL["SAVING"] : SYNC_LABEL["SAVE_POST"]}
           </Button>

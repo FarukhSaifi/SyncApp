@@ -59,7 +59,7 @@ erDiagram
 | `content_markdown` | String | Required |
 | `status` | `draft` \| `published` \| `archived` | Default `draft` |
 | `platform_status` | Object | Per-platform publish state |
-| `tags` | String[] |  |
+| `tags` | String[] | Optional |
 | `meta_description` | String | Max 160 chars |
 | `cover_image` | String | Direct GCS / Firebase public URL |
 | `canonical_url` | String | SEO |

@@ -36,13 +36,24 @@ export async function getPlatformStatus(postId: string, platformName: string) {
     throw new NotFoundError(ERROR_MESSAGES.POST_NOT_FOUND);
   }
 
+  const platformStatus = (post.platform_status as Record<string, unknown> | undefined)?.[platformName];
+  const status =
+    platformStatus && typeof platformStatus === "object"
+      ? (platformStatus as {
+          published?: boolean;
+          post_id?: string | null;
+          url?: string | null;
+          published_at?: Date | string | null;
+        })
+      : {
+          published: false,
+          post_id: null,
+          url: null,
+          published_at: null,
+        };
+
   return {
     platform: platformName,
-    status: (post.platform_status as Record<string, unknown> | undefined)?.[platformName] || {
-      published: false,
-      post_id: null,
-      url: null,
-      published_at: null,
-    },
+    status,
   };
 }

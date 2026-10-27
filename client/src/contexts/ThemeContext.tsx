@@ -25,7 +25,12 @@ function getInitialTheme(): string {
 }
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<string>(() => getInitialTheme());
+  // Match SSR on the first client render; read persisted theme after mount to avoid hydration mismatch.
+  const [theme, setTheme] = useState<string>(THEME_VALUES.LIGHT);
+
+  useEffect(() => {
+    setTheme(getInitialTheme());
+  }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") {

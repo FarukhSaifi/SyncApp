@@ -1,6 +1,8 @@
 /**
  * Post domain types and query parameter interfaces.
  */
+
+import type { LeanPost } from "./services";
 export interface IPlatformStatus {
   published: boolean;
   post_id?: string;
@@ -100,6 +102,21 @@ export interface GetPostsParams {
   status?: string;
   search?: string;
   userId?: string;
+}
+
+/** Pagination metadata returned by getPosts. */
+export interface PostsListPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/** Paginated posts list payload (fresh or cache hit). */
+export interface GetPostsResult {
+  data: LeanPost[];
+  pagination: PostsListPagination;
+  stats: PostListStats;
 }
 
 /** Unfiltered dashboard chip counts (independent of list page/status/search). */

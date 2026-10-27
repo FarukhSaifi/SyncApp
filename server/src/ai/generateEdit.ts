@@ -11,8 +11,6 @@ import { buildModelCandidates, generateAiContent, getModelName, getText } from "
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { withRetry } from "./retries";
 
-
-
 export async function generateEdit(action: string, contextText: string): Promise<string> {
   if (!contextText || typeof contextText !== "string" || !contextText.trim()) {
     throw new AppError(ERROR_MESSAGES.AI_EDIT_CONTEXT_REQUIRED, HTTP_STATUS.BAD_REQUEST);
