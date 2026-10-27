@@ -6,6 +6,7 @@ import { formatDateTime } from "@utils/dateUtils";
 import { FiSearch, FiZap } from "react-icons/fi";
 
 import { KEYWORD_SCORE } from "@constants/ai";
+import { BUTTON_VARIANTS, BUTTON_SIZES } from "@constants/designTokens";
 import { EDITOR_KEYS } from "@constants/editor";
 import { EDITOR_UI } from "@constants/messages";
 
@@ -87,7 +88,7 @@ export default function KeywordResearchSection({
             onChange={(e) => onSeedChange(e.target.value)}
             placeholder={EDITOR_UI["KEYWORD_RESEARCH_SEED_PLACEHOLDER"]}
             className="text-sm"
-            size="sm"
+            size={BUTTON_SIZES.SM}
             disabled={disabled || loading}
             onKeyDown={(e) => {
               if (e.key === EDITOR_KEYS["ENTER"] && seed.trim() && !loading) {
@@ -99,8 +100,8 @@ export default function KeywordResearchSection({
         </div>
         <Button
           type="button"
-          variant="primary"
-          size="sm"
+          variant={BUTTON_VARIANTS.PRIMARY}
+          size={BUTTON_SIZES.SM}
           disabled={disabled || loading || !seed.trim()}
           onClick={onResearch}
           className="shrink-0 justify-center"

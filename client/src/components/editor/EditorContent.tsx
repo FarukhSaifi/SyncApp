@@ -8,9 +8,9 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
-import { EditorContent as TipTapEditorContent, useEditor } from "@tiptap/react";
+import { ReactNodeViewRenderer, EditorContent as TipTapEditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import type { EditorContentProps } from "@types";
+import type { EditorContentProps, EditorToolbarBarProps, ToolbarButtonProps } from "@types";
 import { apiClient } from "@utils/apiClient";
 import { toEditorHtml, toStorageMarkdown } from "@utils/contentUtils";
 import editorLowlight from "@utils/editorLowlight";
@@ -30,15 +30,10 @@ import {
   FiUnderline,
 } from "react-icons/fi";
 
-import {
-  EDITOR_UI,
-  ERROR_MESSAGES,
-  INFO_MESSAGES,
-  SUCCESS_MESSAGES,
-  TOAST_TITLES,
-} from "@constants/messages";
+import { EDITOR_UI, ERROR_MESSAGES, INFO_MESSAGES, SUCCESS_MESSAGES, TOAST_TITLES } from "@constants/messages";
 
 import { EditorPreviewSkeleton } from "./EditorSkeletons";
+import MermaidCodeBlockNodeView from "./MermaidCodeBlockNodeView";
 
 const LazyAIToolkitDropdown = dynamic(() => import("./AIToolkitDropdown").then((m) => m.AIToolkitDropdown), {
   ssr: false,
@@ -49,20 +44,14 @@ const EditorPreview = dynamic(() => import("./EditorPreview"), {
   loading: () => <EditorPreviewSkeleton />,
 });
 
-/** TipTap toolbar button */
-const ToolbarButton = ({
-  onClick,
-  isActive = false,
-  disabled = false,
-  title,
-  children,
-}: {
-  onClick: () => void;
-  isActive?: boolean;
-  disabled?: boolean;
-  title: string;
-  children: React.ReactNode;
-}) => (
+const CodeBlockWithMermaid = CodeBlockLowlight.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(MermaidCodeBlockNodeView);
+  },
+});
+
+/** TipTap formatting toolbar button. */
+const ToolbarButton = ({ onClick, isActive = false, disabled = false, title, children }: ToolbarButtonProps) => (
   <button
     type="button"
     onClick={onClick}
@@ -74,10 +63,12 @@ const ToolbarButton = ({
   </button>
 );
 
-/** TipTap toolbar */
-const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof useEditor> | null }) => {
+/** TipTap toolbar (headings, marks, lists, link/image, history). */
+const EditorToolbarBar = React.memo(({ editor }: EditorToolbarBarProps) => {
   const addImage = useCallback(() => {
-    if (!editor) return;
+    if (!editor) {
+      return;
+    }
     const url = window.prompt(EDITOR_UI.PROMPT_IMAGE_URL);
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
@@ -85,10 +76,14 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
   }, [editor]);
 
   const addLink = useCallback(() => {
-    if (!editor) return;
+    if (!editor) {
+      return;
+    }
     const previousUrl = editor.getAttributes("link").href;
     const url = window.prompt(EDITOR_UI.PROMPT_LINK_URL, previousUrl);
-    if (url === null) return;
+    if (url === null) {
+      return;
+    }
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
@@ -96,7 +91,9 @@ const EditorToolbarBar = React.memo(({ editor }: { editor: ReturnType<typeof use
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   }, [editor]);
 
-  if (!editor) return null;
+  if (!editor) {
+    return null;
+  }
 
   return (
     <div className="tiptap-toolbar">
@@ -289,7 +286,7 @@ const extensions = [
   TextAlign.configure({
     types: ["heading", "paragraph"],
   }),
-  CodeBlockLowlight.configure({
+  CodeBlockWithMermaid.configure({
     lowlight: editorLowlight,
   }),
 ];
@@ -306,13 +303,17 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
       },
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items;
-        if (!items) return false;
+        if (!items) {
+          return false;
+        }
 
         for (const item of Array.from(items)) {
           if (item.type.startsWith("image")) {
             event.preventDefault();
             const file = item.getAsFile();
-            if (!file) return false;
+            if (!file) {
+              return false;
+            }
 
             const toastId = toast.loading(TOAST_TITLES.UPLOADING_IMAGE, INFO_MESSAGES.UPLOADING_IMAGE);
             apiClient
@@ -382,13 +383,19 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
   // Sync formData → TipTap (AI draft, fetch post, tab switch).
   // Compare markdown, not HTML, so TipTap↔markdown round-trips do not reset the cursor.
   useEffect(() => {
-    if (!editor || activeTab !== "edit") return;
+    if (!editor || activeTab !== "edit") {
+      return;
+    }
     const incoming = formData.content_markdown || "";
-    if (!incoming.trim()) return;
+    if (!incoming.trim()) {
+      return;
+    }
 
     const currentMd = toStorageMarkdown(editor.getHTML());
     const incomingMd = toStorageMarkdown(incoming);
-    if (currentMd === incomingMd) return;
+    if (currentMd === incomingMd) {
+      return;
+    }
 
     const htmlContent = toEditorHtml(incomingMd);
     if (htmlContent && htmlContent !== "<p></p>") {

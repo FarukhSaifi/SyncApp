@@ -2,7 +2,7 @@ import React from "react";
 
 import type { InputProps } from "@types";
 
-import { INPUT_SIZES } from "@constants/designTokens";
+import { INPUT_SIZES, KEYBOARD_KEYS } from "@constants/designTokens";
 import { LABELS } from "@constants/messages";
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -23,12 +23,22 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref,
   ) => {
     const hasError = Boolean(error);
+    const hasLeftIcon = Boolean(leftIcon);
+    const hasRightIcon = Boolean(rightIcon || onRightIconClick);
     const sizeClasses: Record<string, string> = {
-      [INPUT_SIZES.SM]: "h-8 px-2.5 text-xs",
-      [INPUT_SIZES.MD]: "h-10 px-3 text-sm",
-      [INPUT_SIZES.LG]: "h-11 px-3.5 text-sm",
+      [INPUT_SIZES.SM]: "h-8 text-xs",
+      [INPUT_SIZES.MD]: "h-10 text-sm",
+      [INPUT_SIZES.LG]: "h-11 text-sm",
+    };
+    const horizontalPadBySize: Record<string, { pl: string; pr: string }> = {
+      [INPUT_SIZES.SM]: { pl: "pl-2.5", pr: "pr-2.5" },
+      [INPUT_SIZES.MD]: { pl: "pl-3", pr: "pr-3" },
+      [INPUT_SIZES.LG]: { pl: "pl-3.5", pr: "pr-3.5" },
     };
     const inputSizeClass = sizeClasses[size] ?? sizeClasses[INPUT_SIZES.MD];
+    const sizePad = horizontalPadBySize[size] ?? horizontalPadBySize[INPUT_SIZES.MD];
+    const padLeftClass = hasLeftIcon ? "pl-10" : sizePad.pl;
+    const padRightClass = hasRightIcon ? "pr-10" : sizePad.pr;
 
     const isDateType =
       type === "date" || type === "datetime-local" || type === "time" || type === "month" || type === "week";
@@ -40,9 +50,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       "disabled:cursor-not-allowed disabled:opacity-50",
       hasError ? "border-destructive focus-visible:ring-destructive" : "border-input",
       inputSizeClass,
+      padLeftClass,
+      padRightClass,
       isDateType ? "appearance-none" : "",
-      leftIcon ? "pl-10" : "",
-      rightIcon || onRightIconClick ? "pr-10" : "",
       className,
     ]
       .filter(Boolean)
@@ -79,7 +89,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <div
               className={`absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground ${onRightIconClick ? "cursor-pointer" : "pointer-events-none"}`}
               onClick={onRightIconClick}
-              onKeyDown={onRightIconClick ? (e) => e.key === "Enter" && onRightIconClick(e) : undefined}
+              onKeyDown={
+                onRightIconClick
+                  ? (e) => {
+                      if (e.key === KEYBOARD_KEYS.ENTER) {
+                        onRightIconClick(e);
+                      }
+                    }
+                  : undefined
+              }
               role={onRightIconClick ? "button" : undefined}
               tabIndex={onRightIconClick ? 0 : undefined}
               aria-label={onRightIconClick ? LABELS.TOGGLE_PASSWORD_VISIBILITY : undefined}

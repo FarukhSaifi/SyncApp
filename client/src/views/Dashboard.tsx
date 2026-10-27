@@ -1,24 +1,25 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import PostCard from "@components/dashboard/PostCard";
 import PostRow from "@components/dashboard/PostRow";
 import StatsCard from "@components/dashboard/StatsCard";
 import DataTable from "@components/data-table/DataTable";
 import {
+  BUTTON_SIZES,
   BUTTON_VARIANTS,
   COLOR_CLASSES,
   DASHBOARD_LAYOUT,
   DATA_TABLE,
   FILTER_STATUS_ALL,
   FILTER_STATUS_SCHEDULED,
+  MODAL_SIZES,
   POST_STATUS,
   POST_TABLE_COLUMNS,
   ROUTES,
   SYNC_LABEL,
 } from "@constants";
 import { useDataTable } from "@hooks/useDataTable";
-import { useDebounce } from "@hooks/useDebounce";
 import { useToast } from "@hooks/useToast";
 import type { DashboardDeleteConfirmState, DashboardProps, DataTableColumn, Post } from "@types";
 import { apiClient } from "@utils/apiClient";
@@ -32,6 +33,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import ConfirmationModal from "@components/common/ConfirmationModal";
 import Skeleton from "@components/common/Skeleton";
 
+/** Posts dashboard — stats strip, searchable/sortable table (desktop) and cards (mobile). */
 const Dashboard = ({
   posts,
   loading,
@@ -52,9 +54,15 @@ const Dashboard = ({
   const toast = useToast();
   const [filterStatus, setFilterStatus] = useState<string>(FILTER_STATUS_ALL);
   const [searchInput, setSearchInput] = useState<string>("");
-  const debouncedSearch = useDebounce(searchInput, DATA_TABLE.SEARCH_DEBOUNCE_MS);
   const [deleteConfirm, setDeleteConfirm] = useState<DashboardDeleteConfirmState>({ isOpen: false, postId: null });
   const [deleting, setDeleting] = useState<boolean>(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setHasLoadedOnce(true);
+    }
+  }, [loading]);
 
   useEffect(() => {
     if (error) {
@@ -63,14 +71,13 @@ const Dashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
-  const skipInitialSearchRef = useRef(true);
-  useEffect(() => {
-    if (skipInitialSearchRef.current) {
-      skipInitialSearchRef.current = false;
-      return;
-    }
-    onSearchChange?.(debouncedSearch);
-  }, [debouncedSearch, onSearchChange]);
+  const handleSearchChange = useCallback(
+    (nextSearch: string) => {
+      setSearchInput(nextSearch);
+      onSearchChange?.(nextSearch);
+    },
+    [onSearchChange],
+  );
 
   const handleStatusFilter = useCallback(
     (status: string) => {
@@ -164,7 +171,7 @@ const Dashboard = ({
     </div>
   );
 
-  if (loading && posts.length === 0) {
+  if (!hasLoadedOnce && loading && posts.length === 0) {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
@@ -225,7 +232,7 @@ const Dashboard = ({
         </div>
         <div className="flex flex-row items-center gap-2 sm:gap-3">
           <Button
-            variant="outline"
+            variant={BUTTON_VARIANTS.OUTLINE}
             onClick={onRefresh}
             disabled={loading}
             className="flex flex-1 items-center justify-center space-x-2 sm:flex-initial"
@@ -251,7 +258,7 @@ const Dashboard = ({
               <p className="font-medium">{SYNC_LABEL.FAILED_TO_LOAD_POSTS_TITLE}</p>
               <p className="text-sm">{error}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={onRefresh}>
+            <Button variant={BUTTON_VARIANTS.OUTLINE} size={BUTTON_SIZES.SM} onClick={onRefresh}>
               <FiRefreshCw className="mr-1 h-4 w-4" />
               {SYNC_LABEL.RETRY}
             </Button>
@@ -330,7 +337,7 @@ const Dashboard = ({
             mobileRow={(row) => <PostCard post={row} onDelete={handleDeleteClick} />}
             search={{
               value: searchInput,
-              onChange: setSearchInput,
+              onChange: handleSearchChange,
               placeholder: SYNC_LABEL.DATA_TABLE_SEARCH_POSTS,
             }}
             pageSize={
@@ -369,7 +376,7 @@ const Dashboard = ({
         cancelText={SYNC_LABEL.CANCEL}
         variant={BUTTON_VARIANTS.DESTRUCTIVE}
         isLoading={deleting}
-        size="md"
+        size={MODAL_SIZES.MD}
       />
     </div>
   );

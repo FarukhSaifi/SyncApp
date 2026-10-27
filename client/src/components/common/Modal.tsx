@@ -69,13 +69,13 @@ const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[1400] flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-1400 flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={handleOverlayClick}
     >
       <Card
         className={`mx-auto my-3 flex max-h-[min(92vh,100%)] w-full flex-col overflow-hidden sm:my-6 ${sizeClass} ${className}`}
       >
-        <CardHeader className="shrink-0 border-b border-border !pb-3 sm:!pb-4">
+        <CardHeader className="shrink-0 border-b border-border pb-3! sm:pb-4!">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-1">
               <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
@@ -95,7 +95,7 @@ const Modal = ({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent className={`min-h-0 flex-1 overflow-y-auto ${footer ? "space-y-4 !pb-4" : ""}`}>
+        <CardContent className={`min-h-0 flex-1 overflow-y-auto ${footer ? "space-y-4 pb-4!" : ""}`}>
           {children}
         </CardContent>
         {footer ? (

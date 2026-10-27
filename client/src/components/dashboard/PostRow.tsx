@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 
-import { APP_CONFIG, COLOR_CLASSES, DATA_TABLE, PLATFORMS, ROUTES, SYNC_LABEL } from "@constants";
-import type { PostData, PostRowProps } from "@types";
+import { APP_CONFIG, DASHBOARD_LAYOUT, DATA_TABLE, ROUTES, SYNC_LABEL } from "@constants";
+import type { PostRowProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
@@ -12,83 +12,14 @@ import TagChips from "@components/common/TagChips";
 import Tooltip from "@components/common/Tooltip";
 
 import PostCoverThumbnail from "./PostCoverThumbnail";
+import PostPlatformStatus from "./PostPlatformStatus";
 import PostStatusPill from "./PostStatusPill";
 import SeoScoreBadge from "./SeoScoreBadge";
 
 /**
- * Memoized post row component for better performance
+ * Memoized desktop table row for a single post (title, status, SEO, platforms, actions).
  */
 const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
-  const getPlatformStatus = (rowPost: PostData) => {
-    const platforms: React.ReactNode[] = [];
-
-    if (rowPost.platform_status?.medium?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.MEDIUM}
-          href={rowPost.platform_status.medium.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
-        >
-          <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
-          <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
-        </a>,
-      );
-    }
-
-    if (rowPost.platform_status?.devto?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.DEVTO}
-          href={rowPost.platform_status.devto.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
-        >
-          <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
-          <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
-        </a>,
-      );
-    }
-
-    if (rowPost.platform_status?.wordpress?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.WORDPRESS}
-          href={rowPost.platform_status.wordpress.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
-        >
-          <span className="text-primary">●</span>
-          <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
-        </a>,
-      );
-    }
-
-    if (rowPost.platform_status?.linkedin?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.LINKEDIN}
-          href={rowPost.platform_status.linkedin.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-primary hover:text-primary/90"
-        >
-          <span className="text-primary">●</span>
-          <span>{SYNC_LABEL.PLATFORM_LINKEDIN}</span>
-        </a>,
-      );
-    }
-
-    if (platforms.length === 0) {
-      return <span className="text-muted-foreground">{SYNC_LABEL.NOT_PUBLISHED}</span>;
-    }
-
-    return <div className="flex flex-wrap gap-2">{platforms}</div>;
-  };
-
   const postId = post.id || post._id;
   const createdAt = post.created_at || post.createdAt;
   const updatedAt = post.updated_at || post.updatedAt;
@@ -100,14 +31,14 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
           <PostCoverThumbnail src={post.cover_image} title={post.title} />
           <div className="min-w-0 flex-1">
             <div className="truncate">{post.title}</div>
-            {isPostScheduled(post) && (
+            {isPostScheduled(post) && post.scheduled_for ? (
               <div className="text-[10px] text-primary mt-0.5 font-medium">
-                Schedules for {formatDateTime(post.scheduled_for!)}
+                {SYNC_LABEL.SCHEDULED_FOR(formatDateTime(post.scheduled_for))}
               </div>
-            )}
-            {isPostScheduleOverdue(post) && (
+            ) : null}
+            {isPostScheduleOverdue(post) ? (
               <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">{SYNC_LABEL.SCHEDULE_MISSED}</div>
-            )}
+            ) : null}
           </div>
         </div>
       </TableCell>
@@ -120,7 +51,13 @@ const PostRow = memo<PostRowProps>(({ post, onDelete }) => {
       <TableCell>
         <TagChips tags={post.tags ?? []} limit={APP_CONFIG.TAGS_DISPLAY_LIMIT_ROW} className="max-w-32" />
       </TableCell>
-      <TableCell>{getPlatformStatus(post)}</TableCell>
+      <TableCell>
+        <PostPlatformStatus
+          post={post}
+          linkClassName={DASHBOARD_LAYOUT.PLATFORM_LINK_ROW_CLASS}
+          emptyClassName={DASHBOARD_LAYOUT.PLATFORM_EMPTY_ROW_CLASS}
+        />
+      </TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(createdAt)}</TableCell>
       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(updatedAt)}</TableCell>
       <TableCell className={DATA_TABLE.ACTIONS_CELL}>

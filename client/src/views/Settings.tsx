@@ -25,7 +25,7 @@ import { isCredentialConnected } from "@utils/credentials";
 import { devError, devLog, devWarn } from "@utils/logger";
 import { FiAlertCircle, FiCopy, FiExternalLink, FiEye, FiEyeOff, FiKey, FiLinkedin, FiSave } from "react-icons/fi";
 
-import { SETTINGS_LAYOUT } from "@constants/designTokens";
+import { SETTINGS_LAYOUT, BUTTON_VARIANTS, BUTTON_SIZES } from "@constants/designTokens";
 
 import Button from "@components/common/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/common/Card";
@@ -115,7 +115,9 @@ const Settings = () => {
           if (wordpress) {
             setConnected((prev) => ({ ...prev, wordpress: isCredentialConnected(wordpress) }));
             setDecryptFailed((prev) => ({ ...prev, wordpress: Boolean(wordpress.decrypt_failed) }));
-            if (wordpress.site_url) setWordpressSiteUrl(wordpress.site_url as unknown as string);
+            if (wordpress.site_url) {
+              setWordpressSiteUrl(wordpress.site_url as unknown as string);
+            }
             setWordpressApiKey("");
           }
           if (linkedin) {
@@ -471,7 +473,7 @@ const Settings = () => {
                       e.stopPropagation();
                       setShowMediumKey((v) => !v);
                     }}
-                    className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-11 text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
                   >
                     {showMediumKey ? (
                       <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
@@ -595,7 +597,7 @@ const Settings = () => {
                         e.stopPropagation();
                         setShowDevtoKey((v) => !v);
                       }}
-                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-11 text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
                     >
                       {showDevtoKey ? (
                         <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -716,7 +718,7 @@ const Settings = () => {
                         e.stopPropagation();
                         setShowWordpressKey((v) => !v);
                       }}
-                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-[44px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
+                      className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-full min-h-11 text-muted-foreground hover:text-foreground transition-colors cursor-pointer touch-manipulation"
                     >
                       {showWordpressKey ? (
                         <FiEyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -788,8 +790,8 @@ const Settings = () => {
                   </code>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant={BUTTON_VARIANTS.OUTLINE}
+                    size={BUTTON_SIZES.SM}
                     onClick={handleCopyLinkedInRedirectUri}
                     className="shrink-0 justify-center"
                   >
@@ -816,7 +818,7 @@ const Settings = () => {
                 <Button
                   onClick={handleDisconnectLinkedIn}
                   disabled={loading || linkedinConnecting}
-                  variant="outline"
+                  variant={BUTTON_VARIANTS.OUTLINE}
                   className="flex items-center space-x-1.5 sm:space-x-2"
                 >
                   {loading ? SYNC_LABEL.SAVING : SYNC_LABEL.DISCONNECT_LINKEDIN}
@@ -825,7 +827,7 @@ const Settings = () => {
                 <Button
                   onClick={handleConnectLinkedIn}
                   disabled={loading || linkedinConnecting}
-                  variant="primary"
+                  variant={BUTTON_VARIANTS.PRIMARY}
                   className="flex items-center space-x-1.5 sm:space-x-2"
                 >
                   <FiLinkedin className="h-3 w-3 sm:h-4 sm:w-4" />

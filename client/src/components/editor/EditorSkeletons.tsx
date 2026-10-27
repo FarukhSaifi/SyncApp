@@ -1,21 +1,30 @@
+import type { ImagePreviewSkeletonProps } from "@types";
+
+import { EDITOR_SKELETONS } from "@constants/editor";
 import { EDITOR_UI } from "@constants/messages";
 
 import Skeleton from "@components/common/Skeleton";
 
-
 /** Skeleton for the editor main panel while TipTap or post data loads. */
 export function EditorContentSkeleton() {
   return (
-    <div className="editor-main bg-background p-4 sm:p-6 space-y-4" aria-busy="true" aria-label={EDITOR_UI.LOADING_EDITOR_ARIA}>
-      <Skeleton className="h-10 w-2/3 max-w-md" />
+    <div
+      className={EDITOR_SKELETONS.CONTENT_ROOT_CLASS}
+      aria-busy="true"
+      aria-label={EDITOR_UI.LOADING_EDITOR_ARIA}
+    >
+      <Skeleton className={EDITOR_SKELETONS.TITLE_CLASS} />
       <div className="flex gap-1.5 border-b border-border pb-2">
-        {Array.from({ length: 10 }, (_, i) => (
-          <Skeleton key={`toolbar-${i}`} className="h-8 w-8 rounded shrink-0" />
+        {Array.from({ length: EDITOR_SKELETONS.TOOLBAR_COUNT }, (_, i) => (
+          <Skeleton key={`toolbar-${i}`} className={EDITOR_SKELETONS.TOOLBAR_BTN_CLASS} />
         ))}
       </div>
       <div className="space-y-3 pt-2">
-        {Array.from({ length: 8 }, (_, i) => (
-          <Skeleton key={`line-${i}`} className={`h-4 ${i % 3 === 2 ? "w-3/5" : "w-full"}`} />
+        {Array.from({ length: EDITOR_SKELETONS.BODY_LINE_COUNT }, (_, i) => (
+          <Skeleton
+            key={`line-${i}`}
+            className={i % 3 === 2 ? EDITOR_SKELETONS.LINE_SHORT_CLASS : EDITOR_SKELETONS.LINE_FULL_CLASS}
+          />
         ))}
       </div>
     </div>
@@ -25,17 +34,28 @@ export function EditorContentSkeleton() {
 /** Skeleton for the preview tab while markdown renderer loads. */
 export function EditorPreviewSkeleton() {
   return (
-    <div className="editor-preview p-4 sm:p-6 space-y-4" aria-busy="true" aria-label={EDITOR_UI.LOADING_PREVIEW_ARIA}>
-      <Skeleton className="h-9 w-3/4 max-w-lg" />
-      <Skeleton className="w-full aspect-video max-h-64 rounded-lg" />
+    <div
+      className={EDITOR_SKELETONS.PREVIEW_ROOT_CLASS}
+      aria-busy="true"
+      aria-label={EDITOR_UI.LOADING_PREVIEW_ARIA}
+    >
+      <Skeleton className={EDITOR_SKELETONS.PREVIEW_TITLE_CLASS} />
+      <Skeleton className={EDITOR_SKELETONS.COVER_CLASS} />
       <div className="space-y-2.5">
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={`preview-line-${i}`} className={`h-4 ${i === 5 ? "w-2/3" : "w-full"}`} />
+        {Array.from({ length: EDITOR_SKELETONS.PREVIEW_LINE_COUNT }, (_, i) => (
+          <Skeleton
+            key={`preview-line-${i}`}
+            className={
+              i === EDITOR_SKELETONS.PREVIEW_LINE_COUNT - 1
+                ? EDITOR_SKELETONS.PREVIEW_LAST_LINE_CLASS
+                : EDITOR_SKELETONS.LINE_FULL_CLASS
+            }
+          />
         ))}
       </div>
       <div className="flex gap-2 pt-2">
-        {Array.from({ length: 3 }, (_, i) => (
-          <Skeleton key={`tag-${i}`} className="h-7 w-16 rounded-full" />
+        {Array.from({ length: EDITOR_SKELETONS.TAG_COUNT }, (_, i) => (
+          <Skeleton key={`tag-${i}`} className={EDITOR_SKELETONS.TAG_CLASS} />
         ))}
       </div>
     </div>
@@ -43,6 +63,8 @@ export function EditorPreviewSkeleton() {
 }
 
 /** Skeleton for cover / featured image areas in sidebars and modals. */
-export function ImagePreviewSkeleton({ className = "w-full aspect-video rounded-lg" }: { className?: string }) {
+export function ImagePreviewSkeleton({
+  className = EDITOR_SKELETONS.IMAGE_DEFAULT_CLASS,
+}: ImagePreviewSkeletonProps) {
   return <Skeleton className={className} aria-hidden />;
 }

@@ -1,14 +1,19 @@
 import React from "react";
 
 
-import { BUTTON_LABELS, BUTTON_VARIANTS, COLOR_CLASSES, INFO_MESSAGES, MODAL_TITLES } from "@constants";
+import {
+  BUTTON_LABELS,
+  BUTTON_VARIANTS,
+  COLOR_CLASSES,
+  INFO_MESSAGES,
+  MODAL_SIZES,
+  MODAL_TITLES,
+} from "@constants";
 import type { ConfirmationModalProps } from "@types";
 import { FiAlertTriangle } from "react-icons/fi";
 
 import Button from "@components/common/Button";
 import Modal from "@components/common/Modal";
-
-
 
 /**
  * Reusable Confirmation Modal Component
@@ -22,7 +27,7 @@ import Modal from "@components/common/Modal";
  * @param cancelText - Cancel button text (default: "Cancel")
  * @param variant - Button variant for confirm (default: BUTTON_VARIANTS.DESTRUCTIVE)
  * @param isLoading - Show loading state on confirm button (default: false)
- * @param size - Modal size: 'sm' | 'md' | 'lg' (default: 'md')
+ * @param size - Modal size from MODAL_SIZES (default: MODAL_SIZES.MD)
  */
 const ConfirmationModal = ({
   isOpen,
@@ -34,7 +39,7 @@ const ConfirmationModal = ({
   cancelText = BUTTON_LABELS.CANCEL,
   variant = BUTTON_VARIANTS.DESTRUCTIVE,
   isLoading = false,
-  size = "md",
+  size = MODAL_SIZES.MD,
 }: ConfirmationModalProps) => {
   const handleConfirm = () => {
     onConfirm();
@@ -50,7 +55,7 @@ const ConfirmationModal = ({
       closeOnEscape={!isLoading}
       footer={
         <div className="flex items-center justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant={BUTTON_VARIANTS.OUTLINE} onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>
           <Button variant={variant} onClick={handleConfirm} disabled={isLoading}>

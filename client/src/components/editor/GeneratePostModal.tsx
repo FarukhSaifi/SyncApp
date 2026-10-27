@@ -9,6 +9,7 @@ import { apiClient } from "@utils/apiClient";
 import { formatDateTime } from "@utils/dateUtils";
 import { FiCheck, FiChevronDown, FiHash, FiRefreshCw, FiSearch, FiTrendingUp, FiZap } from "react-icons/fi";
 
+import { BUTTON_VARIANTS, BUTTON_SIZES } from "@constants/designTokens";
 import { AI_SUGGESTION_SOURCES, EDITOR_KEYS, GENERATE_POST_MODAL } from "@constants/editor";
 import { EDITOR_UI } from "@constants/messages";
 import { OPTIMIZATION_TARGETS } from "@constants/platforms";
@@ -240,8 +241,8 @@ export default function GeneratePostModal({
         <div className={GENERATE_POST_MODAL["FOOTER"]}>
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            variant={BUTTON_VARIANTS.OUTLINE}
+            size={BUTTON_SIZES.SM}
             onClick={onClose}
             disabled={isGenerating}
             className={GENERATE_POST_MODAL["CANCEL_BTN"]}
@@ -250,8 +251,8 @@ export default function GeneratePostModal({
           </Button>
           <Button
             type="button"
-            variant="primary"
-            size="sm"
+            variant={BUTTON_VARIANTS.PRIMARY}
+            size={BUTTON_SIZES.SM}
             onClick={handleGenerate}
             disabled={!canGenerate}
             className={GENERATE_POST_MODAL["GENERATE_BTN"]}
@@ -398,7 +399,7 @@ export default function GeneratePostModal({
               onChange={(e) => onKeywordChange(e.target.value)}
               placeholder={EDITOR_UI["GENERATE_POST_KEYWORD_PLACEHOLDER"]}
               className="text-sm"
-              size="sm"
+              size={BUTTON_SIZES.SM}
               disabled={isGenerating}
               onKeyDown={(e) => {
                 if (e.key === EDITOR_KEYS["ENTER"] && canGenerate) {
@@ -435,8 +436,8 @@ export default function GeneratePostModal({
             <h3 className={GENERATE_POST_MODAL["SECTION_TITLE"]}>{EDITOR_UI["GENERATE_POST_SECTION_DISCOVER"]}</h3>
             <Button
               type="button"
-              variant="outline"
-              size="sm"
+              variant={BUTTON_VARIANTS.OUTLINE}
+              size={BUTTON_SIZES.SM}
               disabled={isGenerating || topicsLoading || reachTagsLoading}
               onClick={() => {
                 void loadTrendingTopics(true);

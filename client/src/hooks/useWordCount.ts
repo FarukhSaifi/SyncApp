@@ -12,7 +12,9 @@ import { useDebounce } from "./useDebounce";
 
 /** Strip HTML tags from content */
 function stripHtml(html: string): string {
-  if (!html) return "";
+  if (!html) {
+    return "";
+  }
   return html
     .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;/g, " ")

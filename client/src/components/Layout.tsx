@@ -5,6 +5,7 @@ import {
   APP_CONFIG,
   BUTTON_LABELS,
   INFO_MESSAGES,
+  KEYBOARD_KEYS,
   PAGE_TITLES,
   PLACEHOLDERS,
   ROUTES,
@@ -67,7 +68,7 @@ const Layout = ({ children }: LayoutProps) => {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === KEYBOARD_KEYS.ESCAPE) {
         setShowMobileDrawer(false);
       }
     };

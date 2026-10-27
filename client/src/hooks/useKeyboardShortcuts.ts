@@ -8,6 +8,8 @@ import { useEffect } from "react";
 
 import type { ShortcutHandlers } from "@types";
 
+import { KEYBOARD_KEYS } from "@constants/designTokens";
+
 export function useKeyboardShortcuts({ onSave, onTogglePreview, onEscape }: ShortcutHandlers) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -27,8 +29,7 @@ export function useKeyboardShortcuts({ onSave, onTogglePreview, onEscape }: Shor
         return;
       }
 
-      // Escape
-      if (e.key === "Escape") {
+      if (e.key === KEYBOARD_KEYS.ESCAPE) {
         onEscape?.();
         return;
       }

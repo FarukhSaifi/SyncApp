@@ -10,8 +10,12 @@ import LoadingScreen from "@components/common/LoadingScreen";
 
 /** Renders children only after mount — prevents hydration mismatches for client-only trees. */
 export default function ClientOnly({ children, message = INFO_MESSAGES.LOADING }: ClientOnlyProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <LoadingScreen message={message} />;
+  const [mounted, setMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) {
+    return <LoadingScreen message={message} />;
+  }
   return <>{children}</>;
 }

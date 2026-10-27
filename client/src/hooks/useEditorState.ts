@@ -14,6 +14,7 @@ import { getDevtoPublishWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
 import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
+import { KEYBOARD_KEYS } from "@constants/designTokens";
 import { AUTOSAVE_INTERVAL_MS, INITIAL_EDITOR_FORM, PUBLISH_WARNING_TOAST_MAX } from "@constants/editor";
 import {
   EDITOR_UI,
@@ -35,7 +36,9 @@ import { SEO_THRESHOLDS, STALE_CANONICAL_HOST_PATTERN } from "@constants/seo";
  * - Otherwise falls back to just the slug.
  */
 function buildClientCanonicalUrl(slug?: string): string {
-  if (!slug) return "";
+  if (!slug) {
+    return "";
+  }
   const base = CANONICAL_BASE_URL.replace(/\/$/, "");
   return base ? `${base}/${slug}` : slug;
 }
@@ -85,7 +88,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   }, [isDirty, formData, tagList]);
 
   const fetchPost = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     setInitialLoading(true);
     try {
       devLog("Fetching post:", id);
@@ -120,7 +125,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
   /** Silent save (for autosave) — no navigation, no toast */
   const handleSaveQuiet = useCallback(async () => {
-    if (!id || !formDataRef.current.title.trim() || !formDataRef.current.content_markdown.trim()) return;
+    if (!id || !formDataRef.current.title.trim() || !formDataRef.current.content_markdown.trim()) {
+      return;
+    }
     try {
       const postData = { ...formDataRef.current, tags: tagListRef.current };
       await apiClient.updatePost(id, postData);
@@ -181,7 +188,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
   // Autosave
   useEffect(() => {
-    if (!id) return; // Only autosave existing posts
+    if (!id) {
+      return; // Only autosave existing posts
+    }
     const interval = setInterval(() => {
       if (isDirtyRef.current && formDataRef.current.title.trim() && formDataRef.current.content_markdown.trim()) {
         handleSaveQuiet();
@@ -201,7 +210,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
   const handleAddTag = useCallback(() => {
     const tag = tagInput.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, "");
-    if (!tag || tagList.length >= SEO_THRESHOLDS.TAG_COUNT_MAX) return;
+    if (!tag || tagList.length >= SEO_THRESHOLDS.TAG_COUNT_MAX) {
+      return;
+    }
     if (!tagList.includes(tag)) {
       setTagList((prev) => [...prev, tag]);
       setTagInput("");
@@ -214,7 +225,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
   const handleTagKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === KEYBOARD_KEYS.ENTER) {
         e.preventDefault();
         handleAddTag();
       }
@@ -261,10 +272,14 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
             }));
           }
           if (id) {
-            if (savedPost) onPostUpdate(savedPost);
+            if (savedPost) {
+              onPostUpdate(savedPost);
+            }
             toast.saveSuccess(true);
           } else {
-            if (savedPost) onPostCreate(savedPost);
+            if (savedPost) {
+              onPostCreate(savedPost);
+            }
             toast.saveSuccess(false);
           }
           suppressDirtyRef.current = true;
@@ -351,7 +366,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const refreshPostAfterPublish = useCallback(
     async (postId: string): Promise<Post | null> => {
       const response = await apiClient.getPost(postId);
-      if (!response?.success || !response.data) return null;
+      if (!response?.success || !response.data) {
+        return null;
+      }
       const post = response.data;
       setFormData((prev) => ({
         ...prev,
@@ -390,7 +407,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       setPublishing(true);
       try {
         const currentPostId = await ensurePostSaved(overrides);
-        if (!currentPostId) return;
+        if (!currentPostId) {
+          return;
+        }
 
         if (platform === PLATFORMS.DEVTO) {
           const warnings = getDevtoPublishWarnings({
@@ -444,7 +463,9 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       setPublishing(true);
       try {
         const currentPostId = await ensurePostSaved(overrides);
-        if (!currentPostId) return;
+        if (!currentPostId) {
+          return;
+        }
 
         const warnings = getDevtoPublishWarnings({
           title: effectiveForm.title,

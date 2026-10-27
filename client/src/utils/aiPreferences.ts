@@ -6,17 +6,25 @@ import { DEFAULT_OPTIMIZATION_TARGETS, VALID_OPTIMIZATION_TARGETS } from "@const
 import { STORAGE_KEYS } from "@constants/theme";
 
 export function readStoredAiModel(): string {
-  if (typeof window === "undefined") return resolveStoredContentModel(null);
+  if (typeof window === "undefined") {
+    return resolveStoredContentModel(null);
+  }
   return resolveStoredContentModel(localStorage.getItem(STORAGE_KEYS.AI_CONTENT_MODEL));
 }
 
 export function readStoredOptimizationTargets(): string[] {
-  if (typeof window === "undefined") return [...DEFAULT_OPTIMIZATION_TARGETS];
+  if (typeof window === "undefined") {
+    return [...DEFAULT_OPTIMIZATION_TARGETS];
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.AI_OPTIMIZATION_TARGETS);
-    if (!raw) return [...DEFAULT_OPTIMIZATION_TARGETS];
+    if (!raw) {
+      return [...DEFAULT_OPTIMIZATION_TARGETS];
+    }
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [...DEFAULT_OPTIMIZATION_TARGETS];
+    if (!Array.isArray(parsed)) {
+      return [...DEFAULT_OPTIMIZATION_TARGETS];
+    }
     const valid = parsed.filter((t): t is string =>
       VALID_OPTIMIZATION_TARGETS.includes(t as (typeof VALID_OPTIMIZATION_TARGETS)[number]),
     );

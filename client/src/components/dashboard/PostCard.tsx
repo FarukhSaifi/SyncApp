@@ -4,13 +4,11 @@ import {
   APP_CONFIG,
   BUTTON_SIZES,
   BUTTON_VARIANTS,
-  COLOR_CLASSES,
   DASHBOARD_LAYOUT,
-  PLATFORMS,
   ROUTES,
   SYNC_LABEL,
 } from "@constants";
-import type { PostCardProps, PostData } from "@types";
+import type { PostCardProps } from "@types";
 import { formatDateTime } from "@utils/dateUtils";
 import { isPostScheduleOverdue, isPostScheduled } from "@utils/postStatusDisplay";
 import Link from "next/link";
@@ -22,6 +20,7 @@ import TagChips from "@components/common/TagChips";
 import Tooltip from "@components/common/Tooltip";
 
 import PostCoverThumbnail from "./PostCoverThumbnail";
+import PostPlatformStatus from "./PostPlatformStatus";
 import PostStatusPill from "./PostStatusPill";
 import SeoScoreBadge from "./SeoScoreBadge";
 
@@ -29,76 +28,6 @@ import SeoScoreBadge from "./SeoScoreBadge";
  * Mobile post card — compact icon actions; detail-first layout.
  */
 const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
-  const getPlatformStatus = (postData: PostData) => {
-    const platforms: React.ReactNode[] = [];
-
-    if (postData.platform_status?.medium?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.MEDIUM}
-          href={postData.platform_status.medium.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-primary hover:text-primary/90 text-xs"
-        >
-          <span className={COLOR_CLASSES.STATUS_DOT.WARNING}>●</span>
-          <span>{SYNC_LABEL.PLATFORM_MEDIUM}</span>
-        </a>,
-      );
-    }
-
-    if (postData.platform_status?.devto?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.DEVTO}
-          href={postData.platform_status.devto.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-primary hover:text-primary/90 text-xs"
-        >
-          <span className={COLOR_CLASSES.STATUS_DOT.PRIMARY}>●</span>
-          <span>{SYNC_LABEL.PLATFORM_DEVTO}</span>
-        </a>,
-      );
-    }
-
-    if (postData.platform_status?.wordpress?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.WORDPRESS}
-          href={postData.platform_status.wordpress.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-primary hover:text-primary/90 text-xs"
-        >
-          <span className="text-primary">●</span>
-          <span>{SYNC_LABEL.PLATFORM_WORDPRESS}</span>
-        </a>,
-      );
-    }
-
-    if (postData.platform_status?.linkedin?.published) {
-      platforms.push(
-        <a
-          key={PLATFORMS.LINKEDIN}
-          href={postData.platform_status.linkedin.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-primary hover:text-primary/90 text-xs"
-        >
-          <span className="text-primary">●</span>
-          <span>{SYNC_LABEL.PLATFORM_LINKEDIN}</span>
-        </a>,
-      );
-    }
-
-    if (platforms.length === 0) {
-      return <span className="text-muted-foreground text-xs">{SYNC_LABEL.NOT_PUBLISHED}</span>;
-    }
-
-    return <div className="flex flex-wrap gap-x-2.5 gap-y-1">{platforms}</div>;
-  };
-
   const postId = post.id || post._id;
   const createdAt = post.created_at || post.createdAt;
   const updatedAt = post.updated_at || post.updatedAt;
@@ -110,7 +39,6 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
     <Card className="border">
       <CardContent className="p-3">
         <div className="space-y-2.5">
-          {/* Header: cover + title/status + compact actions */}
           <div className="flex items-start gap-2.5">
             <PostCoverThumbnail src={post.cover_image} title={post.title} size="md" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -172,7 +100,7 @@ const PostCard = memo<PostCardProps>(({ post, onDelete }) => {
 
           <div className="space-y-0.5">
             <div className="text-[11px] text-muted-foreground">{SYNC_LABEL.PUBLISHED_ON}</div>
-            {getPlatformStatus(post)}
+            <PostPlatformStatus post={post} />
           </div>
 
           <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 text-xs">

@@ -22,9 +22,12 @@ export interface DataTableSortState {
 
 export interface DataTableSearchProps {
   value: string;
+  /** Called with the debounced search string (UI input updates immediately). */
   onChange: (value: string) => void;
   placeholder?: string;
   "aria-label"?: string;
+  /** Override default `DATA_TABLE.SEARCH_DEBOUNCE_MS`. */
+  debounceMs?: number;
 }
 
 export interface DataTablePageSizeProps {

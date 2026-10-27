@@ -71,6 +71,8 @@ export const REGEX_PATTERNS = Object.freeze({
   LINKEDIN_READ_FULL_ARTICLE: /\n*Read\s+the\s+full\s+article:\s*\S+/gi,
   /** Absolute http(s) URL prefix check for slug hints. */
   ABSOLUTE_HTTP_URL_PREFIX: /^https?:\/\//i,
+  /** Escape user search input before embedding in MongoDB `$regex`. */
+  REGEX_SPECIAL_CHARS: /[.*+?^${}()|[\]\\]/g,
 } as const);
 
 // Validation error messages

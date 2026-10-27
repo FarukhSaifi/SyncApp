@@ -300,8 +300,14 @@ export async function getPosts({
   }
 
   if (searchFilter) {
-    const searchRegex = { $regex: searchFilter, $options: "i" };
-    query.$or = [{ title: searchRegex }, { tags: searchRegex }];
+    const escapedSearch = searchFilter.replace(REGEX_PATTERNS.REGEX_SPECIAL_CHARS, "\\$&");
+    const searchRegex = { $regex: escapedSearch, $options: "i" };
+    query.$or = [
+      { title: searchRegex },
+      { tags: searchRegex },
+      { slug: searchRegex },
+      { meta_description: searchRegex },
+    ];
   }
 
   const [items, total, stats] = await Promise.all([

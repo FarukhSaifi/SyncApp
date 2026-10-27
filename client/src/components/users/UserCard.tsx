@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG } from "@constants";
+import { COLOR_CLASSES, ROLE_CONFIG, SYNC_LABEL, USER_ROLES, USER_ROLE_OPTIONS, VERIFIED_CONFIG, BUTTON_VARIANTS, BUTTON_SIZES } from "@constants";
 import type { UserCardProps } from "@types";
 import { formatDateTime, formatLastLogin } from "@utils/dateUtils";
 import { FiEdit3, FiShield, FiTrash2, FiUser, FiUserCheck } from "react-icons/fi";
@@ -79,13 +79,13 @@ const UserCard = memo<UserCardProps>(({ user, onEdit, onDelete }) => {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 pt-2 border-t">
-            <Button variant="outline" size="sm" onClick={() => onEdit(user)} className="flex-1 min-w-0">
+            <Button variant={BUTTON_VARIANTS.OUTLINE} size={BUTTON_SIZES.SM} onClick={() => onEdit(user)} className="flex-1 min-w-0">
               <FiEdit3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
               <span className="truncate">{SYNC_LABEL.EDIT}</span>
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant={BUTTON_VARIANTS.OUTLINE}
+              size={BUTTON_SIZES.SM}
               onClick={() => onDelete(userId, user.username)}
               className={`flex-1 min-w-0 ${COLOR_CLASSES.ICON_COLOR.DESTRUCTIVE} ${COLOR_CLASSES.HOVER_DESTRUCTIVE}`}
             >

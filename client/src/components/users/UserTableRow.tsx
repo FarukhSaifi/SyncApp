@@ -30,7 +30,7 @@ const UserTableRow = memo<UserTableRowProps>(({ user, onEdit, onDelete }) => {
           </div>
         </div>
       </TableCell>
-      <TableCell className="max-w-[200px] truncate" title={user.email}>
+      <TableCell className="max-w-50 truncate" title={user.email}>
         {user.email}
       </TableCell>
       <TableCell>

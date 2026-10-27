@@ -223,7 +223,9 @@ const Analytics = () => {
   );
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
     void loadAll(range);
     // Reload when auth role is known so admin website metrics are fetched.
     // eslint-disable-next-line react-hooks/exhaustive-deps
