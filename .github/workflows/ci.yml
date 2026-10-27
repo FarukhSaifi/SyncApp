@@ -49,8 +49,9 @@ jobs:
           node-version: "lts/*"
           package-manager-cache: false
 
-      - name: Install workspace dependencies
-        run: npm install --workspaces --include=dev
+      # Root install is required so root devDependencies (turbo) land in node_modules/.bin.
+      - name: Install dependencies
+        run: npm install
 
       - name: Run lint
         run: npm run lint
@@ -70,8 +71,8 @@ jobs:
           node-version: "lts/*"
           package-manager-cache: false
 
-      - name: Install workspace dependencies
-        run: npm install --workspaces --include=dev
+      - name: Install dependencies
+        run: npm install
 
       - name: Run typecheck
         run: npm run typecheck
@@ -92,7 +93,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: npm install --workspaces --include=dev
+        run: npm install
 
       - name: Build client
         working-directory: client
@@ -114,7 +115,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: npm install --workspaces --include=dev
+        run: npm install
 
       - name: Build server
         working-directory: server
@@ -170,8 +171,8 @@ jobs:
           node-version: "lts/*"
           package-manager-cache: false
 
-      - name: Install workspace dependencies
-        run: npm install --workspaces --include=dev
+      - name: Install dependencies
+        run: npm install
 
       # Push → iOS simulator (no Apple signing). Device / store profiles need
       # credentials created once via `cd mobile && npx eas credentials` (interactive).
