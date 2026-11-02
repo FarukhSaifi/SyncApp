@@ -59,6 +59,7 @@ export default function SeoScoreBreakdown({
           <p className="text-sm font-semibold text-foreground">
             {SIDEBAR_SECTIONS["SEO_SCORE"]}: {score}/{maxScore}
           </p>
+          <p className="text-[10px] leading-snug text-muted-foreground">{SEO_HELPER_COPY["SCORECARD_NOTE"]}</p>
           <p className="text-[10px] leading-snug text-muted-foreground">{SEO_HELPER_COPY["DENSITY_NOTE"]}</p>
         </div>
       ) : null}

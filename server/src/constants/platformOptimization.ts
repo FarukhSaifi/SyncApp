@@ -102,14 +102,15 @@ const PLATFORM_OPTIMIZATION_RULES: Record<OptimizationTarget, string> = {
 - When DEV.to is also a target, tags JSON field stays at ${PLATFORM_TAG_LIMITS["DEVTO"]["IDEAL"]} DEV.to tags (no #); LinkedIn hashtags live only in linkedin_post.`,
 
   google: `### Google Search SEO Optimization
-- Optimize content_markdown to rank for the primary long-tail query and closely related intents.
-- Title 30–60 chars with the primary keyword near the front; meta_description 120–160 chars with a clear CTR promise (no clickbait).
+- Optimize content_markdown for people-first helpfulness on the primary long-tail query and closely related intents (not a density-% game).
+- Title 30–60 chars with the primary keyword near the front; meta_description **120–160 chars** with a clear CTR promise (no clickbait; SERP may truncate).
 - Structure for SERPs: one H1-equivalent title, scannable ##/### headings that mirror search intents, early answer / featured-snippet box (35–50 words under the first H2).
 - Place the primary long-tail in title + first H2 + snippet box; do not repeat the exact phrase in every H2.
-- Every markdown image MUST include descriptive alt text (not generic words like "image" or "photo").
-- Natural keyword placement — no stuffing and no density targets. Cover people-also-ask angles with concrete steps, code, and definitions.
-- Prefer E-E-A-T: experience cues, accurate commands/versions, honest caveats. Never invent credentials, employers, or fake bylines.
+- Every markdown image MUST include descriptive alt text (not generic words like "image", "photo", or "picture").
+- Natural keyword placement — no stuffing and **no keyword-density targets**. Cover people-also-ask angles with concrete steps, code, and definitions.
+- Prefer E-E-A-T: experience cues, accurate commands/versions, honest caveats. **Never invent credentials, employers, fake bylines, or metrics.**
 - Prefer FAQ / People-also-ask ### only when answers add unique value (no boilerplate).
+- Avoid scaled thin / doorway-style pages — deliver a complete answer on this page.
 - tags JSON: topical SEO keywords (lowercase, no #) that match the query cluster — count is set per request tag limit.
 - Google is an SEO target only (not a SyncApp publish destination). Do not invent Search Console or Analytics claims.`,
 };

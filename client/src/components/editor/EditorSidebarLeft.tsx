@@ -469,7 +469,10 @@ const EditorSidebarLeft = ({
                 <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_IMPROVE_HINT"]}</p>
               </div>
             ) : null}
-            <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_DENSITY_NOTE"]}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_SCORECARD_NOTE"]}</p>
+              <p className="text-[10px] leading-snug text-muted-foreground">{SYNC_LABEL["SEO_DENSITY_NOTE"]}</p>
+            </div>
           </div>
         )}
       </EditorSidebarSection>

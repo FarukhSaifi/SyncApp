@@ -114,13 +114,22 @@ describe("publishController", () => {
     expect(json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: true,
-        data: expect.objectContaining({ postId: "post-1" }),
+        data: expect.objectContaining({
+          postId: "post-1",
+          seo_warnings: expect.any(Array),
+        }),
       }),
     );
   });
 
   it("publishAll forwards orchestration result", async () => {
-    vi.mocked(Post.findById).mockResolvedValue({ _id: "p1", author: "u1" } as never);
+    vi.mocked(Post.findById).mockResolvedValue({
+      _id: "p1",
+      author: "u1",
+      title: "T",
+      content_markdown: "",
+      tags: [],
+    } as never);
     performPublishToAllMock.mockResolvedValue({
       success: true,
       message: "done",
@@ -133,7 +142,13 @@ describe("publishController", () => {
     publishAll({ body: { postId: "p1" }, userId: "u1" } as never, res, vi.fn());
     await flushAsyncHandlers();
 
-    expect(json).toHaveBeenCalledWith(expect.objectContaining({ success: true, message: "done" }));
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: "done",
+        data: expect.objectContaining({ seo_warnings: expect.any(Array) }),
+      }),
+    );
   });
 
   it("statusMedium returns post status payload", async () => {

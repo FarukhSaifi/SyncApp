@@ -1,4 +1,3 @@
-
 import { ERROR_MESSAGES, PLATFORM_CONFIG, PLATFORMS, POST_STATUS, SUCCESS_MESSAGES } from "@constants";
 import { asyncHandler, ForbiddenError, NotFoundError, ValidationError } from "@middleware/errorHandler";
 import type { ICredentialDocument } from "@models/Credential";
@@ -14,8 +13,32 @@ import {
   publishToMedium,
   publishToWordpress,
 } from "@services/publishService";
+import { getPublishSeoWarnings } from "@services/seoScoreService";
 import type { IPlatformStatus, PlatformConfigWithFn, PostPlatformStatus } from "@types";
 import type { Request, Response } from "express";
+
+/** Soft SEO warnings for the publish response (never blocks publish). */
+function softSeoWarningsForPost(post: IPostDocument, extraPlatforms: string[] = []): string[] {
+  const stored = Array.isArray(post.seo_optimization_targets)
+    ? post.seo_optimization_targets.map((p) => String(p).trim().toLowerCase()).filter(Boolean)
+    : [];
+  const platforms = [...new Set([...stored, ...extraPlatforms.map((p) => p.trim().toLowerCase()).filter(Boolean)])];
+  return getPublishSeoWarnings(
+    {
+      title: post.title,
+      content_markdown: post.content_markdown,
+      meta_description: post.meta_description,
+      tags: post.tags,
+      cover_image: post.cover_image,
+      slug: post.slug,
+      canonical_url: post.canonical_url,
+    },
+    {
+      primaryKeyword: typeof post.seo_primary_keyword === "string" ? post.seo_primary_keyword : "",
+      platforms: platforms.length > 0 ? platforms : undefined,
+    },
+  );
+}
 
 const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, PlatformConfigWithFn> = {
   [PLATFORMS.MEDIUM]: { ...PLATFORM_CONFIG.medium, publishFn: publishToMedium },
@@ -146,6 +169,7 @@ function publishToPlatform(platformName: string) {
         postId: updatedPost._id,
         status: POST_STATUS.PUBLISHED,
         platformStatus,
+        seo_warnings: softSeoWarningsForPost(post, [platformName]),
       },
     });
   });
@@ -186,6 +210,7 @@ export const publishAll = asyncHandler(async (req: Request, res: Response) => {
       status: POST_STATUS.PUBLISHED,
       successes: result.successes,
       errors: result.errors,
+      seo_warnings: softSeoWarningsForPost(post, result.successes || []),
     },
   });
 });

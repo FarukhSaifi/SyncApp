@@ -74,17 +74,21 @@ const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL — anti AI-det
 
 ### Anti-spam & search quality (CRITICAL)
 - **No keyword stuffing:** Mentions of the primary topic and LSI terms must read like natural speech. Never repeat the same phrase in every heading, opening sentence, or meta fields.
-- **Natural keyword density:** Place the main topic clearly in the title, intro, and where it earns its keep — not in every paragraph for rank chasing.
+ - **No density targets:** Google does not use a keyword-density %. Place the main long-tail clearly in the title, first H2, snippet box, and intro — never chase a numeric density.
 - **No hidden / deceptive text:** No invisible HTML, white-on-white text, zero-size spans, cloaking, or content meant only for crawlers.
-- **No doorway-page patterns:** Do not write thin pages that only exist to funnel searches to another URL. Deliver a complete answer on this page; use one honest canonical slug, not a swarm of near-duplicate angles.
+- **No doorway-page patterns / scaled thin pages:** Do not write thin pages that only exist to funnel searches to another URL. Deliver a complete answer on this page; use one honest canonical slug, not a swarm of near-duplicate angles.
 - **No spammy CTAs:** Avoid aggressive affiliate-style pitches, fake urgency, or link-farm language. Soft, relevant next steps only.
-- **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch.
+- **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch. Prefer meta_description length **120–160 characters**.
+- **Image alt text (required):** Every markdown image MUST use descriptive alt text (e.g. \`![Architecture of X](url)\`). Never use generic alts like "image", "photo", "picture", or keyword salad.
+- **No fake authorship:** Do not invent credentials, employers, bylines, or metrics. Experience cues must be honest or omitted.
 
 ### SEO & Platform Optimization (E-E-A-T + Information Gain)
 - **Search Intent:** Answer the reader's real question early. Prefer actionable, practical advice over theory dumps.
 - **Beat generic AI content:** Google penalizes interchangeable summaries. Every draft must add *information gain* — specifics a templated AI overview would miss (versions, failure modes, measured numbers, real commands).
-- **High-intent long-tail keywords:** Target phrases a practitioner would type when solving a job (e.g. "How to stream Gemini AI responses in Next.js App Router with Vercel timeouts"), not broad head terms like "What is React". Title + intro must mirror that long-tail intent without stuffing.
+- **High-intent long-tail keywords:** Target phrases a practitioner would type when solving a job (e.g. "How to stream Gemini AI responses in Next.js App Router with Vercel timeouts"), not broad head terms like "What is React".
+- **Primary query placement:** Put the primary long-tail in **title + first H2 + the snippet box** under that H2. Do **not** repeat the exact phrase in every H2.
 - **Featured snippet box (40-word rule):** Immediately under the **first primary H2** (\`## …\`), place a concise factual answer of **2–3 sentences / 35–50 words** that directly answers the search query. Google often lifts this into position zero. Do not bury the answer in a long preamble.
+- **People also ask / FAQ:** Prefer FAQ / "People also ask" \`###\` only when each answer adds unique value — no boilerplate Q&A filler.
 - **Real implementation artifacts (required):** Include working code fences (copy-pasteable), terminal commands, concrete benchmark or timing notes when relevant, and at least one mermaid or ASCII system/flow diagram when the topic involves architecture. Generic prose without artifacts ranks poorly.
 - **Structure:** Open with a concrete hook (problem, surprising fact, or sharp claim). Use a clear ## / ### hierarchy that mirrors how a human would outline the topic.
 - **Rich Elements:** Use Markdown where it helps — > blockquotes for one sharp callout, code fences for working examples. Lists only when scannability genuinely improves understanding.

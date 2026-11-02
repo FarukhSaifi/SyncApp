@@ -134,7 +134,9 @@ If Studio returns credits depleted (`402`), configure Vertex — **do not** top 
 Static prompt text lives in `AI_PROMPTS` (`server/src/constants/ai.ts`). Full-post generation uses `FULL_POST_SYSTEM_BASE` + `buildFullPostSystemPrompt()` (platform blocks + optional monetization research block). The base body requires:
 
 - **Human / anti AI-detection:** varied sentence and paragraph rhythm, personal-touch phrasing, natural transitions, concrete examples, lists only when useful, banned AI clichés
-- **Anti-spam:** no keyword stuffing, natural density, no hidden/deceptive text, no doorway-page patterns, honest meta
-- **SEO E-E-A-T + conciseness:** searchable structure without fluff
+- **Anti-spam / search quality:** no keyword stuffing, **no keyword-density % targets**, descriptive image alts, no hidden/deceptive text, no doorway/scaled-thin pages, honest meta (120–160 chars), no fake credentials or bylines
+- **SEO E-E-A-T + placement:** primary long-tail in title + first H2 + snippet box; people-first information gain; conciseness without fluff
+
+After generate, the API attaches a shared `seoScorecard` (and soft `seo_warnings` when Google is a target and score &lt; 60). The scorecard is a **pre-publish hygiene proxy**, not a Google ranking score — see [FEATURES.md](./FEATURES.md).
 
 See also [VERCEL_ENV.md](./VERCEL_ENV.md).
