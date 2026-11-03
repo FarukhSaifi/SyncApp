@@ -4,9 +4,11 @@ import {
   API_URLS,
   DEFAULT_VALUES,
   ERROR_MESSAGES,
+  extensionForMime,
   FIELDS,
   HTTP,
   PLATFORM_CONFIG,
+  PLATFORM_SYNC,
   PLATFORMS,
   POST_STATUS,
   REGEX_PATTERNS,
@@ -30,6 +32,7 @@ import { cache, cacheKeys } from "@utils/cache";
 import { decryptCredential } from "@utils/encryption";
 import { finalizeLinkedInPost } from "@utils/linkedinPost";
 import { logger } from "@utils/logger";
+import { buildCoverFilename } from "@utils/mediaFilename";
 import { scheduledPublishDueFilter } from "@utils/scheduleUtils";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -293,6 +296,12 @@ function linkedinErrorMessage(error: unknown): string {
   return known || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
+/**
+ * Medium Posts API is create-only (POST /users/:id/posts). There is no public update
+ * endpoint for title/body/cover after first publish — save-sync is skipped by design
+ * (API limitation, not a SyncApp gap). Schedule and SEO stay local to SyncApp.
+ * If already published → action "skip" (honest UX via MEDIUM_ALREADY_PUBLISHED).
+ */
 export async function publishToMedium(
   post: IPostDocument,
   credential: ICredentialDocument,
@@ -384,6 +393,152 @@ export async function publishToDevto(
   };
 }
 
+/**
+ * On save/update: if the post is already live on DEV.to, PUT article fields via
+ * publishToDevto (title, body_markdown, tags, description, canonical_url, main_image).
+ * Best-effort — never throws; local save must still succeed if DEV.to is unreachable.
+ *
+ * Local-only fields (see PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE — schedule, SEO scorecard,
+ * status) are intentionally NOT pushed. Only buildDevtoArticlePayload keys sync;
+ * see PLATFORM_SYNC.DEVTO_SYNCABLE_ON_SAVE in @constants/platformSync.
+ */
+export async function syncPublishedPostToDevto(post: IPostDocument, authorId: string): Promise<boolean> {
+  const postId = String(post._id || "");
+  try {
+    if (!isAlreadyPublishedOnPlatform(post, PLATFORMS.DEVTO)) {
+      return false;
+    }
+
+    const credential = await Credential.findOne({
+      platform_name: PLATFORMS.DEVTO,
+      author: authorId,
+      is_active: true,
+    });
+    if (!credential) {
+      logger.warn(`${ERROR_MESSAGES.DEVTO_POST_SYNC_SKIPPED_NO_CREDENTIAL} (post ${postId})`);
+      return false;
+    }
+
+    await publishToDevto(post, credential);
+    logger.info(SUCCESS_MESSAGES.DEVTO_POST_SYNCED(postId));
+    return true;
+  } catch (err) {
+    logger.warn(ERROR_MESSAGES.DEVTO_POST_SYNC_FAILED((err as Error).message));
+    return false;
+  }
+}
+
+/** @deprecated Prefer syncPublishedPostToDevto — thin cover-era alias. */
+export async function syncPublishedCoverToDevto(post: IPostDocument, authorId: string): Promise<boolean> {
+  return syncPublishedPostToDevto(post, authorId);
+}
+
+/** Log Medium/LinkedIn API sync limits at most once per process (avoid save-path spam). */
+let mediumSaveSyncLimitLogged = false;
+let linkedinCoverSyncLimitLogged = false;
+
+/**
+ * No-op save-sync for Medium. Medium's API cannot update an existing post
+ * (create-only). Returns false and logs once so postsService orchestration can
+ * call this beside DEV.to sync without implying remote sync works.
+ */
+export async function syncPublishedPostToMedium(_post: IPostDocument, _authorId: string): Promise<boolean> {
+  if (!mediumSaveSyncLimitLogged) {
+    mediumSaveSyncLimitLogged = true;
+    logger.warn(ERROR_MESSAGES.MEDIUM_SAVE_SYNC_UNSUPPORTED);
+  }
+  return false;
+}
+
+/**
+ * No-op cover/field sync for LinkedIn. Current UGC payload is text-only
+ * (MEDIA_CATEGORY_NONE); LinkedIn has no edit-in-place for prior shares.
+ * See PLATFORM_SYNC.LINKEDIN_COVER_SYNC (not_applicable) and LOCAL_ONLY_ON_SAVE.
+ * Returns false; logs once.
+ */
+export async function syncPublishedCoverToLinkedin(_post: IPostDocument, _authorId: string): Promise<boolean> {
+  if (!linkedinCoverSyncLimitLogged) {
+    linkedinCoverSyncLimitLogged = true;
+    logger.warn(`${ERROR_MESSAGES.LINKEDIN_COVER_SYNC_UNSUPPORTED} (${PLATFORM_SYNC.LINKEDIN_COVER_SYNC})`);
+  }
+  return false;
+}
+
+/** Resolve a public HTTP(S) cover URL for WordPress media upload, or empty when not uploadable. */
+function resolveWordpressCoverUrl(post: IPostDocument): string {
+  const cover = (post.cover_image || "").trim();
+  if (!cover || cover.startsWith(DEFAULT_VALUES.DATA_URL_SCHEME_PREFIX)) {
+    return "";
+  }
+  if (isValidHttpUrl(cover)) {
+    return cover;
+  }
+  return "";
+}
+
+/**
+ * Upload a public HTTP(S) cover image to the WordPress media library.
+ * Skips data: URLs. Best-effort — returns null on skip/failure so post PUT can still proceed.
+ */
+export async function uploadWordpressFeaturedMedia(
+  siteUrl: string,
+  coverUrl: string,
+  apiKey: string,
+  post: IPostDocument,
+): Promise<number | null> {
+  if (!coverUrl || coverUrl.startsWith(DEFAULT_VALUES.DATA_URL_SCHEME_PREFIX)) {
+    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_SKIPPED("data URL or empty cover"));
+    return null;
+  }
+  if (!isValidHttpUrl(coverUrl)) {
+    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_SKIPPED("cover is not a public HTTP(S) URL"));
+    return null;
+  }
+
+  try {
+    const imageResponse = await axios.get<ArrayBuffer>(coverUrl, { responseType: "arraybuffer" });
+    const rawContentType = imageResponse.headers[HTTP.HEADERS.CONTENT_TYPE.toLowerCase()];
+    const contentTypeHeader = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType;
+    const contentType =
+      typeof contentTypeHeader === "string" && contentTypeHeader.trim()
+        ? contentTypeHeader.split(";")[0].trim()
+        : DEFAULT_VALUES.MIME_IMAGE_JPEG;
+    const ext = extensionForMime(contentType);
+    const filename = buildCoverFilename({
+      slug: post.slug,
+      title: post.title,
+      postId: post._id ? String(post._id) : undefined,
+      ext,
+    });
+    const buffer = Buffer.from(imageResponse.data);
+
+    const mediaResponse = await axios.post<{ id?: number }>(API_URLS.WORDPRESS.MEDIA_ENDPOINT(siteUrl), buffer, {
+      headers: {
+        [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${apiKey}`,
+        [HTTP.HEADERS.CONTENT_TYPE]: contentType,
+        [HTTP.HEADERS.CONTENT_DISPOSITION]: API_URLS.WORDPRESS.MEDIA_CONTENT_DISPOSITION(filename),
+      },
+    });
+
+    const mediaId = mediaResponse.data?.id;
+    if (typeof mediaId !== "number" || !Number.isFinite(mediaId)) {
+      logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_FAILED("media response missing id"));
+      return null;
+    }
+    return mediaId;
+  } catch (err) {
+    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_FAILED((err as Error).message));
+    return null;
+  }
+}
+
+/**
+ * Publish or update a WordPress post (title, content, tags; featured_media when cover uploads).
+ *
+ * Core WP REST does not expose SEO meta description or canonical URL without a plugin
+ * (Yoast / Rank Math). Those SyncApp fields are intentionally NOT sent. scheduled_for and
+ * seo_score / seo_score_summary stay SyncApp-local only (P3) — never pushed to WordPress.
+ */
 export async function publishToWordpress(
   post: IPostDocument,
   credential: ICredentialDocument,
@@ -399,12 +554,21 @@ export async function publishToWordpress(
     throw new Error(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
   }
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     title: post.title,
     content: post.content_markdown,
     status: PLATFORM_CONFIG.wordpress.status,
     tags: post.tags || [],
   };
+
+  const coverUrl = resolveWordpressCoverUrl(post);
+  if (coverUrl) {
+    const mediaId = await uploadWordpressFeaturedMedia(siteUrl, coverUrl, apiKey, post);
+    if (mediaId !== null) {
+      payload.featured_media = mediaId;
+    }
+  }
+
   const headers = wordpressAuthHeaders(apiKey);
   const existing = getExistingPlatformStatus(post, PLATFORMS.WORDPRESS);
 
@@ -437,8 +601,46 @@ export async function publishToWordpress(
 }
 
 /**
+ * On save/update: if the post is already live on WordPress, PUT title/body/tags via
+ * publishToWordpress (and featured_media when a public cover URL uploads successfully).
+ * Best-effort — never throws; local save must still succeed if WordPress is unreachable.
+ *
+ * Local-only / not synced: PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE (schedule, seo_score*).
+ * meta_description / canonical_url: PLATFORM_SYNC.WORDPRESS_SEO_META_SYNC (needs SEO plugin).
+ */
+export async function syncPublishedPostToWordpress(post: IPostDocument, authorId: string): Promise<boolean> {
+  const postId = String(post._id || "");
+  try {
+    if (!isAlreadyPublishedOnPlatform(post, PLATFORMS.WORDPRESS)) {
+      return false;
+    }
+
+    const credential = await Credential.findOne({
+      platform_name: PLATFORMS.WORDPRESS,
+      author: authorId,
+      is_active: true,
+    });
+    if (!credential) {
+      logger.warn(`${ERROR_MESSAGES.WORDPRESS_SYNC_SKIPPED_NO_CREDENTIAL} (post ${postId})`);
+      return false;
+    }
+
+    await publishToWordpress(post, credential);
+    logger.info(SUCCESS_MESSAGES.WORDPRESS_POST_SYNCED(postId));
+    return true;
+  } catch (err) {
+    logger.warn(ERROR_MESSAGES.WORDPRESS_SYNC_FAILED((err as Error).message));
+    return false;
+  }
+}
+
+/**
  * Publish the LinkedIn summary (not the full TipTap article) via UGC Posts API.
- * Always creates a new share with the current summary so "Publish" is never a silent no-op.
+ * Always creates a NEW share — LinkedIn has no edit-in-place for prior UGC posts
+ * (PLATFORM_SYNC.LINKEDIN_SAVE_SYNC). Cover is N/A (LINKEDIN_COVER_SYNC = not_applicable;
+ * MEDIA_CATEGORY_NONE). Save does not update a previous share (API limitation).
+ * Schedule and SEO stay local (PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE).
+ * wasPublished → action "update" only means "re-publish created another share".
  */
 export async function publishToLinkedin(
   post: IPostDocument,
@@ -460,6 +662,7 @@ export async function publishToLinkedin(
     const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
 
     const { UGC, RESTLI_PROTOCOL_HEADER, RESTLI_PROTOCOL_VERSION } = API_URLS.LINKEDIN;
+    // Cover intentionally omitted: MEDIA_CATEGORY_NONE — do not invent IMAGE media without product scope.
     const payload = {
       author: personUrn,
       lifecycleState: UGC.LIFECYCLE_PUBLISHED,
@@ -517,6 +720,20 @@ const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: 
 function platformSuccessMessage(platformName: string, action: PlatformPublishAction): string {
   const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
   const name = platformCfg?.name ?? platformName;
+
+  if (platformName === PLATFORMS.MEDIUM && action === "skip") {
+    return SUCCESS_MESSAGES.MEDIUM_ALREADY_PUBLISHED;
+  }
+
+  if (platformName === PLATFORMS.LINKEDIN) {
+    if (action === "update") {
+      return SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATES_NEW;
+    }
+    if (action === "create") {
+      return SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATED;
+    }
+  }
+
   if (action === "update") {
     return SUCCESS_MESSAGES.UPDATED_ON_PLATFORM(name);
   }

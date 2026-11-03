@@ -119,6 +119,21 @@ const createSuccessMessages = () => {
         ? `Published: ${successes.join(", ")}. Failed: ${failures.join("; ")}`
         : `Published: ${successes.join(", ")}`,
     PUBLISH_ALREADY_ON_PLATFORM: (platform: string) => `Already published on ${platform}`,
+    /**
+     * Medium skip: create-only API — cannot update after first publish.
+     */
+    MEDIUM_ALREADY_PUBLISHED:
+      "Already published on Medium. Medium's API is create-only — SyncApp cannot update the live post. Edit on Medium or leave as-is. Saving here will not sync title, body, or cover.",
+    /**
+     * LinkedIn first publish honesty (new UGC share; cover N/A; save won't update).
+     */
+    LINKEDIN_PUBLISH_CREATED:
+      "Published a new LinkedIn share. Cover image is not applied to LinkedIn text posts. Saving later will not update the LinkedIn share.",
+    /**
+     * LinkedIn re-publish: always a NEW share — previous post is not edited.
+     */
+    LINKEDIN_PUBLISH_CREATES_NEW:
+      "Published a NEW LinkedIn share. The previous LinkedIn post was not updated. Cover image is not applied to LinkedIn UGC text posts.",
     REMOVED_FROM_PLATFORM: (platform: string) => `Post removed from ${platform}`,
     // Credentials
     CREDENTIALS_SAVED: (platform: string) => `${platform} API credentials saved successfully`,
@@ -594,13 +609,21 @@ export const INFO_MESSAGES = Object.freeze({
   ACCOUNT_INFORMATION_DESC: "Your account details and statistics",
   // Settings
   MEDIUM_INTEGRATION: "Medium Integration",
-  MEDIUM_INTEGRATION_DESC: "Connect your Medium account to publish posts directly",
+  MEDIUM_INTEGRATION_DESC:
+    "Connect Medium to publish once. Medium's API is create-only — SyncApp cannot update a live Medium post after first publish.",
+  MEDIUM_UPDATE_UNSUPPORTED_HINT:
+    "Already on Medium? Edit the post on Medium. Saving in SyncApp will not sync title, body, or cover.",
   DEVTO_INTEGRATION: "DEV.to Integration",
   DEVTO_INTEGRATION_DESC: "Connect your DEV.to account to publish posts directly",
   WORDPRESS_INTEGRATION: "WordPress Integration",
   WORDPRESS_INTEGRATION_DESC: "Connect your WordPress site to publish posts directly",
   LINKEDIN_INTEGRATION: "LinkedIn Integration",
-  LINKEDIN_INTEGRATION_DESC: "Connect LinkedIn with OAuth to publish the short summary (not the full article)",
+  LINKEDIN_INTEGRATION_DESC:
+    "Connect LinkedIn with OAuth to publish the short summary as a new UGC share (not the full article). Save does not update a previous LinkedIn post; cover image is not applied.",
+  LINKEDIN_PUBLISH_HONESTY_HINT:
+    "Publish creates a NEW LinkedIn share each time. Saving this post does not edit the previous LinkedIn post. Cover images are not applied to LinkedIn text posts. Schedule and SEO stay in SyncApp only.",
+  PLATFORM_SCHEDULE_SEO_LOCAL_ONLY:
+    "Schedule and SEO fields are stored in SyncApp only; they are not pushed to Medium or LinkedIn.",
   LINKEDIN_HOW_TO_CONNECT: "Before Connect — LinkedIn app + browser checklist:",
   LINKEDIN_OAUTH_STEP_1: "Auth tab: add the exact Redirect URI below (and keep Update saved)",
   LINKEDIN_OAUTH_STEP_2: "Products: enable Sign In with LinkedIn (OpenID) AND Share on LinkedIn",
@@ -1091,7 +1114,7 @@ export const EDITOR_UI = Object.freeze({
   // LinkedIn teaser panel
   LINKEDIN_POST_TITLE: "LinkedIn summary",
   LINKEDIN_POST_HINT:
-    "Short interactive LinkedIn post (with emojis). Full article stays in the editor — link readers to your site.",
+    "Short interactive LinkedIn post (with emojis). Publish creates a NEW share each time — Save does not update LinkedIn. Cover image is not applied to LinkedIn text posts.",
   LINKEDIN_POST_COPY: "Copy for LinkedIn",
   LINKEDIN_POST_PUBLISH: "Publish to LinkedIn",
   LINKEDIN_POST_GENERATE: "Generate LinkedIn summary",

@@ -50,6 +50,13 @@ vi.mock("./storage", () => ({
   deleteFromGCS: vi.fn(async () => undefined),
 }));
 
+vi.mock("./publishService", () => ({
+  syncPublishedPostToDevto: vi.fn(async () => false),
+  syncPublishedPostToMedium: vi.fn(async () => false),
+  syncPublishedCoverToLinkedin: vi.fn(async () => false),
+  syncPublishedPostToWordpress: vi.fn(async () => false),
+}));
+
 import { createPost, deletePost, getPostById, getPostBySlug, getPosts, updatePost } from "./postsService";
 
 describe("postsService branches", () => {

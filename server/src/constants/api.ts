@@ -25,6 +25,9 @@ export const API_URLS = {
   WORDPRESS: {
     POSTS_ENDPOINT: (siteUrl: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`,
     POST_BY_ID: (siteUrl: string, id: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts/${id}`,
+    MEDIA_ENDPOINT: (siteUrl: string) => `${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/media`,
+    /** Content-Disposition value for binary media uploads (WP REST attachment convention). */
+    MEDIA_CONTENT_DISPOSITION: (filename: string) => `attachment; filename="${filename}"`,
   },
 
   // LinkedIn OAuth + Share (UGC Posts API — Share on LinkedIn / w_member_social)

@@ -56,6 +56,8 @@ export {
   resolveOptimizationTargets,
 } from "./platformOptimization";
 export type { OptimizationTarget } from "./platformOptimization";
+export { isLocalOnlyOnSaveField, PLATFORM_SYNC } from "./platformSync";
+export type { PlatformSyncDevtoSyncableField, PlatformSyncLocalOnlyField } from "./platformSync";
 export { PLATFORM_TAG_LIMITS } from "./platformTags";
 export type { PlatformTagLimitKey } from "./platformTags";
 export { OPENAPI_UI, ROUTES } from "./routes";

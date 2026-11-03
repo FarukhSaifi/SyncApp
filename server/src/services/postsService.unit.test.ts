@@ -27,6 +27,18 @@ vi.mock("./storage", () => ({
   deleteFromGCS: vi.fn(async () => undefined),
 }));
 
+const syncPublishedPostToDevto = vi.hoisted(() => vi.fn(async () => true));
+const syncPublishedPostToMedium = vi.hoisted(() => vi.fn(async () => false));
+const syncPublishedCoverToLinkedin = vi.hoisted(() => vi.fn(async () => false));
+const syncPublishedPostToWordpress = vi.hoisted(() => vi.fn(async () => false));
+
+vi.mock("./publishService", () => ({
+  syncPublishedPostToDevto,
+  syncPublishedPostToMedium,
+  syncPublishedCoverToLinkedin,
+  syncPublishedPostToWordpress,
+}));
+
 import { createPost, deletePost, getPostById, getPostBySlug, getPosts, updatePost } from "./postsService";
 
 describe("postsService (mocked Post model)", () => {
@@ -199,6 +211,117 @@ describe("postsService (mocked Post model)", () => {
     });
     const updated = await updatePost("p1", { title: "New title here" }, "owner-1");
     expect(updated?.title).toBe("New title here");
+    expect(syncPublishedPostToDevto).toHaveBeenCalledOnce();
+    expect(syncPublishedPostToWordpress).toHaveBeenCalledOnce();
+  });
+
+  it("updatePost syncs to DEV.to when body or tags change", async () => {
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      title: "Same title",
+      content_markdown: "Old body",
+      tags: ["js"],
+      status: POST_STATUS.PUBLISHED,
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: "p1",
+          title: "Same title",
+          content_markdown: "New body",
+          tags: ["js", "node"],
+        }),
+      }),
+    });
+
+    await updatePost("p1", { content_markdown: "New body", tags: ["js", "node"] }, "owner-1");
+    expect(syncPublishedPostToDevto).toHaveBeenCalledOnce();
+    expect(syncPublishedPostToWordpress).toHaveBeenCalledOnce();
+  });
+
+  it("updatePost skips DEV.to sync when only local-only fields change", async () => {
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      title: "Same title",
+      content_markdown: "Same body",
+      tags: ["js"],
+      status: POST_STATUS.DRAFT,
+      cover_image: null,
+      meta_description: "meta",
+      canonical_url: "https://example.com/slug",
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: "p1",
+          title: "Same title",
+          content_markdown: "Same body",
+          tags: ["js"],
+          status: POST_STATUS.DRAFT,
+          cover_image: null,
+          meta_description: "meta",
+          canonical_url: "https://example.com/slug",
+          linkedin_post: "new summary",
+        }),
+      }),
+    });
+
+    await updatePost("p1", { linkedin_post: "new summary" }, "owner-1");
+    expect(syncPublishedPostToDevto).not.toHaveBeenCalled();
+    expect(syncPublishedPostToWordpress).not.toHaveBeenCalled();
+  });
+
+  it("updatePost skips DEV.to sync for schedule and SEO-only updates (P3)", async () => {
+    const syncableSnapshot = {
+      title: "Same title",
+      content_markdown: "Same body",
+      tags: ["js"],
+      cover_image: null,
+      meta_description: "meta",
+      canonical_url: "https://example.com/slug",
+    };
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      status: POST_STATUS.DRAFT,
+      scheduled_for: null,
+      scheduled_platforms: [],
+      seo_primary_keyword: "old",
+      seo_optimization_targets: ["google"],
+      ...syncableSnapshot,
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: "p1",
+          status: POST_STATUS.DRAFT,
+          scheduled_for: new Date(Date.now() + 86_400_000),
+          scheduled_platforms: ["devto"],
+          seo_score: 72,
+          seo_score_summary: "ok",
+          seo_primary_keyword: "nextjs seo",
+          seo_optimization_targets: ["devto"],
+          ...syncableSnapshot,
+        }),
+      }),
+    });
+
+    await updatePost(
+      "p1",
+      {
+        scheduled_for: new Date(Date.now() + 86_400_000).toISOString(),
+        scheduled_platforms: ["devto"],
+        seo_primary_keyword: "nextjs seo",
+        seo_optimization_targets: ["devto"],
+      },
+      "owner-1",
+    );
+    expect(syncPublishedPostToDevto).not.toHaveBeenCalled();
+    expect(syncPublishedPostToWordpress).not.toHaveBeenCalled();
+    expect(syncPublishedPostToMedium).not.toHaveBeenCalled();
+    expect(syncPublishedCoverToLinkedin).not.toHaveBeenCalled();
   });
 
   it("updatePost deletes previous cover when cover_image is replaced", async () => {
@@ -221,6 +344,10 @@ describe("postsService (mocked Post model)", () => {
 
     const { deleteFromGCS } = await import("./storage");
     expect(vi.mocked(deleteFromGCS)).toHaveBeenCalledWith(oldCover);
+    expect(syncPublishedPostToDevto).toHaveBeenCalledOnce();
+    expect(syncPublishedPostToMedium).toHaveBeenCalledOnce();
+    expect(syncPublishedCoverToLinkedin).toHaveBeenCalledOnce();
+    expect(syncPublishedPostToWordpress).toHaveBeenCalledOnce();
   });
 
   it("updatePost skips cover delete when cover_image is unchanged", async () => {
@@ -242,6 +369,10 @@ describe("postsService (mocked Post model)", () => {
 
     const { deleteFromGCS } = await import("./storage");
     expect(vi.mocked(deleteFromGCS)).not.toHaveBeenCalled();
+    expect(syncPublishedPostToDevto).not.toHaveBeenCalled();
+    expect(syncPublishedPostToMedium).not.toHaveBeenCalled();
+    expect(syncPublishedCoverToLinkedin).not.toHaveBeenCalled();
+    expect(syncPublishedPostToWordpress).not.toHaveBeenCalled();
   });
 
   it("updatePost deletes previous cover when cover_image is cleared", async () => {

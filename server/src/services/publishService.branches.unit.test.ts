@@ -1,5 +1,5 @@
 import { config } from "@config";
-import { DEFAULT_VALUES, ERROR_MESSAGES, PLATFORMS } from "@constants";
+import { DEFAULT_VALUES, ERROR_MESSAGES, PLATFORMS, SUCCESS_MESSAGES } from "@constants";
 import type { ICredentialDocument } from "@models/Credential";
 import type { IPostDocument } from "@models/Post";
 import axios from "axios";
@@ -62,6 +62,17 @@ describe("publishService platform branches", () => {
     expect(platformSuccessMessage("unknown-platform", "create")).toContain("unknown-platform");
   });
 
+  it("platformSuccessMessage uses Medium create-only skip copy", () => {
+    const message = platformSuccessMessage(PLATFORMS.MEDIUM, "skip");
+    expect(message).toBe(SUCCESS_MESSAGES.MEDIUM_ALREADY_PUBLISHED);
+    expect(message).toMatch(/create-only/i);
+  });
+
+  it("platformSuccessMessage uses LinkedIn new-share copy for create and re-publish", () => {
+    expect(platformSuccessMessage(PLATFORMS.LINKEDIN, "create")).toBe(SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATED);
+    expect(platformSuccessMessage(PLATFORMS.LINKEDIN, "update")).toBe(SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATES_NEW);
+  });
+
   it("publishToMedium skips when already published", async () => {
     const post = mockPost({
       platform_status: {
@@ -71,6 +82,7 @@ describe("publishService platform branches", () => {
     const result = await publishToMedium(post, mockCredential(PLATFORMS.MEDIUM));
     expect(result.action).toBe("skip");
     expect(axios.get).not.toHaveBeenCalled();
+    expect(platformSuccessMessage(PLATFORMS.MEDIUM, result.action)).toBe(SUCCESS_MESSAGES.MEDIUM_ALREADY_PUBLISHED);
   });
 
   it("publishToMedium uses markdown contentFormat for plain text bodies", async () => {

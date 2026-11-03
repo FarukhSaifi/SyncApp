@@ -42,6 +42,24 @@ export const ERROR_MESSAGES = {
   LINKEDIN_UNPUBLISH_UNSUPPORTED:
     "LinkedIn posts cannot be unpublished from SyncApp. Delete the post from LinkedIn if needed.",
   FAILED_TO_PUBLISH_ANY_PLATFORM: "Failed to publish to any platform",
+  DEVTO_POST_SYNC_SKIPPED_NO_CREDENTIAL: "Skipping DEV.to post sync: no active DEV.to credential",
+  DEVTO_POST_SYNC_FAILED: (detail: string) => `Best-effort DEV.to post sync failed: ${detail}`,
+  WORDPRESS_SYNC_SKIPPED_NO_CREDENTIAL: "Skipping WordPress sync: no active WordPress credential",
+  WORDPRESS_SYNC_FAILED: (detail: string) => `Best-effort WordPress sync failed: ${detail}`,
+  WORDPRESS_MEDIA_UPLOAD_SKIPPED: (detail: string) => `Skipping WordPress featured media upload: ${detail}`,
+  WORDPRESS_MEDIA_UPLOAD_FAILED: (detail: string) => `Best-effort WordPress media upload failed: ${detail}`,
+  /**
+   * Medium API is create-only — there is no update endpoint for title/body/cover.
+   * Logged once per process when save-path sync is considered and skipped.
+   */
+  MEDIUM_SAVE_SYNC_UNSUPPORTED:
+    "Medium save-sync skipped: Medium API is create-only (no update for title, body, or cover after first publish).",
+  /**
+   * LinkedIn UGC text posts use MEDIA_CATEGORY_NONE — no cover/image in payload, no edit-in-place.
+   * Logged once per process when cover/field sync is considered and skipped.
+   */
+  LINKEDIN_COVER_SYNC_UNSUPPORTED:
+    "LinkedIn cover/field sync skipped: UGC text posts do not include cover/image; LinkedIn has no edit-in-place for prior shares. Schedule and SEO stay local to SyncApp.",
   // Encryption
   FAILED_TO_ENCRYPT: "Failed to encrypt data",
   FAILED_TO_DECRYPT: "Failed to decrypt data",
@@ -127,8 +145,7 @@ export const ERROR_MESSAGES = {
   AI_TRENDING_FETCH_FAILED:
     "Trending topics and search keywords could not be fetched right now. Please retry in a few moments.",
   AI_KEYWORD_RESEARCH_REQUIRES_PROVIDER: " Keyword research requires Vertex AI or Studio access.",
-  AI_KEYWORD_RESEARCH_FAILED:
-    "Keyword research could not be completed right now. Please retry in a few moments.",
+  AI_KEYWORD_RESEARCH_FAILED: "Keyword research could not be completed right now. Please retry in a few moments.",
   AI_RATE_LIMITED: "AI rate limit reached for this model. Wait a minute, or use Gemini 3.8 Flash / Flash-Lite.",
   /** Studio prepaid credits depleted (HTTP 402). Do not top up Studio — use Vertex AI instead. */
   AI_CREDITS_DEPLETED:
@@ -210,10 +227,35 @@ export const SUCCESS_MESSAGES = {
   PUBLISHED_TO_PLATFORM: (name: string) => `Post published to ${name} successfully`,
   UPDATED_ON_PLATFORM: (name: string) => `Post updated on ${name} successfully`,
   ALREADY_PUBLISHED_ON_PLATFORM: (name: string) => `Post is already published on ${name}`,
+  /**
+   * Medium skip path: API is create-only — SyncApp cannot PATCH/PUT an existing Medium post.
+   * Honest UX when action === "skip".
+   */
+  MEDIUM_ALREADY_PUBLISHED:
+    "Already published on Medium. Medium's API is create-only — SyncApp cannot update the live post after first publish. Edit on Medium or leave as-is. Saving here will not sync title, body, or cover.",
+  /**
+   * LinkedIn first publish: always a new UGC share; cover is N/A; save will not update LinkedIn.
+   */
+  LINKEDIN_PUBLISH_CREATED:
+    "Published a new LinkedIn share (UGC text post). Cover image is not applied to LinkedIn text posts. Saving this post later will not update the LinkedIn share.",
+  /**
+   * LinkedIn re-publish (wasPublished / action "update"): always creates another NEW share.
+   */
+  LINKEDIN_PUBLISH_CREATES_NEW:
+    "Published a NEW LinkedIn share. LinkedIn has no edit-in-place — the previous share was not updated. Cover image is not applied to LinkedIn UGC text posts. Saving this post does not update LinkedIn.",
+  /**
+   * Schedule + SEO live only in SyncApp for Medium/LinkedIn (not pushed by those APIs).
+   */
+  PLATFORM_SCHEDULE_SEO_LOCAL_ONLY:
+    "Schedule and SEO fields are stored in SyncApp only; they are not pushed to Medium or LinkedIn.",
   PUBLISHED_TO_PLATFORMS: (platforms: string[]) => `Published to ${platforms.join(", ")} with some errors`,
   PUBLISHED_TO_ALL: (platforms: string[]) => `Post published to all platforms successfully (${platforms.join(", ")})`,
   FAILED_TO_PUBLISH_ALL: "Failed to publish to any platform",
   UNPUBLISHED_FROM_PLATFORM: (name: string) => `Post unpublished from ${name}`,
   ANALYTICS_DEVTO_SYNCED: (count: number) =>
     count === 1 ? "Synced engagement for 1 DEV.to article" : `Synced engagement for ${count} DEV.to articles`,
+  /** Save path: pushed title/body/tags/meta/canonical/cover to an already-published DEV.to article. */
+  DEVTO_POST_SYNCED: (postId: string) => `Synced published post fields to DEV.to for post ${postId}`,
+  /** Save path: pushed title/body/tags (+ featured_media when cover uploaded) to WordPress. */
+  WORDPRESS_POST_SYNCED: (postId: string) => `Synced published post fields to WordPress for post ${postId}`,
 } as const;

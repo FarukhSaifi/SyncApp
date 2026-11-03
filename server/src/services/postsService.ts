@@ -13,6 +13,7 @@ import {
   type PostStatus,
 } from "@constants";
 import { ForbiddenError, NotFoundError } from "@middleware/errorHandler";
+import type { IPostDocument } from "@models/Post";
 import Post from "@models/Post";
 import type { CreatePostInput, GetPostsParams, GetPostsResult, LeanPost, PostListStats } from "@types";
 import { cache, cacheKeys } from "@utils/cache";
@@ -26,6 +27,12 @@ import { logger } from "@utils/logger";
 import { buildCoverFilename, buildInlineImageFilename } from "@utils/mediaFilename";
 import { normalizeScheduledFor, normalizeScheduledPlatforms } from "@utils/scheduleUtils";
 
+import {
+  syncPublishedCoverToLinkedin,
+  syncPublishedPostToDevto,
+  syncPublishedPostToMedium,
+  syncPublishedPostToWordpress,
+} from "./publishService";
 import { buildPersistedSeoFields } from "./seoScoreService";
 import { deleteFromGCS, uploadToGCS } from "./storage";
 
@@ -35,6 +42,100 @@ function normalizeCoverImageUrl(value: unknown): string | null {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeOptionalText(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim();
+}
+
+function tagsEqual(a: unknown, b: unknown): boolean {
+  const left = Array.isArray(a) ? a.map((t) => String(t)) : [];
+  const right = Array.isArray(b) ? b.map((t) => String(t)) : [];
+  if (left.length !== right.length) {
+    return false;
+  }
+  return left.every((tag, index) => tag === right[index]);
+}
+
+/**
+ * True when any DEV.to-synced field differs between the pre-update snapshot and the saved post.
+ * Intentionally ignores PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE (schedule, SEO scorecard, status) —
+ * those must not trigger platform sync-on-save.
+ */
+function hasDevtoSyncableFieldsChanged(
+  previous: {
+    title?: string;
+    content_markdown?: string;
+    tags?: string[];
+    meta_description?: string | null;
+    canonical_url?: string | null;
+    cover_image?: unknown;
+  },
+  next: {
+    title?: string;
+    content_markdown?: string;
+    tags?: string[];
+    meta_description?: string | null;
+    canonical_url?: string | null;
+    cover_image?: unknown;
+  },
+): boolean {
+  if (normalizeOptionalText(previous.title) !== normalizeOptionalText(next.title)) {
+    return true;
+  }
+  if (normalizeOptionalText(previous.content_markdown) !== normalizeOptionalText(next.content_markdown)) {
+    return true;
+  }
+  if (!tagsEqual(previous.tags, next.tags)) {
+    return true;
+  }
+  if (normalizeOptionalText(previous.meta_description) !== normalizeOptionalText(next.meta_description)) {
+    return true;
+  }
+  if (normalizeOptionalText(previous.canonical_url) !== normalizeOptionalText(next.canonical_url)) {
+    return true;
+  }
+  if (normalizeCoverImageUrl(previous.cover_image) !== normalizeCoverImageUrl(next.cover_image)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * True when WordPress-synced fields change (title / body / tags / cover).
+ * meta_description + canonical_url are not WP triggers (core REST lacks SEO fields without plugins).
+ * scheduled_for / seo_score* stay SyncApp-local — never considered here.
+ */
+function hasWordpressSyncableFieldsChanged(
+  previous: {
+    title?: string;
+    content_markdown?: string;
+    tags?: string[];
+    cover_image?: unknown;
+  },
+  next: {
+    title?: string;
+    content_markdown?: string;
+    tags?: string[];
+    cover_image?: unknown;
+  },
+): boolean {
+  if (normalizeOptionalText(previous.title) !== normalizeOptionalText(next.title)) {
+    return true;
+  }
+  if (normalizeOptionalText(previous.content_markdown) !== normalizeOptionalText(next.content_markdown)) {
+    return true;
+  }
+  if (!tagsEqual(previous.tags, next.tags)) {
+    return true;
+  }
+  if (normalizeCoverImageUrl(previous.cover_image) !== normalizeCoverImageUrl(next.cover_image)) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -646,6 +747,20 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
 
   const previousCoverImage = post.cover_image;
   const coverImageChanging = updates.cover_image !== undefined;
+  const previousDevtoSnapshot = {
+    title: post.title,
+    content_markdown: post.content_markdown,
+    tags: Array.isArray(post.tags) ? [...post.tags] : [],
+    meta_description: post.meta_description,
+    canonical_url: post.canonical_url,
+    cover_image: post.cover_image,
+  };
+  const previousWordpressSnapshot = {
+    title: post.title,
+    content_markdown: post.content_markdown,
+    tags: Array.isArray(post.tags) ? [...post.tags] : [],
+    cover_image: post.cover_image,
+  };
 
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     returnDocument: "after",
@@ -661,6 +776,48 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   // Upload/presign already succeeded and DB is updated — delete the prior object best-effort.
   if (coverImageChanging) {
     await deleteReplacedCoverImage(previousCoverImage, updateData.cover_image);
+  }
+
+  // Platform sync-on-save (best-effort). DEV.to can update remotely; Medium/LinkedIn
+  // no-ops document API limits (create-only / no edit-in-place / cover N/A) without implying sync works.
+  if (
+    updatedPost &&
+    hasDevtoSyncableFieldsChanged(previousDevtoSnapshot, {
+      title: updatedPost.title ?? previousDevtoSnapshot.title,
+      content_markdown: updatedPost.content_markdown ?? previousDevtoSnapshot.content_markdown,
+      tags: updatedPost.tags ?? previousDevtoSnapshot.tags,
+      meta_description:
+        updatedPost.meta_description !== undefined
+          ? updatedPost.meta_description
+          : previousDevtoSnapshot.meta_description,
+      canonical_url: updatedPost.canonical_url ?? previousDevtoSnapshot.canonical_url,
+      cover_image:
+        updatedPost.cover_image !== undefined
+          ? updatedPost.cover_image
+          : (updateData.cover_image ?? previousDevtoSnapshot.cover_image),
+    })
+  ) {
+    const postDoc = updatedPost as unknown as IPostDocument;
+    await syncPublishedPostToDevto(postDoc, userId);
+    await syncPublishedPostToMedium(postDoc, userId);
+    await syncPublishedCoverToLinkedin(postDoc, userId);
+  }
+
+  // WordPress sync-on-save (best-effort). scheduled_for / seo_score* are local-only — not triggers.
+  // meta_description / canonical are not WP triggers (core REST SEO fields need Yoast/Rank Math).
+  if (
+    updatedPost &&
+    hasWordpressSyncableFieldsChanged(previousWordpressSnapshot, {
+      title: updatedPost.title ?? previousWordpressSnapshot.title,
+      content_markdown: updatedPost.content_markdown ?? previousWordpressSnapshot.content_markdown,
+      tags: updatedPost.tags ?? previousWordpressSnapshot.tags,
+      cover_image:
+        updatedPost.cover_image !== undefined
+          ? updatedPost.cover_image
+          : (updateData.cover_image ?? previousWordpressSnapshot.cover_image),
+    })
+  ) {
+    await syncPublishedPostToWordpress(updatedPost as unknown as IPostDocument, userId);
   }
 
   return updatedPost;
