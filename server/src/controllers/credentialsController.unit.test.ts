@@ -15,6 +15,12 @@ const serviceMocks = vi.hoisted(() => {
 
 vi.mock("@services/credentialsService", () => serviceMocks);
 
+const testWordpressConnection = vi.hoisted(() => vi.fn());
+
+vi.mock("@services/wordpressService", () => ({
+  testWordpressConnection: (...args: unknown[]) => testWordpressConnection(...args),
+}));
+
 import * as credentialsController from "./credentialsController";
 
 describe("credentialsController", () => {
@@ -89,5 +95,30 @@ describe("credentialsController", () => {
     const status = vi.fn().mockReturnValue({ json });
     await credentialsController.remove({ userId, params: { platform: "devto" } } as never, { json, status } as never);
     expect(status).toHaveBeenCalledWith(HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  });
+
+  it("testWordpress returns connection data on success", async () => {
+    testWordpressConnection.mockResolvedValueOnce({ ok: true, siteUrl: "https://wp.test" });
+    const json = vi.fn();
+    await credentialsController.testWordpress({ userId } as never, { json } as never);
+    expect(testWordpressConnection).toHaveBeenCalledWith(userId);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: { ok: true, siteUrl: "https://wp.test" },
+      }),
+    );
+  });
+
+  it("testWordpress maps rate-limit failures to 429", async () => {
+    testWordpressConnection.mockRejectedValueOnce(new Error(ERROR_MESSAGES.WORDPRESS_TEST_RATE_LIMITED));
+    const json = vi.fn();
+    const status = vi.fn().mockReturnValue({ json });
+    await credentialsController.testWordpress({ userId } as never, { json, status } as never);
+    expect(status).toHaveBeenCalledWith(HTTP_STATUS.TOO_MANY_REQUESTS);
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      error: ERROR_MESSAGES.WORDPRESS_TEST_RATE_LIMITED,
+    });
   });
 });

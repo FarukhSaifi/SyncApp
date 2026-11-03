@@ -40,12 +40,15 @@ function mockPost(overrides: Partial<IPostDocument> = {}): IPostDocument {
 }
 
 function mockCredential(platform: string, extra: Partial<ICredentialDocument> = {}): ICredentialDocument {
-  return {
+  const base: Record<string, unknown> = {
     platform_name: platform,
     encrypted_payload: "enc:payload",
     api_key: "enc:payload",
-    ...extra,
-  } as ICredentialDocument;
+  };
+  if (platform === PLATFORMS.WORDPRESS) {
+    base.platform_config = { wordpress_username: "wpuser" };
+  }
+  return { ...base, ...extra } as ICredentialDocument;
 }
 
 describe("publishService platform branches", () => {
@@ -145,12 +148,16 @@ describe("publishService platform branches", () => {
   });
 
   it("publishToWordpress rejects missing site url", async () => {
-    await expect(publishToWordpress(mockPost(), mockCredential(PLATFORMS.WORDPRESS))).rejects.toThrow(
-      ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED,
-    );
+    await expect(
+      publishToWordpress(
+        mockPost(),
+        mockCredential(PLATFORMS.WORDPRESS, { site_url: undefined, platform_config: { wordpress_username: "u" } }),
+      ),
+    ).rejects.toThrow(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
   });
 
   it("publishToWordpress updates remote post when already published", async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: [] });
     vi.mocked(axios.put).mockResolvedValue({ data: { id: 3, link: "https://wp.test/3" } });
     const post = mockPost({
       platform_status: { wordpress: { published: true, post_id: "3", url: "https://wp.test/3" } },

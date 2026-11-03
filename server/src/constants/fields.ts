@@ -38,6 +38,8 @@ export const FIELDS = {
     POST_ID: (platform: string) => `platform_status.${platform}.post_id`,
     URL: (platform: string) => `platform_status.${platform}.url`,
     PUBLISHED_AT: (platform: string) => `platform_status.${platform}.published_at`,
+    LINK_METHOD: (platform: string) => `platform_status.${platform}.link_method`,
+    LINKED_AT: (platform: string) => `platform_status.${platform}.linked_at`,
   },
 
   // Credential fields

@@ -1,6 +1,7 @@
 
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "@constants";
 import * as service from "@services/credentialsService";
+import { testWordpressConnection } from "@services/wordpressService";
 import type { Request, Response } from "express";
 
 export async function list(req: Request, res: Response): Promise<void> {
@@ -42,5 +43,19 @@ export async function remove(req: Request, res: Response): Promise<void> {
   } catch (error) {
     const status = (error as { status?: number }).status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
     res.status(status).json({ success: false, error: (error as Error).message });
+  }
+}
+
+export async function testWordpress(req: Request, res: Response): Promise<void> {
+  try {
+    const data = await testWordpressConnection(req.userId!);
+    res.json({ success: true, data, message: SUCCESS_MESSAGES.WORDPRESS_CONNECTION_TESTED });
+  } catch (error) {
+    const message = (error as Error).message;
+    const status =
+      message === ERROR_MESSAGES.WORDPRESS_TEST_RATE_LIMITED
+        ? HTTP_STATUS.TOO_MANY_REQUESTS
+        : HTTP_STATUS.BAD_REQUEST;
+    res.status(status).json({ success: false, error: message });
   }
 }

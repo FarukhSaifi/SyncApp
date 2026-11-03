@@ -5,6 +5,8 @@ import { cache, cacheKeys } from "@utils/cache";
 import { decryptCredential, encryptCredential } from "@utils/encryption";
 import { createLogger } from "@utils/logger";
 import { toObjectId } from "@utils/objectId";
+import { parseWordpressUsernamePasswordBlob } from "@utils/wordpressAuth";
+import { assertSafeWordpressSiteUrl } from "@utils/wordpressUrlPolicy";
 
 const logger = createLogger("CREDENTIALS");
 
@@ -146,7 +148,42 @@ export async function upsertCredential(
     throw new ValidationError(ERROR_MESSAGES["WORDPRESS_SITE_URL_REQUIRED"]);
   }
 
-  const encryptedApiKey = encryptCredential(api_key);
+  let passwordToStore = api_key;
+  const nextPlatformConfig: Record<string, unknown> = platform_config ? { ...platform_config } : {};
+  let normalizedSiteUrl: string | undefined = site_url || undefined;
+
+  if (platformName === PLATFORMS["WORDPRESS"]) {
+    let safeOrigin: string;
+    try {
+      safeOrigin = assertSafeWordpressSiteUrl(site_url as string).origin;
+    } catch (error) {
+      throw new ValidationError((error as Error).message);
+    }
+    normalizedSiteUrl = safeOrigin;
+
+    const fromConfig =
+      typeof nextPlatformConfig.wordpress_username === "string"
+        ? nextPlatformConfig.wordpress_username.trim()
+        : "";
+    const blob = parseWordpressUsernamePasswordBlob(api_key);
+    if (blob) {
+      passwordToStore = blob.password;
+      if (!fromConfig) {
+        nextPlatformConfig.wordpress_username = blob.username;
+      }
+    }
+    const username =
+      typeof nextPlatformConfig.wordpress_username === "string"
+        ? nextPlatformConfig.wordpress_username.trim()
+        : "";
+    if (!username) {
+      throw new ValidationError(ERROR_MESSAGES.WORDPRESS_USERNAME_REQUIRED);
+    }
+    nextPlatformConfig.wordpress_username = username;
+    nextPlatformConfig.wordpress_url = safeOrigin;
+  }
+
+  const encryptedApiKey = encryptCredential(passwordToStore);
   const author = toObjectId(userId);
 
   const updateData: Record<string, unknown> = {
@@ -156,12 +193,12 @@ export async function upsertCredential(
     is_active: true,
   };
 
-  if (site_url) {
-    updateData.site_url = site_url;
+  if (normalizedSiteUrl) {
+    updateData.site_url = normalizedSiteUrl;
   }
 
-  if (platform_config) {
-    updateData.platform_config = platform_config;
+  if (platformName === PLATFORMS["WORDPRESS"] || Object.keys(nextPlatformConfig).length > 0) {
+    updateData.platform_config = nextPlatformConfig;
   }
 
   const credential = (await Credential.findOneAndUpdate({ author, platform_name: platformName }, updateData, {

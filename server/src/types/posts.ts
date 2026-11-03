@@ -2,12 +2,17 @@
  * Post domain types and query parameter interfaces.
  */
 
+import type { WordpressLinkMethod } from "./fromConstants";
 import type { LeanPost } from "./services";
+
 export interface IPlatformStatus {
   published: boolean;
   post_id?: string;
   url?: string;
   published_at?: Date;
+  /** How the remote WordPress post was associated (wordpress only). */
+  link_method?: WordpressLinkMethod;
+  linked_at?: Date;
 }
 
 export interface IPost {

@@ -1,9 +1,10 @@
+import { wordpressSearchSchema } from "@schemas";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
 
-import { validateBody } from "./validation";
+import { validateBody, validateQuery } from "./validation";
 
 describe("validateBody", () => {
   const schema = z.object({ name: z.string().min(1) });
@@ -38,5 +39,24 @@ describe("validateBody", () => {
         error: expect.stringContaining("Validation error"),
       }),
     );
+  });
+});
+
+describe("validateQuery", () => {
+  it("parses wordpress search query and requires slug or title", () => {
+    const next = vi.fn();
+    const json = vi.fn();
+    const res = { status: vi.fn().mockReturnValue({ json }) };
+
+    const okReq = { query: { slug: " hello " } };
+    validateQuery(wordpressSearchSchema)(okReq as never, res as never, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(okReq.query).toEqual({ slug: "hello", title: undefined });
+
+    next.mockClear();
+    const badReq = { query: {} };
+    validateQuery(wordpressSearchSchema)(badReq as never, res as never, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.BAD_REQUEST);
   });
 });

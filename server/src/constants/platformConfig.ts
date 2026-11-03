@@ -32,6 +32,7 @@ export const PLATFORM_CONFIG = Object.freeze({
   wordpress: {
     name: "WordPress",
     errorMessage: "WordPress API credentials not found. Please configure your WordPress API key in settings.",
+    /** Legacy default; create uses WORDPRESS.CREATE_STATUS (draft), live uses LIVE_STATUS. */
     status: "publish",
     supportsRemoteUpdate: true,
     /** Core WP REST has no SEO meta/canonical without a plugin — do not fake those fields. */

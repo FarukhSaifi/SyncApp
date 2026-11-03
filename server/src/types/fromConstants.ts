@@ -11,3 +11,4 @@ export type { OptimizationTarget } from "../constants/platformOptimization";
 export type { PlatformTagLimitKey } from "../constants/platformTags";
 export type { UserRole } from "../constants/userRoles";
 export type { UtmMedium, UtmSource } from "../constants/utm";
+export type { WordpressLinkMethod } from "../constants/wordpress";

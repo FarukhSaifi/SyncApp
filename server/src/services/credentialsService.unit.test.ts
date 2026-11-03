@@ -162,15 +162,73 @@ describe("credentialsService", () => {
         platform_name: PLATFORMS.WORDPRESS,
         encrypted_payload: "enc:secret",
         site_url: "https://wp.test",
-        platform_config: { wordpress_url: "https://wp.test" },
+        platform_config: { wordpress_url: "https://wp.test", wordpress_username: "wpuser" },
       })),
     });
     const row = await upsertCredential(userId, PLATFORMS.WORDPRESS, {
       api_key: "secret",
       site_url: "https://wp.test",
-      platform_config: { wordpress_url: "https://wp.test" },
+      platform_config: { wordpress_username: "wpuser" },
     });
     expect(row.configured).toBe(true);
     expect(row.site_url).toBe("https://wp.test");
+  });
+
+  it("upsertCredential rejects wordpress without username", async () => {
+    await expect(
+      upsertCredential(userId, PLATFORMS.WORDPRESS, {
+        api_key: "secret-only",
+        site_url: "https://wp.test",
+      }),
+    ).rejects.toThrow(ERROR_MESSAGES.WORDPRESS_USERNAME_REQUIRED);
+  });
+
+  it("upsertCredential parses legacy user:pass blob and encrypts password only", async () => {
+    mockFindOneAndUpdate.mockReturnValue({
+      lean: vi.fn(async () => ({
+        platform_name: PLATFORMS.WORDPRESS,
+        encrypted_payload: "enc:app-secret",
+        site_url: "https://wp.test",
+        platform_config: { wordpress_url: "https://wp.test", wordpress_username: "legacyuser" },
+      })),
+    });
+
+    await upsertCredential(userId, PLATFORMS.WORDPRESS, {
+      api_key: "legacyuser:app-secret",
+      site_url: "https://wp.test",
+    });
+
+    const updateArg = mockFindOneAndUpdate.mock.calls[0][1] as {
+      api_key: string;
+      encrypted_payload: string;
+      platform_config: { wordpress_username: string };
+    };
+    expect(updateArg.api_key).toBe("enc:app-secret");
+    expect(updateArg.encrypted_payload).toBe("enc:app-secret");
+    expect(updateArg.platform_config.wordpress_username).toBe("legacyuser");
+  });
+
+  it("upsertCredential prefers platform_config username over legacy blob username", async () => {
+    mockFindOneAndUpdate.mockReturnValue({
+      lean: vi.fn(async () => ({
+        platform_name: PLATFORMS.WORDPRESS,
+        encrypted_payload: "enc:app-secret",
+        site_url: "https://wp.test",
+        platform_config: { wordpress_url: "https://wp.test", wordpress_username: "explicit" },
+      })),
+    });
+
+    await upsertCredential(userId, PLATFORMS.WORDPRESS, {
+      api_key: "blobuser:app-secret",
+      site_url: "https://wp.test",
+      platform_config: { wordpress_username: "explicit" },
+    });
+
+    const updateArg = mockFindOneAndUpdate.mock.calls[0][1] as {
+      api_key: string;
+      platform_config: { wordpress_username: string };
+    };
+    expect(updateArg.api_key).toBe("enc:app-secret");
+    expect(updateArg.platform_config.wordpress_username).toBe("explicit");
   });
 });

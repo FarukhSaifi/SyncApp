@@ -25,11 +25,17 @@ vi.mock("./notificationService", () => ({
   notifyScheduledPublishResult: vi.fn(async () => ({ email: "skipped", slack: "skipped" })),
 }));
 
+const postFindById = vi.hoisted(() => vi.fn());
+const postFindOneAndUpdate = vi.hoisted(() => vi.fn());
+const postUpdateOne = vi.hoisted(() => vi.fn());
+
 vi.mock("@models/Post", () => ({
   default: {
     find: vi.fn(),
-    findById: vi.fn(),
+    findById: postFindById,
     findByIdAndUpdate: vi.fn(),
+    findOneAndUpdate: postFindOneAndUpdate,
+    updateOne: postUpdateOne,
   },
 }));
 
@@ -68,18 +74,27 @@ function mockPost(overrides: Partial<IPostDocument> = {}): IPostDocument {
 }
 
 function mockCredential(platform: string): ICredentialDocument {
-  return {
+  const base: Record<string, unknown> = {
     platform_name: platform,
     encrypted_payload: "enc:key",
     api_key: "enc:key",
-    site_url: platform === PLATFORMS.WORDPRESS ? "https://wp.example" : undefined,
-  } as ICredentialDocument;
+  };
+  if (platform === PLATFORMS.WORDPRESS) {
+    base.site_url = "https://wp.example";
+    base.platform_config = { wordpress_username: "wpuser" };
+  }
+  return base as ICredentialDocument;
 }
 
 describe("publishService error mapping", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     decryptCredential.mockImplementation(() => "api-key");
+    postFindById.mockReturnValue({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
+    });
+    postFindOneAndUpdate.mockResolvedValue({ _id: "post-id" });
+    postUpdateOne.mockResolvedValue({ acknowledged: true });
   });
 
   it("performPublishToAll maps Medium API validation errors", async () => {
@@ -140,11 +155,20 @@ describe("publishService error mapping", () => {
   });
 
   it("performPublishToAll maps WordPress generic failures", async () => {
-    vi.mocked(Post.findById).mockResolvedValue(mockPost());
+    const post = mockPost();
+    // Dual-shape: await findById for orchestration + .select().lean() for WP idempotency check
+    postFindById.mockImplementation(() =>
+      Object.assign(Promise.resolve(post), {
+        select: () => ({ lean: async () => null }),
+      }),
+    );
     vi.mocked(Credential.find).mockResolvedValue([mockCredential(PLATFORMS.WORDPRESS)] as never);
+    vi.mocked(axios.get).mockResolvedValue({
+      data: [{ id: 1, name: "javascript", slug: "javascript" }],
+    });
     vi.mocked(axios.post).mockRejectedValue(new Error("wordpress down"));
 
-    const result = await performPublishToAll(mockPost());
+    const result = await performPublishToAll(post);
     expect(result.success).toBe(false);
     expect(result.errors?.[0]?.error).toBe("wordpress down");
   });
@@ -266,9 +290,13 @@ describe("publishService error mapping", () => {
   });
 
   it("publishToWordpress creates post when not yet published", async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: [{ id: 1, name: "javascript", slug: "javascript" }],
+    });
     vi.mocked(axios.post).mockResolvedValue({ data: { id: 9, link: "https://wp.example/9" } });
     const result = await publishToWordpress(mockPost(), mockCredential(PLATFORMS.WORDPRESS));
     expect(result.action).toBe("create");
-    expect(axios.post).toHaveBeenCalledOnce();
+    const createCall = vi.mocked(axios.post).mock.calls.find(([url]) => String(url).includes("/posts"));
+    expect(createCall).toBeTruthy();
   });
 });

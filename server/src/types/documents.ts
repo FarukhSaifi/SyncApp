@@ -36,6 +36,7 @@ export interface ICredentialDocument extends Document, Omit<ICredential, "_id" |
     devto_username?: string;
     medium_user_id?: string;
     wordpress_url?: string;
+    wordpress_username?: string;
     linkedin_person_urn?: string;
   };
   createdAt: Date;

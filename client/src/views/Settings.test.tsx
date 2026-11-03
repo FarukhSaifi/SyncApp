@@ -116,11 +116,12 @@ describe("Settings view", () => {
       expect(screen.getByLabelText(SYNC_LABEL.WORDPRESS_SITE_URL_LABEL)).toBeInTheDocument();
     });
     await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_SITE_URL_LABEL), "bad-url");
+    await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_USERNAME_LABEL), "wpuser");
     await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_API_KEY_LABEL), "wp-key");
     const saveButtons = screen.getAllByRole("button", { name: new RegExp(SYNC_LABEL.SAVE_CREDENTIALS, "i") });
     await userEvent.click(saveButtons[saveButtons.length - 1]);
     await waitFor(() => {
-      expect(toastMocks.validationError).toHaveBeenCalled();
+      expect(toastMocks.validationError).toHaveBeenCalledWith(SYNC_LABEL.VALID_WORDPRESS_URL);
     });
   });
 
@@ -182,13 +183,17 @@ describe("Settings view", () => {
       expect(screen.getByLabelText(SYNC_LABEL.WORDPRESS_SITE_URL_LABEL)).toBeInTheDocument();
     });
     await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_SITE_URL_LABEL), "https://blog.example.com");
+    await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_USERNAME_LABEL), "wpuser");
     await userEvent.type(screen.getByLabelText(SYNC_LABEL.WORDPRESS_API_KEY_LABEL), "wp-secret");
     const saveButtons = screen.getAllByRole("button", { name: new RegExp(SYNC_LABEL.SAVE_CREDENTIALS, "i") });
     await userEvent.click(saveButtons[saveButtons.length - 1]);
     await waitFor(() => {
       expect(apiClient.upsertCredential).toHaveBeenCalledWith(
         PLATFORMS.WORDPRESS,
-        expect.objectContaining({ site_url: "https://blog.example.com" }),
+        expect.objectContaining({
+          site_url: "https://blog.example.com",
+          platform_config: { wordpress_username: "wpuser" },
+        }),
       );
       expect(toastMocks.credentialsSaved).toHaveBeenCalledWith(SYNC_LABEL.PLATFORM_WORDPRESS);
     });

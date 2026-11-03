@@ -4,7 +4,6 @@ import {
   API_URLS,
   DEFAULT_VALUES,
   ERROR_MESSAGES,
-  extensionForMime,
   FIELDS,
   HTTP,
   PLATFORM_CONFIG,
@@ -32,7 +31,6 @@ import { cache, cacheKeys } from "@utils/cache";
 import { decryptCredential } from "@utils/encryption";
 import { finalizeLinkedInPost } from "@utils/linkedinPost";
 import { logger } from "@utils/logger";
-import { buildCoverFilename } from "@utils/mediaFilename";
 import { scheduledPublishDueFilter } from "@utils/scheduleUtils";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -41,6 +39,23 @@ import { PUBLISH_ERROR_PLATFORM_SYSTEM, SCHEDULED_PUBLISH_MAX_PER_RUN } from "@c
 
 import { resolveLinkedInAccess } from "./linkedinOAuthService";
 import { notifyScheduledPublishResult } from "./notificationService";
+import {
+  linkExistingWordpressPost,
+  publishToWordpress,
+  searchWordpressPostsForLink,
+  syncPublishedPostToWordpress,
+  testWordpressConnection,
+  uploadWordpressFeaturedMedia,
+} from "./wordpressService";
+
+export {
+  linkExistingWordpressPost,
+  publishToWordpress,
+  searchWordpressPostsForLink,
+  syncPublishedPostToWordpress,
+  testWordpressConnection,
+  uploadWordpressFeaturedMedia,
+};
 
 function isValidHttpUrl(value: string): boolean {
   try {
@@ -239,12 +254,6 @@ function devtoErrorMessage(error: unknown): string {
   return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
-function wordpressAuthHeaders(apiKey: string) {
-  return {
-    [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${apiKey}`,
-    [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
-  };
-}
 
 function linkedinErrorMessage(error: unknown): string {
   const known = (error as Error)?.message;
@@ -462,176 +471,6 @@ export async function syncPublishedCoverToLinkedin(_post: IPostDocument, _author
     logger.warn(`${ERROR_MESSAGES.LINKEDIN_COVER_SYNC_UNSUPPORTED} (${PLATFORM_SYNC.LINKEDIN_COVER_SYNC})`);
   }
   return false;
-}
-
-/** Resolve a public HTTP(S) cover URL for WordPress media upload, or empty when not uploadable. */
-function resolveWordpressCoverUrl(post: IPostDocument): string {
-  const cover = (post.cover_image || "").trim();
-  if (!cover || cover.startsWith(DEFAULT_VALUES.DATA_URL_SCHEME_PREFIX)) {
-    return "";
-  }
-  if (isValidHttpUrl(cover)) {
-    return cover;
-  }
-  return "";
-}
-
-/**
- * Upload a public HTTP(S) cover image to the WordPress media library.
- * Skips data: URLs. Best-effort — returns null on skip/failure so post PUT can still proceed.
- */
-export async function uploadWordpressFeaturedMedia(
-  siteUrl: string,
-  coverUrl: string,
-  apiKey: string,
-  post: IPostDocument,
-): Promise<number | null> {
-  if (!coverUrl || coverUrl.startsWith(DEFAULT_VALUES.DATA_URL_SCHEME_PREFIX)) {
-    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_SKIPPED("data URL or empty cover"));
-    return null;
-  }
-  if (!isValidHttpUrl(coverUrl)) {
-    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_SKIPPED("cover is not a public HTTP(S) URL"));
-    return null;
-  }
-
-  try {
-    const imageResponse = await axios.get<ArrayBuffer>(coverUrl, { responseType: "arraybuffer" });
-    const rawContentType = imageResponse.headers[HTTP.HEADERS.CONTENT_TYPE.toLowerCase()];
-    const contentTypeHeader = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType;
-    const contentType =
-      typeof contentTypeHeader === "string" && contentTypeHeader.trim()
-        ? contentTypeHeader.split(";")[0].trim()
-        : DEFAULT_VALUES.MIME_IMAGE_JPEG;
-    const ext = extensionForMime(contentType);
-    const filename = buildCoverFilename({
-      slug: post.slug,
-      title: post.title,
-      postId: post._id ? String(post._id) : undefined,
-      ext,
-    });
-    const buffer = Buffer.from(imageResponse.data);
-
-    const mediaResponse = await axios.post<{ id?: number }>(API_URLS.WORDPRESS.MEDIA_ENDPOINT(siteUrl), buffer, {
-      headers: {
-        [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${apiKey}`,
-        [HTTP.HEADERS.CONTENT_TYPE]: contentType,
-        [HTTP.HEADERS.CONTENT_DISPOSITION]: API_URLS.WORDPRESS.MEDIA_CONTENT_DISPOSITION(filename),
-      },
-    });
-
-    const mediaId = mediaResponse.data?.id;
-    if (typeof mediaId !== "number" || !Number.isFinite(mediaId)) {
-      logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_FAILED("media response missing id"));
-      return null;
-    }
-    return mediaId;
-  } catch (err) {
-    logger.warn(ERROR_MESSAGES.WORDPRESS_MEDIA_UPLOAD_FAILED((err as Error).message));
-    return null;
-  }
-}
-
-/**
- * Publish or update a WordPress post (title, content, tags; featured_media when cover uploads).
- *
- * Core WP REST does not expose SEO meta description or canonical URL without a plugin
- * (Yoast / Rank Math). Those SyncApp fields are intentionally NOT sent. scheduled_for and
- * seo_score / seo_score_summary stay SyncApp-local only (P3) — never pushed to WordPress.
- */
-export async function publishToWordpress(
-  post: IPostDocument,
-  credential: ICredentialDocument,
-): Promise<PlatformPublishResult> {
-  const apiKey = decryptPlatformApiKey(credential);
-  if (!apiKey) {
-    throw new Error(ERROR_MESSAGES.INVALID_WORDPRESS_API_KEY);
-  }
-
-  const siteUrl =
-    credential.site_url || (credential.platform_config as { wordpress_url?: string } | undefined)?.wordpress_url;
-  if (!siteUrl) {
-    throw new Error(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
-  }
-
-  const payload: Record<string, unknown> = {
-    title: post.title,
-    content: post.content_markdown,
-    status: PLATFORM_CONFIG.wordpress.status,
-    tags: post.tags || [],
-  };
-
-  const coverUrl = resolveWordpressCoverUrl(post);
-  if (coverUrl) {
-    const mediaId = await uploadWordpressFeaturedMedia(siteUrl, coverUrl, apiKey, post);
-    if (mediaId !== null) {
-      payload.featured_media = mediaId;
-    }
-  }
-
-  const headers = wordpressAuthHeaders(apiKey);
-  const existing = getExistingPlatformStatus(post, PLATFORMS.WORDPRESS);
-
-  if (isAlreadyPublishedOnPlatform(post, PLATFORMS.WORDPRESS)) {
-    const remoteId = existing!.post_id!;
-    const publishResponse = await axios.put(API_URLS.WORDPRESS.POST_BY_ID(siteUrl, remoteId), payload, { headers });
-
-    return {
-      updates: {
-        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.WORDPRESS)]: true,
-        [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.WORDPRESS)]: publishResponse.data.id.toString(),
-        [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.WORDPRESS)]: publishResponse.data.link,
-        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.WORDPRESS)]: existing?.published_at ?? dayjs().toDate(),
-      },
-      action: "update",
-    };
-  }
-
-  const publishResponse = await axios.post(API_URLS.WORDPRESS.POSTS_ENDPOINT(siteUrl), payload, { headers });
-
-  return {
-    updates: {
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.WORDPRESS)]: true,
-      [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.WORDPRESS)]: publishResponse.data.id.toString(),
-      [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.WORDPRESS)]: publishResponse.data.link,
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.WORDPRESS)]: dayjs().toDate(),
-    },
-    action: "create",
-  };
-}
-
-/**
- * On save/update: if the post is already live on WordPress, PUT title/body/tags via
- * publishToWordpress (and featured_media when a public cover URL uploads successfully).
- * Best-effort — never throws; local save must still succeed if WordPress is unreachable.
- *
- * Local-only / not synced: PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE (schedule, seo_score*).
- * meta_description / canonical_url: PLATFORM_SYNC.WORDPRESS_SEO_META_SYNC (needs SEO plugin).
- */
-export async function syncPublishedPostToWordpress(post: IPostDocument, authorId: string): Promise<boolean> {
-  const postId = String(post._id || "");
-  try {
-    if (!isAlreadyPublishedOnPlatform(post, PLATFORMS.WORDPRESS)) {
-      return false;
-    }
-
-    const credential = await Credential.findOne({
-      platform_name: PLATFORMS.WORDPRESS,
-      author: authorId,
-      is_active: true,
-    });
-    if (!credential) {
-      logger.warn(`${ERROR_MESSAGES.WORDPRESS_SYNC_SKIPPED_NO_CREDENTIAL} (post ${postId})`);
-      return false;
-    }
-
-    await publishToWordpress(post, credential);
-    logger.info(SUCCESS_MESSAGES.WORDPRESS_POST_SYNCED(postId));
-    return true;
-  } catch (err) {
-    logger.warn(ERROR_MESSAGES.WORDPRESS_SYNC_FAILED((err as Error).message));
-    return false;
-  }
 }
 
 /**

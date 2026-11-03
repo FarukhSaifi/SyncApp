@@ -22,6 +22,28 @@ export const upsertCredentialSchema = z.object({
   platform_config: z.record(z.string(), z.unknown()).optional(),
 });
 
+export const wordpressLinkExistingSchema = z.object({
+  postId: z.string().min(1),
+  remotePostId: z.string().min(1),
+  confirm: z.literal(true),
+  linkMethod: z.enum(["matched_slug", "matched_title", "manual"]).optional(),
+});
+
+const optionalSearchText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined));
+
+export const wordpressSearchSchema = z
+  .object({
+    slug: optionalSearchText,
+    title: optionalSearchText,
+  })
+  .refine((data) => Boolean(data.slug || data.title), {
+    message: ERROR_MESSAGES.WORDPRESS_SEARCH_QUERY_REQUIRED,
+  });
+
 export const keywordResearchRequestSchema = z.object({
   seed: z
     .string()

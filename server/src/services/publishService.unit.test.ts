@@ -14,6 +14,7 @@ vi.mock("axios", () => ({
 
 vi.mock("@utils/encryption", () => ({
   decryptCredential: vi.fn(() => "plain-api-key"),
+  encryptCredential: vi.fn(() => "enc:payload"),
 }));
 
 vi.mock("./linkedinOAuthService", () => ({
@@ -25,11 +26,23 @@ vi.mock("./notificationService", () => ({
 }));
 
 const credentialFindOne = vi.hoisted(() => vi.fn());
+const postFindById = vi.hoisted(() => vi.fn());
+const postFindOneAndUpdate = vi.hoisted(() => vi.fn());
+const postUpdateOne = vi.hoisted(() => vi.fn());
 
 vi.mock("@models/Credential", () => ({
   default: {
     findOne: (...args: unknown[]) => credentialFindOne(...args),
     find: vi.fn(),
+  },
+}));
+
+vi.mock("@models/Post", () => ({
+  default: {
+    findById: (...args: unknown[]) => postFindById(...args),
+    findOneAndUpdate: (...args: unknown[]) => postFindOneAndUpdate(...args),
+    updateOne: (...args: unknown[]) => postUpdateOne(...args),
+    findOne: vi.fn(),
   },
 }));
 
@@ -56,17 +69,33 @@ function mockPost(overrides: Partial<IPostDocument> = {}): IPostDocument {
   } as IPostDocument;
 }
 
-function mockCredential(platform: string): ICredentialDocument {
-  return {
+function mockCredential(platform: string, extra: Partial<ICredentialDocument> = {}): ICredentialDocument {
+  const base: Record<string, unknown> = {
     platform_name: platform,
     encrypted_payload: "enc:payload",
     api_key: "enc:payload",
-  } as ICredentialDocument;
+  };
+  if (platform === PLATFORMS.WORDPRESS) {
+    base.site_url = "https://wp.test";
+    base.platform_config = { wordpress_username: "wpuser" };
+  }
+  return { ...base, ...extra } as ICredentialDocument;
 }
 
 describe("publishService platform publishers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    postFindById.mockReturnValue({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
+    });
+    postFindOneAndUpdate.mockResolvedValue({ _id: "p1" });
+    postUpdateOne.mockResolvedValue({ acknowledged: true });
+    vi.mocked(axios.get).mockImplementation(async (url: string) => {
+      if (typeof url === "string" && url.includes("/tags")) {
+        return { data: [] };
+      }
+      return { data: Buffer.from("img"), headers: { "content-type": "image/jpeg" } };
+    });
   });
 
   it("publishToMedium creates remote post", async () => {
@@ -195,21 +224,24 @@ describe("publishService platform publishers", () => {
     expect(credentialFindOne).not.toHaveBeenCalled();
   });
 
-  it("publishToWordpress creates remote post when site_url is set", async () => {
-    vi.mocked(axios.post).mockResolvedValue({
-      data: { id: 12, link: "https://wp.test/post/12" },
+  it("publishToWordpress creates remote post as draft when site_url is set", async () => {
+    vi.mocked(axios.post).mockImplementation(async (url: string) => {
+      if (typeof url === "string" && url.includes("/tags")) {
+        return { data: { id: 1 } };
+      }
+      return { data: { id: 12, link: "https://wp.test/post/12" } };
     });
 
-    const credential = {
-      ...mockCredential(PLATFORMS.WORDPRESS),
-      site_url: "https://wp.test",
-    } as ICredentialDocument;
-
+    const credential = mockCredential(PLATFORMS.WORDPRESS);
     const result = await publishToWordpress(mockPost(), credential);
     expect(result.action).toBe("create");
     expect(result.updates[`platform_status.wordpress.published`]).toBe(true);
-    const [, wpBody] = vi.mocked(axios.post).mock.calls[0] as [string, Record<string, unknown>];
-    // WP `status` is PLATFORM_CONFIG.wordpress.status ("publish"), not SyncApp post.status.
+    const createCall = vi.mocked(axios.post).mock.calls.find(([url]) => String(url).includes("/posts"));
+    expect(createCall).toBeTruthy();
+    const [, wpBody] = createCall as [string, Record<string, unknown>];
+    expect(wpBody.status).toBe("draft");
+    const headers = createCall?.[2] as { headers?: Record<string, string> } | undefined;
+    expect(headers?.headers?.Authorization?.startsWith("Basic ")).toBe(true);
     for (const field of PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE) {
       if (field === "status") {
         continue;
@@ -225,10 +257,13 @@ describe("publishService platform publishers", () => {
     expect(axios.put).not.toHaveBeenCalled();
   });
 
-  it("syncPublishedPostToWordpress PUTs title body tags when already published", async () => {
-    credentialFindOne.mockResolvedValue({
-      ...mockCredential(PLATFORMS.WORDPRESS),
-      site_url: "https://wp.test",
+  it("syncPublishedPostToWordpress PUTs title body tag IDs when already published", async () => {
+    credentialFindOne.mockResolvedValue(mockCredential(PLATFORMS.WORDPRESS));
+    vi.mocked(axios.get).mockResolvedValue({
+      data: [
+        { id: 7, name: "wordpress", slug: "wordpress" },
+        { id: 8, name: "sync", slug: "sync" },
+      ],
     });
     vi.mocked(axios.put).mockResolvedValue({
       data: { id: 12, link: "https://wp.test/post/12" },
@@ -249,22 +284,25 @@ describe("publishService platform publishers", () => {
     expect(axios.put).toHaveBeenCalledOnce();
     const [, body] = vi.mocked(axios.put).mock.calls[0] as [
       string,
-      { title?: string; content?: string; tags?: string[]; featured_media?: number },
+      { title?: string; content?: string; tags?: number[]; featured_media?: number; status?: string },
     ];
     expect(body.title).toBe("Synced WP title");
-    expect(body.content).toBe("## Updated WP body");
-    expect(body.tags).toEqual(["wordpress", "sync"]);
+    expect(body.content).toContain("<h2>");
+    expect(body.tags).toEqual([7, 8]);
+    expect(body.status).toBe("publish");
     expect(body.featured_media).toBeUndefined();
   });
 
   it("syncPublishedPostToWordpress uploads cover and sets featured_media", async () => {
-    credentialFindOne.mockResolvedValue({
-      ...mockCredential(PLATFORMS.WORDPRESS),
-      site_url: "https://wp.test",
-    });
-    vi.mocked(axios.get).mockResolvedValue({
-      data: Buffer.from("fake-image-bytes"),
-      headers: { "content-type": "image/webp" },
+    credentialFindOne.mockResolvedValue(mockCredential(PLATFORMS.WORDPRESS));
+    vi.mocked(axios.get).mockImplementation(async (url: string) => {
+      if (String(url).includes("/tags")) {
+        return { data: [] };
+      }
+      return {
+        data: Buffer.from("fake-image-bytes"),
+        headers: { "content-type": "image/webp" },
+      };
     });
     vi.mocked(axios.post).mockResolvedValue({
       data: { id: 55 },
@@ -283,20 +321,18 @@ describe("publishService platform publishers", () => {
 
     const synced = await syncPublishedPostToWordpress(post, "user-1");
     expect(synced).toBe(true);
-    expect(axios.get).toHaveBeenCalledWith("https://cdn.example/cover-new.webp", {
-      responseType: "arraybuffer",
-    });
-    expect(axios.post).toHaveBeenCalledOnce();
+    expect(axios.get).toHaveBeenCalledWith(
+      "https://cdn.example/cover-new.webp",
+      expect.objectContaining({ responseType: "arraybuffer" }),
+    );
+    expect(axios.post).toHaveBeenCalled();
     expect(axios.put).toHaveBeenCalledOnce();
     const [, body] = vi.mocked(axios.put).mock.calls[0] as [string, { featured_media?: number }];
     expect(body.featured_media).toBe(55);
   });
 
   it("syncPublishedPostToWordpress skips data: cover URLs for featured_media", async () => {
-    credentialFindOne.mockResolvedValue({
-      ...mockCredential(PLATFORMS.WORDPRESS),
-      site_url: "https://wp.test",
-    });
+    credentialFindOne.mockResolvedValue(mockCredential(PLATFORMS.WORDPRESS));
     vi.mocked(axios.put).mockResolvedValue({
       data: { id: 12, link: "https://wp.test/post/12" },
     });
@@ -311,8 +347,8 @@ describe("publishService platform publishers", () => {
 
     const synced = await syncPublishedPostToWordpress(post, "user-1");
     expect(synced).toBe(true);
-    expect(axios.get).not.toHaveBeenCalled();
-    expect(axios.post).not.toHaveBeenCalled();
+    const mediaGets = vi.mocked(axios.get).mock.calls.filter(([url]) => String(url).includes("data:"));
+    expect(mediaGets).toHaveLength(0);
     const [, body] = vi.mocked(axios.put).mock.calls[0] as [string, { featured_media?: number }];
     expect(body.featured_media).toBeUndefined();
   });
@@ -332,10 +368,7 @@ describe("publishService platform publishers", () => {
   });
 
   it("syncPublishedPostToWordpress returns false and does not throw on API failure", async () => {
-    credentialFindOne.mockResolvedValue({
-      ...mockCredential(PLATFORMS.WORDPRESS),
-      site_url: "https://wp.test",
-    });
+    credentialFindOne.mockResolvedValue(mockCredential(PLATFORMS.WORDPRESS));
     vi.mocked(axios.put).mockRejectedValue(new Error("wp unreachable"));
 
     const post = mockPost({

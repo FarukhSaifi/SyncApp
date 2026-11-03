@@ -31,6 +31,22 @@ export const ERROR_MESSAGES = {
   INVALID_MEDIUM_API_KEY: "Invalid Medium API key",
   INVALID_DEVTO_API_KEY: "Invalid DEV.to API key",
   INVALID_WORDPRESS_API_KEY: "Invalid WordPress API key",
+  WORDPRESS_USERNAME_REQUIRED: "WordPress username is required",
+  WORDPRESS_SITE_URL_INVALID: "WordPress site URL is invalid",
+  WORDPRESS_SITE_URL_HTTPS_REQUIRED: "WordPress site URL must use HTTPS",
+  WORDPRESS_SITE_URL_BLOCKED_HOST: "WordPress site URL host is not allowed",
+  WORDPRESS_MEDIA_URL_BLOCKED: "Cover image URL is not allowed for WordPress media upload",
+  WORDPRESS_MEDIA_TOO_LARGE: "Cover image exceeds the WordPress media size limit",
+  WORDPRESS_MEDIA_TYPE_INVALID: "Cover image content type must be an image",
+  WORDPRESS_TEST_RATE_LIMITED: "Too many WordPress connection tests. Try again shortly.",
+  WORDPRESS_PUBLISH_IN_PROGRESS: "WordPress publish is already in progress for this post. Retry shortly.",
+  WORDPRESS_LINK_CONFIRM_REQUIRED: "Confirm is required to link an existing WordPress post",
+  WORDPRESS_LINK_REMOTE_ID_REQUIRED: "WordPress remote post id is required to link",
+  WORDPRESS_LINK_CONFLICT: "Another SyncApp post is already linked to that WordPress post",
+  WORDPRESS_LINK_NOT_FOUND: "WordPress post not found for linking",
+  WORDPRESS_SEARCH_QUERY_REQUIRED: "Provide a WordPress slug or title to search for linking",
+  WORDPRESS_TEST_FAILED: "WordPress connection test failed",
+  WORDPRESS_TEST_OK: "WordPress connection successful",
   INVALID_LINKEDIN_TOKEN: "Invalid or expired LinkedIn access token. Reconnect LinkedIn in Settings.",
   LINKEDIN_NOT_CONFIGURED:
     "LinkedIn OAuth is not configured. Set LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, and LINKEDIN_REDIRECT_URI.",
@@ -258,4 +274,7 @@ export const SUCCESS_MESSAGES = {
   DEVTO_POST_SYNCED: (postId: string) => `Synced published post fields to DEV.to for post ${postId}`,
   /** Save path: pushed title/body/tags (+ featured_media when cover uploaded) to WordPress. */
   WORDPRESS_POST_SYNCED: (postId: string) => `Synced published post fields to WordPress for post ${postId}`,
+  WORDPRESS_POST_LINKED: (postId: string, remoteId: string) =>
+    `Linked SyncApp post ${postId} to WordPress post ${remoteId}`,
+  WORDPRESS_CONNECTION_TESTED: "WordPress credentials verified",
 } as const;

@@ -58,6 +58,8 @@ export {
 export type { OptimizationTarget } from "./platformOptimization";
 export { isLocalOnlyOnSaveField, PLATFORM_SYNC } from "./platformSync";
 export type { PlatformSyncDevtoSyncableField, PlatformSyncLocalOnlyField } from "./platformSync";
+export { WORDPRESS } from "./wordpress";
+export type { WordpressLinkMethod } from "./wordpress";
 export { PLATFORM_TAG_LIMITS } from "./platformTags";
 export type { PlatformTagLimitKey } from "./platformTags";
 export { OPENAPI_UI, ROUTES } from "./routes";
