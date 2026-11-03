@@ -1,5 +1,4 @@
-
-import { SEO_IMPROVE_APPLY, SEO_IMPROVE_FIELDS } from "@constants";
+import { SEO_IMPROVE_APPLY, SEO_IMPROVE_FIELDS, SEO_IMPROVE_LIMITS } from "@constants";
 import { AppError } from "@middleware/errorHandler";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +15,7 @@ vi.mock("./retries", () => ({
   withRetry: (fn: () => Promise<unknown>) => fn(),
 }));
 
-import { getText, generateAiContent } from "./client";
+import { generateAiContent, getText } from "./client";
 import { improveSeoFromScorecard } from "./improveSeo";
 
 describe("improveSeoFromScorecard (mocked Gemini)", () => {
@@ -104,7 +103,9 @@ describe("improveSeoFromScorecard (mocked Gemini)", () => {
     vi.mocked(getText).mockReturnValue(
       "```json\n" +
         JSON.stringify({
-          fixes: [{ id: "meta-fix", value: "Updated meta description for SyncApp SEO improve path.", note: " clearer " }],
+          fixes: [
+            { id: "meta-fix", value: "Updated meta description for SyncApp SEO improve path.", note: " clearer " },
+          ],
         }) +
         "\n```",
     );
@@ -132,7 +133,9 @@ describe("improveSeoFromScorecard (mocked Gemini)", () => {
     vi.mocked(generateAiContent)
       .mockRejectedValueOnce(new Error("503 unavailable"))
       .mockResolvedValueOnce({} as never);
-    vi.mocked(getText).mockReturnValue(JSON.stringify({ fixes: [{ id: "title-fix", value: "Better SEO title for SyncApp" }] }));
+    vi.mocked(getText).mockReturnValue(
+      JSON.stringify({ fixes: [{ id: "title-fix", value: "Better SEO title for SyncApp" }] }),
+    );
 
     const result = await improveSeoFromScorecard({
       targets: [
@@ -148,6 +151,26 @@ describe("improveSeoFromScorecard (mocked Gemini)", () => {
 
     expect(result.fixes).toHaveLength(1);
     expect(generateAiContent).toHaveBeenCalledTimes(2);
+  });
+
+  it("clamps oversized fix values to FIX_VALUE_MAX", async () => {
+    const oversized = `Better title ${"x".repeat(SEO_IMPROVE_LIMITS.FIX_VALUE_MAX + 80)}`;
+    vi.mocked(generateAiContent).mockResolvedValue({} as never);
+    vi.mocked(getText).mockReturnValue(JSON.stringify({ fixes: [{ id: "title-fix", value: oversized }] }));
+
+    const result = await improveSeoFromScorecard({
+      targets: [
+        {
+          id: "title-fix",
+          field: SEO_IMPROVE_FIELDS.TITLE,
+          issue: "Title too short",
+          currentValue: "Short",
+          applyMode: SEO_IMPROVE_APPLY.REPLACE,
+        },
+      ],
+    });
+
+    expect(result.fixes[0]?.value.length).toBeLessThanOrEqual(SEO_IMPROVE_LIMITS.FIX_VALUE_MAX);
   });
 
   it("throws when parsed fixes do not align to requested targets", async () => {

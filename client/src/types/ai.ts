@@ -176,5 +176,9 @@ export interface UseEditorAIReturn {
   closeImproveReview: () => void;
   toggleImproveReviewItem: (id: string) => void;
   handleImproveWithAi: (targets: import("./editor").SeoImproveTarget[]) => Promise<void>;
-  handleApplyImproveFixes: (apply: (fixes: import("./editor").SeoImproveProposedFix[]) => void) => void;
+  handleApplyImproveFixes: (
+    apply: (
+      fixes: import("./editor").SeoImproveProposedFix[],
+    ) => import("./editor").SeoImproveApplyResult | void,
+  ) => void;
 }

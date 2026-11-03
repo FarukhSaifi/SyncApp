@@ -99,8 +99,12 @@ function tryParseFixes(rawText: string): SeoImproveFix[] {
         }
         const row = item as Record<string, unknown>;
         const id = typeof row.id === "string" ? row.id.trim() : "";
-        const value = typeof row.value === "string" ? row.value.trim() : "";
-        if (!id || !value) {
+        const rawValue = typeof row.value === "string" ? row.value.trim() : "";
+        if (!id || !rawValue) {
+          continue;
+        }
+        const value = clamp(rawValue, SEO_IMPROVE_LIMITS.FIX_VALUE_MAX);
+        if (!value) {
           continue;
         }
         const note = typeof row.note === "string" ? clamp(row.note, SEO_IMPROVE_LIMITS.ISSUE_MAX) : undefined;
@@ -124,9 +128,13 @@ function alignFixesToTargets(targets: SeoImproveTargetInput[], fixes: SeoImprove
     if (!fix || !fix.value.trim()) {
       continue;
     }
+    const value = clamp(fix.value.trim(), SEO_IMPROVE_LIMITS.FIX_VALUE_MAX);
+    if (!value) {
+      continue;
+    }
     aligned.push({
       id: target.id,
-      value: fix.value.trim(),
+      value,
       ...(fix.note ? { note: fix.note } : {}),
     });
   }

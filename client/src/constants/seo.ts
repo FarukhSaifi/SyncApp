@@ -269,6 +269,15 @@ export const SEO_IMPROVE_LIMITS = Object.freeze({
   SURROUNDING_CHARS: 400,
   /** Hard API ceiling for currentValue — must be >= STUFFING_SCAN_CHARS. */
   CURRENT_VALUE_MAX: 4000,
+  /** Hard ceiling for AI-proposed fix values (server + client). */
+  FIX_VALUE_MAX: 4000,
+  /**
+   * Large REPLACE blobs (anti-stuffing / long intros) must keep proposed length
+   * within these ratios of currentValue to prevent destructive truncation.
+   */
+  SAFE_REPLACE_MIN_CURRENT: 200,
+  REPLACE_MIN_LENGTH_RATIO: 0.6,
+  REPLACE_MAX_LENGTH_RATIO: 1.25,
   ISSUE_MAX: 240,
   PRIMARY_KEYWORD_MAX: 120,
   TITLE_CONTEXT_MAX: 200,

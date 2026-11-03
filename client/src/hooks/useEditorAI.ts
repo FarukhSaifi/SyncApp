@@ -11,6 +11,7 @@ import type {
   GeneratedPostData,
   GeneratePostResearchContext,
   KeywordResearchItem,
+  SeoImproveApplyResult,
   SeoImproveProposedFix,
   SeoImproveReviewItem,
   SeoImproveTarget,
@@ -478,13 +479,13 @@ export function useEditorAI({
   );
 
   const handleApplyImproveFixes = useCallback(
-    (apply: (fixes: SeoImproveProposedFix[]) => void) => {
+    (apply: (fixes: SeoImproveProposedFix[]) => SeoImproveApplyResult | void) => {
       const selected = improveReviewItems.filter((item) => item.selected);
       if (selected.length === 0) {
         toast.validationError(SYNC_LABEL["AI_SEO_IMPROVE_NO_SELECTION"]);
         return;
       }
-      apply(
+      const result = apply(
         selected.map((item) => ({
           id: item.id,
           field: item.field,
@@ -498,6 +499,22 @@ export function useEditorAI({
       setImproveReviewOpen(false);
       setImproveReviewItems([]);
       pendingImproveTargetsRef.current = [];
+
+      if (!result) {
+        toast.success(TOAST_TITLES["SEO_IMPROVE_APPLIED"], SYNC_LABEL["AI_SEO_IMPROVE_APPLIED"]);
+        return;
+      }
+      if (result.appliedIds.length === 0) {
+        toast.warning(TOAST_TITLES["SEO_IMPROVE_SKIPPED"], SYNC_LABEL["AI_SEO_IMPROVE_SKIPPED"]);
+        return;
+      }
+      if (result.skippedIds.length > 0) {
+        toast.warning(
+          TOAST_TITLES["SEO_IMPROVE_PARTIAL"],
+          SYNC_LABEL["AI_SEO_IMPROVE_PARTIAL"](result.appliedIds.length, result.skippedIds.length),
+        );
+        return;
+      }
       toast.success(TOAST_TITLES["SEO_IMPROVE_APPLIED"], SYNC_LABEL["AI_SEO_IMPROVE_APPLIED"]);
     },
     [improveReviewItems, toast],

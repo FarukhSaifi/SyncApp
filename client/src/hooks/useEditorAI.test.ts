@@ -64,9 +64,7 @@ describe("useEditorAI", () => {
       data: { title: "T", meta_description: "Meta", content: "Generated body", tags: ["js"] },
     });
 
-    const { result } = renderHook(() =>
-      useEditorAI({ ...baseOptions(), onDraftGenerated }),
-    );
+    const { result } = renderHook(() => useEditorAI({ ...baseOptions(), onDraftGenerated }));
 
     act(() => {
       result.current.setAiKeyword("react");
@@ -96,9 +94,7 @@ describe("useEditorAI", () => {
       },
     });
 
-    const { result } = renderHook(() =>
-      useEditorAI({ ...baseOptions(), onDraftGenerated }),
-    );
+    const { result } = renderHook(() => useEditorAI({ ...baseOptions(), onDraftGenerated }));
 
     act(() => {
       result.current.setAiKeyword("topic");
@@ -109,9 +105,7 @@ describe("useEditorAI", () => {
       await result.current.handleGeneratePost();
     });
 
-    expect(onDraftGenerated).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Parsed", content: "# Hi" }),
-    );
+    expect(onDraftGenerated).toHaveBeenCalledWith(expect.objectContaining({ title: "Parsed", content: "# Hi" }));
   });
 
   it("validates article context before LinkedIn summary", async () => {
@@ -136,9 +130,7 @@ describe("useEditorAI", () => {
       data: { linkedin_post: "Summary line", linkedin_missing_canonical: false },
     });
 
-    const { result } = renderHook(() =>
-      useEditorAI({ ...baseOptions(), onLinkedInSummaryGenerated }),
-    );
+    const { result } = renderHook(() => useEditorAI({ ...baseOptions(), onLinkedInSummaryGenerated }));
 
     await act(async () => {
       await result.current.handleGenerateLinkedInSummary();
@@ -253,9 +245,7 @@ describe("useEditorAI", () => {
     });
 
     const onCoverImageSet = vi.fn();
-    const { result } = renderHook(() =>
-      useEditorAI({ ...baseOptions(), postId: "post-1", onCoverImageSet }),
-    );
+    const { result } = renderHook(() => useEditorAI({ ...baseOptions(), postId: "post-1", onCoverImageSet }));
 
     act(() => {
       result.current.setAiKeyword("topic");
@@ -395,7 +385,17 @@ describe("useEditorAI", () => {
       data: { fixes: [{ id: "title-fix", value: "Better title" }] },
     });
 
-    const apply = vi.fn();
+    const apply = vi.fn(() => ({
+      post: {
+        title: "Better title",
+        meta_description: "",
+        tags: [],
+        canonical_url: "",
+        content_markdown: "",
+      },
+      appliedIds: ["title-fix"],
+      skippedIds: [],
+    }));
     const { result } = renderHook(() => useEditorAI(baseOptions()));
 
     await act(async () => {
@@ -416,6 +416,51 @@ describe("useEditorAI", () => {
 
     expect(apply).toHaveBeenCalled();
     expect(result.current.improveReviewOpen).toBe(false);
+    expect(toast.success).toHaveBeenCalledWith(
+      TOAST_TITLES["SEO_IMPROVE_APPLIED"],
+      SYNC_LABEL["AI_SEO_IMPROVE_APPLIED"],
+    );
+  });
+
+  it("warns when selected improve fixes are all skipped as unsafe", async () => {
+    vi.spyOn(apiClient, "aiImproveSeo").mockResolvedValue({
+      success: true,
+      data: { fixes: [{ id: "content_anti_stuffing", value: "tiny" }] },
+    });
+
+    const apply = vi.fn(() => ({
+      post: {
+        title: "T",
+        meta_description: "",
+        tags: [],
+        canonical_url: "",
+        content_markdown: "unchanged",
+      },
+      appliedIds: [] as string[],
+      skippedIds: ["content_anti_stuffing"],
+    }));
+    const { result } = renderHook(() => useEditorAI(baseOptions()));
+
+    await act(async () => {
+      await result.current.handleImproveWithAi([
+        {
+          id: "content_anti_stuffing",
+          field: SEO_IMPROVE_FIELDS.CONTENT,
+          issue: "Stuffing",
+          currentValue: "x".repeat(400),
+          applyMode: SEO_IMPROVE_APPLY.REPLACE,
+        },
+      ]);
+    });
+
+    act(() => {
+      result.current.handleApplyImproveFixes(apply);
+    });
+
+    expect(toast.warning).toHaveBeenCalledWith(
+      TOAST_TITLES["SEO_IMPROVE_SKIPPED"],
+      SYNC_LABEL["AI_SEO_IMPROVE_SKIPPED"],
+    );
   });
 
   it("toggles improve review item selection", async () => {

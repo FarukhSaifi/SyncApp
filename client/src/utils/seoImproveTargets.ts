@@ -1,8 +1,16 @@
 /**
  * Map failing/warning SEO scorecard checks → targeted AI fix snippets.
  * Never packs the full post body as one rewrite target.
+ * Apply path is fail-closed: unsafe or unmatched content replaces are skipped.
  */
-import type { SeoCheck, SeoImproveApplyMode, SeoImproveField, SeoImproveProposedFix, SeoImproveTarget } from "@types";
+import type {
+  SeoCheck,
+  SeoImproveApplyMode,
+  SeoImproveApplyResult,
+  SeoImproveField,
+  SeoImproveProposedFix,
+  SeoImproveTarget,
+} from "@types";
 
 import { SEO_IMPROVE_APPLY, SEO_IMPROVE_FIELDS, SEO_IMPROVE_LIMITS, SEO_IMPROVE_TARGET_IDS } from "@constants/seo";
 
@@ -21,6 +29,12 @@ type TargetDraft = {
   currentValue: string;
   applyMode: SeoImproveApplyMode;
   surroundingContext?: string;
+};
+
+type MarkdownImage = {
+  full: string;
+  alt: string;
+  url: string;
 };
 
 function clampChars(value: string, max: number): string {
@@ -301,8 +315,175 @@ export interface SeoImproveApplyInput {
   content_markdown: string;
 }
 
+/** Reject oversized / truncating REPLACE payloads for large content blobs. */
+export function isSafeContentReplaceSize(currentValue: string, proposedValue: string): boolean {
+  const proposed = proposedValue.trim();
+  if (!proposed || proposed.length > SEO_IMPROVE_LIMITS.FIX_VALUE_MAX) {
+    return false;
+  }
+  if (currentValue.length < SEO_IMPROVE_LIMITS.SAFE_REPLACE_MIN_CURRENT) {
+    return true;
+  }
+  const ratio = proposed.length / currentValue.length;
+  return ratio >= SEO_IMPROVE_LIMITS.REPLACE_MIN_LENGTH_RATIO && ratio <= SEO_IMPROVE_LIMITS.REPLACE_MAX_LENGTH_RATIO;
+}
+
+function parseMarkdownImages(text: string): MarkdownImage[] {
+  const images: MarkdownImage[] = [];
+  const pattern = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let match: RegExpExecArray | null = pattern.exec(text);
+  while (match) {
+    images.push({
+      full: match[0],
+      alt: match[1] ?? "",
+      url: (match[2] ?? "").trim(),
+    });
+    match = pattern.exec(text);
+  }
+  return images;
+}
+
+function parseH2Lines(text: string): string[] {
+  return text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => /^##\s+\S/.test(line));
+}
+
+function replaceFirstOccurrence(haystack: string, needle: string, replacement: string): string | null {
+  const index = haystack.indexOf(needle);
+  if (index < 0) {
+    return null;
+  }
+  return `${haystack.slice(0, index)}${replacement}${haystack.slice(index + needle.length)}`;
+}
+
+/**
+ * Replace image alts by URL match so non-contiguous images still update safely.
+ */
+function applyImageAltFixes(content: string, proposedValue: string): { content: string; changed: boolean } {
+  const proposedImages = parseMarkdownImages(proposedValue);
+  if (proposedImages.length === 0) {
+    return { content, changed: false };
+  }
+
+  let next = content;
+  let changed = false;
+  for (const image of proposedImages) {
+    if (!image.url) {
+      continue;
+    }
+    const pattern = new RegExp(`!\\[[^\\]]*\\]\\(${escapeRegExp(image.url)}\\)`, "g");
+    const updated = next.replace(pattern, `![${image.alt}](${image.url})`);
+    if (updated !== next) {
+      next = updated;
+      changed = true;
+    }
+  }
+  return { content: next, changed };
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Apply heading outline fixes without requiring contiguous packed heading lines.
+ * Existing H2 lines are rewritten in document order; extra proposed H2s append.
+ */
+function applyHeadingFixes(content: string, proposedValue: string): { content: string; changed: boolean } {
+  const proposedHeadings = parseH2Lines(proposedValue);
+  if (proposedHeadings.length === 0) {
+    return { content, changed: false };
+  }
+
+  const existingHeadings = parseH2Lines(content);
+  if (existingHeadings.length === 0) {
+    const base = content.trimEnd();
+    return {
+      content: base ? `${base}\n\n${proposedHeadings.join("\n\n")}` : proposedHeadings.join("\n\n"),
+      changed: true,
+    };
+  }
+
+  let next = content;
+  let changed = false;
+  const replaceCount = Math.min(existingHeadings.length, proposedHeadings.length);
+  for (let i = 0; i < replaceCount; i++) {
+    const currentHeading = existingHeadings[i];
+    const proposedHeading = proposedHeadings[i];
+    if (!currentHeading || !proposedHeading || currentHeading === proposedHeading) {
+      continue;
+    }
+    const replaced = replaceFirstOccurrence(next, currentHeading, proposedHeading);
+    if (replaced !== null) {
+      next = replaced;
+      changed = true;
+    }
+  }
+
+  if (proposedHeadings.length > existingHeadings.length) {
+    const extras = proposedHeadings.slice(existingHeadings.length).join("\n\n");
+    const base = next.trimEnd();
+    next = base ? `${base}\n\n${extras}` : extras;
+    changed = true;
+  }
+
+  return { content: next, changed };
+}
+
+function applyContentFix(
+  content: string,
+  fix: SeoImproveProposedFix,
+): { content: string; applied: boolean } {
+  const value = clampChars(fix.value.trim(), SEO_IMPROVE_LIMITS.FIX_VALUE_MAX);
+  if (!value) {
+    return { content, applied: false };
+  }
+
+  if (fix.applyMode === SEO_IMPROVE_APPLY.APPEND || !fix.currentValue.trim()) {
+    const base = content.trimEnd();
+    return {
+      content: base ? `${base}\n\n${value}` : value,
+      applied: true,
+    };
+  }
+
+  if (fix.id === SEO_IMPROVE_TARGET_IDS.IMAGE_ALTS) {
+    const result = applyImageAltFixes(content, value);
+    return { content: result.content, applied: result.changed };
+  }
+
+  if (fix.id === SEO_IMPROVE_TARGET_IDS.HEADINGS) {
+    if (content.includes(fix.currentValue) && isSafeContentReplaceSize(fix.currentValue, value)) {
+      return {
+        content: content.replaceAll(fix.currentValue, value),
+        applied: true,
+      };
+    }
+    const result = applyHeadingFixes(content, value);
+    return { content: result.content, applied: result.changed };
+  }
+
+  if (!isSafeContentReplaceSize(fix.currentValue, value)) {
+    return { content, applied: false };
+  }
+
+  if (!content.includes(fix.currentValue)) {
+    return { content, applied: false };
+  }
+
+  return {
+    content: content.replaceAll(fix.currentValue, value),
+    applied: true,
+  };
+}
+
 /** Apply only the selected proposed fixes; leave all other post fields untouched. */
-export function applySeoImproveFixes(post: SeoImproveApplyInput, fixes: SeoImproveProposedFix[]): SeoImproveApplyInput {
+export function applySeoImproveFixes(
+  post: SeoImproveApplyInput,
+  fixes: SeoImproveProposedFix[],
+): SeoImproveApplyResult {
   let next: SeoImproveApplyInput = {
     title: post.title,
     meta_description: post.meta_description,
@@ -310,46 +491,49 @@ export function applySeoImproveFixes(post: SeoImproveApplyInput, fixes: SeoImpro
     canonical_url: post.canonical_url,
     content_markdown: post.content_markdown,
   };
+  const appliedIds: string[] = [];
+  const skippedIds: string[] = [];
 
   for (const fix of fixes) {
-    const value = fix.value.trim();
+    const value = clampChars(fix.value.trim(), SEO_IMPROVE_LIMITS.FIX_VALUE_MAX);
     if (!value) {
+      skippedIds.push(fix.id);
       continue;
     }
+
     if (fix.field === SEO_IMPROVE_FIELDS.TITLE) {
       next = { ...next, title: value };
+      appliedIds.push(fix.id);
       continue;
     }
     if (fix.field === SEO_IMPROVE_FIELDS.META_DESCRIPTION) {
       next = { ...next, meta_description: value };
+      appliedIds.push(fix.id);
       continue;
     }
     if (fix.field === SEO_IMPROVE_FIELDS.TAGS) {
       next = { ...next, tags: parseTagsValue(value) };
+      appliedIds.push(fix.id);
       continue;
     }
     if (fix.field === SEO_IMPROVE_FIELDS.CANONICAL_URL) {
       next = { ...next, canonical_url: value };
+      appliedIds.push(fix.id);
       continue;
     }
     if (fix.field === SEO_IMPROVE_FIELDS.CONTENT) {
-      if (fix.applyMode === SEO_IMPROVE_APPLY.APPEND || !fix.currentValue.trim()) {
-        const base = next.content_markdown.trimEnd();
-        next = {
-          ...next,
-          content_markdown: base ? `${base}\n\n${value}` : value,
-        };
-        continue;
+      const result = applyContentFix(next.content_markdown, { ...fix, value });
+      if (result.applied) {
+        next = { ...next, content_markdown: result.content };
+        appliedIds.push(fix.id);
+      } else {
+        skippedIds.push(fix.id);
       }
-      if (next.content_markdown.includes(fix.currentValue)) {
-        next = {
-          ...next,
-          // replaceAll: identical duplicated snippets (e.g. repeated sections) all update
-          content_markdown: next.content_markdown.replaceAll(fix.currentValue, value),
-        };
-      }
+      continue;
     }
+
+    skippedIds.push(fix.id);
   }
 
-  return next;
+  return { post: next, appliedIds, skippedIds };
 }

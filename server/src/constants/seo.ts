@@ -212,6 +212,8 @@ export const SEO_IMPROVE_LIMITS = Object.freeze({
   SURROUNDING_CHARS: 400,
   /** Hard API ceiling for currentValue — must be >= STUFFING_SCAN_CHARS. */
   CURRENT_VALUE_MAX: 4000,
+  /** Hard ceiling for AI-proposed fix values (keep in sync with client). */
+  FIX_VALUE_MAX: 4000,
   ISSUE_MAX: 240,
   PRIMARY_KEYWORD_MAX: 120,
   TITLE_CONTEXT_MAX: 200,

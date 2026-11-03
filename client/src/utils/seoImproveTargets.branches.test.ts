@@ -77,15 +77,13 @@ describe("buildSeoImproveTargets branch coverage", () => {
 
   it("ignores ok checks and manual schema/cover labels", () => {
     expect(buildSeoImproveTargets(basePost, [{ label: "Title ok", ok: true }])).toHaveLength(0);
-    expect(
-      buildSeoImproveTargets(basePost, [{ label: "Schema-ready metadata", ok: false }]),
-    ).toHaveLength(0);
+    expect(buildSeoImproveTargets(basePost, [{ label: "Schema-ready metadata", ok: false }])).toHaveLength(0);
   });
 });
 
 describe("applySeoImproveFixes branches", () => {
   it("appends content when applyMode is APPEND", () => {
-    const next = applySeoImproveFixes(
+    const result = applySeoImproveFixes(
       {
         title: "T",
         meta_description: "M",
@@ -104,7 +102,8 @@ describe("applySeoImproveFixes branches", () => {
         },
       ],
     );
-    expect(next.content_markdown).toContain("What do you think?");
+    expect(result.post.content_markdown).toContain("What do you think?");
+    expect(result.appliedIds).toEqual(["disc"]);
   });
 
   it("skips empty fix values and leaves post unchanged", () => {
@@ -115,7 +114,7 @@ describe("applySeoImproveFixes branches", () => {
       canonical_url: "https://x.test/a",
       content_markdown: "Body",
     };
-    const next = applySeoImproveFixes(post, [
+    const result = applySeoImproveFixes(post, [
       {
         id: "title",
         field: SEO_IMPROVE_FIELDS.TITLE,
@@ -125,11 +124,12 @@ describe("applySeoImproveFixes branches", () => {
         applyMode: SEO_IMPROVE_APPLY.REPLACE,
       },
     ]);
-    expect(next).toEqual(post);
+    expect(result.post).toEqual(post);
+    expect(result.skippedIds).toEqual(["title"]);
   });
 
   it("updates tags from comma-separated value", () => {
-    const next = applySeoImproveFixes(
+    const result = applySeoImproveFixes(
       {
         title: "T",
         meta_description: "M",
@@ -148,6 +148,7 @@ describe("applySeoImproveFixes branches", () => {
         },
       ],
     );
-    expect(next.tags).toEqual(["react", "seo", "devto"]);
+    expect(result.post.tags).toEqual(["react", "seo", "devto"]);
+    expect(result.appliedIds).toEqual(["tags"]);
   });
 });

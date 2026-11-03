@@ -32,7 +32,7 @@ import { AI_COVER_AUTOGEN_DELAY_MS, AI_LOADING } from "@constants/editor";
 import { EDITOR_UI, SYNC_LABEL } from "@constants/messages";
 import { PLATFORMS } from "@constants/platforms";
 import { POST_STATUS } from "@constants/postStatus";
-import { SEO_THRESHOLDS } from "@constants/seo";
+import { SEO_IMPROVE_FIELDS, SEO_IMPROVE_TARGET_IDS, SEO_THRESHOLDS } from "@constants/seo";
 
 import ConfirmationModal from "@components/common/ConfirmationModal";
 
@@ -96,7 +96,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
   });
   const wordStats = useWordCount(state.formData.content_markdown);
 
-  // Restore keyword/targets from the last persisted score so editor matches dashboard.
+  // Prefer persisted post SEO context over localStorage defaults so scorecard matches dashboard.
   useEffect(() => {
     if (state.initialLoading) {
       return;
@@ -105,7 +105,8 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
     if (primaryKeyword.trim() && !ai.aiKeyword.trim()) {
       ai.setAiKeyword(primaryKeyword);
     }
-    if (platforms.length > 0 && ai.targetPlatforms.length === 0) {
+    // Always restore post platforms when present — localStorage defaults are never empty.
+    if (platforms.length > 0) {
       ai.setTargetPlatforms(platforms);
     }
     // Only when finishing load for a post
@@ -350,7 +351,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
         onToggleItem={ai.toggleImproveReviewItem}
         onApply={() => {
           ai.handleApplyImproveFixes((fixes) => {
-            const patched = applySeoImproveFixes(
+            const result = applySeoImproveFixes(
               {
                 title: state.formData.title,
                 meta_description: state.formData.meta_description || "",
@@ -360,6 +361,7 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
               },
               fixes,
             );
+            const patched = result.post;
             const markdown = toStorageMarkdown(normalizeMarkdownNewlines(patched.content_markdown));
             setFormData((prev) => ({
               ...prev,
@@ -368,9 +370,13 @@ const Editor = ({ onPostCreate, onPostUpdate }: EditorProps) => {
               canonical_url: patched.canonical_url,
               content_markdown: markdown,
             }));
-            if (fixes.some((f) => f.field === "tags")) {
+            const tagsApplied =
+              fixes.some((f) => f.field === SEO_IMPROVE_FIELDS.TAGS) &&
+              result.appliedIds.includes(SEO_IMPROVE_TARGET_IDS.TAGS);
+            if (tagsApplied) {
               state.setTagList(patched.tags.slice(0, SEO_THRESHOLDS.TAG_COUNT_MAX));
             }
+            return result;
           });
         }}
       />

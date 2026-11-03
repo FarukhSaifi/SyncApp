@@ -49,6 +49,8 @@ export const TOAST_TITLES = Object.freeze({
   POST_GENERATED: "Post generated",
   SEO_IMPROVE_READY: "SEO fixes ready",
   SEO_IMPROVE_APPLIED: "SEO fixes applied",
+  SEO_IMPROVE_PARTIAL: "Some SEO fixes skipped",
+  SEO_IMPROVE_SKIPPED: "SEO fixes not applied",
   IMAGE_GENERATED: "Image generated",
   FEATURED_IMAGE_SET: "Featured image set",
   IMAGE_UPLOADED: "Image uploaded",
@@ -104,6 +106,10 @@ const createSuccessMessages = () => {
     AI_EDIT_COMPLETE: "AI Edit Complete",
     AI_SEO_IMPROVE_READY: "Review the proposed snippet fixes, then apply the ones you want.",
     AI_SEO_IMPROVE_APPLIED: "Selected SEO snippet fixes were applied. Save the post when ready.",
+    AI_SEO_IMPROVE_PARTIAL: (applied: number, skipped: number) =>
+      `${applied} applied, ${skipped} skipped (unsafe size or no exact match in the post). Review and retry or edit manually.`,
+    AI_SEO_IMPROVE_SKIPPED:
+      "None of the selected fixes could be applied safely (size guard or no match in the post).",
     AI_SEO_IMPROVE_NONE: "No failing or warning scorecard items to improve with AI.",
     // Publishing
     PUBLISHED_TO_PLATFORM: (platform: string) => `Post successfully published to ${platform}`,

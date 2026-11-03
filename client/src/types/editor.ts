@@ -255,6 +255,19 @@ export interface SeoImproveProposedFix {
   note?: string;
 }
 
+/** Result of merging selected SEO improve fixes into editor state. */
+export interface SeoImproveApplyResult {
+  post: {
+    title: string;
+    meta_description: string;
+    tags: string[];
+    canonical_url: string;
+    content_markdown: string;
+  };
+  appliedIds: string[];
+  skippedIds: string[];
+}
+
 /** Full-viewport sheet for editor panels on mobile (&lt; lg). */
 export interface EditorMobileSheetProps {
   isOpen: boolean;
