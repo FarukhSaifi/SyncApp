@@ -15,6 +15,7 @@ import connectDB, { getDbConnectionMeta, isDbConnected } from "@database/connect
 import { ensureDb } from "@middleware/ensureDb";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
 import apiRoutes from "@routes";
+import { mountOpenApiDocs } from "@src/openapi";
 import { logger, requestLogger } from "@utils/logger";
 import compression from "compression";
 import cors from "cors";
@@ -141,6 +142,9 @@ app.get("/health", async (req: Request, res: Response) => {
 // Static file uploads fallback route
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+// OpenAPI / Swagger UI — before ensureDb so docs work when Mongo is down (disabled in production)
+mountOpenApiDocs(app);
+
 // API routes — ensure MongoDB is connected before handling requests
 app.use("/api", ensureDb, apiRoutes);
 
@@ -151,6 +155,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Export app for Vercel (serverless). The server is only started in non-serverless envs.
+/* v8 ignore start — local `app.listen` bootstrap; Vitest sets VERCEL=1 (serverless path). */
 if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
   app.listen(PORT, () => {
     logger.info(HEALTH["LOG"]["SERVER_STARTED"], {
@@ -176,5 +181,6 @@ if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
     }
   });
 }
+/* v8 ignore stop */
 
 export default app;

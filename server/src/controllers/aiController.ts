@@ -16,6 +16,7 @@ import type {
   GenerateImageRequestBody,
   GenerateLinkedInSummaryRequestBody,
   GeneratePostRequestBody,
+  ImproveSeoRequestBody,
   KeywordResearchRequestBody,
 } from "@types";
 import type { Request, Response } from "express";
@@ -91,6 +92,19 @@ export const postEdit = asyncHandler(async (req: Request, res: Response) => {
   const { action, text } = req.body as GenerateEditRequestBody;
   const editedText = await aiService.generateEdit(action, text);
   res.status(HTTP_STATUS.OK).json({ success: true, data: { result: editedText } });
+});
+
+export const postImproveSeo = asyncHandler(async (req: Request, res: Response) => {
+  const { targets, model, primaryKeyword, title, platforms } = req.body as ImproveSeoRequestBody;
+  validateRequestedModel(model);
+  const data = await aiService.improveSeoFromScorecard({
+    targets,
+    model: model?.trim() || undefined,
+    primaryKeyword,
+    title,
+    platforms,
+  });
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
 });
 
 export const postGenerateLinkedInSummary = asyncHandler(async (req: Request, res: Response) => {

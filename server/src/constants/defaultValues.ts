@@ -87,6 +87,8 @@ export const DEFAULT_VALUES = Object.freeze({
 
   // Google Cloud Storage
   GCS_UPLOAD_PREFIX: "uploads/",
+  /** Scheme prefix for base64 data URLs — never treated as deletable storage objects. */
+  DATA_URL_SCHEME_PREFIX: "data:",
   GCS_PUBLIC_URL_BASE,
   /** Legacy App Engine / Firebase default-bucket host suffix (without leading dot). */
   GCS_APPS_POT_BUCKET_SUFFIX: "appspot.com",

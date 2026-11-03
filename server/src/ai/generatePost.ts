@@ -12,17 +12,54 @@ import {
   includesLinkedInTarget,
 } from "@constants";
 import { AppError } from "@middleware/errorHandler";
+import { getPublishSeoWarnings, getSeoScorecard } from "@services/seoScoreService";
 import type { GeneratePostResearchContext, GeneratePostResult } from "@types";
 import { buildReadMoreUrl, slugifyArticlePath } from "@utils/linkedinPost";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
 import { ERROR_MESSAGES } from "@constants/messages";
+import { SEO_THRESHOLDS } from "@constants/seo";
 
 import { buildModelCandidates, generateAiContent, getModelName, getText } from "./client";
 import { isFallbackWorthyError, normalizeAiError } from "./errors";
 import { isKeywordIntentLabel, parseIntentLabel } from "./parseHelpers";
 import { withRetry } from "./retries";
 import { parseGeneratePostResponse } from "./schemas";
+
+function attachSeoScorecard(
+  result: GeneratePostResult,
+  keyword: string,
+  targetPlatforms?: string[],
+): GeneratePostResult {
+  const scorecard = getSeoScorecard(
+    {
+      title: result.title,
+      content_markdown: result.content,
+      meta_description: result.meta_description,
+      tags: result.tags,
+      canonical_url: undefined,
+    },
+    { primaryKeyword: keyword, platforms: targetPlatforms },
+  );
+  const googleTarget = (targetPlatforms || []).some((p) => p.trim().toLowerCase() === "google");
+  const seo_warnings =
+    googleTarget && scorecard.score < SEO_THRESHOLDS.PUBLISH_WARNING_SCORE_MIN
+      ? getPublishSeoWarnings(
+          {
+            title: result.title,
+            content_markdown: result.content,
+            meta_description: result.meta_description,
+            tags: result.tags,
+          },
+          { primaryKeyword: keyword, platforms: targetPlatforms },
+        )
+      : [];
+  return {
+    ...result,
+    seoScorecard: scorecard,
+    seo_warnings,
+  };
+}
 
 function isRateLimited(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -102,12 +139,13 @@ export async function generatePost(
     researchContext,
   });
   const candidates = buildModelCandidates(primaryModel);
-  const preferSearchGrounding =
-    config.aiUseGoogleSearchRetrieval || includesGoogleTarget(options.targetPlatforms);
+  const preferSearchGrounding = config.aiUseGoogleSearchRetrieval || includesGoogleTarget(options.targetPlatforms);
+  const scoredKeyword = keyword.trim();
 
   if (preferSearchGrounding) {
     try {
-      return await generateWithModel(primaryModel, systemInstruction, userMessage, true, includeLinkedIn);
+      const drafted = await generateWithModel(primaryModel, systemInstruction, userMessage, true, includeLinkedIn);
+      return attachSeoScorecard(drafted, scoredKeyword, options.targetPlatforms);
     } catch {
       // Grounding unavailable — fall through to standard generation.
     }
@@ -116,7 +154,8 @@ export async function generatePost(
   let lastError: unknown;
   for (const modelName of candidates) {
     try {
-      return await generateWithModel(modelName, systemInstruction, userMessage, false, includeLinkedIn);
+      const drafted = await generateWithModel(modelName, systemInstruction, userMessage, false, includeLinkedIn);
+      return attachSeoScorecard(drafted, scoredKeyword, options.targetPlatforms);
     } catch (err) {
       lastError = err;
       if (!isFallbackWorthyError(err)) {

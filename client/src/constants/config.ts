@@ -22,7 +22,7 @@ export const APP_CONFIG = Object.freeze({
 
   // Pagination
   DEFAULT_PAGE: 1,
-  DEFAULT_LIMIT: 5,
+  DEFAULT_LIMIT: 10,
   MAX_LIMIT: 100,
 
   // Toaster

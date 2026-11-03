@@ -9,3 +9,4 @@ export { generateLinkedInSummary } from "./generateLinkedInSummary";
 export { generatePost } from "./generatePost";
 export { getTrendingTopics } from "./generateTrendingTopics";
 export { getDevtoReachTags } from "./getDevtoTags";
+export { improveSeoFromScorecard } from "./improveSeo";

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { SeoScoreBadge } from "@components/SeoScoreBadge";
 import { TagChips } from "@components/TagChips";
 import { Tooltip } from "@components/Tooltip";
 import { APP_CONFIG } from "@constants/config";
@@ -78,6 +79,7 @@ export function PostCard({ post, onPress, onDelete }: PostCardProps) {
         <View style={[styles.badge, { backgroundColor: badgeStyle.backgroundColor }]}>
           <Text style={[styles.badgeText, { color: badgeStyle.color }]}>{statusConfig.label}</Text>
         </View>
+        <SeoScoreBadge post={post} />
       </View>
 
       {publishedPlatforms.length > 0 ? (

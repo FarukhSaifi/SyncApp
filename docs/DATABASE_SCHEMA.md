@@ -59,7 +59,7 @@ erDiagram
 | `content_markdown` | String | Required |
 | `status` | `draft` \| `published` \| `archived` | Default `draft` |
 | `platform_status` | Object | Per-platform publish state |
-| `tags` | String[] |  |
+| `tags` | String[] | Optional |
 | `meta_description` | String | Max 160 chars |
 | `cover_image` | String | Direct GCS / Firebase public URL |
 | `canonical_url` | String | SEO |
@@ -67,6 +67,10 @@ erDiagram
 | `linkedin_read_more_url` | String | Public article URL for Read more |
 | `scheduled_for` | Date | Cron trigger when due |
 | `scheduled_platforms` | String[] | Platforms to syndicate on cron (`medium`, `devto`, `wordpress`, `linkedin`). Empty on legacy posts → all active credentials |
+| `seo_score` | Number \| null | 0–100 from full-body SEO rubric at create/update (dashboard list reads this; no body fetch) |
+| `seo_score_summary` | String | Checklist summary for dashboard tooltip |
+| `seo_primary_keyword` | String | Keyword used for placement checks when score was computed |
+| `seo_optimization_targets` | String[] | `devto` / `linkedin` / `google` weighting context for the stored score |
 
 **Indexes:** `{ author, createdAt }`, `{ status, scheduled_for }`
 

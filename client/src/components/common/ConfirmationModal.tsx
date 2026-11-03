@@ -1,14 +1,4 @@
-import React from "react";
-
-
-import {
-  BUTTON_LABELS,
-  BUTTON_VARIANTS,
-  COLOR_CLASSES,
-  INFO_MESSAGES,
-  MODAL_SIZES,
-  MODAL_TITLES,
-} from "@constants";
+import { BUTTON_LABELS, BUTTON_VARIANTS, COLOR_CLASSES, INFO_MESSAGES, MODAL_SIZES, MODAL_TITLES } from "@constants";
 import type { ConfirmationModalProps } from "@types";
 import { FiAlertTriangle } from "react-icons/fi";
 

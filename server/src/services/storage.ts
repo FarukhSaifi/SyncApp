@@ -8,6 +8,7 @@ import {
   ERROR_MESSAGES,
   HTTP,
   HTTP_STATUS,
+  REGEX_PATTERNS,
   buildFirebaseStoragePublicUrl,
   buildGcsJsonApiMediaUploadUrl,
   buildGcsPublicObjectUrl,
@@ -15,7 +16,7 @@ import {
 } from "@constants";
 import { Storage, type StorageOptions } from "@google-cloud/storage";
 import { AppError } from "@middleware/errorHandler";
-import type { GCSCredentials, PresignedUploadResponse } from "@types";
+import type { GCSCredentials, GcsObjectLocation, PresignedUploadResponse } from "@types";
 import { loadGoogleServiceAccountCredentials, resolveGcsSigningServiceAccountEmail } from "@utils/googleCredentials";
 import { logger } from "@utils/logger";
 import { GoogleAuth, Impersonated } from "google-auth-library";
@@ -141,7 +142,7 @@ function sanitizeObjectBasename(originalname: string): string {
 
 /**
  * Build a unique storage object name that keeps post slug / title in the name.
- * Example: uploads/cover-how-to-optimize-react-1737123456789-42.png
+ * Example: uploads/cover-how-to-optimize-react-1737123456789-42.webp
  */
 function buildStoredObjectName(originalname: string, mimetype: string, withPrefix: boolean): string {
   const mimeExt = extensionForMime(mimetype);
@@ -350,5 +351,86 @@ export async function generatePresignedUploadUrl(
     }
     logger.error(`Presigned URL generation failed: ${(err as Error).message}`);
     throw new AppError(ERROR_MESSAGES["GCS_SIGNED_URL_FAILED"], HTTP_STATUS["INTERNAL_SERVER_ERROR"]);
+  }
+}
+
+function resolveConfiguredBucketName(): string | undefined {
+  const bucketName = config.gcpBucketName || process.env[AI_CONFIG["ENV_GCS_BUCKET_NAME"]];
+  return bucketName || undefined;
+}
+
+function safeDecodeUriComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Parse a public GCS or Firebase Storage download URL into bucket + object path.
+ * Returns null for data URLs, non-GCS hosts, or unparseable strings.
+ */
+export function parseGcsObjectFromPublicUrl(publicUrl: string): GcsObjectLocation | null {
+  if (!publicUrl || typeof publicUrl !== "string") {
+    return null;
+  }
+
+  const trimmed = publicUrl.trim();
+  if (!trimmed || trimmed.startsWith(DEFAULT_VALUES["DATA_URL_SCHEME_PREFIX"])) {
+    return null;
+  }
+
+  const gcsMatch = trimmed.match(REGEX_PATTERNS["GCS_PUBLIC_OBJECT_URL"]);
+  if (gcsMatch) {
+    return {
+      bucketName: gcsMatch[1],
+      objectPath: safeDecodeUriComponent(gcsMatch[2]),
+    };
+  }
+
+  const firebaseMatch = trimmed.match(REGEX_PATTERNS["FIREBASE_STORAGE_PUBLIC_OBJECT_URL"]);
+  if (firebaseMatch) {
+    return {
+      bucketName: firebaseMatch[1],
+      objectPath: safeDecodeUriComponent(firebaseMatch[2]),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Best-effort delete of a GCS/Firebase Storage object referenced by a public URL.
+ * Only deletes when the URL belongs to the configured bucket and under the uploads/ prefix.
+ * Never throws — failures are logged as warnings so callers can continue.
+ */
+export async function deleteFromGCS(publicUrl: string): Promise<void> {
+  try {
+    const location = parseGcsObjectFromPublicUrl(publicUrl);
+    if (!location) {
+      return;
+    }
+
+    const configuredBucket = resolveConfiguredBucketName();
+    if (!configuredBucket || location.bucketName !== configuredBucket) {
+      logger.debug(
+        `Skipping GCS delete; object bucket "${location.bucketName}" is not the configured bucket`,
+      );
+      return;
+    }
+
+    if (!location.objectPath.startsWith(DEFAULT_VALUES["GCS_UPLOAD_PREFIX"])) {
+      logger.warn(
+        `Skipping GCS delete; object path is outside the uploads prefix: ${location.objectPath}`,
+      );
+      return;
+    }
+
+    const storage = await getStorageClient();
+    await storage.bucket(location.bucketName).file(location.objectPath).delete({ ignoreNotFound: true });
+    logger.info(`Deleted GCS object: gs://${location.bucketName}/${location.objectPath}`);
+  } catch (err) {
+    logger.warn(`Best-effort GCS delete failed: ${(err as Error).message}`);
   }
 }

@@ -90,9 +90,9 @@ function sanitizeCredentialForClient(credential: Record<string, unknown>): Recor
 /**
  * Get all credentials for a user (masked keys only — never full decrypted secrets).
  */
-export async function getAllCredentials(userId: string) {
+export async function getAllCredentials(userId: string): Promise<Record<string, unknown>[]> {
   const cacheKey = cacheKeys.credentials.list(userId);
-  const cached = cache.get(cacheKey);
+  const cached = cache.get(cacheKey) as Record<string, unknown>[] | undefined;
   if (cached) {
     return cached;
   }

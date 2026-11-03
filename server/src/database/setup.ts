@@ -43,8 +43,10 @@ async function setupDatabase(): Promise<void> {
   }
 }
 
+/* v8 ignore start — CLI entry when run via `npm run db:setup`; covered by setup.test.ts importing default. */
 if (require.main === module) {
   setupDatabase();
 }
+/* v8 ignore stop */
 
 export default setupDatabase;

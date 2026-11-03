@@ -147,6 +147,15 @@ export const LABELS = Object.freeze({
   HELP_DEVTO_SETTINGS: "Dev.to settings",
   HELP_WORDPRESS_JWT: "WordPress JWT plugin",
   HELP_LINKEDIN_DEVELOPERS: "LinkedIn developers",
+  SEO_BADGE_LABEL: "SEO",
+  SEO_SCORE_UNKNOWN: "—",
+  SEO_SCORE_PENDING: "Save the post to compute SEO score",
+  SEO_SCORE_ARIA: (score: number, maxScore: number, summary?: string) =>
+    `SEO score: ${score} out of ${maxScore}. ${summary || ""}`,
+  SEO_DENSITY_NOTE: "Google does not use a keyword-density target; we check placement and stuffing risk.",
+  SEO_SCORECARD_NOTE: "Pre-publish hygiene and helpfulness proxies — not a Google ranking predictor.",
+  SEO_SCORE_HEADING: "SEO Score",
+  SEO_SCORE_VALUE: (score: number, maxScore: number) => `${score}/${maxScore}`,
   AI_COPILOT_TITLE: "AI Copilot Studio",
   AI_COPILOT_SUBTITLE: "Refine your message or generate drafts",
   AI_REVIEW_CHANGES: "Review AI Changes",
@@ -228,6 +237,7 @@ export const TOAST = Object.freeze({
   LINKEDIN_CONNECTED: "LinkedIn connected",
   UNPUBLISHED: "Unpublished",
   COVER_UPLOADED: "Cover uploaded",
+  SEO_PUBLISH_HINT: "SEO suggestions before publish",
 });
 
 export const ERRORS = Object.freeze({
@@ -346,6 +356,7 @@ export const EDITOR_UI = Object.freeze({
   PRESET_IN_3_DAYS: "In 3 Days",
   SEARCH_SOCIAL_PREVIEWS: "Search & Social Previews",
   META_DESCRIPTION_LABEL: "Meta Description",
+  SEO_SCORE_SECTION: "SEO Score",
   ADVANCED_SEO_TOGGLE: "Advanced SEO (Canonical URL)",
   CANONICAL_HINT:
     "Specify where this article was originally published to avoid search engine duplicate content penalties.",
@@ -516,8 +527,8 @@ export function editorLinkedInCharCount(count: number): string {
   return `${count} / 1300 characters`;
 }
 
-export function editorMetaCharCount(length: number): string {
-  return `${length} / 160 recommended characters`;
+export function editorMetaCharCount(length: number, maxChars: number): string {
+  return `${length} / ${maxChars} recommended characters`;
 }
 
 export function editorMockupPlatformsAppearance(platformNames: string): string {

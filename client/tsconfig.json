@@ -23,13 +23,11 @@
         "name": "next"
       }
     ],
-    "typeRoots": [
-      "../node_modules/@types"
-    ],
     "types": [
       "node",
       "react",
-      "react-dom"
+      "react-dom",
+      "vitest/globals"
     ],
     "paths": {
       "@components/*": [

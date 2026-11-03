@@ -1,6 +1,8 @@
 /**
  * Post domain types and query parameter interfaces.
  */
+
+import type { LeanPost } from "./services";
 export interface IPlatformStatus {
   published: boolean;
   post_id?: string;
@@ -31,8 +33,50 @@ export interface IPost {
   scheduled_for?: Date;
   /** Platforms to syndicate when the scheduled cron runs. Empty = all active credentials (legacy). */
   scheduled_platforms?: string[];
+  /** Persisted SEO score (0-100) from full-body rubric at save/generate time. */
+  seo_score?: number | null;
+  /** Compact checklist summary for dashboard tooltip. */
+  seo_score_summary?: string;
+  /** Keyword used for placement checks when the score was computed. */
+  seo_primary_keyword?: string;
+  /** Optimization targets used for platform-aware weighting (devto/linkedin/google). */
+  seo_optimization_targets?: string[];
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export type SeoCategoryId = "metadata" | "structure" | "trust";
+
+export interface SeoCheck {
+  label: string;
+  ok: boolean | null;
+  warning?: boolean;
+  category?: SeoCategoryId;
+}
+
+export interface SeoScorecardCategoryGroup {
+  id: SeoCategoryId;
+  checks: SeoCheck[];
+}
+
+export interface SeoScorecard {
+  score: number;
+  maxScore: number;
+  checks: SeoCheck[];
+  categories?: SeoScorecardCategoryGroup[];
+  summary?: string;
+}
+
+export interface SeoScorecardContext {
+  primaryKeyword?: string;
+  platforms?: string[];
+}
+
+export interface SeoScorePersistFields {
+  seo_score: number;
+  seo_score_summary: string;
+  seo_primary_keyword: string;
+  seo_optimization_targets: string[];
 }
 
 export interface CreatePostInput {
@@ -48,6 +92,8 @@ export interface CreatePostInput {
   linkedin_post?: string;
   linkedin_read_more_url?: string;
   author?: string;
+  seo_primary_keyword?: string;
+  seo_optimization_targets?: string[];
 }
 
 export interface GetPostsParams {
@@ -56,6 +102,21 @@ export interface GetPostsParams {
   status?: string;
   search?: string;
   userId?: string;
+}
+
+/** Pagination metadata returned by getPosts. */
+export interface PostsListPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/** Paginated posts list payload (fresh or cache hit). */
+export interface GetPostsResult {
+  data: LeanPost[];
+  pagination: PostsListPagination;
+  stats: PostListStats;
 }
 
 /** Unfiltered dashboard chip counts (independent of list page/status/search). */

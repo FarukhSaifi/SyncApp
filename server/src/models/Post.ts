@@ -88,6 +88,25 @@ const postSchema = new Schema<IPostDocument>(
       type: [String],
       default: [],
     },
+    seo_score: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    seo_score_summary: {
+      type: String,
+      default: "",
+    },
+    seo_primary_keyword: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    seo_optimization_targets: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

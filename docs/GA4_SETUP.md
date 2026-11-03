@@ -35,7 +35,7 @@ Use the same Google Cloud service account SyncApp already uses for Vertex/GCS (o
 ### 5. Set SyncApp server env (no secrets in code)
 
 | Variable | Where | Notes |
-|----------|--------|--------|
+| --- | --- | --- |
 | `GOOGLE_ANALYTICS_PROPERTY_ID` | `server/.env.dev`, `.env.prod`, Vercel | Numeric property id only (e.g. `123456789`) |
 | `GOOGLE_CREDENTIALS_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` | Already used for Vertex/GCS | Must be able to call Analytics Data API |
 | `CANONICAL_BASE_URL` / `NEXT_PUBLIC_CANONICAL_BASE_URL` | Server + client | Public blog base. LinkedIn Read more UTMs (`utm_source=linkedin`, etc.) are appended in app code — **no UTM env vars**. |
@@ -50,6 +50,6 @@ Restart the server after changing env. Until these are set, `GET /api/analytics/
 
 ## Related
 
-- [`ANALYTICS_PLAN.md`](./ANALYTICS_PLAN.md) — phased roadmap  
-- [`VERCEL_ENV.md`](./VERCEL_ENV.md) — deployment env vars  
-- [`AI_SETUP.md`](./AI_SETUP.md) — service account / ADC for Google APIs  
+- [`ANALYTICS_PLAN.md`](./ANALYTICS_PLAN.md) — phased roadmap
+- [`VERCEL_ENV.md`](./VERCEL_ENV.md) — deployment env vars
+- [`AI_SETUP.md`](./AI_SETUP.md) — service account / ADC for Google APIs

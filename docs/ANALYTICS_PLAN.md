@@ -143,7 +143,7 @@ When SyncApp appends or builds Read more URLs, standardize:
 
 **UI sketch:**
 
-```
+```bash
 [ Summary: posts / published / drafts ]   ← existing
 [ DEV.to views (7d / all) ] [ Top articles table: title | views | reactions | link ]
 [ Activity chart ]                        ← existing
@@ -166,7 +166,7 @@ When SyncApp appends or builds Read more URLs, standardize:
 
 **UI sketch:**
 
-```
+```bash
 Website & SEO
   [ Organic clicks | Impressions | Avg position ]
   [ Table: post | organic clicks | pageviews | LinkedIn referrals (GA) ]

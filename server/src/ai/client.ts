@@ -5,7 +5,11 @@
 
 import { config } from "@config";
 import { AI_CONFIG, AI_PROVIDERS, AI_SAFETY_SETTINGS, resolveContentModel } from "@constants";
-import { GenerateContentConfig, GenerateContentResponse, GoogleGenAI } from "@google/genai";
+import {
+  GoogleGenAI,
+  type GenerateContentConfig,
+  type GenerateContentResponse,
+} from "@google/genai/node";
 import { AppError } from "@middleware/errorHandler";
 import type { AiCapabilities, AiGenerateOptions, AiProvider } from "@types";
 import {

@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, useEffect } from "react";
 
+import { TEST_IDS } from "@constants";
 import { useToast } from "@hooks/useToast";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Image from "@tiptap/extension-image";
@@ -418,8 +419,9 @@ const EditorContent = ({ formData, activeTab, onTitleChange, onContentChange, ta
           className="editor-title-input"
           aria-label={EDITOR_UI.POST_TITLE_ARIA}
           autoFocus
+          data-testid={TEST_IDS.EDITOR_TITLE}
         />
-        <div className="tiptap-wrapper flex flex-col flex-1">
+        <div className="tiptap-wrapper flex flex-col flex-1" data-testid={TEST_IDS.EDITOR_CONTENT}>
           <EditorToolbarBar editor={editor} />
           <TipTapEditorContent editor={editor} className="tiptap-content-area" />
         </div>

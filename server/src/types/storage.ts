@@ -1,6 +1,13 @@
 /**
  * Storage and file upload types.
  */
+
+/** Bucket + object path parsed from a public GCS / Firebase Storage URL. */
+export interface GcsObjectLocation {
+  bucketName: string;
+  objectPath: string;
+}
+
 export interface PresignedUploadResponse {
   presignedUrl: string;
   publicUrl: string;

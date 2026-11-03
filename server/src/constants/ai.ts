@@ -1,12 +1,12 @@
 /**
  * AI (Vertex AI primary / Google AI Studio fallback) constants: prompts, config, safety.
  */
-import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai";
+import { HarmBlockThreshold, HarmCategory, Type } from "@google/genai/node";
 
 /** DEV.to + Google ranking constraints referenced by prompts and downstream validation. */
 export const AI_POST_LIMITS = Object.freeze({
   TITLE_MAX: 60,
-  META_DESC_MAX: 150,
+  META_DESC_MAX: 160,
   /**
    * Default article tag count (DEV.to hard max). Prefer PLATFORM_TAG_LIMITS +
    * resolveArticleTagLimit() when targets are known.
@@ -74,17 +74,21 @@ const FULL_POST_SYSTEM_BODY = `### Tone & Humanization (CRITICAL — anti AI-det
 
 ### Anti-spam & search quality (CRITICAL)
 - **No keyword stuffing:** Mentions of the primary topic and LSI terms must read like natural speech. Never repeat the same phrase in every heading, opening sentence, or meta fields.
-- **Natural keyword density:** Place the main topic clearly in the title, intro, and where it earns its keep — not in every paragraph for rank chasing.
+ - **No density targets:** Google does not use a keyword-density %. Place the main long-tail clearly in the title, first H2, snippet box, and intro — never chase a numeric density.
 - **No hidden / deceptive text:** No invisible HTML, white-on-white text, zero-size spans, cloaking, or content meant only for crawlers.
-- **No doorway-page patterns:** Do not write thin pages that only exist to funnel searches to another URL. Deliver a complete answer on this page; use one honest canonical slug, not a swarm of near-duplicate angles.
+- **No doorway-page patterns / scaled thin pages:** Do not write thin pages that only exist to funnel searches to another URL. Deliver a complete answer on this page; use one honest canonical slug, not a swarm of near-duplicate angles.
 - **No spammy CTAs:** Avoid aggressive affiliate-style pitches, fake urgency, or link-farm language. Soft, relevant next steps only.
-- **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch.
+- **Honest meta:** title and meta_description must accurately describe the article — no bait-and-switch. Prefer meta_description length **120–160 characters**.
+- **Image alt text (required):** Every markdown image MUST use descriptive alt text (e.g. \`![Architecture of X](url)\`). Never use generic alts like "image", "photo", "picture", or keyword salad.
+- **No fake authorship:** Do not invent credentials, employers, bylines, or metrics. Experience cues must be honest or omitted.
 
 ### SEO & Platform Optimization (E-E-A-T + Information Gain)
 - **Search Intent:** Answer the reader's real question early. Prefer actionable, practical advice over theory dumps.
 - **Beat generic AI content:** Google penalizes interchangeable summaries. Every draft must add *information gain* — specifics a templated AI overview would miss (versions, failure modes, measured numbers, real commands).
-- **High-intent long-tail keywords:** Target phrases a practitioner would type when solving a job (e.g. "How to stream Gemini AI responses in Next.js App Router with Vercel timeouts"), not broad head terms like "What is React". Title + intro must mirror that long-tail intent without stuffing.
+- **High-intent long-tail keywords:** Target phrases a practitioner would type when solving a job (e.g. "How to stream Gemini AI responses in Next.js App Router with Vercel timeouts"), not broad head terms like "What is React".
+- **Primary query placement:** Put the primary long-tail in **title + first H2 + the snippet box** under that H2. Do **not** repeat the exact phrase in every H2.
 - **Featured snippet box (40-word rule):** Immediately under the **first primary H2** (\`## …\`), place a concise factual answer of **2–3 sentences / 35–50 words** that directly answers the search query. Google often lifts this into position zero. Do not bury the answer in a long preamble.
+- **People also ask / FAQ:** Prefer FAQ / "People also ask" \`###\` only when each answer adds unique value — no boilerplate Q&A filler.
 - **Real implementation artifacts (required):** Include working code fences (copy-pasteable), terminal commands, concrete benchmark or timing notes when relevant, and at least one mermaid or ASCII system/flow diagram when the topic involves architecture. Generic prose without artifacts ranks poorly.
 - **Structure:** Open with a concrete hook (problem, surprising fact, or sharp claim). Use a clear ## / ### hierarchy that mirrors how a human would outline the topic.
 - **Rich Elements:** Use Markdown where it helps — > blockquotes for one sharp callout, code fences for working examples. Lists only when scannability genuinely improves understanding.
@@ -106,7 +110,7 @@ OUTPUT RULES:
 You MUST output a valid JSON object matching this exact schema. Do not output markdown code blocks wrapping the JSON:
 {
   "title": "A highly clickable, curiosity-inducing, SEO-optimized title (30-60 characters)",
-  "meta_description": "A punchy summary that drives CTR in search results (120-150 characters)",
+  "meta_description": "A punchy summary that drives CTR in search results (120-160 characters)",
   "tags": ["array", "of", "max", "4", "highly", "relevant", "tags"],
   "content_markdown": "The full, highly detailed, humanized blog post in markdown format",
   "canonical_url": "A slugified version of the title suitable for a URL (e.g., 'how-to-optimize-react-apps')",
@@ -204,6 +208,27 @@ Rules:
     `Seed topic: "${seed}"
 ${autocompleteContext}
 Search Google for related long-tail queries with high commercial intent and relatively low competition. Return exactly 10 scored keywords as JSON.`,
+
+  /**
+   * Targeted SEO improve — rewrite ONLY the failing snippets, never the whole post.
+   */
+  SEO_IMPROVE_SYSTEM: `You are an expert technical SEO editor. You receive a post's failing or warning scorecard items as isolated snippets. Fix ONLY those snippets.
+Rules:
+- Return valid JSON only (no markdown fences): {"fixes":[{"id":"same-as-input","value":"replacement snippet","note":"one short sentence"}]}
+- Every input target id MUST appear exactly once in fixes (same id string).
+- value is ONLY the fixed snippet for that field — never the full article.
+- For field "tags", value must be a comma-separated list of lowercase tags without # (e.g. "webdev, react, typescript").
+- For field "canonical_url", value must be a URL slug or path (no spaces), not a full essay.
+- For field "content" with applyMode "append", value is markdown to append (section or paragraph only).
+- For field "content" with applyMode "replace", value replaces currentValue exactly — preserve surrounding structure (headings, fences).
+- Keep a human, peer-engineer voice. No AI clichés, no keyword stuffing, no spam CTAs.
+- Stay faithful to the post topic and primaryKeyword when provided.
+- Do not invent credentials, employers, or fake metrics.`,
+
+  SEO_IMPROVE_USER: (payloadJson: string) =>
+    `Fix these SEO scorecard targets. Return JSON fixes for each id only.
+
+${payloadJson}`,
 
   /** Appended to full-post system when researchContext is present. */
   MONETIZATION_RESEARCH_SYSTEM: (monetizationAngle: string, intentLabel: string) =>
@@ -317,7 +342,10 @@ export const AI_CONFIG = Object.freeze({
   ] as readonly string[],
   /** Reject deprecated Imagen model ids if they appear in config lists. */
   IMAGEN_MODEL_PREFIX: "imagen",
+  /** AI-generated covers are always re-encoded to PNG before returning a data URL. */
   IMAGE_MIME_PNG: "image/png",
+  /** Sharp PNG compression level for AI covers (0–9; higher = smaller, slower). */
+  IMAGE_PNG_COMPRESSION_LEVEL: 7,
   RESPONSE_MIME_JSON: "application/json",
   RESPONSE_MODALITY_TEXT: "TEXT",
   RESPONSE_MODALITY_IMAGE: "IMAGE",
@@ -354,6 +382,8 @@ export const AI_CONFIG = Object.freeze({
    */
   MAX_DRAFT_TOKENS: 8192,
   MAX_EDIT_TOKENS: 4096,
+  /** Targeted SEO snippet fixes (not a full rewrite). */
+  MAX_SEO_IMPROVE_TOKENS: 4096,
   /** LinkedIn teaser only — short plain text. */
   MAX_LINKEDIN_SUMMARY_TOKENS: 2048,
   /** Max source article characters to inspect when summarizing for LinkedIn. */
@@ -424,6 +454,8 @@ export const AI_CONFIG = Object.freeze({
   TEMPERATURE_POST: 0.55,
   /** Inline edits: stay close to source text. */
   TEMPERATURE_EDIT: 0.25,
+  /** Targeted SEO snippet fixes — slightly creative but grounded. */
+  TEMPERATURE_SEO_IMPROVE: 0.35,
   TOP_P: 0.95,
   /** 0 = disable Flash thinking so maxOutputTokens go to visible JSON/text, not reasoning. */
   FLASH_THINKING_BUDGET: 0,
@@ -506,6 +538,26 @@ export const AI_RESPONSE_SCHEMA = {
     linkedin_post: { type: Type.STRING },
   },
   required: ["title", "meta_description", "tags", "content_markdown", "canonical_url"],
+};
+
+/** Structured output for targeted SEO improve (snippet fixes only). */
+export const AI_SEO_IMPROVE_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    fixes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          value: { type: Type.STRING },
+          note: { type: Type.STRING },
+        },
+        required: ["id", "value"],
+      },
+    },
+  },
+  required: ["fixes"],
 };
 
 /**

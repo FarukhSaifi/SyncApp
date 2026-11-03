@@ -5,12 +5,15 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Card } from "@components/Card";
 import { Input } from "@components/Input";
+import { SeoScoreBreakdown } from "@components/SeoScoreBreakdown";
 import { RADIUS } from "@constants/designTokens";
 import { EDITOR_A11Y, EDITOR_UI, editorMetaCharCount, LABELS, PLACEHOLDERS } from "@constants/messages";
 import { PLATFORM_DISPLAY_NAMES, PLATFORMS, type PlatformSlug } from "@constants/platforms";
+import { SEO_THRESHOLDS } from "@constants/seo";
 import { useThemeColors } from "@contexts/ThemeContext";
 import { toast } from "@hooks/useToast";
 import type { DetailsTabProps } from "@types";
+import { getSeoScorecard } from "@utils/seoScorecard";
 
 const SCHEDULE_PLATFORM_ORDER: PlatformSlug[] = [
   PLATFORMS.MEDIUM,
@@ -83,6 +86,33 @@ export function DetailsTab({ form, connectedPlatforms, updateField }: DetailsTab
   };
 
   const metaLength = form.meta_description.length;
+  const metaMax = SEO_THRESHOLDS.META_DESC_MAX;
+
+  const seo = useMemo(
+    () =>
+      getSeoScorecard(
+        {
+          title: form.title,
+          tags: form.tags,
+          cover_image: form.cover_image,
+          canonical_url: form.canonical_url,
+          meta_description: form.meta_description,
+          content_markdown: form.content_markdown,
+        },
+        {
+          platforms: connectedPlatforms.length > 0 ? connectedPlatforms : undefined,
+        },
+      ),
+    [
+      form.title,
+      form.tags,
+      form.cover_image,
+      form.canonical_url,
+      form.meta_description,
+      form.content_markdown,
+      connectedPlatforms,
+    ],
+  );
 
   return (
     <View style={styles.container}>
@@ -242,8 +272,8 @@ export function DetailsTab({ form, connectedPlatforms, updateField }: DetailsTab
           style={styles.metaInput}
         />
         <View style={styles.metaFooter}>
-          <Text style={[styles.metaCounter, metaLength > 160 && styles.metaCounterWarning]}>
-            {editorMetaCharCount(metaLength)}
+          <Text style={[styles.metaCounter, metaLength > metaMax && styles.metaCounterWarning]}>
+            {editorMetaCharCount(metaLength, metaMax)}
           </Text>
         </View>
 
@@ -265,6 +295,21 @@ export function DetailsTab({ form, connectedPlatforms, updateField }: DetailsTab
             <Text style={styles.canonicalHint}>{EDITOR_UI.CANONICAL_HINT}</Text>
           </View>
         ) : null}
+      </Card>
+
+      {/* 4. Live SEO scorecard */}
+      <Card style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="analytics-outline" size={18} color={colors.primary} />
+          <Text style={styles.cardTitle}>{EDITOR_UI.SEO_SCORE_SECTION}</Text>
+        </View>
+        <SeoScoreBreakdown
+          checks={seo.checks}
+          categories={seo.categories}
+          score={seo.score}
+          maxScore={seo.maxScore}
+          showHeader
+        />
       </Card>
     </View>
   );

@@ -1,7 +1,6 @@
-
 import * as aiController from "@controllers/aiController";
 import { validateBody } from "@middleware/validation";
-import { keywordResearchRequestSchema } from "@schemas";
+import { improveSeoRequestSchema, keywordResearchRequestSchema } from "@schemas";
 import { authenticateToken } from "@utils/auth";
 import { Router } from "express";
 
@@ -21,5 +20,6 @@ router.post(
 router.post("/generate-image", authenticateToken, aiController.postGenerateImage);
 router.post("/generate-linkedin-summary", authenticateToken, aiController.postGenerateLinkedInSummary);
 router.post("/edit", authenticateToken, aiController.postEdit);
+router.post("/improve-seo", authenticateToken, validateBody(improveSeoRequestSchema), aiController.postImproveSeo);
 
 export default router;

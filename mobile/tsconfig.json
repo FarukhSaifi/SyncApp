@@ -6,6 +6,9 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "paths": {
+      "expo-router/build": [
+        "../node_modules/expo-router/build/index.d.ts"
+      ],
       "@/*": [
         "./*"
       ],

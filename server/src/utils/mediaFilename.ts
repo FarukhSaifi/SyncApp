@@ -40,7 +40,7 @@ export function resolvePostMediaSlug(opts: {
   return "post";
 }
 
-/** e.g. cover-how-to-optimize-react.png */
+/** e.g. cover-how-to-optimize-react.webp (ext follows upload MIME). */
 export function buildCoverFilename(opts: {
   slug?: string | null;
   title?: string | null;

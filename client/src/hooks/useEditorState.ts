@@ -10,7 +10,7 @@ import { apiClient } from "@utils/apiClient";
 import { toStorageMarkdown } from "@utils/contentUtils";
 import { isCredentialConnected } from "@utils/credentials";
 import { devError, devLog } from "@utils/logger";
-import { getDevtoPublishWarnings } from "@utils/seoScorecard";
+import { getPublishSeoWarnings } from "@utils/seoScorecard";
 import { useParams, useRouter } from "next/navigation";
 
 import { API_PATHS, CANONICAL_BASE_URL } from "@constants/api";
@@ -57,11 +57,28 @@ function platformDisplayName(platform: string): string {
   return PLATFORM_DISPLAY_NAMES[platform as PlatformSlug] || platform;
 }
 
-export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOptions) {
+export function useEditorState({ onPostCreate, onPostUpdate, getSeoContext }: UseEditorStateOptions) {
   const params = useParams();
   const id = params?.id as string | undefined;
   const router = useRouter();
   const toast = useToast();
+
+  const withSeoFields = useCallback(
+    <T extends Record<string, unknown>>(
+      postData: T,
+    ): T & {
+      seo_primary_keyword: string;
+      seo_optimization_targets: string[];
+    } => {
+      const ctx = getSeoContext?.() || {};
+      return {
+        ...postData,
+        seo_primary_keyword: (ctx.primaryKeyword || "").trim(),
+        seo_optimization_targets: Array.isArray(ctx.platforms) ? ctx.platforms : [],
+      };
+    },
+    [getSeoContext],
+  );
 
   const [formData, setFormData] = useState<EditorFormData>({ ...INITIAL_EDITOR_FORM });
   const [tagList, setTagList] = useState<string[]>([]);
@@ -73,6 +90,10 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [persistedSeoContext, setPersistedSeoContext] = useState<{
+    primaryKeyword: string;
+    platforms: string[];
+  }>({ primaryKeyword: "", platforms: [] });
 
   const isDirtyRef = useRef(isDirty);
   const formDataRef = useRef(formData);
@@ -110,6 +131,10 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           linkedin_read_more_url: post.linkedin_read_more_url || "",
         });
         setTagList(Array.isArray(post.tags) ? post.tags : []);
+        setPersistedSeoContext({
+          primaryKeyword: typeof post.seo_primary_keyword === "string" ? post.seo_primary_keyword : "",
+          platforms: Array.isArray(post.seo_optimization_targets) ? post.seo_optimization_targets : [],
+        });
         suppressDirtyRef.current = true;
         setIsDirty(false);
       } else {
@@ -129,14 +154,14 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       return;
     }
     try {
-      const postData = { ...formDataRef.current, tags: tagListRef.current };
+      const postData = withSeoFields({ ...formDataRef.current, tags: tagListRef.current });
       await apiClient.updatePost(id, postData);
       setIsDirty(false);
       setLastSavedAt(new Date());
     } catch {
       // Silent fail for autosave
     }
-  }, [id]);
+  }, [id, withSeoFields]);
 
   // Fetch post on mount if editing
   useEffect(() => {
@@ -244,12 +269,12 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
 
       setLoading(true);
       try {
-        const postData = {
+        const postData = withSeoFields({
           ...formData,
           content_markdown: toStorageMarkdown(formData.content_markdown),
           tags: tagList,
           status,
-        };
+        });
         devLog("Saving post:", id ? "update" : "create");
         let response;
         if (id) {
@@ -299,7 +324,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         setLoading(false);
       }
     },
-    [formData, tagList, id, onPostUpdate, onPostCreate, router, toast],
+    [formData, tagList, id, onPostUpdate, onPostCreate, router, toast, withSeoFields],
   );
 
   /** Ensures post exists and latest edits are saved before publishing */
@@ -321,14 +346,14 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       };
 
       const status = data.status ?? POST_STATUS.DRAFT;
-      const postData = {
+      const postData = withSeoFields({
         ...data,
         content_markdown: toStorageMarkdown(data.content_markdown),
         tags: tagList,
         status,
         scheduled_for: null,
         scheduled_platforms: [],
-      };
+      });
 
       if (!id) {
         devLog("Saving new post before publishing");
@@ -360,7 +385,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       clearScheduledForInForm();
       return id;
     },
-    [id, formData, tagList, onPostCreate, onPostUpdate, router],
+    [id, formData, tagList, onPostCreate, onPostUpdate, router, withSeoFields],
   );
 
   const refreshPostAfterPublish = useCallback(
@@ -412,14 +437,17 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         }
 
         if (platform === PLATFORMS.DEVTO) {
-          const warnings = getDevtoPublishWarnings({
-            title: effectiveForm.title,
-            tags: tagList,
-            cover_image: effectiveForm.cover_image,
-            canonical_url: effectiveForm.canonical_url,
-            meta_description: effectiveForm.meta_description,
-            content_markdown: effectiveForm.content_markdown,
-          });
+          const warnings = getPublishSeoWarnings(
+            {
+              title: effectiveForm.title,
+              tags: tagList,
+              cover_image: effectiveForm.cover_image,
+              canonical_url: effectiveForm.canonical_url,
+              meta_description: effectiveForm.meta_description,
+              content_markdown: effectiveForm.content_markdown,
+            },
+            { platforms: [PLATFORMS.DEVTO] },
+          );
           if (warnings.length > 0) {
             toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, PUBLISH_WARNING_TOAST_MAX).join(" · "));
           }
@@ -467,14 +495,19 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
           return;
         }
 
-        const warnings = getDevtoPublishWarnings({
-          title: effectiveForm.title,
-          tags: tagList,
-          cover_image: effectiveForm.cover_image,
-          canonical_url: effectiveForm.canonical_url,
-          meta_description: effectiveForm.meta_description,
-          content_markdown: effectiveForm.content_markdown,
-        });
+        const warnings = getPublishSeoWarnings(
+          {
+            title: effectiveForm.title,
+            tags: tagList,
+            cover_image: effectiveForm.cover_image,
+            canonical_url: effectiveForm.canonical_url,
+            meta_description: effectiveForm.meta_description,
+            content_markdown: effectiveForm.content_markdown,
+          },
+          {
+            platforms: connectedPlatforms.includes(PLATFORMS.DEVTO) ? [PLATFORMS.DEVTO] : connectedPlatforms,
+          },
+        );
         if (warnings.length > 0) {
           toast.warning(TOAST_TITLES.WARNING, warnings.slice(0, PUBLISH_WARNING_TOAST_MAX).join(" · "));
         }
@@ -549,13 +582,13 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
       setLoading(true);
       try {
         const nextPlatforms = scheduledFor ? platforms : [];
-        const postData = {
+        const postData = withSeoFields({
           ...formData,
           tags: tagList,
           status: formData.status ?? POST_STATUS.DRAFT,
           scheduled_for: scheduledFor || null,
           scheduled_platforms: nextPlatforms,
-        };
+        });
 
         let response;
         if (id) {
@@ -603,7 +636,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
         setLoading(false);
       }
     },
-    [formData, tagList, id, onPostCreate, onPostUpdate, router, toast],
+    [formData, tagList, id, onPostCreate, onPostUpdate, router, toast, withSeoFields],
   );
 
   const togglePreview = useCallback(() => {
@@ -630,6 +663,7 @@ export function useEditorState({ onPostCreate, onPostUpdate }: UseEditorStateOpt
     isDirty,
     lastSavedAt,
     connectedPlatforms,
+    persistedSeoContext,
     // Handlers
     handleInputChange,
     updateFormField,

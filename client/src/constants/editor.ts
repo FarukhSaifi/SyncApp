@@ -33,6 +33,9 @@ export const SIDEBAR_SECTIONS = Object.freeze({
   FEATURED_IMAGE: "Featured Image",
   CANONICAL_URL: "Canonical URL",
   SEO_SCORE: "SEO Score",
+  SEO_METADATA: "Metadata",
+  SEO_STRUCTURE: "Structure",
+  SEO_TRUST: "Trust",
 } as const);
 
 /** Right sidebar section labels */
@@ -118,7 +121,7 @@ export const EDITOR_PREVIEW_CODE = Object.freeze({
   WRAP_CLASS: "my-4 overflow-x-auto",
   INLINE_CLASS: "rounded bg-muted px-1.5 py-0.5 font-mono text-sm",
   TAG_WRAP_CLASS: "mt-6 flex flex-wrap gap-2",
-  TAG_CLASS: "rounded-full bg-primary/15 px-3 py-1 text-sm font-medium text-primary",
+  TAG_CLASS: "rounded-full border border-current/40 bg-primary/15 px-3 py-1 text-sm font-medium text-primary",
   PROSE_CLASS: "prose prose-base max-w-none",
   ROOT_CLASS: "editor-preview prose prose-base max-w-none p-4 sm:p-6",
   TITLE_CLASS: "mb-4 text-3xl font-bold",
@@ -156,6 +159,7 @@ export const AI_LOADING = Object.freeze({
   POST: "post",
   IMAGE: "image",
   LINKEDIN: "linkedin",
+  IMPROVE: "improve",
 } as const);
 
 /** AI Toolkit dropdown action ids (passed to aiEdit / onAction). */
@@ -197,7 +201,7 @@ export const EDITOR_KEYS = Object.freeze({
   SPACE: " ",
 } as const);
 
-/** AI-generated cover download filename parts. */
+/** AI-generated cover download filename parts (matches server PNG output). */
 export const AI_COVER_DOWNLOAD = Object.freeze({
   PREFIX: "cover-",
   EXT: ".png",

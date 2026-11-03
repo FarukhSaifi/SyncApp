@@ -2,10 +2,22 @@ import Constants from "expo-constants";
 
 import { APP_CONFIG } from "@constants/config";
 
-const extra = Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined;
+const extra = Constants.expoConfig?.extra as {
+  apiBaseUrl?: string;
+  canonicalBaseUrl?: string;
+} | undefined;
 const raw = extra?.apiBaseUrl?.trim() || APP_CONFIG.DEFAULT_API_BASE;
 
 export const API_BASE = raw.endsWith("/api") ? raw : `${raw.replace(/\/$/, "")}/api`;
+
+/**
+ * Public blog base for internal-link scoring + canonicals.
+ * Set EXPO_PUBLIC_CANONICAL_BASE_URL (also wired via app.config extra).
+ */
+export const CANONICAL_BASE_URL: string =
+  extra?.canonicalBaseUrl?.trim() ||
+  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_CANONICAL_BASE_URL?.trim()) ||
+  "";
 
 export const HTTP_METHODS = Object.freeze({
   GET: "GET",

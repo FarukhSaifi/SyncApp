@@ -12,6 +12,7 @@ export * from "./palette";
 export * from "./platforms";
 export * from "./postStatus";
 export * from "./routes";
+export * from "./seo";
 export * from "./settingsUi";
 export * from "./theme";
 export * from "./userRoles";

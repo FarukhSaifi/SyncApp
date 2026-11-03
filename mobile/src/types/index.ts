@@ -29,11 +29,44 @@ export interface Post {
   };
   linkedin_post?: string;
   linkedin_read_more_url?: string;
+  /** Persisted SEO score (0–100); null until first save/compute. */
+  seo_score?: number | null;
+  /** Persisted checklist summary lines (OK/WARN/FAIL prefixes). */
+  seo_score_summary?: string;
   createdAt?: string;
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
 }
+
+export type SeoCategoryId = "metadata" | "structure" | "trust";
+
+export interface SeoCheck {
+  label: string;
+  ok: boolean | null;
+  warning?: boolean;
+  category?: SeoCategoryId;
+}
+
+export interface SeoScorecardCategoryGroup {
+  id: SeoCategoryId;
+  checks: SeoCheck[];
+}
+
+export interface SeoScorecard {
+  score: number;
+  maxScore: number;
+  checks: SeoCheck[];
+  categories?: SeoScorecardCategoryGroup[];
+  summary?: string;
+}
+
+export interface SeoScorecardContext {
+  primaryKeyword?: string;
+  platforms?: string[];
+}
+
+export type MetaDescriptionStatus = "ok" | "too_short" | "too_long" | "missing";
 
 export interface User {
   _id: string;

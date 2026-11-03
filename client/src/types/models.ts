@@ -58,6 +58,14 @@ export interface Post {
   };
   linkedin_post?: string;
   linkedin_read_more_url?: string;
+  /** Persisted SEO score (0-100) from full-body rubric at save time. */
+  seo_score?: number | null;
+  /** Checklist summary for dashboard tooltip. */
+  seo_score_summary?: string;
+  /** Keyword used when the stored score was computed. */
+  seo_primary_keyword?: string;
+  /** Optimization targets used for platform-aware weighting. */
+  seo_optimization_targets?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

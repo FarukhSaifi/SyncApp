@@ -1,7 +1,9 @@
 /**
  * AI module domain types, interfaces, and DTOs.
  */
-import type { GenerateContentConfig } from "@google/genai";
+import type { GenerateContentConfig } from "@google/genai/node";
+
+import type { SeoScorecard } from "./posts";
 
 /** Matches AI_PROVIDERS in constants/ai.ts */
 export type AiProvider = "vertex" | "studio" | "none";
@@ -37,7 +39,12 @@ export type StudioGenerateOptions = AiGenerateOptions;
 export type ImageSource = "gemini" | "imagen";
 
 export interface GenerateImageResult {
+  /** PNG base64 data URL for client-side preview; not uploaded to GCS on generate. */
   imageDataUrl: string;
+  /**
+   * Public bucket URL. Intentionally omitted by generate — set only after an
+   * explicit upload/attach or save-time base64 cover persist.
+   */
   imageUrl?: string;
   source: ImageSource;
 }
@@ -145,6 +152,9 @@ export interface GeneratePostResult {
   linkedin_post?: string;
   read_more_url?: string;
   linkedin_missing_canonical?: boolean;
+  /** Full-body SEO scorecard for the generated draft (not persisted until save). */
+  seoScorecard?: SeoScorecard;
+  seo_warnings?: string[];
 }
 
 /** Request DTOs for AI controllers */
@@ -174,4 +184,32 @@ export interface GenerateLinkedInSummaryRequestBody {
   content?: string;
   model?: string;
   readMoreUrl?: string;
+}
+
+/** One scorecard-driven snippet the model may rewrite (not the full post). */
+export interface SeoImproveTargetInput {
+  id: string;
+  field: "title" | "meta_description" | "tags" | "canonical_url" | "content";
+  issue: string;
+  currentValue: string;
+  applyMode: "replace" | "append";
+  surroundingContext?: string;
+}
+
+export interface ImproveSeoRequestBody {
+  targets: SeoImproveTargetInput[];
+  model?: string;
+  primaryKeyword?: string;
+  title?: string;
+  platforms?: string[];
+}
+
+export interface SeoImproveFix {
+  id: string;
+  value: string;
+  note?: string;
+}
+
+export interface ImproveSeoResult {
+  fixes: SeoImproveFix[];
 }
