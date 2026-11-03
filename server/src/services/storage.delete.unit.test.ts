@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { buildFirebaseStoragePublicUrl, buildGcsPublicObjectUrl, DEFAULT_VALUES } from "@constants";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const deleteObject = vi.hoisted(() => vi.fn(async () => undefined));
 const fileMock = vi.hoisted(() =>
@@ -96,10 +95,7 @@ describe("deleteFromGCS", () => {
   it("logs and swallows delete failures", async () => {
     deleteObject.mockRejectedValueOnce(new Error("permission denied"));
     const { deleteFromGCS } = await loadStorageWithBucket(bucketName);
-    const publicUrl = buildGcsPublicObjectUrl(
-      bucketName,
-      `${DEFAULT_VALUES["GCS_UPLOAD_PREFIX"]}cover-old.webp`,
-    );
+    const publicUrl = buildGcsPublicObjectUrl(bucketName, `${DEFAULT_VALUES["GCS_UPLOAD_PREFIX"]}cover-old.webp`);
 
     await expect(deleteFromGCS(publicUrl)).resolves.toBeUndefined();
   });
