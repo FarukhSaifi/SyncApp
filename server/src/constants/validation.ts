@@ -59,6 +59,9 @@ export const REGEX_PATTERNS = Object.freeze({
   MARKDOWN_IMAGE_DATA_URL: /data:image\/([^;]+);base64,([A-Za-z0-9+/=]+)/g,
   /** Absolute GCS public object URL. */
   GCS_PUBLIC_OBJECT_URL: /^https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/,
+  /** Firebase Storage public download URL (`?alt=media`). */
+  FIREBASE_STORAGE_PUBLIC_OBJECT_URL:
+    /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/([^/]+)\/o\/([^?]+)(?:\?.*)?$/,
   /** GCS public URLs embedded in markdown (stops at ), whitespace, or "). */
   GCS_PUBLIC_URL_IN_MARKDOWN: /https:\/\/storage\.googleapis\.com\/([^/]+)\/([^)\s"]+)/g,
   /** Normalize Dev.to tags: collapse whitespace and hyphens. */

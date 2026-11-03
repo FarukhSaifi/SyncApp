@@ -39,7 +39,12 @@ export type StudioGenerateOptions = AiGenerateOptions;
 export type ImageSource = "gemini" | "imagen";
 
 export interface GenerateImageResult {
+  /** PNG base64 data URL for client-side preview; not uploaded to GCS on generate. */
   imageDataUrl: string;
+  /**
+   * Public bucket URL. Intentionally omitted by generate — set only after an
+   * explicit upload/attach or save-time base64 cover persist.
+   */
   imageUrl?: string;
   source: ImageSource;
 }

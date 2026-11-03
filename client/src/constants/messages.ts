@@ -99,6 +99,7 @@ const createSuccessMessages = () => {
     AI_FEATURED_IMAGE_SET: "You can save the post to keep it.",
     AI_COVER_ATTACHED: "Cover image attached to this post.",
     AI_IMAGE_URL_COPIED: "Image URL copied to clipboard",
+    AI_IMAGE_DATA_COPIED: "Image data copied to clipboard",
     AI_IMAGE_DOWNLOADED: "Image downloaded to your device",
     AI_EDIT_COMPLETE: "AI Edit Complete",
     AI_SEO_IMPROVE_READY: "Review the proposed snippet fixes, then apply the ones you want.",

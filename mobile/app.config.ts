@@ -66,6 +66,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://sync-app-server.vercel.app/api",
+    canonicalBaseUrl: process.env.EXPO_PUBLIC_CANONICAL_BASE_URL?.trim() || "",
     eas: {
       projectId: EAS_PROJECT_ID,
     },

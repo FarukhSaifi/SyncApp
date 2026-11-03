@@ -47,6 +47,7 @@ vi.mock("@utils/cache", () => ({
 
 vi.mock("./storage", () => ({
   uploadToGCS: vi.fn(async () => "https://cdn.example/file.png"),
+  deleteFromGCS: vi.fn(async () => undefined),
 }));
 
 import { createPost, deletePost, getPostById, getPostBySlug, getPosts, updatePost } from "./postsService";

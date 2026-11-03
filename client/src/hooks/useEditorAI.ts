@@ -331,7 +331,8 @@ export function useEditorAI({
   }, [aiKeyword, aiImagePrompt, toast]);
 
   const handleUseAsFeaturedImage = useCallback(() => {
-    const target = generatedImageUrl || generatedImageDataUrl;
+    // Prefer local data URL from generate; public URL only exists after explicit upload.
+    const target = generatedImageDataUrl || generatedImageUrl;
     if (!target) {
       return;
     }
@@ -372,7 +373,10 @@ export function useEditorAI({
     }
     try {
       await navigator.clipboard.writeText(target);
-      toast.success(TOAST_TITLES["COPIED"], SYNC_LABEL["AI_IMAGE_URL_COPIED"]);
+      toast.success(
+        TOAST_TITLES["COPIED"],
+        generatedImageUrl ? SYNC_LABEL["AI_IMAGE_URL_COPIED"] : SYNC_LABEL["AI_IMAGE_DATA_COPIED"],
+      );
     } catch {
       toast.apiError(SYNC_LABEL["FAILED_TO_COPY_IMAGE_URL"]);
     }

@@ -16,7 +16,10 @@ const postsServiceMocks = vi.hoisted(() => ({
 const uploadToGCS = vi.hoisted(() => vi.fn(async () => "https://cdn/cover.png"));
 
 vi.mock("@services/postsService", () => postsServiceMocks);
-vi.mock("@services/storage", () => ({ uploadToGCS }));
+vi.mock("@services/storage", () => ({
+  uploadToGCS,
+  deleteFromGCS: vi.fn(async () => undefined),
+}));
 
 const postFindById = vi.hoisted(() => vi.fn());
 

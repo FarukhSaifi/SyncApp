@@ -3,6 +3,7 @@
  * Primary: Gemini multimodal image models on Vertex AI (preferred) or Studio fallback.
  * Imagen is not used (deprecated on Vertex as of 2026-06-30).
  * Configured for 16:9 blog headers.
+ * Generated covers are always returned as PNG data URLs (no GCS upload on generate).
  */
 
 import {
@@ -11,13 +12,11 @@ import {
   AI_POST_LIMITS,
   AI_PROMPTS,
   AI_PROVIDERS,
-  DEFAULT_VALUES,
-  REGEX_PATTERNS,
 } from "@constants";
 import { AppError } from "@middleware/errorHandler";
-import { uploadToGCS } from "@services/storage";
 import type { GenerateImageResult, ImageSource } from "@types";
 import { logger } from "@utils/logger";
+import sharp from "sharp";
 
 import { HTTP_STATUS } from "@constants/httpStatus";
 import { ERROR_MESSAGES } from "@constants/messages";
@@ -35,12 +34,33 @@ import { withRetry } from "./retries";
 
 export type { GenerateImageResult, ImageSource };
 
-function toBase64DataUrl(bytes: string | Uint8Array | Buffer, mime: string = AI_CONFIG.IMAGE_MIME_PNG): string {
-  const base64 = typeof bytes === "string" ? bytes : Buffer.from(bytes).toString("base64");
-  return `data:${mime};base64,${base64}`;
+function toPngDataUrl(pngBytes: Buffer): string {
+  return `data:${AI_CONFIG.IMAGE_MIME_PNG};base64,${pngBytes.toString("base64")}`;
 }
 
-function extractInlineImage(result: Record<string, unknown>): string | null {
+/**
+ * Decode Gemini inline image bytes and re-encode as PNG so clients always
+ * receive `data:image/png;base64,...` regardless of source mime (WebP, JPEG, etc.).
+ */
+async function convertInlineImageToPngDataUrl(base64Data: string, sourceMime?: string): Promise<string | null> {
+  try {
+    const input = Buffer.from(base64Data, "base64");
+    const pngBytes = await sharp(input)
+      .png({ compressionLevel: AI_CONFIG.IMAGE_PNG_COMPRESSION_LEVEL })
+      .toBuffer();
+    if (sourceMime && sourceMime.toLowerCase() !== AI_CONFIG.IMAGE_MIME_PNG) {
+      logger.info(`AI cover converted from ${sourceMime} to ${AI_CONFIG.IMAGE_MIME_PNG}`);
+    }
+    return toPngDataUrl(pngBytes);
+  } catch (err) {
+    logger.warn(
+      `AI cover PNG conversion failed: ${(err as Error).message.slice(0, AI_CONFIG.IMAGE_ERROR_LOG_MAX_CHARS)}`,
+    );
+    return null;
+  }
+}
+
+async function extractInlineImage(result: Record<string, unknown>): Promise<string | null> {
   const candidates = result.candidates as Array<{ content?: { parts?: Array<Record<string, unknown>> } }> | undefined;
   const parts = candidates?.[0]?.content?.parts || [];
   for (const part of parts) {
@@ -48,34 +68,14 @@ function extractInlineImage(result: Record<string, unknown>): string | null {
       | { data?: string; mimeType?: string; mime_type?: string }
       | undefined;
     if (inline?.data) {
-      return toBase64DataUrl(inline.data, inline.mimeType || inline.mime_type || AI_CONFIG.IMAGE_MIME_PNG);
+      const sourceMime = inline.mimeType || inline.mime_type;
+      const dataUrl = await convertInlineImageToPngDataUrl(inline.data, sourceMime);
+      if (dataUrl) {
+        return dataUrl;
+      }
     }
   }
   return null;
-}
-
-/**
- * Persist generated image to cloud storage in background so it has a permanent public URL.
- */
-async function persistImage(dataUrl: string, topic: string): Promise<string | undefined> {
-  try {
-    const match = dataUrl.match(REGEX_PATTERNS["DATA_URL_BASE64"]);
-    if (!match) {
-      return undefined;
-    }
-    const mimetype = match[1];
-    const buffer = Buffer.from(match[2], "base64");
-    const slug = topic
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .slice(0, DEFAULT_VALUES.STORAGE_SLUG_MAX_LENGTH);
-    const ext = mimetype.split("/")[1]?.replace("+xml", "") || "png";
-    const filename = `ai-cover-${slug}-${Date.now()}.${ext}`;
-    return await uploadToGCS(buffer, filename, mimetype, false);
-  } catch (err) {
-    logger.warn(`Storage persistence skipped: ${(err as Error).message}`);
-    return undefined;
-  }
 }
 
 /**
@@ -146,7 +146,7 @@ async function tryGeminiImageModel(model: string, prompt: string, providerLabel:
         }),
       { attempts: AI_CONFIG.RETRY_ATTEMPTS_ONCE },
     );
-    const dataUrl = extractInlineImage(res as unknown as Record<string, unknown>);
+    const dataUrl = await extractInlineImage(res as unknown as Record<string, unknown>);
     if (dataUrl) {
       logger.info(`AI image generated via ${providerLabel} (${model})`);
       return dataUrl;
@@ -174,6 +174,9 @@ async function tryGeminiImageModels(prompt: string): Promise<string | null> {
 
 /**
  * Main entry point: generate a 16:9 featured blog image from topic.
+ * Returns a client-local PNG data URL only — GCS upload happens on explicit
+ * attach (`PUT /api/posts/:id/cover`), manual presigned upload, or save-time
+ * base64 cover processing — not during generate.
  */
 export async function generateImageFromTopic(topic: string, additionalPrompt?: string): Promise<GenerateImageResult> {
   if (!topic || typeof topic !== "string" || !topic.trim()) {
@@ -184,8 +187,7 @@ export async function generateImageFromTopic(topic: string, additionalPrompt?: s
 
   const imageData = await tryGeminiImageModels(prompt);
   if (imageData) {
-    const publicUrl = await persistImage(imageData, topic);
-    return { imageDataUrl: imageData, imageUrl: publicUrl, source: AI_IMAGE_SOURCES.GEMINI };
+    return { imageDataUrl: imageData, source: AI_IMAGE_SOURCES.GEMINI };
   }
 
   throw new AppError(

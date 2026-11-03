@@ -27,7 +27,28 @@ import { buildCoverFilename, buildInlineImageFilename } from "@utils/mediaFilena
 import { normalizeScheduledFor, normalizeScheduledPlatforms } from "@utils/scheduleUtils";
 
 import { buildPersistedSeoFields } from "./seoScoreService";
-import { uploadToGCS } from "./storage";
+import { deleteFromGCS, uploadToGCS } from "./storage";
+
+function normalizeCoverImageUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * After a successful cover_image change, best-effort delete the previous GCS object
+ * when it differs from the new URL. Never fails the caller.
+ */
+async function deleteReplacedCoverImage(previousCover: unknown, nextCover: unknown): Promise<void> {
+  const previousUrl = normalizeCoverImageUrl(previousCover);
+  const nextUrl = normalizeCoverImageUrl(nextCover);
+  if (!previousUrl || previousUrl === nextUrl) {
+    return;
+  }
+  await deleteFromGCS(previousUrl);
+}
 
 function normalizeSeoPlatforms(value: unknown): string[] {
   if (!Array.isArray(value)) {
@@ -623,6 +644,9 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   );
   Object.assign(updateData, seoFields);
 
+  const previousCoverImage = post.cover_image;
+  const coverImageChanging = updates.cover_image !== undefined;
+
   const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
     returnDocument: "after",
     runValidators: true,
@@ -633,6 +657,11 @@ export async function updatePost(id: string, updates: Record<string, unknown>, u
   cache.delete(cacheKeys.posts.single(id));
   cache.delete(cacheKeys.posts.slug(post.slug || ""));
   cache.invalidatePattern(cacheKeys.posts.all());
+
+  // Upload/presign already succeeded and DB is updated — delete the prior object best-effort.
+  if (coverImageChanging) {
+    await deleteReplacedCoverImage(previousCoverImage, updateData.cover_image);
+  }
 
   return updatedPost;
 }
@@ -651,9 +680,15 @@ export async function deletePost(id: string, userId: string) {
     throw new ForbiddenError(ERROR_MESSAGES["ACCESS_DENIED_POST"]);
   }
 
+  const coverToDelete = normalizeCoverImageUrl(post.cover_image);
+
   await Post.findByIdAndDelete(id);
 
   cache.delete(cacheKeys.posts.single(id));
   cache.delete(cacheKeys.posts.slug(post.slug || ""));
   cache.invalidatePattern(cacheKeys.posts.all());
+
+  if (coverToDelete) {
+    await deleteFromGCS(coverToDelete);
+  }
 }

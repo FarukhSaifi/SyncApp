@@ -6,6 +6,7 @@ import { clearMemoryMongo, startMemoryMongo, stopMemoryMongo } from "../helpers/
 
 vi.mock("@services/storage", () => ({
   uploadToGCS: vi.fn(async () => "https://storage.example.com/cover.png"),
+  deleteFromGCS: vi.fn(async () => undefined),
 }));
 
 describe("posts cover upload API (memory Mongo)", () => {

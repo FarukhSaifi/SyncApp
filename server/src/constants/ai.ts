@@ -342,7 +342,10 @@ export const AI_CONFIG = Object.freeze({
   ] as readonly string[],
   /** Reject deprecated Imagen model ids if they appear in config lists. */
   IMAGEN_MODEL_PREFIX: "imagen",
+  /** AI-generated covers are always re-encoded to PNG before returning a data URL. */
   IMAGE_MIME_PNG: "image/png",
+  /** Sharp PNG compression level for AI covers (0–9; higher = smaller, slower). */
+  IMAGE_PNG_COMPRESSION_LEVEL: 7,
   RESPONSE_MIME_JSON: "application/json",
   RESPONSE_MODALITY_TEXT: "TEXT",
   RESPONSE_MODALITY_IMAGE: "IMAGE",

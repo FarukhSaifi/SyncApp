@@ -182,10 +182,10 @@ describe("useEditorAI", () => {
     expect(toast.validationError).toHaveBeenCalledWith(SYNC_LABEL["AI_KEYWORD_REQUIRED_FOR_IMAGE"]);
   });
 
-  it("generates image on success", async () => {
+  it("generates image on success as local data URL only", async () => {
     vi.spyOn(apiClient, "aiGenerateImage").mockResolvedValue({
       success: true,
-      data: { imageDataUrl: "data:image/png;base64,abc", imageUrl: "https://cdn.test/x.png", source: "gemini" },
+      data: { imageDataUrl: "data:image/png;base64,abc", source: "gemini" },
     });
 
     const { result } = renderHook(() => useEditorAI(baseOptions()));
@@ -198,7 +198,8 @@ describe("useEditorAI", () => {
       await result.current.handleGenerateImage();
     });
 
-    expect(result.current.generatedImageDataUrl).toContain("base64");
+    expect(result.current.generatedImageDataUrl).toContain("data:image/png;base64");
+    expect(result.current.generatedImageUrl).toBeNull();
     expect(toast.success).toHaveBeenCalledWith(TOAST_TITLES["IMAGE_GENERATED"], SYNC_LABEL["AI_IMAGE_GENERATED"]);
   });
 
@@ -314,6 +315,7 @@ describe("useEditorAI", () => {
     });
 
     expect(clickSpy).toHaveBeenCalled();
+    expect(anchor.download).toMatch(/\.png$/);
     expect(toast.success).toHaveBeenCalledWith(TOAST_TITLES["DOWNLOADED"], SYNC_LABEL["AI_IMAGE_DOWNLOADED"]);
   });
 
@@ -446,10 +448,10 @@ describe("useEditorAI", () => {
     expect(result.current.improveReviewItems[0]?.selected).toBe(false);
   });
 
-  it("copies image URL to clipboard", async () => {
+  it("copies generated data URL to clipboard when no public URL", async () => {
     vi.spyOn(apiClient, "aiGenerateImage").mockResolvedValue({
       success: true,
-      data: { imageDataUrl: "data:image/png;base64,abc", imageUrl: "https://cdn.test/img.png" },
+      data: { imageDataUrl: "data:image/png;base64,abc", source: "gemini" },
     });
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
@@ -466,7 +468,8 @@ describe("useEditorAI", () => {
       await result.current.handleCopyImageUrl();
     });
 
-    expect(writeText).toHaveBeenCalledWith("https://cdn.test/img.png");
+    expect(writeText).toHaveBeenCalledWith("data:image/png;base64,abc");
+    expect(toast.success).toHaveBeenCalledWith(TOAST_TITLES["COPIED"], SYNC_LABEL["AI_IMAGE_DATA_COPIED"]);
     vi.unstubAllGlobals();
   });
 

@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { EDITOR_CONFIG } from "@constants/editor";
+import { EDITOR_CONFIG, PUBLISH_WARNING_TOAST_MAX } from "@constants/editor";
 import { EDITOR_READINESS, ERRORS, publishedToPlatform, TOAST } from "@constants/messages";
 import {
   DEFAULT_OPTIMIZATION_TARGETS,
@@ -16,6 +16,25 @@ import { toast } from "@hooks/useToast";
 import { apiClient } from "@services/apiClient";
 import type { EditorForm, EditorReadiness, PlatformStatus, Post } from "@types";
 import { isCredentialConnected } from "@utils/credentials";
+import { getPublishSeoWarnings } from "@utils/seoScorecard";
+
+function showSoftSeoPublishWarnings(form: EditorForm, platforms: string[]): void {
+  const warnings = getPublishSeoWarnings(
+    {
+      title: form.title,
+      tags: form.tags,
+      cover_image: form.cover_image,
+      canonical_url: form.canonical_url,
+      meta_description: form.meta_description,
+      content_markdown: form.content_markdown,
+    },
+    { platforms },
+  );
+  if (warnings.length === 0) {
+    return;
+  }
+  toast.info(TOAST.SEO_PUBLISH_HINT, warnings.slice(0, PUBLISH_WARNING_TOAST_MAX).join(" · "));
+}
 
 const INITIAL: EditorForm = {
   title: "",
@@ -224,7 +243,14 @@ export function useEditorState(postId?: string) {
         const post = await handleSave();
         id = post?._id || post?.id || savedId;
       }
-      if (!id) return;
+      if (!id) {
+        return;
+      }
+
+      if (slug === PLATFORMS.DEVTO) {
+        showSoftSeoPublishWarnings(form, [PLATFORMS.DEVTO]);
+      }
+
       setPublishing(true);
       try {
         const res = await apiClient.publish(platform, id);
@@ -239,7 +265,7 @@ export function useEditorState(postId?: string) {
         setPublishing(false);
       }
     },
-    [handleSave, savedId, connectedPlatforms],
+    [handleSave, savedId, connectedPlatforms, form],
   );
 
   const publishAll = useCallback(
@@ -253,7 +279,15 @@ export function useEditorState(postId?: string) {
         const post = await handleSave();
         id = post?._id || post?.id || savedId;
       }
-      if (!id) return;
+      if (!id) {
+        return;
+      }
+
+      showSoftSeoPublishWarnings(
+        form,
+        connectedPlatforms.includes(PLATFORMS.DEVTO) ? [PLATFORMS.DEVTO] : connectedPlatforms,
+      );
+
       setPublishing(true);
       try {
         const res = await apiClient.publishAll(id);
@@ -268,7 +302,7 @@ export function useEditorState(postId?: string) {
         setPublishing(false);
       }
     },
-    [handleSave, savedId, connectedPlatforms],
+    [handleSave, savedId, connectedPlatforms, form],
   );
 
   const toggleAiTargetPlatform = useCallback((target: OptimizationTarget) => {

@@ -12,6 +12,8 @@
  * - Background: Soft gray canvas; cards stay elevated white / dark elevated
  */
 
+import { DATA_TABLE } from "./dataTable";
+
 /** Button size keys for UI */
 export const BUTTON_SIZES = Object.freeze({
   DEFAULT: "default",
@@ -134,7 +136,7 @@ export const TOOLTIP_UI = Object.freeze({
   /** Delay before closing portal tip so the cursor can cross the gap into the panel. */
   PORTAL_DISMISS_MS: 200,
   CONTENT_LIST: "flex flex-wrap gap-1",
-  CHIP: "inline-flex max-w-full items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary",
+  CHIP: "inline-flex max-w-full items-center rounded-full border border-current/40 bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary",
 } as const);
 
 /** Portal panel for colored SEO checklist breakdown on the dashboard. */
@@ -163,10 +165,10 @@ export const TOAST_UI = Object.freeze({
   DEFAULT_POSITION: "top-right" as const,
 } as const);
 
-/** Pill badge base classes — use with semantic color classes from STATUS_CONFIG, ROLE_CONFIG, etc. */
+/** Pill badge base — shape/padding match TagChips; softer text-hue border via border-current/40. Pair with STATUS_CONFIG / ROLE_CONFIG color classes. */
 export const PILL_SIZES = Object.freeze({
-  SM: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-  MD: "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium",
+  SM: "inline-flex items-center rounded-full border border-current/40 px-2 py-0.5 text-xs font-medium",
+  MD: "inline-flex items-center rounded-full border border-current/40 px-2 py-0.5 text-xs font-medium",
 } as const);
 
 /** Loading / spinner UI (single source for sizing) */
@@ -302,12 +304,12 @@ export const DASHBOARD_LAYOUT = Object.freeze({
   TABLE_CARD_HEADER_CLASS: "space-y-1 border-b border-border p-4 pb-3 sm:px-5",
   TABLE_CARD_TITLE_CLASS: "text-base font-semibold leading-none tracking-tight sm:text-lg",
   TABLE_CARD_CONTENT_CLASS: "p-0",
-  /** Published-platform link row (PostCard / PostRow / PostPlatformStatus). */
-  PLATFORM_LINK_CLASS: "inline-flex items-center gap-1 text-primary hover:text-primary/90",
-  PLATFORM_LINK_ROW_CLASS: "inline-flex items-center space-x-1 text-primary hover:text-primary/90",
+  /** Published-platform link chips — reuse TagChips visual (DATA_TABLE.TAG_CHIP). */
+  PLATFORM_LINK_CLASS: `${DATA_TABLE.TAG_CHIP} inline-flex items-center gap-1`,
+  PLATFORM_LINK_ROW_CLASS: `${DATA_TABLE.TAG_CHIP} inline-flex items-center gap-1`,
   PLATFORM_EMPTY_CLASS: "text-muted-foreground text-xs",
   PLATFORM_EMPTY_ROW_CLASS: "text-muted-foreground",
-  PLATFORM_WRAP_CLASS: "flex flex-wrap gap-x-2.5 gap-y-1",
+  PLATFORM_WRAP_CLASS: DATA_TABLE.TAG_WRAP,
 } as const);
 
 /** Dashboard post cover thumbnail dimensions by size key. */

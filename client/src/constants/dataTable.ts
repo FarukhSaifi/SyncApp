@@ -49,9 +49,10 @@ export const DATA_TABLE = Object.freeze({
   PAGE_SIZE_LABEL_TEXT_MOBILE: "inline whitespace-nowrap sm:hidden",
   PAGE_SIZE_SELECT_CLASS: "min-w-[5.5rem] flex-1 sm:min-w-[6.5rem] sm:flex-none",
   TAG_WRAP: "flex flex-wrap gap-1",
-  TAG_CHIP: "max-w-full truncate rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary",
+  TAG_CHIP:
+    "max-w-full truncate rounded-full border border-current/40 bg-primary/15 px-2 py-0.5 text-xs text-primary",
   TAG_MORE:
-    "inline-flex cursor-help items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+    "inline-flex cursor-help items-center rounded-full border border-current/40 bg-muted/60 px-2 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
   FOOTER_BAR: "flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
   FOOTER_EMBEDDED:
     "flex flex-col items-stretch gap-3 border-t border-border px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5",

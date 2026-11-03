@@ -10,6 +10,11 @@ describe("imageUpload", () => {
     expect(extensionForUploadImageMime(mime).length).toBeGreaterThan(0);
   });
 
+  it("allows WebP covers and maps to webp extension", () => {
+    expect(assertAllowedUploadImageMime(DEFAULT_VALUES["MIME_IMAGE_WEBP"])).toBe(DEFAULT_VALUES["MIME_IMAGE_WEBP"]);
+    expect(extensionForUploadImageMime(DEFAULT_VALUES["MIME_IMAGE_WEBP"])).toBe("webp");
+  });
+
   it("rejects unknown mime", () => {
     expect(() => assertAllowedUploadImageMime("application/pdf")).toThrow();
   });

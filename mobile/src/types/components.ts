@@ -73,6 +73,18 @@ export interface PostCardProps {
   onDelete: () => void;
 }
 
+export interface SeoScoreBadgeProps {
+  post: Pick<Post, "seo_score" | "seo_score_summary">;
+}
+
+export interface SeoScoreBreakdownProps {
+  checks: import("./index").SeoCheck[];
+  categories?: import("./index").SeoScorecardCategoryGroup[];
+  score?: number;
+  maxScore?: number;
+  showHeader?: boolean;
+}
+
 export type TooltipSide = "top" | "bottom";
 
 export interface TooltipProps {

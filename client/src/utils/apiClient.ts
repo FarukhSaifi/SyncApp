@@ -296,6 +296,7 @@ class ApiClient {
     });
   }
 
+  /** Returns a local data URL only; `imageUrl` is unset until explicit upload/attach. */
   aiGenerateImage(
     topic: string,
     additionalPrompt?: string,

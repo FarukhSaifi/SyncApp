@@ -24,6 +24,7 @@ vi.mock("@models/Post", () => ({
 
 vi.mock("./storage", () => ({
   uploadToGCS: vi.fn(async (_buf: Buffer, name: string) => `https://cdn.example/${name}`),
+  deleteFromGCS: vi.fn(async () => undefined),
 }));
 
 import { createPost, deletePost, getPostById, getPostBySlug, getPosts, updatePost } from "./postsService";
@@ -200,6 +201,70 @@ describe("postsService (mocked Post model)", () => {
     expect(updated?.title).toBe("New title here");
   });
 
+  it("updatePost deletes previous cover when cover_image is replaced", async () => {
+    const oldCover = "https://storage.googleapis.com/syncapp-uploads/uploads/cover-old.webp";
+    const newCover = "https://storage.googleapis.com/syncapp-uploads/uploads/cover-new.webp";
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      title: "Old",
+      status: POST_STATUS.DRAFT,
+      cover_image: oldCover,
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: "p1", cover_image: newCover }),
+      }),
+    });
+
+    await updatePost("p1", { cover_image: newCover }, "owner-1");
+
+    const { deleteFromGCS } = await import("./storage");
+    expect(vi.mocked(deleteFromGCS)).toHaveBeenCalledWith(oldCover);
+  });
+
+  it("updatePost skips cover delete when cover_image is unchanged", async () => {
+    const sameCover = "https://storage.googleapis.com/syncapp-uploads/uploads/cover.webp";
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      title: "Old",
+      status: POST_STATUS.DRAFT,
+      cover_image: sameCover,
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: "p1", cover_image: sameCover }),
+      }),
+    });
+
+    await updatePost("p1", { cover_image: sameCover }, "owner-1");
+
+    const { deleteFromGCS } = await import("./storage");
+    expect(vi.mocked(deleteFromGCS)).not.toHaveBeenCalled();
+  });
+
+  it("updatePost deletes previous cover when cover_image is cleared", async () => {
+    const oldCover = "https://storage.googleapis.com/syncapp-uploads/uploads/cover-old.webp";
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      title: "Old",
+      status: POST_STATUS.DRAFT,
+      cover_image: oldCover,
+    });
+    mockFindByIdAndUpdate.mockReturnValue({
+      populate: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: "p1", cover_image: null }),
+      }),
+    });
+
+    await updatePost("p1", { cover_image: null }, "owner-1");
+
+    const { deleteFromGCS } = await import("./storage");
+    expect(vi.mocked(deleteFromGCS)).toHaveBeenCalledWith(oldCover);
+  });
+
   it("deletePost removes owned post", async () => {
     mockFindById.mockResolvedValue({
       author: { toString: () => "owner-1" },
@@ -209,6 +274,21 @@ describe("postsService (mocked Post model)", () => {
 
     await deletePost("p1", "owner-1");
     expect(mockFindByIdAndDelete).toHaveBeenCalledWith("p1");
+  });
+
+  it("deletePost best-effort deletes cover object", async () => {
+    const cover = "https://storage.googleapis.com/syncapp-uploads/uploads/cover.webp";
+    mockFindById.mockResolvedValue({
+      author: { toString: () => "owner-1" },
+      slug: "slug",
+      cover_image: cover,
+    });
+    mockFindByIdAndDelete.mockResolvedValue({});
+
+    await deletePost("p1", "owner-1");
+
+    const { deleteFromGCS } = await import("./storage");
+    expect(vi.mocked(deleteFromGCS)).toHaveBeenCalledWith(cover);
   });
 
   it("deletePost throws NotFoundError when post missing", async () => {
