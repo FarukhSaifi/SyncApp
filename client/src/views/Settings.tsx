@@ -40,6 +40,7 @@ const Settings = () => {
   const [devtoUsername, setDevtoUsername] = useState<string>("");
   const [wordpressApiKey, setWordpressApiKey] = useState<string>("");
   const [wordpressSiteUrl, setWordpressSiteUrl] = useState<string>("");
+  const [wordpressUsername, setWordpressUsername] = useState<string>("");
   const [saved, setSaved] = useState<SavedState>({ medium: false, devto: false, wordpress: false, linkedin: false });
   const [connected, setConnected] = useState<SavedState>({
     medium: false,
@@ -117,6 +118,11 @@ const Settings = () => {
             setDecryptFailed((prev) => ({ ...prev, wordpress: Boolean(wordpress.decrypt_failed) }));
             if (wordpress.site_url) {
               setWordpressSiteUrl(wordpress.site_url as unknown as string);
+            }
+            const wpUser = (wordpress.platform_config as { wordpress_username?: string } | undefined)
+              ?.wordpress_username;
+            if (typeof wpUser === "string" && wpUser.trim()) {
+              setWordpressUsername(wpUser.trim());
             }
             setWordpressApiKey("");
           }
@@ -282,20 +288,17 @@ const Settings = () => {
   };
 
   const handleSaveWordpressCredentials = async () => {
-    const fieldsEmpty = !wordpressApiKey.trim() && !wordpressSiteUrl.trim();
+    const fieldsEmpty = !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && !wordpressUsername.trim();
     const isDisconnect = fieldsEmpty && connected.wordpress;
-    const fieldsPartial = !fieldsEmpty && (!wordpressApiKey.trim() || !wordpressSiteUrl.trim());
+    const fieldsPartial =
+      !fieldsEmpty && (!wordpressApiKey.trim() || !wordpressSiteUrl.trim() || !wordpressUsername.trim());
 
     if (fieldsPartial || (fieldsEmpty && !connected.wordpress)) {
       toast.validationError(SYNC_LABEL.ENTER_WORDPRESS_CREDENTIALS);
       return;
     }
 
-    if (
-      !isDisconnect &&
-      !wordpressSiteUrl.startsWith(URL_SCHEME_PREFIXES.HTTP) &&
-      !wordpressSiteUrl.startsWith(URL_SCHEME_PREFIXES.HTTPS)
-    ) {
+    if (!isDisconnect && !wordpressSiteUrl.startsWith(URL_SCHEME_PREFIXES.HTTPS)) {
       toast.validationError(SYNC_LABEL.VALID_WORDPRESS_URL);
       return;
     }
@@ -308,6 +311,7 @@ const Settings = () => {
         : await apiClient.upsertCredential(PLATFORMS.WORDPRESS, {
             api_key: wordpressApiKey.trim(),
             site_url: wordpressSiteUrl.trim(),
+            platform_config: { wordpress_username: wordpressUsername.trim() },
           });
 
       if (result?.success) {
@@ -315,6 +319,7 @@ const Settings = () => {
           setConnected((prev) => ({ ...prev, wordpress: false }));
           setWordpressApiKey("");
           setWordpressSiteUrl("");
+          setWordpressUsername("");
           toast.credentialsRemoved(SYNC_LABEL.PLATFORM_WORDPRESS);
         } else {
           setConnected((prev) => ({ ...prev, wordpress: true }));
@@ -344,6 +349,25 @@ const Settings = () => {
           (error as Error)?.message || SYNC_LABEL.FAILED_TO_SAVE_CREDENTIALS,
         );
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestWordpressConnection = async () => {
+    setLoading(true);
+    try {
+      const result = await apiClient.testWordpressConnection();
+      if (result?.success) {
+        toast.credentialsSaved(SYNC_LABEL.WORDPRESS_TEST_OK);
+      } else {
+        toast.credentialsError(SYNC_LABEL.PLATFORM_WORDPRESS, result?.error || SYNC_LABEL.WORDPRESS_TEST_FAILED);
+      }
+    } catch (error) {
+      toast.credentialsError(
+        SYNC_LABEL.PLATFORM_WORDPRESS,
+        (error as Error)?.message || SYNC_LABEL.WORDPRESS_TEST_FAILED,
+      );
     } finally {
       setLoading(false);
     }
@@ -650,18 +674,8 @@ const Settings = () => {
                   <FiAlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
                   <div className="text-sm text-foreground">
                     <p className="font-medium mb-1">{SYNC_LABEL.HOW_TO_GET_WORDPRESS_KEY}</p>
+                    <p className="mb-2 text-muted-foreground">{SYNC_LABEL.WORDPRESS_COM_HINT}</p>
                     <ol className="list-decimal list-inside space-y-1 ml-2">
-                      <li>
-                        {SYNC_LABEL.INSTALL_JWT_PLUGIN}{" "}
-                        <a
-                          href={EXTERNAL_LINKS.WORDPRESS_JWT_PLUGIN}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:text-primary"
-                        >
-                          {SYNC_LABEL.WORDPRESS_JWT_PLUGIN}
-                        </a>
-                      </li>
                       <li>{SYNC_LABEL.WORDPRESS_ADMIN}</li>
                       <li>{SYNC_LABEL.GENERATE_APP_PASSWORD}</li>
                       <li>{SYNC_LABEL.USE_USERNAME_PASSWORD}</li>
@@ -684,13 +698,32 @@ const Settings = () => {
                     type="url"
                     value={wordpressSiteUrl}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressSiteUrl(e.target.value)}
-                    placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL}
+                    placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_SITE_URL_COM}
                     className="w-full"
                     autoComplete="url"
                   />
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_URL_INFO}</p>
                 </div>
                 <div>
+                  <label
+                    htmlFor="settings-wordpress-username"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    {SYNC_LABEL.WORDPRESS_USERNAME_LABEL}
+                  </label>
+                  <Input
+                    id="settings-wordpress-username"
+                    name="wordpressUsername"
+                    type="text"
+                    value={wordpressUsername}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWordpressUsername(e.target.value)}
+                    placeholder={SYNC_LABEL.PLACEHOLDER_WORDPRESS_USERNAME}
+                    className="w-full"
+                    autoComplete="username"
+                  />
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">{SYNC_LABEL.WORDPRESS_USERNAME_INFO}</p>
+                </div>
+                <div className="md:col-span-2">
                   <label
                     htmlFor="settings-wordpress-api-key"
                     className="block text-sm font-medium text-foreground mb-2"
@@ -734,24 +767,41 @@ const Settings = () => {
                 {connected.wordpress ? SYNC_LABEL.CLEAR_FIELDS_TO_DISCONNECT : SYNC_LABEL.BOTH_REQUIRED_WORDPRESS}
               </p>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-wrap gap-2">
               <Button
                 onClick={handleSaveWordpressCredentials}
-                disabled={loading || ((!wordpressApiKey.trim() || !wordpressSiteUrl.trim()) && !connected.wordpress)}
+                disabled={
+                  loading ||
+                  ((!wordpressApiKey.trim() || !wordpressSiteUrl.trim() || !wordpressUsername.trim()) &&
+                    !connected.wordpress)
+                }
                 variant={
-                  !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress ? "outline" : "primary"
+                  !wordpressApiKey.trim() &&
+                  !wordpressSiteUrl.trim() &&
+                  !wordpressUsername.trim() &&
+                  connected.wordpress
+                    ? "outline"
+                    : "primary"
                 }
                 className="flex items-center space-x-1.5 sm:space-x-2"
               >
                 <FiSave className="h-3 w-3 sm:h-4 sm:w-4" />
                 {loading
                   ? SYNC_LABEL.SAVING
-                  : !wordpressApiKey.trim() && !wordpressSiteUrl.trim() && connected.wordpress
+                  : !wordpressApiKey.trim() &&
+                      !wordpressSiteUrl.trim() &&
+                      !wordpressUsername.trim() &&
+                      connected.wordpress
                     ? SYNC_LABEL.DISCONNECT_PLATFORM
                     : saved.wordpress
                       ? SYNC_LABEL.SAVED
                       : SYNC_LABEL.SAVE_CREDENTIALS}
               </Button>
+              {connected.wordpress ? (
+                <Button type="button" variant="outline" disabled={loading} onClick={handleTestWordpressConnection}>
+                  {SYNC_LABEL.WORDPRESS_TEST_CONNECTION}
+                </Button>
+              ) : null}
             </CardFooter>
           </Card>
 

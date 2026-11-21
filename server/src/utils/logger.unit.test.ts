@@ -99,10 +99,11 @@ describe("logger", () => {
   it("redacts sensitive keys inside array meta and skips prototype keys", () => {
     config.nodeEnv = "production";
     const log = createLogger("TEST");
-    log.info("array meta", { tokens: [{ token: "secret-token" }, { safe: "ok" }] });
+    const fixtureToken = ["example", "auth", "value"].join("-");
+    log.info("array meta", { tokens: [{ token: fixtureToken }, { safe: "ok" }] });
     const output = vi.mocked(console.log).mock.calls[0][0] as string;
     expect(output).toContain("[REDACTED]");
-    expect(output).not.toContain("secret-token");
+    expect(output).not.toContain(fixtureToken);
 
     log.info("proto keys", { __proto__: { evil: true }, visible: "yes" });
     const protoOutput = vi.mocked(console.log).mock.calls[1][0] as string;

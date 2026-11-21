@@ -33,8 +33,17 @@ const CLEANUP_TARGETS = Object.freeze({
     "client/.eslintcache",
     "server/.eslintcache",
   ]),
-  /** Dependency trees — requires `npm install` afterward. */
-  DEPS: Object.freeze(["node_modules", "client/node_modules", "server/node_modules", "mobile/node_modules"]),
+  /** Dependency trees + lockfiles — requires `npm install` afterward. */
+  DEPS: Object.freeze([
+    "node_modules",
+    "client/node_modules",
+    "server/node_modules",
+    "mobile/node_modules",
+    "package-lock.json",
+    "client/package-lock.json",
+    "server/package-lock.json",
+    "mobile/package-lock.json",
+  ]),
   /** Expo / React Native generated native artifacts. */
   NATIVE: Object.freeze([
     "mobile/.expo",
@@ -104,7 +113,7 @@ Usage:
 
 Options:
   ${FLAGS.DRY_RUN}   Print paths that would be removed
-  ${FLAGS.DEPS}      Also remove node_modules (root + workspaces)
+  ${FLAGS.DEPS}      Also remove node_modules and package-lock.json (root + workspaces)
   ${FLAGS.NATIVE}    Also remove Expo / iOS / Android build folders
   ${FLAGS.ALL}       Equivalent to ${FLAGS.DEPS} ${FLAGS.NATIVE}
   ${FLAGS.HELP}      Show this help

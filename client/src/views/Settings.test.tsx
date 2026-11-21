@@ -1,5 +1,3 @@
-import React from "react";
-
 import {
   LINKEDIN_OAUTH_QUERY,
   PLATFORM_DISPLAY_NAMES,
@@ -12,7 +10,6 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { apiClient } from "@utils/apiClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 
 const toastMocks = {
   apiError: vi.fn(),
@@ -259,10 +256,7 @@ describe("Settings view", () => {
     });
     await userEvent.click(screen.getByRole("button", { name: SYNC_LABEL.DISCONNECT_PLATFORM }));
     await waitFor(() => {
-      expect(toastMocks.credentialsRemoveError).toHaveBeenCalledWith(
-        SYNC_LABEL.PLATFORM_MEDIUM,
-        "revoke failed",
-      );
+      expect(toastMocks.credentialsRemoveError).toHaveBeenCalledWith(SYNC_LABEL.PLATFORM_MEDIUM, "revoke failed");
     });
   });
 

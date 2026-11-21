@@ -56,6 +56,8 @@ const postSchema = new Schema<IPostDocument>(
         post_id: String,
         url: String,
         published_at: Date,
+        link_method: String,
+        linked_at: Date,
       },
       linkedin: {
         published: { type: Boolean, default: false },

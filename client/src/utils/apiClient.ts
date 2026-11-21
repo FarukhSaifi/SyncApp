@@ -179,6 +179,38 @@ class ApiClient {
     });
   }
 
+  testWordpressConnection(): Promise<ApiResponse<unknown>> {
+    return this.request(`${API_PATHS["CREDENTIALS"]}/wordpress/test`, {
+      method: HTTP_METHODS["POST"],
+    });
+  }
+
+  searchWordpressPosts(params: { slug?: string; title?: string }): Promise<ApiResponse<unknown>> {
+    const query = new URLSearchParams();
+    if (params.slug) {
+      query.set("slug", params.slug);
+    }
+    if (params.title) {
+      query.set("title", params.title);
+    }
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return this.request(`${API_PATHS["PUBLISH"]}/wordpress/search${suffix}`, {
+      method: HTTP_METHODS["GET"],
+    });
+  }
+
+  linkWordpressPost(body: {
+    postId: string;
+    remotePostId: string;
+    confirm: true;
+    linkMethod?: "matched_slug" | "matched_title" | "manual";
+  }): Promise<ApiResponse<unknown>> {
+    return this.request(`${API_PATHS["PUBLISH"]}/wordpress/link`, {
+      method: HTTP_METHODS["POST"],
+      body,
+    });
+  }
+
   deleteCredential(platform: string): Promise<ApiResponse<unknown>> {
     return this.request(`${API_PATHS["CREDENTIALS"]}/${platform}`, {
       method: HTTP_METHODS["DELETE"],

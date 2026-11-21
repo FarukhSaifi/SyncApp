@@ -4,21 +4,33 @@ echo "🚀 Welcome to SyncApp - Blog Syndication Platform!"
 echo "=================================================="
 echo ""
 
+# Prefer nvm when available (repo engines: Node >=24.21, npm ^11)
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    # shellcheck disable=SC1091
+    . "$HOME/.nvm/nvm.sh"
+    if [ -f .nvmrc ]; then
+        nvm use >/dev/null 2>&1 || nvm install
+    fi
+fi
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 18 or higher first."
-    echo "   Visit: https://nodejs.org/"
+    echo "❌ Node.js is not installed. Please install Node.js 24.21 or higher first."
+    echo "   Visit: https://nodejs.org/  or: nvm install 24.21.0"
     exit 1
 fi
 
-# Check Node.js version
-NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-    echo "❌ Node.js version 18 or higher is required. Current version: $(node -v)"
+# Check Node.js major.minor against package.json engines (>=24.21)
+NODE_MAJOR=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+NODE_MINOR=$(node -v | cut -d'v' -f2 | cut -d'.' -f2)
+if [ "$NODE_MAJOR" -lt 24 ] || { [ "$NODE_MAJOR" -eq 24 ] && [ "$NODE_MINOR" -lt 21 ]; }; then
+    echo "❌ Node.js >=24.21.0 is required. Current: $(node -v) ($(command -v node))"
+    echo "   If you use nvm: nvm use 24.21.0"
+    echo "   Wrong Node (e.g. v20 + npm 10) causes: Cannot read properties of null (reading 'edgesOut')"
     exit 1
 fi
 
-echo "✅ Node.js $(node -v) detected"
+echo "✅ Node.js $(node -v) / npm $(npm -v) detected"
 echo ""
 
 # Check if MongoDB is running

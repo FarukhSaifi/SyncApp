@@ -27,12 +27,7 @@ vi.mock("@utils/encryption", () => ({
   }),
 }));
 
-import {
-  deleteCredential,
-  getAllCredentials,
-  getCredentialByPlatform,
-  upsertCredential,
-} from "./credentialsService";
+import { deleteCredential, getAllCredentials, getCredentialByPlatform, upsertCredential } from "./credentialsService";
 
 describe("credentialsService", () => {
   const userId = "507f1f77bcf86cd799439011";
@@ -166,9 +161,9 @@ describe("credentialsService", () => {
       })),
     });
     const row = await upsertCredential(userId, PLATFORMS.WORDPRESS, {
-      api_key: "secret",
+      api_key: "example-app-secret",
       site_url: "https://wp.test",
-      platform_config: { wordpress_url: "https://wp.test" },
+      platform_config: { wordpress_url: "https://wp.test", wordpress_username: "demo-account" },
     });
     expect(row.configured).toBe(true);
     expect(row.site_url).toBe("https://wp.test");

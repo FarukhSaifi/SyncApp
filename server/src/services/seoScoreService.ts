@@ -12,10 +12,13 @@ import {
   SEO_ALT_DENYLIST,
   SEO_CATEGORIES,
   SEO_CHECK_LABELS,
+  SEO_DISCUSSION_HEADING_PREFIX,
   SEO_MARKDOWN,
   SEO_PUBLISH_WARNINGS,
+  SEO_SHELL_LINE_PREFIXES,
   SEO_SUMMARY_PREFIX,
   SEO_THRESHOLDS,
+  SEO_TROUBLESHOOTING_HEADING_PREFIXES,
   SEO_WEIGHTS,
   type SeoCategoryId,
 } from "@constants/seo";
@@ -44,8 +47,31 @@ const {
   SCORE_WITHOUT_CONTENT_DIVISOR,
 } = SEO_THRESHOLDS;
 
+function isAsciiWhitespace(ch: string): boolean {
+  return ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === "\f" || ch === "\v";
+}
+
+function collapseWhitespace(text: string): string {
+  const bound = Math.min(text.length, SEO_THRESHOLDS.SCORECARD_CONTENT_MAX_CHARS);
+  let out = "";
+  let prevSpace = false;
+  for (let i = 0; i < bound; i++) {
+    const ch = text[i]!;
+    if (isAsciiWhitespace(ch)) {
+      if (!prevSpace) {
+        out += " ";
+        prevSpace = true;
+      }
+    } else {
+      out += ch;
+      prevSpace = false;
+    }
+  }
+  return out.trim();
+}
+
 function normalizeKeyword(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
+  return collapseWhitespace(value.toLowerCase());
 }
 
 function includesKeyword(haystack: string, keyword: string): boolean {
@@ -215,33 +241,100 @@ function hasAuthorityLink(content: string): boolean {
   return AUTHORITY_LINK_HOSTS.some((host) => lower.includes(host));
 }
 
+function hasCodeFence(content: string): boolean {
+  const fence = SEO_MARKDOWN.FENCE;
+  const open = content.indexOf(fence);
+  if (open < 0) {
+    return false;
+  }
+  return content.indexOf(fence, open + fence.length) >= 0;
+}
+
+function hasShellPromptLine(content: string): boolean {
+  const lines = content.split("\n");
+  for (const line of lines) {
+    let i = 0;
+    while (i < line.length && i < SEO_MARKDOWN.SHELL_INDENT_MAX && (line[i] === " " || line[i] === "\t")) {
+      i++;
+    }
+    const rest = line.slice(i);
+    for (const prefix of SEO_SHELL_LINE_PREFIXES) {
+      if (rest.startsWith(prefix)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function hasCodeArtifact(content: string): boolean {
   if (!content) {
     return false;
   }
-  return /```[\s\S]*?```/.test(content) || /(?:^|\n)\s{0,3}(?:\$|npm |npx |yarn |pnpm |git )/m.test(content);
+  return hasCodeFence(content) || hasShellPromptLine(content);
 }
 
 function hasAuthorityCue(content: string): boolean {
   return hasAuthorityLink(content) || hasCodeArtifact(content);
 }
 
+function headingStartsWithPrefix(headingText: string, prefix: string): boolean {
+  return collapseWhitespace(headingText.toLowerCase()).startsWith(prefix);
+}
+
 function hasTroubleshootingSection(content: string): boolean {
   if (!content) {
     return false;
   }
-  return /(^|\n)#+\s*(troubleshooting|common\s+errors?|debugging|pitfalls)/i.test(content);
+  for (const line of content.split("\n")) {
+    const text = getAtxHeadingText(line);
+    if (!text) {
+      continue;
+    }
+    for (const prefix of SEO_TROUBLESHOOTING_HEADING_PREFIXES) {
+      if (headingStartsWithPrefix(text, prefix)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function hasQuestionMarkCue(tail: string): boolean {
+  let end = tail.length - 1;
+  while (end >= 0 && isAsciiWhitespace(tail[end]!)) {
+    end--;
+  }
+  if (end >= 0 && tail[end] === SEO_MARKDOWN.QUESTION_MARK) {
+    return true;
+  }
+  for (let i = 0; i < tail.length; i++) {
+    if (tail[i] !== SEO_MARKDOWN.QUESTION_MARK) {
+      continue;
+    }
+    let j = i + 1;
+    while (j < tail.length && isAsciiWhitespace(tail[j]!) && tail[j] !== "\n") {
+      j++;
+    }
+    if (j < tail.length && tail[j] === "\n") {
+      return true;
+    }
+  }
+  return false;
 }
 
 function hasDiscussionQuestion(content: string): boolean {
   if (!content) {
     return false;
   }
-  if (/(^|\n)#+\s*discussion/i.test(content)) {
-    return true;
+  for (const line of content.split("\n")) {
+    const text = getAtxHeadingText(line);
+    if (text && headingStartsWithPrefix(text, SEO_DISCUSSION_HEADING_PREFIX)) {
+      return true;
+    }
   }
   const tail = content.trim().slice(-SEO_THRESHOLDS.DISCUSSION_TAIL_CHARS);
-  return /\?\s*$/.test(tail) || /\?\s*\n/.test(tail);
+  return hasQuestionMarkCue(tail);
 }
 
 function countAtxHashes(line: string): number {
@@ -333,26 +426,6 @@ function stripMarkdownImagesAndLinks(text: string): string {
   return out;
 }
 
-function collapseWhitespace(text: string): string {
-  const bound = Math.min(text.length, SEO_THRESHOLDS.SCORECARD_CONTENT_MAX_CHARS);
-  let out = "";
-  let prevSpace = false;
-  for (let i = 0; i < bound; i++) {
-    const ch = text[i]!;
-    const isSpace = ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === "\f";
-    if (isSpace) {
-      if (!prevSpace) {
-        out += " ";
-        prevSpace = true;
-      }
-    } else {
-      out += ch;
-      prevSpace = false;
-    }
-  }
-  return out.trim();
-}
-
 function extractFirstH2Block(content: string): string {
   const trimmed = content.trim();
   const lines = trimmed.split("\n");
@@ -403,10 +476,33 @@ function hasDirectAnswerBlock(content: string): boolean {
   if (words.length < SEO_THRESHOLDS.DIRECT_ANSWER_MIN_WORDS || words.length > SEO_THRESHOLDS.DIRECT_ANSWER_MAX_WORDS) {
     return false;
   }
-  const sentences = prose
-    .split(/[.!?]+/)
-    .filter((s) => s.trim().length > SEO_THRESHOLDS.DIRECT_ANSWER_MIN_SENTENCE_CHARS);
+  const sentences = splitSentences(prose).filter(
+    (s) => s.trim().length > SEO_THRESHOLDS.DIRECT_ANSWER_MIN_SENTENCE_CHARS,
+  );
   return sentences.length >= SEO_THRESHOLDS.DIRECT_ANSWER_MIN_SENTENCES;
+}
+
+function splitSentences(prose: string): string[] {
+  const parts: string[] = [];
+  let current = "";
+  for (let i = 0; i < prose.length; i++) {
+    const ch = prose[i]!;
+    if (SEO_MARKDOWN.SENTENCE_END_CHARS.includes(ch)) {
+      if (current.trim()) {
+        parts.push(current);
+      }
+      current = "";
+      while (i + 1 < prose.length && SEO_MARKDOWN.SENTENCE_END_CHARS.includes(prose[i + 1]!)) {
+        i++;
+      }
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) {
+    parts.push(current);
+  }
+  return parts;
 }
 
 function getHeadingStats(content: string): { h2Count: number; hasDuplicateH2: boolean } {

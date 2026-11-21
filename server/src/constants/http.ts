@@ -24,6 +24,7 @@ export const HTTP = Object.freeze({
   // Authorization schemes
   AUTH_SCHEMES: {
     BEARER: "Bearer",
+    BASIC: "Basic",
   },
 
   // CORS headers

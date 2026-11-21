@@ -55,6 +55,7 @@ const credentialSchema = new Schema<ICredentialDocument>(
       devto_username: String,
       medium_user_id: String,
       wordpress_url: String,
+      wordpress_username: String,
       linkedin_person_urn: String,
     },
   },

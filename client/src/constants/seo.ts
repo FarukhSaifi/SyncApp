@@ -220,7 +220,34 @@ export const SEO_MARKDOWN = Object.freeze({
   HTTPS_PREFIX: "https://",
   PATH_PREFIX: "/",
   FENCE: "```",
+  /** Max leading spaces/tabs before a shell-style authority cue line. */
+  SHELL_INDENT_MAX: 3,
+  QUESTION_MARK: "?",
+  SENTENCE_END_CHARS: ".!?",
 } as const);
+
+/** Shell / CLI line prefixes that count as an authority code cue. */
+export const SEO_SHELL_LINE_PREFIXES = Object.freeze([
+  "$",
+  "npm ",
+  "npx ",
+  "yarn ",
+  "pnpm ",
+  "git ",
+] as const);
+
+/**
+ * ATX heading text prefixes for troubleshooting sections.
+ * "common error" also matches "common errors" via startsWith.
+ */
+export const SEO_TROUBLESHOOTING_HEADING_PREFIXES = Object.freeze([
+  "troubleshooting",
+  "common error",
+  "debugging",
+  "pitfalls",
+] as const);
+
+export const SEO_DISCUSSION_HEADING_PREFIX = "discussion";
 
 export const SEO_HELPER_COPY = Object.freeze({
   DENSITY_NOTE: "Google does not use a keyword-density target; we check placement and stuffing risk.",
