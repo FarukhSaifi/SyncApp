@@ -7,6 +7,7 @@ import {
   FIELDS,
   HTTP,
   PLATFORM_CONFIG,
+  PLATFORM_SYNC,
   PLATFORMS,
   POST_STATUS,
   REGEX_PATTERNS,
@@ -38,6 +39,23 @@ import { PUBLISH_ERROR_PLATFORM_SYSTEM, SCHEDULED_PUBLISH_MAX_PER_RUN } from "@c
 
 import { resolveLinkedInAccess } from "./linkedinOAuthService";
 import { notifyScheduledPublishResult } from "./notificationService";
+import {
+  linkExistingWordpressPost,
+  publishToWordpress,
+  searchWordpressPostsForLink,
+  syncPublishedPostToWordpress,
+  testWordpressConnection,
+  uploadWordpressFeaturedMedia,
+} from "./wordpressService";
+
+export {
+  linkExistingWordpressPost,
+  publishToWordpress,
+  searchWordpressPostsForLink,
+  syncPublishedPostToWordpress,
+  testWordpressConnection,
+  uploadWordpressFeaturedMedia,
+};
 
 function isValidHttpUrl(value: string): boolean {
   try {
@@ -236,12 +254,6 @@ function devtoErrorMessage(error: unknown): string {
   return (error as Error).message || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
-function wordpressAuthHeaders(apiKey: string) {
-  return {
-    [HTTP.HEADERS.AUTHORIZATION]: `${HTTP.AUTH_SCHEMES.BEARER} ${apiKey}`,
-    [HTTP.HEADERS.CONTENT_TYPE]: HTTP.CONTENT_TYPES.JSON,
-  };
-}
 
 function linkedinErrorMessage(error: unknown): string {
   const known = (error as Error)?.message;
@@ -293,6 +305,12 @@ function linkedinErrorMessage(error: unknown): string {
   return known || ERROR_MESSAGES.PUBLISHING_FAILED;
 }
 
+/**
+ * Medium Posts API is create-only (POST /users/:id/posts). There is no public update
+ * endpoint for title/body/cover after first publish — save-sync is skipped by design
+ * (API limitation, not a SyncApp gap). Schedule and SEO stay local to SyncApp.
+ * If already published → action "skip" (honest UX via MEDIUM_ALREADY_PUBLISHED).
+ */
 export async function publishToMedium(
   post: IPostDocument,
   credential: ICredentialDocument,
@@ -384,61 +402,84 @@ export async function publishToDevto(
   };
 }
 
-export async function publishToWordpress(
-  post: IPostDocument,
-  credential: ICredentialDocument,
-): Promise<PlatformPublishResult> {
-  const apiKey = decryptPlatformApiKey(credential);
-  if (!apiKey) {
-    throw new Error(ERROR_MESSAGES.INVALID_WORDPRESS_API_KEY);
+/**
+ * On save/update: if the post is already live on DEV.to, PUT article fields via
+ * publishToDevto (title, body_markdown, tags, description, canonical_url, main_image).
+ * Best-effort — never throws; local save must still succeed if DEV.to is unreachable.
+ *
+ * Local-only fields (see PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE — schedule, SEO scorecard,
+ * status) are intentionally NOT pushed. Only buildDevtoArticlePayload keys sync;
+ * see PLATFORM_SYNC.DEVTO_SYNCABLE_ON_SAVE in @constants/platformSync.
+ */
+export async function syncPublishedPostToDevto(post: IPostDocument, authorId: string): Promise<boolean> {
+  const postId = String(post._id || "");
+  try {
+    if (!isAlreadyPublishedOnPlatform(post, PLATFORMS.DEVTO)) {
+      return false;
+    }
+
+    const credential = await Credential.findOne({
+      platform_name: PLATFORMS.DEVTO,
+      author: authorId,
+      is_active: true,
+    });
+    if (!credential) {
+      logger.warn(`${ERROR_MESSAGES.DEVTO_POST_SYNC_SKIPPED_NO_CREDENTIAL} (post ${postId})`);
+      return false;
+    }
+
+    await publishToDevto(post, credential);
+    logger.info(SUCCESS_MESSAGES.DEVTO_POST_SYNCED(postId));
+    return true;
+  } catch (err) {
+    logger.warn(ERROR_MESSAGES.DEVTO_POST_SYNC_FAILED((err as Error).message));
+    return false;
   }
+}
 
-  const siteUrl =
-    credential.site_url || (credential.platform_config as { wordpress_url?: string } | undefined)?.wordpress_url;
-  if (!siteUrl) {
-    throw new Error(ERROR_MESSAGES.WORDPRESS_SITE_URL_NOT_CONFIGURED);
+/** @deprecated Prefer syncPublishedPostToDevto — thin cover-era alias. */
+export async function syncPublishedCoverToDevto(post: IPostDocument, authorId: string): Promise<boolean> {
+  return syncPublishedPostToDevto(post, authorId);
+}
+
+/** Log Medium/LinkedIn API sync limits at most once per process (avoid save-path spam). */
+let mediumSaveSyncLimitLogged = false;
+let linkedinCoverSyncLimitLogged = false;
+
+/**
+ * No-op save-sync for Medium. Medium's API cannot update an existing post
+ * (create-only). Returns false and logs once so postsService orchestration can
+ * call this beside DEV.to sync without implying remote sync works.
+ */
+export async function syncPublishedPostToMedium(_post: IPostDocument, _authorId: string): Promise<boolean> {
+  if (!mediumSaveSyncLimitLogged) {
+    mediumSaveSyncLimitLogged = true;
+    logger.warn(ERROR_MESSAGES.MEDIUM_SAVE_SYNC_UNSUPPORTED);
   }
+  return false;
+}
 
-  const payload = {
-    title: post.title,
-    content: post.content_markdown,
-    status: PLATFORM_CONFIG.wordpress.status,
-    tags: post.tags || [],
-  };
-  const headers = wordpressAuthHeaders(apiKey);
-  const existing = getExistingPlatformStatus(post, PLATFORMS.WORDPRESS);
-
-  if (isAlreadyPublishedOnPlatform(post, PLATFORMS.WORDPRESS)) {
-    const remoteId = existing!.post_id!;
-    const publishResponse = await axios.put(API_URLS.WORDPRESS.POST_BY_ID(siteUrl, remoteId), payload, { headers });
-
-    return {
-      updates: {
-        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.WORDPRESS)]: true,
-        [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.WORDPRESS)]: publishResponse.data.id.toString(),
-        [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.WORDPRESS)]: publishResponse.data.link,
-        [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.WORDPRESS)]: existing?.published_at ?? dayjs().toDate(),
-      },
-      action: "update",
-    };
+/**
+ * No-op cover/field sync for LinkedIn. Current UGC payload is text-only
+ * (MEDIA_CATEGORY_NONE); LinkedIn has no edit-in-place for prior shares.
+ * See PLATFORM_SYNC.LINKEDIN_COVER_SYNC (not_applicable) and LOCAL_ONLY_ON_SAVE.
+ * Returns false; logs once.
+ */
+export async function syncPublishedCoverToLinkedin(_post: IPostDocument, _authorId: string): Promise<boolean> {
+  if (!linkedinCoverSyncLimitLogged) {
+    linkedinCoverSyncLimitLogged = true;
+    logger.warn(`${ERROR_MESSAGES.LINKEDIN_COVER_SYNC_UNSUPPORTED} (${PLATFORM_SYNC.LINKEDIN_COVER_SYNC})`);
   }
-
-  const publishResponse = await axios.post(API_URLS.WORDPRESS.POSTS_ENDPOINT(siteUrl), payload, { headers });
-
-  return {
-    updates: {
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED(PLATFORMS.WORDPRESS)]: true,
-      [FIELDS.PLATFORM_STATUS_FIELDS.POST_ID(PLATFORMS.WORDPRESS)]: publishResponse.data.id.toString(),
-      [FIELDS.PLATFORM_STATUS_FIELDS.URL(PLATFORMS.WORDPRESS)]: publishResponse.data.link,
-      [FIELDS.PLATFORM_STATUS_FIELDS.PUBLISHED_AT(PLATFORMS.WORDPRESS)]: dayjs().toDate(),
-    },
-    action: "create",
-  };
+  return false;
 }
 
 /**
  * Publish the LinkedIn summary (not the full TipTap article) via UGC Posts API.
- * Always creates a new share with the current summary so "Publish" is never a silent no-op.
+ * Always creates a NEW share — LinkedIn has no edit-in-place for prior UGC posts
+ * (PLATFORM_SYNC.LINKEDIN_SAVE_SYNC). Cover is N/A (LINKEDIN_COVER_SYNC = not_applicable;
+ * MEDIA_CATEGORY_NONE). Save does not update a previous share (API limitation).
+ * Schedule and SEO stay local (PLATFORM_SYNC.LOCAL_ONLY_ON_SAVE).
+ * wasPublished → action "update" only means "re-publish created another share".
  */
 export async function publishToLinkedin(
   post: IPostDocument,
@@ -460,6 +501,7 @@ export async function publishToLinkedin(
     const { accessToken, personUrn } = await resolveLinkedInAccess(credential);
 
     const { UGC, RESTLI_PROTOCOL_HEADER, RESTLI_PROTOCOL_VERSION } = API_URLS.LINKEDIN;
+    // Cover intentionally omitted: MEDIA_CATEGORY_NONE — do not invent IMAGE media without product scope.
     const payload = {
       author: personUrn,
       lifecycleState: UGC.LIFECYCLE_PUBLISHED,
@@ -517,6 +559,20 @@ const PLATFORM_CONFIG_WITH_FUNCTIONS: Record<string, { name: string; publishFn: 
 function platformSuccessMessage(platformName: string, action: PlatformPublishAction): string {
   const platformCfg = PLATFORM_CONFIG_WITH_FUNCTIONS[platformName];
   const name = platformCfg?.name ?? platformName;
+
+  if (platformName === PLATFORMS.MEDIUM && action === "skip") {
+    return SUCCESS_MESSAGES.MEDIUM_ALREADY_PUBLISHED;
+  }
+
+  if (platformName === PLATFORMS.LINKEDIN) {
+    if (action === "update") {
+      return SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATES_NEW;
+    }
+    if (action === "create") {
+      return SUCCESS_MESSAGES.LINKEDIN_PUBLISH_CREATED;
+    }
+  }
+
   if (action === "update") {
     return SUCCESS_MESSAGES.UPDATED_ON_PLATFORM(name);
   }

@@ -5,6 +5,9 @@ export interface PlatformStatus {
   post_id?: string;
   url?: string;
   published_at?: string;
+  /** How the remote WordPress post was associated (wordpress only). */
+  link_method?: "created" | "matched_slug" | "matched_title" | "manual";
+  linked_at?: string;
 }
 
 export interface Post {

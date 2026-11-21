@@ -6,12 +6,14 @@ import type { IPostDocument } from "@models/Post";
 import Post from "@models/Post";
 import { unpublishFromPlatform } from "@services/platformService";
 import {
+  linkExistingWordpressPost,
   performPublishToAll,
   platformSuccessMessage,
   publishToDevto,
   publishToLinkedin,
   publishToMedium,
   publishToWordpress,
+  searchWordpressPostsForLink,
 } from "@services/publishService";
 import { getPublishSeoWarnings } from "@services/seoScoreService";
 import type { IPlatformStatus, PlatformConfigWithFn, PostPlatformStatus } from "@types";
@@ -262,5 +264,30 @@ export const unpublishPlatform = asyncHandler(async (req: Request, res: Response
       postId: updatedPost._id,
       platformStatus: updatedPost.platform_status,
     },
+  });
+});
+
+export const searchWordpressForLink = asyncHandler(async (req: Request, res: Response) => {
+  const slug = typeof req.query.slug === "string" ? req.query.slug : undefined;
+  const title = typeof req.query.title === "string" ? req.query.title : undefined;
+  const candidates = await searchWordpressPostsForLink(req.userId!, { slug, title });
+  res.json({ success: true, data: candidates });
+});
+
+export const linkWordpressExisting = asyncHandler(async (req: Request, res: Response) => {
+  const postId = String(req.body.postId);
+  const remotePostId = String(req.body.remotePostId);
+  const confirm = req.body.confirm === true;
+  const linkMethod =
+    req.body.linkMethod === "matched_slug" || req.body.linkMethod === "matched_title" || req.body.linkMethod === "manual"
+      ? req.body.linkMethod
+      : "manual";
+
+  await ensurePost(postId, req.userId!);
+  const updates = await linkExistingWordpressPost(req.userId!, postId, remotePostId, confirm, linkMethod);
+  res.json({
+    success: true,
+    message: SUCCESS_MESSAGES.WORDPRESS_POST_LINKED(postId, remotePostId),
+    data: updates,
   });
 });

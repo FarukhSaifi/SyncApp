@@ -54,9 +54,14 @@ Functional and non-functional requirements as implemented.
 - **LinkedIn publish** — OAuth connect in Settings + UGC Posts API publishes the summary (not the full article). Wired into Smart Publish, Publish All, and scheduled cron.
 - **Production Expo Mobile Content Studio** — Expo SDK 57 cross-platform app targeting iOS 26 (`IOS_DEPLOYMENT_TARGET=26.0`) and Android 16 (API 36). Features a Word/Gutenberg-style mobile editor with dual-mode write canvas, live visual block preview, categorized block insertion drawer, sticky formatting bar, reversible AI Copilot diff review, and authenticated-only multi-platform publishing.
 
+## Platform sync limitations (API)
+
+- **WordPress SEO meta / canonical** — Core WP REST (`/wp/v2/posts`) does not expose Search Engine meta description or canonical URL. Those require a plugin with REST fields (e.g. Yoast, Rank Math). SyncApp syncs title, content, tags, and `featured_media` only; it does **not** fake SEO fields. Schedule (`scheduled_for`) and `seo_score*` remain SyncApp-local.
+
 ## Out of Scope (Future)
 
 - LinkedIn Company Page posting (member-only today)
 - Hashnode/Ghost integration
 - Real-time collaborative editing
 - Team workspaces
+- WordPress Yoast/Rank Math SEO field sync (blocked on plugin REST; see above)
