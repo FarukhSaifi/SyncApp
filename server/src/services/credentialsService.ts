@@ -162,9 +162,7 @@ export async function upsertCredential(
     normalizedSiteUrl = safeOrigin;
 
     const fromConfig =
-      typeof nextPlatformConfig.wordpress_username === "string"
-        ? nextPlatformConfig.wordpress_username.trim()
-        : "";
+      typeof nextPlatformConfig.wordpress_username === "string" ? nextPlatformConfig.wordpress_username.trim() : "";
     const blob = parseWordpressAuthBlob(api_key);
     if (blob) {
       passwordToStore = blob.secret;
@@ -173,9 +171,7 @@ export async function upsertCredential(
       }
     }
     const username =
-      typeof nextPlatformConfig.wordpress_username === "string"
-        ? nextPlatformConfig.wordpress_username.trim()
-        : "";
+      typeof nextPlatformConfig.wordpress_username === "string" ? nextPlatformConfig.wordpress_username.trim() : "";
     if (!username) {
       throw new ValidationError(ERROR_MESSAGES.WORDPRESS_USERNAME_REQUIRED);
     }
