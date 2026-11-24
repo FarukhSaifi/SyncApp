@@ -1,5 +1,3 @@
-import React from "react";
-
 import { cleanup, render } from "@testing-library/react";
 import { apiClient } from "@utils/apiClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
