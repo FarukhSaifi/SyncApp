@@ -1,5 +1,3 @@
-import React from "react";
-
 import { SYNC_LABEL } from "@constants";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";

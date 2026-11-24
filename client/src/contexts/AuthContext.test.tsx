@@ -1,5 +1,3 @@
-import React from "react";
-
 import { SYNC_LABEL } from "@constants";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

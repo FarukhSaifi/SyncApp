@@ -1,5 +1,3 @@
-import React from "react";
-
 import type { EditorStatusBarProps } from "@types";
 
 import { EDITOR_UI } from "@constants/messages";
