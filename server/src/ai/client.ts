@@ -9,7 +9,7 @@ import {
   GoogleGenAI,
   type GenerateContentConfig,
   type GenerateContentResponse,
-} from "@google/genai/node";
+} from "@google/genai";
 import { AppError } from "@middleware/errorHandler";
 import type { AiCapabilities, AiGenerateOptions, AiProvider } from "@types";
 import {

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const GoogleGenAI = vi.hoisted(() => vi.fn(function GoogleGenAIMock() {}));
 
-vi.mock("@google/genai/node", async (importOriginal) => {
+vi.mock("@google/genai", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
